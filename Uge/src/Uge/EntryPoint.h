@@ -8,6 +8,12 @@ extern Uge::Application* Uge::CreateApplication();
 
 int main(int argc, char** argv)
 {
+	int a = 42;
+
+	Uge::Log::Init();
+	UG_CORE_WARN("Initialized Log!");
+	UG_INFO("Hello Var={0}!", a);
+
 	auto app = Uge::CreateApplication();
 	app->Run();
 

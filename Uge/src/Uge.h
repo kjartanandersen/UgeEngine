@@ -6,6 +6,7 @@
 // For use by Uge applications
 
 #include "Uge/Application.h"
+#include "Uge/Log.h"
 
 
 // ------ Entry Point ---------------------
