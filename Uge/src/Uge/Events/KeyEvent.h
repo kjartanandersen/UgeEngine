@@ -46,11 +46,11 @@ namespace Uge
 
 	};
 
-	class UG_API KeyReleased : public KeyEvent
+	class UG_API KeyReleasedEvent : public KeyEvent
 	{
 
 	public:
-		KeyReleased(int keyCode, int repeatCount)
+		KeyReleasedEvent(int keyCode)
 			: KeyEvent(keyCode) {
 		}
 
