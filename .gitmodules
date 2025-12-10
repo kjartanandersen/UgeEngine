@@ -1,3 +1,6 @@
 [submodule "Uge/thirdparty/spdlog"]
 	path = Uge/thirdparty/spdlog
 	url = git@github.com:gabime/spdlog.git
+[submodule "Uge/thirdparty/GLFW"]
+	path = Uge/thirdparty/GLFW
+	url = git@github.com:glfw/glfw.git

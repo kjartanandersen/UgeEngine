@@ -10,6 +10,12 @@ workspace "Uge"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
+-- Include Directories relative to root folder (Solution Directory)
+IncludeDir = {}
+IncludeDir["GLFW"] = "Uge/thirdparty/GLFW/include"
+
+include "Uge/thirdparty/GLFW"
+
 project "Uge"
 	location "Uge"
 	kind "SharedLib"
@@ -17,6 +23,9 @@ project "Uge"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+
+	pchheader "ugpch.h"
+	pchsource "Uge/src/ugpch.cpp"
 
 	files 
 	{
@@ -27,7 +36,15 @@ project "Uge"
 	includedirs
 	{
 		"%{prj.name}/thirdparty/spdlog/include",
-		"%{prj.name}/src"
+		"%{prj.name}/src",
+		"%{IncludeDir.GLFW}"
+	}
+
+	links
+	{
+		"GLFW",
+		"opengl32.lib",
+		"dwmapi.lib"
 	}
 	
 	buildoptions {"/utf-8"}
@@ -40,7 +57,8 @@ project "Uge"
 		defines 
 		{
 			"UG_PLATFORM_WINDOWS",
-			"UG_BUILD_DLL"
+			"UG_BUILD_DLL",
+			"UG_ENABLE_ASSERTS"
 		}
 
 		postbuildcommands
@@ -52,6 +70,7 @@ project "Uge"
 	filter "configurations:Debug"
 		defines "UG_DEBUG"
 		symbols "On"
+		
 	
 	filter "configurations:Release"
 		defines "UG_RELEASE"

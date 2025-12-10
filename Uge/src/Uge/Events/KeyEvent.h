@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Event.h"
+#include "ugpch.h"
 
-#include <sstream>
+#include "Event.h"
 
 namespace Uge
 {

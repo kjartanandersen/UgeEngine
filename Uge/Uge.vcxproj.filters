@@ -1,6 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Platform">
+      <UniqueIdentifier>{2AC788B4-1694-E3BF-3FAD-D1672BD9184E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\Windows">
+      <UniqueIdentifier>{64FBD71A-50F4-F66C-7926-DCF1657ED678}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Uge">
       <UniqueIdentifier>{262A880B-9233-887C-1BAF-9E7C87B7937C}</UniqueIdentifier>
     </Filter>
@@ -9,6 +15,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Platform\Windows\WindowsWindow.h">
+      <Filter>Platform\Windows</Filter>
+    </ClInclude>
     <ClInclude Include="src\Uge.h" />
     <ClInclude Include="src\Uge\Application.h">
       <Filter>Uge</Filter>
@@ -34,13 +43,21 @@
     <ClInclude Include="src\Uge\Log.h">
       <Filter>Uge</Filter>
     </ClInclude>
+    <ClInclude Include="src\Uge\Window.h">
+      <Filter>Uge</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ugpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp">
+      <Filter>Platform\Windows</Filter>
+    </ClCompile>
     <ClCompile Include="src\Uge\Application.cpp">
       <Filter>Uge</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\Log.cpp">
       <Filter>Uge</Filter>
     </ClCompile>
+    <ClCompile Include="src\ugpch.cpp" />
   </ItemGroup>
 </Project>
