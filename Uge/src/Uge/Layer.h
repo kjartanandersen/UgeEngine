@@ -1,0 +1,30 @@
+#pragma once
+
+#include "Uge/Core.h"
+#include "Uge/Events/Event.h"
+
+namespace Uge
+{
+
+
+	class UG_API Layer
+	{
+
+	public:
+		Layer(const std::string& debugName = "Layer");
+		virtual ~Layer();
+
+		virtual void OnAttach() {}
+		virtual void OnDetach() {}
+		virtual void OnUpdate() {}
+		virtual void OnEvent(Event& event) {}
+
+		inline const std::string& GetName() const { return m_debugName; }
+
+	protected:
+		std::string m_debugName;
+	};
+
+
+}
+

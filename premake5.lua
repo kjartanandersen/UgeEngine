@@ -13,8 +13,10 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 -- Include Directories relative to root folder (Solution Directory)
 IncludeDir = {}
 IncludeDir["GLFW"] = "Uge/thirdparty/GLFW/include"
+IncludeDir["GLAD"] = "Uge/thirdparty/GLAD/include"
 
 include "Uge/thirdparty/GLFW"
+include "Uge/thirdparty/GLAD"
 
 project "Uge"
 	location "Uge"
@@ -37,12 +39,14 @@ project "Uge"
 	{
 		"%{prj.name}/thirdparty/spdlog/include",
 		"%{prj.name}/src",
-		"%{IncludeDir.GLFW}"
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.GLAD}"
 	}
 
 	links
 	{
 		"GLFW",
+		"GLAD",
 		"opengl32.lib",
 		"dwmapi.lib"
 	}
@@ -58,7 +62,8 @@ project "Uge"
 		{
 			"UG_PLATFORM_WINDOWS",
 			"UG_BUILD_DLL",
-			"UG_ENABLE_ASSERTS"
+			"UG_ENABLE_ASSERTS",
+			"GLFW_INCLUDE_NONE"
 		}
 
 		postbuildcommands
@@ -69,15 +74,18 @@ project "Uge"
 		
 	filter "configurations:Debug"
 		defines "UG_DEBUG"
+		buildoptions "/MDd"
 		symbols "On"
 		
 	
 	filter "configurations:Release"
 		defines "UG_RELEASE"
+		buildoptions "/MD"
 		optimize "On"
 	
 	filter "configurations:Dist"
 		defines "UG_DIST"
+		buildoptions "/MD"
 		optimize "On"
 
 
@@ -125,12 +133,18 @@ project "Sandbox"
 
 	filter "configurations:Debug"
 		defines "UG_DEBUG"
+		buildoptions "/MDd"
 		symbols "On"
+		
 	
 	filter "configurations:Release"
 		defines "UG_RELEASE"
+		buildoptions "/MD"
 		optimize "On"
 	
 	filter "configurations:Dist"
 		defines "UG_DIST"
+		buildoptions "/MD"
 		optimize "On"
+		
+	

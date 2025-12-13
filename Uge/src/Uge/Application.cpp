@@ -4,7 +4,7 @@
 
 #include "Uge/Log.h"
 
-#include <GLFW/glfw3.h>
+#include <glad/glad.h>
 
 namespace Uge
 {
@@ -15,6 +15,10 @@ namespace Uge
 	{
 		m_window = std::unique_ptr<Window>(Window::Create());
 		m_window->SetEventCallback(BIND_EVENT_FN(Application::OnEvent));
+
+
+		GLuint id;
+		glGenVertexArrays(1, &id);
 	}
 
 	Application::~Application()
@@ -55,6 +59,10 @@ namespace Uge
 
 			glClearColor(r, g, b, 1);
 			glClear(GL_COLOR_BUFFER_BIT);
+
+			for (auto layer : m_layerStack)
+				layer->OnUpdate();
+
 			m_window->OnUpdate();
 
 		}
@@ -67,7 +75,15 @@ namespace Uge
 
 		dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(Application::OnWindowClose));
 
-		UG_CORE_TRACE("{0}", e.ToString());
+		for ( auto it = m_layerStack.end(); it != m_layerStack.begin(); )
+		{
+
+			(*--it)->OnEvent(e);
+			if (true)
+				break;
+
+
+		}
 
 
 	}
@@ -80,6 +96,22 @@ namespace Uge
 
 
 		return true;
+
+	}
+
+	void Application::PushLayer(Layer* layer)
+	{
+
+		m_layerStack.PushLayer(layer);
+
+
+	}
+
+	void Application::PushOverlay(Layer* overlay)
+	{
+
+		m_layerStack.PushOverlay(overlay);
+
 
 	}
 

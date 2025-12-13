@@ -1,10 +1,12 @@
 #include "ugpch.h"
 #include "WindowsWindow.h"
 
+#include <glad/glad.h>
 
 #include "Uge/Events/ApplicationEvent.h"
 #include "Uge/Events/MouseEvent.h"
 #include "Uge/Events/KeyEvent.h"
+
 
 
 
@@ -68,6 +70,9 @@ namespace Uge
 			m_data.m_title.c_str(), nullptr, nullptr);
 
 		glfwMakeContextCurrent(m_window);
+		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+		UG_CORE_ASSERT(status, "Failed to initialize GLAD");
+
 		glfwSetWindowUserPointer(m_window, &m_data);
 		SetVSync(true);
 
@@ -163,10 +168,8 @@ namespace Uge
 
 					}
 
-
-
-						default:
-							break;
+					default:
+						break;
 				}
 
 
