@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_BUILD_DLL;UG_ENABLE_ASSERTS;GLFW_INCLUDE_NONE;UG_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -104,7 +104,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_BUILD_DLL;UG_ENABLE_ASSERTS;GLFW_INCLUDE_NONE;UG_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -132,7 +132,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_BUILD_DLL;UG_ENABLE_ASSERTS;GLFW_INCLUDE_NONE;UG_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -155,6 +155,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.h" />
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="src\Uge.h" />
     <ClInclude Include="src\Uge\Application.h" />
@@ -164,6 +165,7 @@
     <ClInclude Include="src\Uge\Events\Event.h" />
     <ClInclude Include="src\Uge\Events\KeyEvent.h" />
     <ClInclude Include="src\Uge\Events\MouseEvent.h" />
+    <ClInclude Include="src\Uge\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\Uge\Layer.h" />
     <ClInclude Include="src\Uge\LayerStack.h" />
     <ClInclude Include="src\Uge\Log.h" />
@@ -171,8 +173,10 @@
     <ClInclude Include="src\ugpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="src\Uge\Application.cpp" />
+    <ClCompile Include="src\Uge\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\Uge\Layer.cpp" />
     <ClCompile Include="src\Uge\LayerStack.cpp" />
     <ClCompile Include="src\Uge\Log.cpp" />
@@ -186,6 +190,9 @@
     </ProjectReference>
     <ProjectReference Include="thirdparty\GLAD\GLAD.vcxproj">
       <Project>{5D4A857C-4981-860D-F26D-6C10DE83020F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="thirdparty\imgui\ImGui.vcxproj">
+      <Project>{C0FF640D-2C14-8DBE-F595-301E616989EF}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
