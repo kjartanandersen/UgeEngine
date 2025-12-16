@@ -7,6 +7,8 @@
 #include "Uge/Events/MouseEvent.h"
 #include "Uge/Events/KeyEvent.h"
 
+#include "Platform/OpenGL/ImGuiOpenGLRenderer.h"
+
 
 
 
@@ -105,6 +107,13 @@ namespace Uge
 
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
+			ImGuiIO& io = ImGui::GetIO();
+
+			io.AddKeyEvent(ImGuiMod_Ctrl, (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) || (glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS));
+			io.AddKeyEvent(ImGuiMod_Shift, (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) || (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS));
+			io.AddKeyEvent(ImGuiMod_Alt, (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) || (glfwGetKey(window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS));
+			io.AddKeyEvent(ImGuiMod_Super, (glfwGetKey(window, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS) || (glfwGetKey(window, GLFW_KEY_RIGHT_SUPER) == GLFW_PRESS));
+
 			switch (action)
 			{
 
@@ -112,7 +121,7 @@ namespace Uge
 
 				{
 
-					KeyPressedEvent event(key, 0);
+					KeyPressedEvent event(key, scancode, 0);
 					data.m_eventCallback(event);
 
 					break;
@@ -122,7 +131,7 @@ namespace Uge
 
 				case GLFW_RELEASE:
 				{
-					KeyReleasedEvent event(key);
+					KeyReleasedEvent event(key, scancode);
 					data.m_eventCallback(event);
 
 					break;
@@ -130,7 +139,7 @@ namespace Uge
 
 				case GLFW_REPEAT:
 				{
-					KeyPressedEvent event(key, 1);
+					KeyPressedEvent event(key, scancode, 1);
 					data.m_eventCallback(event);
 
 					break;
@@ -140,6 +149,21 @@ namespace Uge
 				default:
 					break;
 			}
+
+			
+
+		});
+
+		glfwSetCharCallback(m_window, [](GLFWwindow* window, unsigned int codepoint)
+		{
+
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
+				KeyTypedEvent event(codepoint);
+				data.m_eventCallback(event);
+
+
+
 
 		});
 
@@ -155,7 +179,7 @@ namespace Uge
 					case GLFW_PRESS:
 					{
 
-						MouseButtonReleasedEvent event(button);
+						MouseButtonPressedEvent event(button);
 						data.m_eventCallback(event);
 
 						break;
@@ -164,7 +188,9 @@ namespace Uge
 					case GLFW_RELEASE:
 					{
 
-
+						MouseButtonReleasedEvent event(button);
+						data.m_eventCallback(event);
+						break;
 
 					}
 

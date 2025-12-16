@@ -62,7 +62,7 @@ namespace Uge
 
 	public:
 
-		inline float GetMouseButton() const { return m_button; };
+		inline int GetMouseButton() const { return m_button; };
 
 
 		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)

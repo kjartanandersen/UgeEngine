@@ -10,6 +10,11 @@
 	#error Uge only supports Windows!
 #endif // UG_PLATFORM_WINDOWS
 
+#ifdef UG_DEBUG
+	#define UG_ENABLE_ASSERTS
+#endif // UG_DEBUG
+
+
 #ifdef UG_ENABLE_ASSERTS
 	#define UG_ASSERT(x, ...) { if (!(x)) { UG_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
 	#define UG_CORE_ASSERT(x, ...) { if (!(x)) { UG_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
@@ -20,3 +25,5 @@
 
 
 #define BIT(x) (1 << x)
+
+#define BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1)

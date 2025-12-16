@@ -2,6 +2,7 @@ project "Uge"
 	location "./"
 	kind "SharedLib"
 	language "C++"
+	staticruntime "off"
 
 	targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("../bin-int/" .. outputdir .. "/%{prj.name}")
@@ -37,37 +38,36 @@ project "Uge"
 
 	filter "system:windows"
 		cppdialect "C++17"
-		staticruntime "On"
 		systemversion "latest"
 
 		defines 
 		{
 			"UG_PLATFORM_WINDOWS",
 			"UG_BUILD_DLL",
-			"UG_ENABLE_ASSERTS",
 			"GLFW_INCLUDE_NONE"
 		}
 
 		postbuildcommands
 		{
+			("IF NOT EXIST \"../bin/" .. outputdir .. "/Sandbox\" (mkdir \"../bin/" .. outputdir .. "/Sandbox\")"),
 			("{COPYFILE} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Sandbox")
 		}
 		
 		
 	filter "configurations:Debug"
 		defines "UG_DEBUG"
-		buildoptions "/MDd"
+		runtime "Debug"
 		symbols "On"
 		
 	
 	filter "configurations:Release"
 		defines "UG_RELEASE"
-		buildoptions "/MD"
+		runtime "Release"
 		optimize "On"
 	
 	filter "configurations:Dist"
 		defines "UG_DIST"
-		buildoptions "/MD"
+		runtime "Release"
 		optimize "On"
 
 

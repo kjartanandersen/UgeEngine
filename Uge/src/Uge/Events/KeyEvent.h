@@ -12,14 +12,16 @@ namespace Uge
 
 	public:
 		inline int GetKeyCode() const { return m_keyCode; };
+		inline int GetScanCode() const { return m_scanCode; };
 
 		EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput)
 
 	protected:
-		KeyEvent(int keyCode)
-			: m_keyCode(keyCode) { }
+		KeyEvent(int keyCode, int scancode)
+			: m_keyCode(keyCode), m_scanCode(scancode) { }
 
 		int m_keyCode;
+		int m_scanCode;
 
 	};
 
@@ -27,8 +29,8 @@ namespace Uge
 	{
 
 	public:
-		KeyPressedEvent(int keyCode, int repeatCount)
-			: KeyEvent(keyCode), m_repeatCount(repeatCount) { }
+		KeyPressedEvent(int keyCode, int scancode, int repeatCount)
+			: KeyEvent(keyCode, scancode), m_repeatCount(repeatCount) { }
 
 		inline int GetRepeatCount() const { return m_repeatCount; }
 
@@ -50,8 +52,8 @@ namespace Uge
 	{
 
 	public:
-		KeyReleasedEvent(int keyCode)
-			: KeyEvent(keyCode) {
+		KeyReleasedEvent(int keyCode, int scancode)
+			: KeyEvent(keyCode, scancode) {
 		}
 
 		std::string ToString() const override
@@ -64,6 +66,31 @@ namespace Uge
 		EVENT_CLASS_TYPE(KeyReleased)
 
 	};
+
+
+	class UG_API KeyTypedEvent : public KeyEvent
+	{
+
+	public:
+		KeyTypedEvent(int keyCode, int scancode)
+			: KeyEvent(keyCode, scancode) {  }
+		KeyTypedEvent(int keyCode)
+			: KeyEvent(keyCode, 0) { }
+
+
+		std::string ToString() const override
+		{
+			std::stringstream ss;
+			ss << "KeyTypedEvent: " << m_keyCode ;
+			return ss.str();
+		}
+
+		EVENT_CLASS_TYPE(KeyTyped)
+
+
+	};
+
+
 
 }
 

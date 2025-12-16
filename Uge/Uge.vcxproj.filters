@@ -49,6 +49,9 @@
     <ClInclude Include="src\Uge\Events\MouseEvent.h">
       <Filter>Uge\Events</Filter>
     </ClInclude>
+    <ClInclude Include="src\Uge\ImGui\ImGuiGLFW.h">
+      <Filter>Uge\ImGui</Filter>
+    </ClInclude>
     <ClInclude Include="src\Uge\ImGui\ImGuiLayer.h">
       <Filter>Uge\ImGui</Filter>
     </ClInclude>
@@ -75,6 +78,9 @@
     </ClCompile>
     <ClCompile Include="src\Uge\Application.cpp">
       <Filter>Uge</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Uge\ImGui\ImGuiGLFW.cpp">
+      <Filter>Uge\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\ImGui\ImGuiLayer.cpp">
       <Filter>Uge\ImGui</Filter>

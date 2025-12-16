@@ -79,12 +79,12 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_BUILD_DLL;UG_ENABLE_ASSERTS;GLFW_INCLUDE_NONE;UG_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_BUILD_DLL;GLFW_INCLUDE_NONE;UG_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalOptions>/utf-8 /MDd %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -95,7 +95,8 @@
       <ImportLibrary>..\bin\Debug-windows-x86_64\Uge\Uge.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>copy /B /Y ..\bin\Debug-windows-x86_64\Uge\Uge.dll ..\bin\Debug-windows-x86_64\Sandbox</Command>
+      <Command>IF NOT EXIST "../bin/Debug-windows-x86_64/Sandbox" (mkdir "../bin/Debug-windows-x86_64/Sandbox")
+copy /B /Y ..\bin\Debug-windows-x86_64\Uge\Uge.dll ..\bin\Debug-windows-x86_64\Sandbox</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -103,15 +104,15 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_BUILD_DLL;UG_ENABLE_ASSERTS;GLFW_INCLUDE_NONE;UG_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_BUILD_DLL;GLFW_INCLUDE_NONE;UG_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalOptions>/utf-8 /MD /MT %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/utf-8 /MT %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -123,7 +124,8 @@
       <ImportLibrary>..\bin\Release-windows-x86_64\Uge\Uge.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>copy /B /Y ..\bin\Release-windows-x86_64\Uge\Uge.dll ..\bin\Release-windows-x86_64\Sandbox</Command>
+      <Command>IF NOT EXIST "../bin/Release-windows-x86_64/Sandbox" (mkdir "../bin/Release-windows-x86_64/Sandbox")
+copy /B /Y ..\bin\Release-windows-x86_64\Uge\Uge.dll ..\bin\Release-windows-x86_64\Sandbox</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
@@ -131,15 +133,15 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_BUILD_DLL;UG_ENABLE_ASSERTS;GLFW_INCLUDE_NONE;UG_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_BUILD_DLL;GLFW_INCLUDE_NONE;UG_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalOptions>/utf-8 /MD %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -151,7 +153,8 @@
       <ImportLibrary>..\bin\Dist-windows-x86_64\Uge\Uge.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>copy /B /Y ..\bin\Dist-windows-x86_64\Uge\Uge.dll ..\bin\Dist-windows-x86_64\Sandbox</Command>
+      <Command>IF NOT EXIST "../bin/Dist-windows-x86_64/Sandbox" (mkdir "../bin/Dist-windows-x86_64/Sandbox")
+copy /B /Y ..\bin\Dist-windows-x86_64\Uge\Uge.dll ..\bin\Dist-windows-x86_64\Sandbox</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -165,6 +168,7 @@
     <ClInclude Include="src\Uge\Events\Event.h" />
     <ClInclude Include="src\Uge\Events\KeyEvent.h" />
     <ClInclude Include="src\Uge\Events\MouseEvent.h" />
+    <ClInclude Include="src\Uge\ImGui\ImGuiGLFW.h" />
     <ClInclude Include="src\Uge\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\Uge\Layer.h" />
     <ClInclude Include="src\Uge\LayerStack.h" />
@@ -176,6 +180,7 @@
     <ClCompile Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="src\Uge\Application.cpp" />
+    <ClCompile Include="src\Uge\ImGui\ImGuiGLFW.cpp" />
     <ClCompile Include="src\Uge\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\Uge\Layer.cpp" />
     <ClCompile Include="src\Uge\LayerStack.cpp" />

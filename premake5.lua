@@ -1,6 +1,7 @@
 workspace "Uge"
 	architecture "x64"
-
+	startproject "Sandbox"
+	
 	configurations 
 	{
 		"Debug",
@@ -16,9 +17,14 @@ IncludeDir["GLFW"] = "Uge/thirdparty/GLFW/include"
 IncludeDir["GLAD"] = "Uge/thirdparty/GLAD/include"
 IncludeDir["IMGUI"] = "Uge/thirdparty/imgui"
 
-include "Uge/thirdparty/GLFW"
-include "Uge/thirdparty/GLAD"
-include "Uge/thirdparty/imgui"
+
+group "Dependencies"
+	include "Uge/thirdparty/GLFW"
+	include "Uge/thirdparty/GLAD"
+	include "Uge/thirdparty/imgui"
+
+group ""
 
 include "Uge"
 include "Sandbox"
+

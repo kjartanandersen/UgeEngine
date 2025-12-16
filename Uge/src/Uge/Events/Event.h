@@ -25,6 +25,7 @@ namespace Uge
 		AppRender,
 		KeyPressed,
 		KeyReleased,
+		KeyTyped,
 		MouseButtonPressed,
 		MouseButtonReleased,
 		MouseMoved,
@@ -56,6 +57,7 @@ namespace Uge
 		friend class EventDispatcher;
 
 	public:
+		bool m_handled = false;
 
 
 		virtual EventType GetEventType() const = 0;
@@ -69,8 +71,6 @@ namespace Uge
 			return GetCategoryFlags() & category;
 		}
 
-	protected:
-		bool m_handled = false;
 	};
 
 	class EventDispatcher
