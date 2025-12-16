@@ -27,6 +27,7 @@ namespace Uge
 
 		inline static Application& Get() { return *s_instance; }
 		inline Window& GetWindow() { return *m_window; }
+		inline void CloseProgram() { m_running = false; }
 
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);

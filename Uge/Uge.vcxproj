@@ -159,6 +159,7 @@ copy /B /Y ..\bin\Dist-windows-x86_64\Uge\Uge.dll ..\bin\Dist-windows-x86_64\San
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.h" />
+    <ClInclude Include="src\Platform\Windows\WIndowsInput.h" />
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="src\Uge.h" />
     <ClInclude Include="src\Uge\Application.h" />
@@ -170,14 +171,18 @@ copy /B /Y ..\bin\Dist-windows-x86_64\Uge\Uge.dll ..\bin\Dist-windows-x86_64\San
     <ClInclude Include="src\Uge\Events\MouseEvent.h" />
     <ClInclude Include="src\Uge\ImGui\ImGuiGLFW.h" />
     <ClInclude Include="src\Uge\ImGui\ImGuiLayer.h" />
+    <ClInclude Include="src\Uge\Input.h" />
+    <ClInclude Include="src\Uge\KeyCodes.h" />
     <ClInclude Include="src\Uge\Layer.h" />
     <ClInclude Include="src\Uge\LayerStack.h" />
     <ClInclude Include="src\Uge\Log.h" />
+    <ClInclude Include="src\Uge\MouseButtonCodes.h" />
     <ClInclude Include="src\Uge\Window.h" />
     <ClInclude Include="src\ugpch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.cpp" />
+    <ClCompile Include="src\Platform\Windows\WIndowsInput.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="src\Uge\Application.cpp" />
     <ClCompile Include="src\Uge\ImGui\ImGuiGLFW.cpp" />

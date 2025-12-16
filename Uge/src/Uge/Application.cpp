@@ -6,10 +6,15 @@
 
 #include <glad/glad.h>
 
+#include "Uge/Input.h"
+#include "Uge/KeyCodes.h"
+
+#include <GLFW/glfw3.h>
+
 namespace Uge
 {
 
-
+	
 	Application* Application::s_instance = nullptr;
 
 	Application::Application()
@@ -46,6 +51,9 @@ namespace Uge
 
 		while (m_running)
 		{
+			if (Uge::Input::IsKeyPressed(UG_KEY_ESCAPE))
+				CloseProgram();
+
 			auto current_time = std::chrono::high_resolution_clock::now();
 
 			auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time);
@@ -59,7 +67,7 @@ namespace Uge
 
 				start_time = std::chrono::high_resolution_clock::now();
 			}
-
+			
 
 			glClearColor(r, g, b, 1);
 			glClear(GL_COLOR_BUFFER_BIT);

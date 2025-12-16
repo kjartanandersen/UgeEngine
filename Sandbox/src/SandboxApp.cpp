@@ -15,7 +15,11 @@ public:
 	void OnUpdate() override
 	{
 
-		UG_INFO("ExampleLayer::Update");
+		//UG_INFO("ExampleLayer::Update");
+
+		
+
+		
 
 
 	}
@@ -23,7 +27,16 @@ public:
 	void OnEvent(Uge::Event& event) override
 	{
 
-		UG_TRACE("{0}", event.ToString());
+		//UG_TRACE("{0}", event.ToString());
+
+		if (event.GetEventType() == Uge::EventType::KeyPressed)
+		{
+
+			Uge::KeyPressedEvent& e = static_cast<Uge::KeyPressedEvent&>(event);
+			UG_TRACE("{0}", (char)e.GetKeyCode());
+
+
+		}
 
 	}
 
