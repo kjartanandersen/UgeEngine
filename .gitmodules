@@ -7,3 +7,6 @@
 [submodule "Uge/thirdparty/imgui"]
 	path = Uge/thirdparty/imgui
 	url = git@github.com:ocornut/imgui.git
+[submodule "Uge/thirdparty/glm"]
+	path = Uge/thirdparty/glm
+	url = git@github.com:g-truc/glm.git

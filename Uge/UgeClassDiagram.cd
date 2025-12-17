@@ -1,0 +1,200 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="FullSignature">
+  <Class Name="Uge::WindowsWindow" Collapsed="true">
+    <Position X="3.25" Y="9" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CAAAAAEAAAAAAABAAIABAQBAAAAAECAAgAACAEEAAAA=</HashCode>
+      <FileName>src\Platform\Windows\WindowsWindow.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::Application" Collapsed="true">
+    <Position X="31.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CAAAAAAAADAAAABAAkQAggAAAAACAAAAAABAAACAAAI=</HashCode>
+      <FileName>src\Uge\Application.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::Layer" Collapsed="true">
+    <Position X="6.25" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAQAAAAAAAAEAEAAAAAAAIAAAAAEAAABAAEABAA=</HashCode>
+      <FileName>src\Uge\Layer.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::LayerStack" Collapsed="true">
+    <Position X="31.75" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACACCAAAAAAAACAEAQAAICAAAAAAgAAAIAAAA=</HashCode>
+      <FileName>src\Uge\LayerStack.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::Log" Collapsed="true">
+    <Position X="33.5" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAACAACABAAAAAAAAAAAAAAAAAAAAABAAACAAAAAAA=</HashCode>
+      <FileName>src\Uge\Log.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::Window" Collapsed="true">
+    <Position X="3.25" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAEAAAAAAABAAAAAAABAAQAAAGAAgAAAAEEAAAA=</HashCode>
+      <FileName>src\Uge\Window.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::WindowResizeEvent" Collapsed="true">
+    <Position X="4.5" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAFAAAAAABAAAAAAACAEAAAAEAAAAA=</HashCode>
+      <FileName>src\Uge\Events\ApplicationEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::WindowCloseEvent" Collapsed="true">
+    <Position X="6.75" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\ApplicationEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::AppTickEvent" Collapsed="true">
+    <Position X="11.25" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\ApplicationEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::AppUpdateEvent" Collapsed="true">
+    <Position X="15.75" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\ApplicationEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::AppRenderEvent" Collapsed="true">
+    <Position X="29.25" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\ApplicationEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::Event" Collapsed="true">
+    <Position X="16.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABAAAIAAAAIAAAEAAAAAEAAAAAAAAAAAAAAAAAABAA=</HashCode>
+      <FileName>src\Uge\Events\Event.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::EventDispatcher" Collapsed="true">
+    <Position X="33.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gAgAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\Event.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::KeyEvent" Collapsed="true">
+    <Position X="20.25" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAAAAAAAAAAAAAAAAAAAAgEAAAAAACAACAAAA=</HashCode>
+      <FileName>src\Uge\Events\KeyEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::KeyPressedEvent" Collapsed="true">
+    <Position X="22.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEAAAAAAAABAAAIAAABAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\KeyEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::KeyReleasedEvent" Collapsed="true">
+    <Position X="18" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEAAAAAAAAAAAAAIAAAAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\KeyEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::KeyTypedEvent" Collapsed="true">
+    <Position X="20.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAgAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\KeyEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::MouseMovedEvent" Collapsed="true">
+    <Position X="9" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAIAAAAAAAEAAADAAAAAAAAAAAAYAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\MouseEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::MouseScrolledEvent" Collapsed="true">
+    <Position X="13.5" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAMAAAAAAEAAAAAAAAgAAAAAAAAAAAAACAAAA=</HashCode>
+      <FileName>src\Uge\Events\MouseEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::MouseButtonEvent" Collapsed="true">
+    <Position X="25.75" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAMAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\MouseEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::MouseButtonPressedEvent" Collapsed="true">
+    <Position X="27" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\MouseEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::MouseButtonReleasedEvent" Collapsed="true">
+    <Position X="24.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAgAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Events\MouseEvent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::ImGuiLayer" Collapsed="true">
+    <Position X="6.25" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EBEAAAAAIAAABAAAgEAABAAAAIACQAAABABBAAEAAAA=</HashCode>
+      <FileName>src\Uge\ImGui\ImGuiLayer.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::WindowsInput" Collapsed="true">
+    <Position X="3.25" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAgAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAg=</HashCode>
+      <FileName>src\Platform\Windows\WIndowsInput.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::Input" Collapsed="true">
+    <Position X="3.25" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAhAAAAAAAAAAAAAgQAAABAgAAAAAAAACAAAAAAAAg=</HashCode>
+      <FileName>src\Uge\Input.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Struct Name="Uge::WindowProps" Collapsed="true">
+    <Position X="31.75" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAEAAAAAAAABAAQAAAAAAAAAAACAAAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Window.h</FileName>
+    </TypeIdentifier>
+  </Struct>
+  <Enum Name="Uge::EventType" Collapsed="true">
+    <Position X="33.5" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAEACAAAAAAgAAAIgAAAAgAAAAEBAgAAAAAIABFgAQA=</HashCode>
+      <FileName>src\Uge\Events\Event.h</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="Uge::EventCategory" Collapsed="true">
+    <Position X="31.75" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAQAAAQAAAAAAAAAAAAAAAAAAAQAAQAAEAAIA=</HashCode>
+      <FileName>src\Uge\Events\Event.h</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

@@ -16,7 +16,8 @@ project "Sandbox"
 	includedirs
 	{
 		"../Uge/thirdparty/spdlog/include",
-		"../Uge/src"
+		"../Uge/src",
+		"../%{IncludeDir.GLM}"
 	}
 
 	links

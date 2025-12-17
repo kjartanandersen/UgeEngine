@@ -22,7 +22,8 @@ project "Uge"
 		"../%{prj.name}/src",
 		"../%{IncludeDir.GLFW}",
 		"../%{IncludeDir.GLAD}",
-		"../%{IncludeDir.IMGUI}"
+		"../%{IncludeDir.IMGUI}",
+		"../%{IncludeDir.GLM}"
 	}
 
 	links
@@ -30,6 +31,7 @@ project "Uge"
 		"GLFW",
 		"GLAD",
 		"ImGui",
+		"glm",
 		"opengl32.lib",
 		"dwmapi.lib"
 	}

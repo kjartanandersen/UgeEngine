@@ -11,9 +11,11 @@
 
 #include <GLFW/glfw3.h>
 
+#include "glm/glm.hpp"
+
 namespace Uge
 {
-
+	
 	
 	Application* Application::s_instance = nullptr;
 
