@@ -1,5 +1,6 @@
 #include <Uge.h>
 
+
 class ExampleLayer : public Uge::Layer
 {
 
@@ -23,6 +24,8 @@ public:
 
 
 	}
+
+	
 
 	void OnEvent(Uge::Event& event) override
 	{
@@ -50,7 +53,6 @@ public:
 	Sandbox()
 	{
 		PushLayer(new ExampleLayer());
-		PushOverlay(new Uge::ImGuiLayer());
 	}
 	~Sandbox()
 	{

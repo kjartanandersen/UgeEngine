@@ -12,7 +12,6 @@ namespace Uge
 	LayerStack::LayerStack()
 	{
 
-		m_layerInsert = m_layers.begin();
 
 	}
 
@@ -28,8 +27,7 @@ namespace Uge
 	void LayerStack::PushLayer(Layer* layer)
 	{
 
-
-		m_layerInsert = m_layers.emplace(m_layerInsert, layer);
+		m_layers.emplace(m_layers.begin() + m_layerInsertIndex, layer);
 		
 
 
@@ -40,6 +38,7 @@ namespace Uge
 
 
 		m_layers.emplace_back(overlay);
+		m_layerInsertIndex++;
 
 	}
 
@@ -52,7 +51,7 @@ namespace Uge
 		{
 
 			m_layers.erase(it);
-			m_layerInsert--;
+			m_layerInsertIndex--;
 
 
 		}

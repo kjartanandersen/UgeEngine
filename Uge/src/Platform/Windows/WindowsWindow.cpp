@@ -2,12 +2,17 @@
 #include "WindowsWindow.h"
 
 #include <glad/glad.h>
+#include "backends/imgui_impl_glfw.h"
 
 #include "Uge/Events/ApplicationEvent.h"
 #include "Uge/Events/MouseEvent.h"
 #include "Uge/Events/KeyEvent.h"
 
-#include "Platform/OpenGL/ImGuiOpenGLRenderer.h"
+
+
+
+
+
 
 
 
@@ -153,7 +158,7 @@ namespace Uge
 			
 
 		});
-
+		
 		glfwSetCharCallback(m_window, [](GLFWwindow* window, unsigned int codepoint)
 		{
 

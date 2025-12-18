@@ -9,7 +9,6 @@
 #include "Uge/MouseButtonCodes.h"
 #include "Uge/KeyCodes.h"
 
-#include "Uge/Layer.h"
 #include "Uge/ImGui/ImGuiLayer.h"
 
 // ************* Entry Point *****************

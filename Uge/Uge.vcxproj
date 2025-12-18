@@ -158,7 +158,6 @@ copy /B /Y ..\bin\Dist-windows-x86_64\Uge\Uge.dll ..\bin\Dist-windows-x86_64\San
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.h" />
     <ClInclude Include="src\Platform\Windows\WIndowsInput.h" />
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="src\Uge.h" />
@@ -169,7 +168,6 @@ copy /B /Y ..\bin\Dist-windows-x86_64\Uge\Uge.dll ..\bin\Dist-windows-x86_64\San
     <ClInclude Include="src\Uge\Events\Event.h" />
     <ClInclude Include="src\Uge\Events\KeyEvent.h" />
     <ClInclude Include="src\Uge\Events\MouseEvent.h" />
-    <ClInclude Include="src\Uge\ImGui\ImGuiGLFW.h" />
     <ClInclude Include="src\Uge\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\Uge\Input.h" />
     <ClInclude Include="src\Uge\KeyCodes.h" />
@@ -181,11 +179,10 @@ copy /B /Y ..\bin\Dist-windows-x86_64\Uge\Uge.dll ..\bin\Dist-windows-x86_64\San
     <ClInclude Include="src\ugpch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.cpp" />
     <ClCompile Include="src\Platform\Windows\WIndowsInput.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="src\Uge\Application.cpp" />
-    <ClCompile Include="src\Uge\ImGui\ImGuiGLFW.cpp" />
+    <ClCompile Include="src\Uge\ImGui\ImGuiBuild.cpp" />
     <ClCompile Include="src\Uge\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\Uge\Layer.cpp" />
     <ClCompile Include="src\Uge\LayerStack.cpp" />
