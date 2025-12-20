@@ -2,7 +2,8 @@ project "Sandbox"
 	location "./"
 	kind "ConsoleApp"
 	language "C++"
-	staticruntime "off"
+	cppdialect "C++17"
+	staticruntime "on"
 
 	targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("../bin-int/" .. outputdir .. "/%{prj.name}")
@@ -29,7 +30,6 @@ project "Sandbox"
 	buildoptions {"/utf-8"}
 
 	filter "system:windows"
-		cppdialect "C++17"
 		systemversion "latest"
 
 		defines 
@@ -41,17 +41,17 @@ project "Sandbox"
 	filter "configurations:Debug"
 		defines "UG_DEBUG"
 		runtime "Debug"
-		symbols "On"
+		symbols "on"
 		
 	
 	filter "configurations:Release"
 		defines "UG_RELEASE"
 		runtime "Release"
-		optimize "On"
+		optimize "on"
 	
 	filter "configurations:Dist"
 		defines "UG_DIST"
 		runtime "Release"
-		optimize "On"
+		optimize "on"
 		
 	

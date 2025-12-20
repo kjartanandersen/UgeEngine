@@ -1,8 +1,9 @@
 project "Uge"
 	location "./"
-	kind "SharedLib"
+	kind "StaticLib"
 	language "C++"
-	staticruntime "off"
+	cppdialect "C++17"
+	staticruntime "on"
 
 	targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("../bin-int/" .. outputdir .. "/%{prj.name}")
@@ -13,7 +14,13 @@ project "Uge"
 	files 
 	{
 		"src/**.h",
-		"src/**.cpp"
+		"src/**.cpp",
+		"UgeClassDiagram.cd"
+	}
+	
+	defines
+	{
+		"_CRT_SECURE_NO_WARNINGS"
 	}
 
 	includedirs
@@ -32,14 +39,12 @@ project "Uge"
 		"GLAD",
 		"ImGui",
 		"glm",
-		"opengl32.lib",
-		"dwmapi.lib"
+		"opengl32.lib"
 	}
 	
 	buildoptions {"/utf-8"}
 
 	filter "system:windows"
-		cppdialect "C++17"
 		systemversion "latest"
 
 		defines 
@@ -48,29 +53,23 @@ project "Uge"
 			"UG_BUILD_DLL",
 			"GLFW_INCLUDE_NONE"
 		}
-
-		postbuildcommands
-		{
-			("IF NOT EXIST \"../bin/" .. outputdir .. "/Sandbox\" (mkdir \"../bin/" .. outputdir .. "/Sandbox\")"),
-			("{COPYFILE} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Sandbox")
-		}
 		
 		
 	filter "configurations:Debug"
 		defines "UG_DEBUG"
 		runtime "Debug"
-		symbols "On"
+		symbols "on"
 		
 	
 	filter "configurations:Release"
 		defines "UG_RELEASE"
 		runtime "Release"
-		optimize "On"
+		optimize "on"
 	
 	filter "configurations:Dist"
 		defines "UG_DIST"
 		runtime "Release"
-		optimize "On"
+		optimize "on"
 
 
 	filter { "system:windows", "configurations:Release" }

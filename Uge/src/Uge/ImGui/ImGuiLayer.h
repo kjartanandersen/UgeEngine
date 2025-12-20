@@ -10,7 +10,7 @@
 namespace Uge
 {
 
-	class UG_API ImGuiLayer : public Layer
+	class ImGuiLayer : public Layer
 	{
 
 	public:

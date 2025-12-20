@@ -1,7 +1,7 @@
 project "GLAD"
 	kind "StaticLib"
 	language "C"
-	staticruntime "off"
+	staticruntime "on"
 	warnings "off"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -26,7 +26,6 @@ project "GLAD"
 	filter "configurations:Debug"
 		runtime "Debug"
 		symbols "on"
-		staticruntime "on"
         runtime "Debug" -- This sets the runtime library to /MTd for Debug builds
 
 	filter { "system:windows", "configurations:Debug-AS" }	
@@ -37,11 +36,10 @@ project "GLAD"
 
 	filter "configurations:Release"
 		runtime "Release"
-		optimize "speed"
-		staticruntime "on"
+		optimize "on"
         runtime "Release" -- This sets the runtime library to /MT for Release builds
 
     filter "configurations:Dist"
 		runtime "Release"
-		optimize "speed"
+		optimize "on"
         symbols "off"

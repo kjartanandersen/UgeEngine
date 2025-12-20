@@ -1,5 +1,6 @@
 #include <Uge.h>
 
+#include "imgui/imgui.h"
 
 class ExampleLayer : public Uge::Layer
 {
@@ -8,7 +9,6 @@ public:
 	ExampleLayer()
 		: Layer("Example")
 	{
-
 
 
 	}
@@ -20,6 +20,17 @@ public:
 
 		
 
+		
+
+
+	}
+
+	virtual void OnImGuiRender() override
+	{
+
+		ImGui::Begin("Test");
+		ImGui::Text("Hello World");
+		ImGui::End();
 		
 
 

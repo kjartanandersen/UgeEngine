@@ -12,7 +12,7 @@
 
 namespace Uge
 {
-	class UG_API Application
+	class Application
 	{
 	public:
 		Application();

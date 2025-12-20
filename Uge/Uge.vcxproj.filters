@@ -1,102 +1,114 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Platform">
-      <UniqueIdentifier>{2AC788B4-1694-E3BF-3FAD-D1672BD9184E}</UniqueIdentifier>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Platform\Windows">
-      <UniqueIdentifier>{64FBD71A-50F4-F66C-7926-DCF1657ED678}</UniqueIdentifier>
+    <Filter Include="src\Platform">
+      <UniqueIdentifier>{21CA02E5-0D2D-9289-B6B2-CA3FA2F45D0C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Uge">
-      <UniqueIdentifier>{262A880B-9233-887C-1BAF-9E7C87B7937C}</UniqueIdentifier>
+    <Filter Include="src\Platform\Windows">
+      <UniqueIdentifier>{5B054582-4794-CE4B-F0B2-E246DC20DFF1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Uge\Events">
-      <UniqueIdentifier>{4A2FB06C-36E7-F1B9-9FEE-CA158BC58CAA}</UniqueIdentifier>
+    <Filter Include="src\Uge">
+      <UniqueIdentifier>{BDB62FA9-2996-AE44-32AE-391B9E0C15A6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Uge\ImGui">
-      <UniqueIdentifier>{D023AD7F-3C8E-61F6-85CC-129CF1753F4B}</UniqueIdentifier>
+    <Filter Include="src\Uge\Events">
+      <UniqueIdentifier>{01CCB6A3-ED99-AAA9-D62D-1BD0C29A860E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Uge\ImGui">
+      <UniqueIdentifier>{A78567BF-1346-E3F5-DC80-2C73480028D2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Platform\Windows\WIndowsInput.h">
-      <Filter>Platform\Windows</Filter>
+      <Filter>src\Platform\Windows</Filter>
     </ClInclude>
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h">
-      <Filter>Platform\Windows</Filter>
+      <Filter>src\Platform\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Uge.h" />
+    <ClInclude Include="src\Uge.h">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="src\Uge\Application.h">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Core.h">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\EntryPoint.h">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Events\ApplicationEvent.h">
-      <Filter>Uge\Events</Filter>
+      <Filter>src\Uge\Events</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Events\Event.h">
-      <Filter>Uge\Events</Filter>
+      <Filter>src\Uge\Events</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Events\KeyEvent.h">
-      <Filter>Uge\Events</Filter>
+      <Filter>src\Uge\Events</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Events\MouseEvent.h">
-      <Filter>Uge\Events</Filter>
+      <Filter>src\Uge\Events</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\ImGui\ImGuiLayer.h">
-      <Filter>Uge\ImGui</Filter>
+      <Filter>src\Uge\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Input.h">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\KeyCodes.h">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Layer.h">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\LayerStack.h">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Log.h">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\MouseButtonCodes.h">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Window.h">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClInclude>
-    <ClInclude Include="src\ugpch.h" />
+    <ClInclude Include="src\ugpch.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\Windows\WIndowsInput.cpp">
-      <Filter>Platform\Windows</Filter>
+      <Filter>src\Platform\Windows</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp">
-      <Filter>Platform\Windows</Filter>
+      <Filter>src\Platform\Windows</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\Application.cpp">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\ImGui\ImGuiBuild.cpp">
-      <Filter>Uge\ImGui</Filter>
+      <Filter>src\Uge\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\ImGui\ImGuiLayer.cpp">
-      <Filter>Uge\ImGui</Filter>
+      <Filter>src\Uge\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\Layer.cpp">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\LayerStack.cpp">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\Log.cpp">
-      <Filter>Uge</Filter>
+      <Filter>src\Uge</Filter>
     </ClCompile>
-    <ClCompile Include="src\ugpch.cpp" />
+    <ClCompile Include="src\ugpch.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="UgeClassDiagram.cd" />
   </ItemGroup>
 </Project>

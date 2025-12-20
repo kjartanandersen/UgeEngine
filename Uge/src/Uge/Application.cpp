@@ -43,8 +43,8 @@ namespace Uge
 
 		auto start_time = std::chrono::high_resolution_clock::now();
 
-		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-		std::default_random_engine generator(seed);
+		long long seed = std::chrono::system_clock::now().time_since_epoch().count();
+		std::default_random_engine generator(static_cast<unsigned>(seed));
 
 		std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 

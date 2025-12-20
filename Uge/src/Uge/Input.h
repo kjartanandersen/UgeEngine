@@ -5,7 +5,7 @@
 namespace Uge
 {
 
-	class UG_API Input
+	class Input
 	{
 
 	public:

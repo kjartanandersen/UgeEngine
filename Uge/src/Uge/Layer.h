@@ -7,7 +7,7 @@ namespace Uge
 {
 
 
-	class UG_API Layer
+	class Layer
 	{
 
 	public:

@@ -9,7 +9,7 @@
 
 namespace Uge
 {
-	class UG_API Log
+	class Log
 	{
 
 	public:
