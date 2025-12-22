@@ -30,6 +30,37 @@ namespace Uge
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
+		// Vertex Array
+		// Vertex Buffer
+		// Index Buffer
+
+
+		glGenVertexArrays(1, &m_vertexArray);
+		glBindVertexArray(m_vertexArray);
+
+		glGenBuffers(1, &m_vertexBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer);
+
+
+		float vertices[3 * 3] =
+		{
+			-0.5f, -0.5f, 0.5f,
+			 0.5f, -0.5f, 0.0f,
+			 0.0f,  0.5f, 0.5f
+		};
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+
+		glGenBuffers(1, &m_indexBuffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer);
+
+		unsigned int indices[3] = { 0, 1, 2 };
+
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 
 	}
 
@@ -41,39 +72,20 @@ namespace Uge
 	void Application::Run()
 	{
 
-		auto start_time = std::chrono::high_resolution_clock::now();
-
-		long long seed = std::chrono::system_clock::now().time_since_epoch().count();
-		std::default_random_engine generator(static_cast<unsigned>(seed));
-
-		std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-
-		float r = distribution(generator);
-		float b = distribution(generator);
-		float g = distribution(generator);
-
 		while (m_running)
 		{
 			if (Uge::Input::IsKeyPressed(UG_KEY_ESCAPE))
 				CloseProgram();
 
-			auto current_time = std::chrono::high_resolution_clock::now();
-
-			auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time);
-
-			if (elapsed_time.count() >= 1)
-			{
-
-				r = distribution(generator);
-				g = distribution(generator);
-				b = distribution(generator);
-
-				start_time = std::chrono::high_resolution_clock::now();
-			}
 			
 
-			glClearColor(r, g, b, 1);
+			glClearColor(0.1f, 0.1f, 0.1f, 1);
 			glClear(GL_COLOR_BUFFER_BIT);
+
+			glBindVertexArray(m_vertexArray);
+			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
+
+
 
 			for (auto layer : m_layerStack)
 				layer->OnUpdate();

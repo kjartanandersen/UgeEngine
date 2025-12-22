@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Uge/Window.h"
+#include "Uge/Renderer/GraphicsContext.h"
 
 #include "GLFW/glfw3.h"
+
 
 namespace Uge
 {
@@ -35,6 +37,10 @@ namespace Uge
 		virtual void Init(const WindowProps& props);
 		virtual void Shutdown();
 
+	private:
+		GLFWwindow* m_window;
+		GraphicsContext* m_context;
+
 		struct WindowData
 		{
 
@@ -47,7 +53,6 @@ namespace Uge
 		};
 
 		WindowData m_data;
-		GLFWwindow* m_window;
 		
 
 	};

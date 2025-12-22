@@ -1,20 +1,12 @@
 #include "ugpch.h"
 #include "WindowsWindow.h"
 
-#include <glad/glad.h>
 #include "backends/imgui_impl_glfw.h"
 
 #include "Uge/Events/ApplicationEvent.h"
 #include "Uge/Events/MouseEvent.h"
 #include "Uge/Events/KeyEvent.h"
-
-
-
-
-
-
-
-
+#include "Platform/OpenGL/OpenGLContext.h"
 
 
 namespace Uge
@@ -56,6 +48,7 @@ namespace Uge
 		m_data.m_width = props.m_width;
 		m_data.m_height = props.m_height;
 
+
 		UG_CORE_INFO("Creating Window {0} (Width: {1}, Height: {2})", 
 					  props.m_title, props.m_width, props.m_height);
 
@@ -76,9 +69,10 @@ namespace Uge
 		m_window = glfwCreateWindow((int)props.m_width, (int)props.m_height,
 			m_data.m_title.c_str(), nullptr, nullptr);
 
-		glfwMakeContextCurrent(m_window);
-		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-		UG_CORE_ASSERT(status, "Failed to initialize GLAD");
+		m_context = new OpenGLContext(m_window);
+		m_context->Init();
+
+		
 
 		glfwSetWindowUserPointer(m_window, &m_data);
 		SetVSync(true);
@@ -245,7 +239,7 @@ namespace Uge
 	{
 
 		glfwPollEvents();
-		glfwSwapBuffers(m_window);
+		m_context->SwapBuffers();
 
 	}
 

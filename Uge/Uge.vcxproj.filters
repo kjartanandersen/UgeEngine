@@ -78,6 +78,8 @@
     <ClInclude Include="src\ugpch.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\Uge\Renderer\GraphicsContext.h" />
+    <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\Windows\WIndowsInput.cpp">
@@ -107,6 +109,7 @@
     <ClCompile Include="src\ugpch.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="UgeClassDiagram.cd" />
