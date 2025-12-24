@@ -146,6 +146,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
     <ClInclude Include="src\Platform\Windows\WIndowsInput.h" />
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
@@ -164,11 +165,15 @@
     <ClInclude Include="src\Uge\LayerStack.h" />
     <ClInclude Include="src\Uge\Log.h" />
     <ClInclude Include="src\Uge\MouseButtonCodes.h" />
+    <ClInclude Include="src\Uge\Renderer\Buffer.h" />
     <ClInclude Include="src\Uge\Renderer\GraphicsContext.h" />
+    <ClInclude Include="src\Uge\Renderer\Renderer.h" />
+    <ClInclude Include="src\Uge\Renderer\Shader.h" />
     <ClInclude Include="src\Uge\Window.h" />
     <ClInclude Include="src\ugpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
     <ClCompile Include="src\Platform\Windows\WIndowsInput.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
@@ -178,6 +183,9 @@
     <ClCompile Include="src\Uge\Layer.cpp" />
     <ClCompile Include="src\Uge\LayerStack.cpp" />
     <ClCompile Include="src\Uge\Log.cpp" />
+    <ClCompile Include="src\Uge\Renderer\Buffer.cpp" />
+    <ClCompile Include="src\Uge\Renderer\Renderer.cpp" />
+    <ClCompile Include="src\Uge\Renderer\Shader.cpp" />
     <ClCompile Include="src\ugpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
