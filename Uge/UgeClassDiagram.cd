@@ -1,199 +1,311 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="FullSignature">
-  <Class Name="Uge::WindowsWindow" Collapsed="true">
-    <Position X="3.25" Y="9" Width="1.5" />
+  <Class Name="Uge::WindowsInput" Collapsed="true">
+    <Position X="3.5" Y="10.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>CAAAAAEAAAAAAABAAIABAQBAAAAAECAAgAACAEEAAAA=</HashCode>
+      <HashCode>EAAgAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAg=</HashCode>
+      <FileName>src\Platform\Windows\WIndowsInput.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::WindowsWindow" Collapsed="true">
+    <Position X="0.5" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CAAAAAEAAAAEAABAAIABAQBAAAAAECAAgAACAEEAAAA=</HashCode>
       <FileName>src\Platform\Windows\WindowsWindow.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::Application" Collapsed="true">
-    <Position X="31.75" Y="1.75" Width="1.5" />
+    <Position X="29" Y="0.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>CAAAAAAAADAAAABAAkQAggAAAAACAAAAAABAAACAAAI=</HashCode>
+      <HashCode>CAAIAAAAADCAAABAAkQAghAAAAACAAAAAABAAADAQAI=</HashCode>
       <FileName>src\Uge\Application.h</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="Uge::Layer" Collapsed="true">
-    <Position X="6.25" Y="4.75" Width="1.5" />
+  <Class Name="Uge::Input" Collapsed="true">
+    <Position X="3.5" Y="9.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAQAAAAAAAAEAEAAAAAAAIAAAAAEAAABAAEABAA=</HashCode>
+      <HashCode>EAAhAAAAAAAAAAAAAgQAAABAgAAAAAAAACAAAAAAAAg=</HashCode>
+      <FileName>src\Uge\Input.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::Layer" Collapsed="true">
+    <Position X="6.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAQAAAAAAAAEAEAAAAAAAIAAEAAEAAABAAEABAA=</HashCode>
       <FileName>src\Uge\Layer.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::LayerStack" Collapsed="true">
-    <Position X="31.75" Y="2.75" Width="1.5" />
+    <Position X="29" Y="1.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAACACCAAAAAAAACAEAQAAICAAAAAAgAAAIAAAA=</HashCode>
+      <HashCode>AAAAAAACACAAAAAAAAACAEAQAAICAAAAAAgAAAIAAAA=</HashCode>
       <FileName>src\Uge\LayerStack.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::Log" Collapsed="true">
-    <Position X="33.5" Y="2.75" Width="1.5" />
+    <Position X="30.75" Y="1.5" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAACAACABAAAAAAAAAAAAAAAAAAAAABAAACAAAAAAA=</HashCode>
       <FileName>src\Uge\Log.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::Window" Collapsed="true">
-    <Position X="3.25" Y="7.75" Width="1.5" />
+    <Position X="0.5" Y="9.5" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAEAAAAAAABAAAAAAABAAQAAAGAAgAAAAEEAAAA=</HashCode>
       <FileName>src\Uge\Window.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::WindowResizeEvent" Collapsed="true">
-    <Position X="4.5" Y="3" Width="1.5" />
+    <Position X="4" Y="1.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAFAAAAAABAAAAAAACAEAAAAEAAAAA=</HashCode>
       <FileName>src\Uge\Events\ApplicationEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::WindowCloseEvent" Collapsed="true">
-    <Position X="6.75" Y="3" Width="1.5" />
+    <Position X="8.5" Y="1.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\ApplicationEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::AppTickEvent" Collapsed="true">
-    <Position X="11.25" Y="3" Width="1.5" />
+    <Position X="15.25" Y="1.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\ApplicationEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::AppUpdateEvent" Collapsed="true">
-    <Position X="15.75" Y="3" Width="1.5" />
+    <Position X="24.25" Y="1.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\ApplicationEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::AppRenderEvent" Collapsed="true">
-    <Position X="29.25" Y="3" Width="1.5" />
+    <Position X="26.5" Y="1.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\ApplicationEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::Event" Collapsed="true">
-    <Position X="16.75" Y="1.75" Width="1.5" />
+    <Position X="14" Y="0.5" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AABAAAIAAAAIAAAEAAAAAEAAAAAAAAAAAAAAAAAABAA=</HashCode>
       <FileName>src\Uge\Events\Event.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::EventDispatcher" Collapsed="true">
-    <Position X="33.5" Y="1.75" Width="1.5" />
+    <Position X="32.5" Y="0.5" Width="1.5" />
     <TypeIdentifier>
       <HashCode>gAgAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\Event.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::KeyEvent" Collapsed="true">
-    <Position X="20.25" Y="3" Width="1.5" />
+    <Position X="19.75" Y="1.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AgAAAAAAAAAAAAAAAAAAAAAAAAAgEAAAAAACAACAAAA=</HashCode>
       <FileName>src\Uge\Events\KeyEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::KeyPressedEvent" Collapsed="true">
-    <Position X="22.5" Y="4.5" Width="1.5" />
+    <Position X="19.75" Y="3.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAEAAAAAAAABAAAIAAABAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\KeyEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::KeyReleasedEvent" Collapsed="true">
-    <Position X="18" Y="4.5" Width="1.5" />
+    <Position X="22" Y="3.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAEAAAAAAAAAAAAAIAAAAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\KeyEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::KeyTypedEvent" Collapsed="true">
-    <Position X="20.25" Y="4.5" Width="1.5" />
+    <Position X="17.5" Y="3.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAgAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\KeyEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::MouseMovedEvent" Collapsed="true">
-    <Position X="9" Y="3" Width="1.5" />
+    <Position X="1.75" Y="1.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAIAAAAAAAEAAADAAAAAAAAAAAAYAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\MouseEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::MouseScrolledEvent" Collapsed="true">
-    <Position X="13.5" Y="3" Width="1.5" />
+    <Position X="6.25" Y="1.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAMAAAAAAEAAAAAAAAgAAAAAAAAAAAAACAAAA=</HashCode>
       <FileName>src\Uge\Events\MouseEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::MouseButtonEvent" Collapsed="true">
-    <Position X="25.75" Y="3" Width="1.5" />
+    <Position X="11.75" Y="1.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAMAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\MouseEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::MouseButtonPressedEvent" Collapsed="true">
-    <Position X="27" Y="4.5" Width="1.5" />
+    <Position X="10.75" Y="3.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>BAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\MouseEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::MouseButtonReleasedEvent" Collapsed="true">
-    <Position X="24.75" Y="4.5" Width="1.5" />
+    <Position X="13" Y="3.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAgAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Events\MouseEvent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Uge::ImGuiLayer" Collapsed="true">
-    <Position X="6.25" Y="6" Width="1.5" />
+    <Position X="6.5" Y="7.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>EBEAAAAAIAAABAAAgEAABAAAAIACQAAABABBAAEAAAA=</HashCode>
+      <HashCode>ABIAAAAAAAAAAAAAgAAAAAAAAIAAEAAABAABAAAAAAA=</HashCode>
       <FileName>src\Uge\ImGui\ImGuiLayer.h</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="Uge::WindowsInput" Collapsed="true">
-    <Position X="3.25" Y="6" Width="1.5" />
+  <Class Name="Uge::OpenGLVertexBuffer" Collapsed="true">
+    <Position X="3.5" Y="7.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>EAAgAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAg=</HashCode>
-      <FileName>src\Platform\Windows\WIndowsInput.h</FileName>
+      <HashCode>AAAAiAAAAAAAAEAAAAACAAAAAACAAAAIAAAEAAAQAAA=</HashCode>
+      <FileName>src\Platform\OpenGL\OpenGLBuffer.h</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="Uge::Input" Collapsed="true">
-    <Position X="3.25" Y="4.75" Width="1.5" />
+  <Class Name="Uge::OpenGLIndexBuffer" Collapsed="true">
+    <Position X="6.5" Y="4.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>EAAhAAAAAAAAAAAAAgQAAABAgAAAAAAAACAAAAAAAAg=</HashCode>
-      <FileName>src\Uge\Input.h</FileName>
+      <HashCode>AAQAiAAAAAAAAEAAAAAAAAAAAAAAAQAAAAAEAAQAAAA=</HashCode>
+      <FileName>src\Platform\OpenGL\OpenGLBuffer.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::OpenGLContext" Collapsed="true">
+    <Position X="0.5" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAgACAAAAIAA=</HashCode>
+      <FileName>src\Platform\OpenGL\OpenGLContext.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::OpenGLVertexArray" Collapsed="true">
+    <Position X="3.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAiAARAAAAAAABABAAAAAAAAIAAAAAAAAEAAACECA=</HashCode>
+      <FileName>src\Platform\OpenGL\OpenGLVertexArray.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::BufferLayout" Collapsed="true">
+    <Position X="30.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAgACAAAAAAAAgAAAAQAQAAABAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>src\Uge\Renderer\Buffer.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::VertexBuffer" Collapsed="true">
+    <Position X="3.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABAAgAAAAAAAAAAAAAAAAAAAAACAAEAIAAAEAAAAAAA=</HashCode>
+      <FileName>src\Uge\Renderer\Buffer.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::IndexBuffer" Collapsed="true">
+    <Position X="6.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAgAAAAAAAAAAAAAAAAAABAAAAAEAAAAAEAAAAAAA=</HashCode>
+      <FileName>src\Uge\Renderer\Buffer.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::GraphicsContext" Collapsed="true">
+    <Position X="0.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAIAA=</HashCode>
+      <FileName>src\Uge\Renderer\GraphicsContext.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::Renderer" Collapsed="true">
+    <Position X="29" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAABCAAAQAAAAA=</HashCode>
+      <FileName>src\Uge\Renderer\Renderer.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::Shader" Collapsed="true">
+    <Position X="30.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAAAiAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEAAAAAAA=</HashCode>
+      <FileName>src\Uge\Renderer\Shader.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::VertexArray" Collapsed="true">
+    <Position X="3.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAABABAAAAAAAAIAAEAAAAAEAEACAAA=</HashCode>
+      <FileName>src\Uge\Renderer\VertexArray.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::RendererAPI" Collapsed="true">
+    <Position X="0.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CAIAAAAAAAAAAAAAAAAEAAAAAAAAAAAAACAAAABAAAA=</HashCode>
+      <FileName>src\Uge\Renderer\RendererAPI.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::RenderCommand" Collapsed="true">
+    <Position X="32.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CAAAAAAAQAAAAAAAAAAEAAAAAAAAAAAAAAAAAABAAAA=</HashCode>
+      <FileName>src\Uge\Renderer\RenderCommand.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Uge::OpenGLRendererAPI" Collapsed="true">
+    <Position X="0.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAABAAAA=</HashCode>
+      <FileName>src\Platform\OpenGL\OpenGLRendererAPI.h</FileName>
     </TypeIdentifier>
   </Class>
   <Struct Name="Uge::WindowProps" Collapsed="true">
-    <Position X="31.75" Y="4" Width="1.5" />
+    <Position X="30.75" Y="3.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAEAAAAAAAABAAQAAAAAAAAAAACAAAAAAAAAAAA=</HashCode>
       <FileName>src\Uge\Window.h</FileName>
     </TypeIdentifier>
   </Struct>
+  <Struct Name="Uge::BufferElement" Collapsed="true">
+    <Position X="29" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AQCAQAAAAAAAAIAAAIAAAAAAAAAFAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>src\Uge\Renderer\Buffer.h</FileName>
+    </TypeIdentifier>
+  </Struct>
   <Enum Name="Uge::EventType" Collapsed="true">
-    <Position X="33.5" Y="5.25" Width="1.5" />
+    <Position X="30.75" Y="5" Width="1.5" />
     <TypeIdentifier>
       <HashCode>QAEACAAAAAAgAAAIgAAAAgAAAAEBAgAAAAAIABFgAQA=</HashCode>
       <FileName>src\Uge\Events\Event.h</FileName>
     </TypeIdentifier>
   </Enum>
   <Enum Name="Uge::EventCategory" Collapsed="true">
-    <Position X="31.75" Y="5.25" Width="1.5" />
+    <Position X="29" Y="5" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAQAAAQAAAAAAAAAAAAAAAAAAAQAAQAAEAAIA=</HashCode>
       <FileName>src\Uge\Events\Event.h</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="Uge::ShaderDataType" Collapsed="true">
+    <Position X="32.5" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAgAAAAAIANAgAAAAAAAAAAAAEgACA=</HashCode>
+      <FileName>src\Uge\Renderer\Buffer.h</FileName>
     </TypeIdentifier>
   </Enum>
   <Font Name="Segoe UI" Size="9" />

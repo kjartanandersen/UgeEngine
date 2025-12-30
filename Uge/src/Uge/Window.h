@@ -16,7 +16,7 @@ namespace Uge
 		unsigned int m_height;
 
 		WindowProps( const std::string& title = "Uge Engine",
-				unsigned int width = 1280, unsigned int height = 720) 
+				unsigned int width = 2560, unsigned int height = 1440) 
 				: m_title(title), m_width(width), m_height(height)  {}
 	};
 

@@ -17,11 +17,11 @@ namespace Uge
 		switch (Renderer::GetAPI())
 		{
 
-		case RendererAPI::None:
+		case RendererAPI::API::None:
 			UG_CORE_ASSERT(false, "Renderer API \"None\" not supported!");
 			return nullptr;
 			break;
-		case RendererAPI::OpenGL:
+		case RendererAPI::API::OpenGL:
 
 			return new OpenGLVertexBuffer(vertices, size);
 
@@ -40,11 +40,11 @@ namespace Uge
 		switch (Renderer::GetAPI())
 		{
 
-		case RendererAPI::None:
+		case RendererAPI::API::None:
 			UG_CORE_ASSERT(false, "Renderer API \"None\" not supported!");
 			return nullptr;
 			break;
-		case RendererAPI::OpenGL:
+		case RendererAPI::API::OpenGL:
 
 			return new OpenGLIndexBuffer(indices, size);
 

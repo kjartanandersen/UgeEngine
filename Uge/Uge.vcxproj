@@ -148,6 +148,7 @@
   <ItemGroup>
     <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
+    <ClInclude Include="src\Platform\OpenGL\OpenGLRendererAPI.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLVertexArray.h" />
     <ClInclude Include="src\Platform\Windows\WIndowsInput.h" />
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
@@ -168,7 +169,10 @@
     <ClInclude Include="src\Uge\MouseButtonCodes.h" />
     <ClInclude Include="src\Uge\Renderer\Buffer.h" />
     <ClInclude Include="src\Uge\Renderer\GraphicsContext.h" />
+    <ClInclude Include="src\Uge\Renderer\OrthographicCamera.h" />
+    <ClInclude Include="src\Uge\Renderer\RenderCommand.h" />
     <ClInclude Include="src\Uge\Renderer\Renderer.h" />
+    <ClInclude Include="src\Uge\Renderer\RendererAPI.h" />
     <ClInclude Include="src\Uge\Renderer\Shader.h" />
     <ClInclude Include="src\Uge\Renderer\VertexArray.h" />
     <ClInclude Include="src\Uge\Window.h" />
@@ -177,6 +181,7 @@
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
+    <ClCompile Include="src\Platform\OpenGL\OpenGLRendererAPI.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLVertexArray.cpp" />
     <ClCompile Include="src\Platform\Windows\WIndowsInput.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
@@ -187,7 +192,10 @@
     <ClCompile Include="src\Uge\LayerStack.cpp" />
     <ClCompile Include="src\Uge\Log.cpp" />
     <ClCompile Include="src\Uge\Renderer\Buffer.cpp" />
+    <ClCompile Include="src\Uge\Renderer\OrthographicCamera.cpp" />
+    <ClCompile Include="src\Uge\Renderer\RenderCommand.cpp" />
     <ClCompile Include="src\Uge\Renderer\Renderer.cpp" />
+    <ClCompile Include="src\Uge\Renderer\RendererAPI.cpp" />
     <ClCompile Include="src\Uge\Renderer\Shader.cpp" />
     <ClCompile Include="src\Uge\Renderer\VertexArray.cpp" />
     <ClCompile Include="src\ugpch.cpp">

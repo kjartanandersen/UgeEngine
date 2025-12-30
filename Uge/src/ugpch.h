@@ -15,6 +15,8 @@
 
 #include <random>
 #include <chrono>
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 
 #include "Uge/Log.h"

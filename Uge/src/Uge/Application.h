@@ -8,10 +8,6 @@
 #include "Uge/Events/Event.h"
 #include "Uge/Events/ApplicationEvent.h"
 
-#include "Uge/Renderer/Shader.h"
-#include "Uge/Renderer/Buffer.h"
-#include "Uge/Renderer/VertexArray.h"
-
 #include "Uge/ImGui/ImGuiLayer.h"
 
 
@@ -43,11 +39,6 @@ namespace Uge
 		bool m_running = true;
 		LayerStack m_layerStack;
 
-		std::shared_ptr<Shader> m_shader;
-		std::shared_ptr<VertexArray> m_vertexArray;
-
-		std::shared_ptr<Shader> m_whiteShader;
-		std::shared_ptr<VertexArray> m_squareVA;
 	private:
 		static Application* s_instance;
 
