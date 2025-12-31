@@ -8,6 +8,8 @@
 #include "Uge/Events/Event.h"
 #include "Uge/Events/ApplicationEvent.h"
 
+#include "Uge/Core/Timestep.h"
+
 #include "Uge/ImGui/ImGuiLayer.h"
 
 
@@ -33,11 +35,13 @@ namespace Uge
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 
-
+	private:
 		std::unique_ptr<Window> m_window;
 		ImGuiLayer* m_ImGuiLayer;
 		bool m_running = true;
 		LayerStack m_layerStack;
+
+		float m_lastFrameTime = 0.0f;
 
 	private:
 		static Application* s_instance;

@@ -6,6 +6,8 @@
 #include "Uge/Layer.h"
 #include "Uge/Log.h"
 
+#include "Uge/Core/Timestep.h"
+
 #include "Uge/Input.h"
 #include "Uge/KeyCodes.h"
 #include "Uge/MouseButtonCodes.h"

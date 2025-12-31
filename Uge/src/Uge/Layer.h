@@ -3,6 +3,8 @@
 #include "Uge/Core.h"
 #include "Uge/Events/Event.h"
 
+#include "Uge/Core/Timestep.h"
+
 namespace Uge
 {
 
@@ -16,7 +18,7 @@ namespace Uge
 
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
-		virtual void OnUpdate() {}
+		virtual void OnUpdate(Timestep timestep) {}
 		virtual void OnImGuiRender() {}
 		virtual void OnEvent(Event& event) {}
 

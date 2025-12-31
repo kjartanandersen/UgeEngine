@@ -148,4 +148,14 @@ namespace Uge
 
 	}
 
+	void Shader::UploadUniformFloat4(const std::string& name, const glm::vec4& values)
+	{
+
+
+		GLint location = glGetUniformLocation(m_rendererID, name.c_str());
+		glUniform4f(location, values.x, values.y, values.z, values.w);
+
+	}
+
+
 }

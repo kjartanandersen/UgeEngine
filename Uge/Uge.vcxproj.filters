@@ -120,6 +120,7 @@
     <ClInclude Include="src\ugpch.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\Uge\Core\Timestep.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">
