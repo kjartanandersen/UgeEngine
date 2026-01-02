@@ -1,6 +1,7 @@
 #include <ugpch.h>
 #include "Renderer.h"
 
+#include "Platform/OpenGL/OpenGLShader.h"
 
 namespace Uge
 {
@@ -22,12 +23,13 @@ namespace Uge
 
 	}
 
-	void Renderer::Submit(const std::shared_ptr<Shader>& shader, 
-		const std::shared_ptr<VertexArray> vertexArray, const glm::mat4& transform)
+	void Renderer::Submit(const Ref<Shader>& shader,
+		const Ref<VertexArray> vertexArray, const glm::mat4& transform)
 	{
 		shader->Bind();
-		shader->UploadUniformMat4("u_ViewProjection", m_sceneData->viewProjectionMatrix);
-		shader->UploadUniformMat4("u_ModelMatrix", transform);
+		std::dynamic_pointer_cast<OpenGLShader>(shader)->UploadUniformMat4("u_ViewProjection", m_sceneData->viewProjectionMatrix);
+		std::dynamic_pointer_cast<OpenGLShader>(shader)->UploadUniformMat4("u_ModelMatrix", transform);
+		
 
 
 		vertexArray->Bind();

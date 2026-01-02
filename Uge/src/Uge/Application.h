@@ -36,7 +36,7 @@ namespace Uge
 		bool OnWindowClose(WindowCloseEvent& e);
 
 	private:
-		std::unique_ptr<Window> m_window;
+		Scope<Window> m_window;
 		ImGuiLayer* m_ImGuiLayer;
 		bool m_running = true;
 		LayerStack m_layerStack;

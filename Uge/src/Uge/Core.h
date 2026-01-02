@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #ifdef UG_PLATFORM_WINDOWS
 	#ifdef UG_BUILD_DLL
 		#define UG_API __declspec(dllexport)
@@ -27,3 +29,16 @@
 #define BIT(x) (1 << x)
 
 #define UG_BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1)
+
+
+namespace Uge
+{
+
+	template <typename T>
+	using Scope = std::unique_ptr<T>;
+
+
+	template <typename T>
+	using Ref = std::shared_ptr<T>;
+
+}

@@ -16,6 +16,9 @@
     <Filter Include="src\Uge">
       <UniqueIdentifier>{BDB62FA9-2996-AE44-32AE-391B9E0C15A6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Uge\Core">
+      <UniqueIdentifier>{3599C905-21FC-58AA-CA81-9160B6C3242D}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\Uge\Events">
       <UniqueIdentifier>{01CCB6A3-ED99-AAA9-D62D-1BD0C29A860E}</UniqueIdentifier>
     </Filter>
@@ -36,6 +39,9 @@
     <ClInclude Include="src\Platform\OpenGL\OpenGLRendererAPI.h">
       <Filter>src\Platform\OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\OpenGLShader.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
     <ClInclude Include="src\Platform\OpenGL\OpenGLVertexArray.h">
       <Filter>src\Platform\OpenGL</Filter>
     </ClInclude>
@@ -53,6 +59,9 @@
     </ClInclude>
     <ClInclude Include="src\Uge\Core.h">
       <Filter>src\Uge</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Uge\Core\Timestep.h">
+      <Filter>src\Uge\Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\EntryPoint.h">
       <Filter>src\Uge</Filter>
@@ -120,7 +129,6 @@
     <ClInclude Include="src\ugpch.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\Uge\Core\Timestep.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">
@@ -130,6 +138,9 @@
       <Filter>src\Platform\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLRendererAPI.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLShader.cpp">
       <Filter>src\Platform\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLVertexArray.cpp">

@@ -2,7 +2,11 @@
 
 #include "imgui/imgui.h"
 
+
+#include "Platform/OpenGL/OpenGLShader.h"
 #include <glm/gtc/matrix_transform.hpp>
+
+#include <glm/gtc/type_ptr.hpp>
 
 class ExampleLayer : public Uge::Layer
 {
@@ -26,7 +30,7 @@ public:
 			0.0f,  0.5f, 0.0f,      0.2f, 0.2f, 0.8f, 1.0f
 		};
 
-		std::shared_ptr<Uge::VertexBuffer> m_vertexBuffer;
+		Uge::Ref<Uge::VertexBuffer> m_vertexBuffer;
 		m_vertexBuffer.reset(Uge::VertexBuffer::Create(vertices, sizeof(vertices)));
 
 
@@ -44,7 +48,7 @@ public:
 
 		uint32_t indices[3] = { 0, 1, 2 };
 
-		std::shared_ptr<Uge::IndexBuffer> m_indexBuffer;
+		Uge::Ref<Uge::IndexBuffer> m_indexBuffer;
 		m_indexBuffer.reset(Uge::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
 		m_vertexArray->SetIndexBuffer(m_indexBuffer);
 
@@ -61,7 +65,7 @@ public:
 		};
 
 
-		std::shared_ptr<Uge::VertexBuffer> squareVB;
+		Uge::Ref<Uge::VertexBuffer> squareVB;
 		squareVB.reset(Uge::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
 
 		Uge::BufferLayout squareVBlayout =
@@ -74,7 +78,7 @@ public:
 
 		uint32_t squareIndices[6] = { 0, 1, 2, 2, 3, 0 };
 
-		std::shared_ptr<Uge::IndexBuffer> squareIB;
+		Uge::Ref<Uge::IndexBuffer> squareIB;
 
 		squareIB.reset(Uge::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
 
@@ -126,7 +130,7 @@ public:
 
 
 
-		m_shader.reset(new Uge::Shader(vertexSrc, fragmentSrc));
+		m_shader.reset(Uge::Shader::Create(vertexSrc, fragmentSrc));
 
 		// Flat Color Shader
 
@@ -139,7 +143,6 @@ public:
 			uniform mat4 u_ModelMatrix;
 
 			out vec3 v_Position;
-			out vec4 v_Color;
 			
 			void main()
 			{
@@ -172,7 +175,7 @@ public:
 
 
 
-		m_flatColorShader.reset(new Uge::Shader(flatColorVertexSrc, flatColorFragmentSrc));
+		m_flatColorShader.reset(Uge::Shader::Create(flatColorVertexSrc, flatColorFragmentSrc));
 
 	}
 
@@ -223,8 +226,8 @@ public:
 			// White squares
 			static glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 
-			glm::vec4 redColor( 0.8f, 0.2f, 0.3f, 1.0f);
-			glm::vec4 blueColor(0.2f, 0.3f, 0.8f, 1.0f);
+			std::dynamic_pointer_cast<Uge::OpenGLShader>(m_flatColorShader)->Bind();
+			std::dynamic_pointer_cast<Uge::OpenGLShader>(m_flatColorShader)->UploadUniformFloat4("u_Color", m_squareColor);
 
 			for (int y = 0; y < 20; y++)
 			{
@@ -232,10 +235,6 @@ public:
 				{
 					glm::vec3 pos(x * 0.11f, y * 0.11f, 0.0f);
 					glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
-					if (x % 2 == 0)
-						m_flatColorShader->UploadUniformFloat4("u_Color", redColor);
-					else
-						m_flatColorShader->UploadUniformFloat4("u_Color", blueColor);
 					Uge::Renderer::Submit(m_flatColorShader, m_squareVA, transform);
 
 				}
@@ -259,6 +258,12 @@ public:
 		//ImGui::Text("Hello World");
 		//ImGui::End();
 		
+		ImGui::Begin("Settings");
+		{
+			ImGui::ColorEdit4("Square Color", glm::value_ptr(m_squareColor));
+		}
+		ImGui::End();
+
 
 
 	}
@@ -271,17 +276,19 @@ public:
 	}
 
 private:
-	std::shared_ptr<Uge::Shader> m_shader;
-	std::shared_ptr<Uge::VertexArray> m_vertexArray;
+	Uge::Ref<Uge::Shader> m_shader;
+	Uge::Ref<Uge::VertexArray> m_vertexArray;
 
-	std::shared_ptr<Uge::Shader> m_flatColorShader;
-	std::shared_ptr<Uge::VertexArray> m_squareVA;
+	Uge::Ref<Uge::Shader> m_flatColorShader;
+	Uge::Ref<Uge::VertexArray> m_squareVA;
 
 	Uge::OrthographicCamera m_camera;
 	glm::vec3 m_cameraPosition;
 	float m_cameraRotation = 0.0f;
 	float m_cameraMovementSpeed = 1.0f;
 	float m_cameraRotationSpeed = 50.0f;
+
+	glm::vec4 m_squareColor = {0.2f, 0.3f, 0.8f, 1.0f};
 
 
 };
