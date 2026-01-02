@@ -15,7 +15,7 @@ public:
 	ExampleLayer()
 		: Layer("Example"), m_camera(-1.6f, 1.6f, -0.9f, 0.9f), m_cameraPosition({0.0f, 0.0f, 0.0f})
 	{
-		m_vertexArray.reset(Uge::VertexArray::Create());
+		m_vertexArray = Uge::VertexArray::Create();
 
 		// Vertex Array
 		// Vertex Buffer
@@ -31,7 +31,7 @@ public:
 		};
 
 		Uge::Ref<Uge::VertexBuffer> m_vertexBuffer;
-		m_vertexBuffer.reset(Uge::VertexBuffer::Create(vertices, sizeof(vertices)));
+		m_vertexBuffer = Uge::VertexBuffer::Create(vertices, sizeof(vertices));
 
 
 		Uge::BufferLayout layout =
@@ -49,28 +49,29 @@ public:
 		uint32_t indices[3] = { 0, 1, 2 };
 
 		Uge::Ref<Uge::IndexBuffer> m_indexBuffer;
-		m_indexBuffer.reset(Uge::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
+		m_indexBuffer = Uge::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
 		m_vertexArray->SetIndexBuffer(m_indexBuffer);
 
 
-		m_squareVA.reset(Uge::VertexArray::Create());
+		m_squareVA = Uge::VertexArray::Create();
 
-		float squareVertices[3 * 4] =
+		float squareVertices[5 * 4] =
 		{
-			/* Vertices */
-		   -0.5f, -0.5f, 0.0f,
-			0.5f, -0.5f, 0.0f,
-			0.5f,  0.5f, 0.0f,
-		   -0.5f,  0.5f, 0.0f
+			/* Vertices */			/* Texture Coordinates */
+		   -0.5f, -0.5f, 0.0f,		0.0f, 0.0f,
+			0.5f, -0.5f, 0.0f,		1.0f, 0.0f,
+			0.5f,  0.5f, 0.0f,		1.0f, 1.0f,
+		   -0.5f,  0.5f, 0.0f,		0.0f, 1.0f
 		};
 
 
 		Uge::Ref<Uge::VertexBuffer> squareVB;
-		squareVB.reset(Uge::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
+		squareVB = Uge::VertexBuffer::Create(squareVertices, sizeof(squareVertices));
 
 		Uge::BufferLayout squareVBlayout =
 		{
-			{ Uge::ShaderDataType::Float3, "a_Position"}
+			{ Uge::ShaderDataType::Float3, "a_Position"},
+			{ Uge::ShaderDataType::Float2, "a_TextCoord"}
 		};
 
 		squareVB->SetLayout(squareVBlayout);
@@ -80,7 +81,7 @@ public:
 
 		Uge::Ref<Uge::IndexBuffer> squareIB;
 
-		squareIB.reset(Uge::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
+		squareIB = Uge::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
 
 		m_squareVA->SetIndexBuffer(squareIB);
 
@@ -173,9 +174,60 @@ public:
 
 		)";
 
-
-
 		m_flatColorShader.reset(Uge::Shader::Create(flatColorVertexSrc, flatColorFragmentSrc));
+		
+		/**** Texture Shader ***/
+
+		std::string textureShaderVertexSrc = R"(
+			#version 330 core
+				
+			layout(location = 0) in vec3 a_Position;
+			layout(location = 1) in vec2 a_TextCoord;
+
+			uniform mat4 u_ViewProjection;
+			uniform mat4 u_ModelMatrix;
+
+			out vec2 v_TextCoord;
+
+			
+			void main()
+			{
+				v_TextCoord = a_TextCoord;
+				gl_Position = u_ViewProjection * u_ModelMatrix * vec4(a_Position, 1.0);
+
+				
+			}
+
+
+		)";
+
+
+		std::string textureShaderFragmentSrc = R"(
+			#version 330 core
+				
+			layout(location = 0) out vec4 fragColor;
+
+			in vec2 v_TextCoord;
+
+			uniform sampler2D u_Texture;
+			
+			void main()
+			{
+				fragColor = texture(u_Texture, v_TextCoord);
+			}
+
+
+		)";
+
+
+
+		m_textureShader.reset(Uge::Shader::Create(textureShaderVertexSrc, textureShaderFragmentSrc));
+
+		m_texture = Uge::Texture2D::Create("assets/textures/Checkerboard.png");
+
+		std::dynamic_pointer_cast<Uge::OpenGLShader>(m_textureShader)->Bind();
+		std::dynamic_pointer_cast<Uge::OpenGLShader>(m_textureShader)->UploadUniformInt("u_Texture", 0);
+
 
 	}
 
@@ -221,7 +273,7 @@ public:
 
 			
 			// multicolor triangle
-			Uge::Renderer::Submit(m_shader, m_vertexArray);
+			//Uge::Renderer::Submit(m_shader, m_vertexArray);
 			
 			// White squares
 			static glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
@@ -241,7 +293,9 @@ public:
 
 			}
 
-			
+			m_texture->Bind();
+			Uge::Renderer::Submit(m_textureShader, m_squareVA, 
+				glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 		}
 		Uge::Renderer::EndScene();
@@ -279,8 +333,10 @@ private:
 	Uge::Ref<Uge::Shader> m_shader;
 	Uge::Ref<Uge::VertexArray> m_vertexArray;
 
-	Uge::Ref<Uge::Shader> m_flatColorShader;
+	Uge::Ref<Uge::Shader> m_flatColorShader, m_textureShader;
 	Uge::Ref<Uge::VertexArray> m_squareVA;
+
+	Uge::Ref<Uge::Texture2D> m_texture;
 
 	Uge::OrthographicCamera m_camera;
 	glm::vec3 m_cameraPosition;

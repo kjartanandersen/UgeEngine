@@ -7,7 +7,7 @@
 namespace Uge
 {
 
-	VertexArray* VertexArray::Create()
+	Ref<VertexArray> VertexArray::Create()
 	{
 
 
@@ -20,7 +20,7 @@ namespace Uge
 				break;
 			case RendererAPI::API::OpenGL:
 
-				return new OpenGLVertexArray();
+				return std::make_shared<OpenGLVertexArray>();
 
 				break;
 

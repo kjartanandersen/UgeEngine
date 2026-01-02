@@ -15,6 +15,8 @@ project "Uge"
 	{
 		"src/**.h",
 		"src/**.cpp",
+		"thirdparty/stb_image/**.h",
+		"thirdparty/stb_image/**.cpp",
 		"UgeClassDiagram.cd"
 	}
 	
@@ -30,7 +32,8 @@ project "Uge"
 		"../%{IncludeDir.GLFW}",
 		"../%{IncludeDir.GLAD}",
 		"../%{IncludeDir.IMGUI}",
-		"../%{IncludeDir.GLM}"
+		"../%{IncludeDir.GLM}",
+		"../%{IncludeDir.STBI}"
 	}
 
 	links

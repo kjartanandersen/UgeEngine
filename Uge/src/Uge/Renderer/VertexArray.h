@@ -23,7 +23,7 @@ namespace Uge
 		virtual const Ref<IndexBuffer>& GetIndexBuffers() const = 0;
 		
 
-		static VertexArray* Create();
+		static Ref<VertexArray> Create();
 
 	};
 
