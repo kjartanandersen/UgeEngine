@@ -27,11 +27,19 @@ namespace Uge
 		auto shaderSources = PreProcess(source);
 		Compile(shaderSources);
 
+		// Extract name from filepath
+		// assets/shaders/Texture.glsl
+		auto lastSlash = filePath.find_last_of("/\\");
+		lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
+		auto lastDot = filePath.rfind(".");
+		auto count = lastDot == std::string::npos ? filePath.size() - lastSlash : lastDot - lastSlash;
 
+		m_name = filePath.substr(lastSlash, count);
 
 	}
 
-	OpenGLShader::OpenGLShader(const std::string& vertexSource, const std::string& fragmentSource)
+	OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource)
+		: m_name(name)
 	{
 
 		std::unordered_map<GLenum, std::string> sources;
@@ -53,7 +61,7 @@ namespace Uge
 	{
 		
 		std::string result;
-		std::ifstream in(filePath, std::ios::in, std::ios::binary);
+		std::ifstream in(filePath, std::ios::in | std::ios::binary);
 
 		if (in)
 		{
@@ -108,7 +116,9 @@ namespace Uge
 		// Now time to link them together into a program.
 		// Get a program object.
 		GLuint program = glCreateProgram();
-		std::vector<GLenum> glShaderIDs(shaderSources.size());
+		UG_CORE_ASSERT(shaderSources.size() <= 2, "Only 2 shaders are supported for now!");
+		std::array<GLenum, 2> glShaderIDs;
+		int glShaderIDIdx = 0;
 
 		for (auto& key : shaderSources)
 		{
@@ -149,7 +159,7 @@ namespace Uge
 			}
 
 			glAttachShader(program, shader);
-			glShaderIDs.push_back(shader);
+			glShaderIDs[glShaderIDIdx++] = shader;
 
 		}
 

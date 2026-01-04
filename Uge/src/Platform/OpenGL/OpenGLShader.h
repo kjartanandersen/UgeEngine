@@ -17,11 +17,13 @@ namespace Uge
 
 	public:
 		OpenGLShader(const std::string& filePath);
-		OpenGLShader(const std::string& vertexSource, const std::string& fragmentSource);
+		OpenGLShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource);
 		virtual ~OpenGLShader();
 
 		virtual void Bind() const override;
 		virtual void Unbind() const override;
+
+		virtual const std::string& GetName() const override { return m_name; };
 
 		void UploadUniformInt(const std::string& name, int value);
 
@@ -42,6 +44,7 @@ namespace Uge
 	private:
 		uint32_t m_rendererID;
 		mutable std::unordered_map<std::string, GLint> m_uniformLocCache;
+		std::string m_name;
 
 
 	};
