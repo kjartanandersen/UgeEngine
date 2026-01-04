@@ -12,6 +12,11 @@ namespace Uge
 
 	public :
 
+		inline static void Init()
+		{
+			m_rendererAPI->Init();
+		}
+
 		inline static void SetClearColor(const glm::vec4& color)
 		{
 			m_rendererAPI->SetClearColor(color);

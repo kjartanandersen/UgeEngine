@@ -4,7 +4,10 @@
 #include "Uge/Renderer/Shader.h"
 
 #include <glm/glm.hpp>
-#include <glad/glad.h>
+
+// TODO: Remove
+typedef unsigned int GLenum;
+typedef int GLint;
 
 namespace Uge
 {
@@ -13,6 +16,7 @@ namespace Uge
 	{
 
 	public:
+		OpenGLShader(const std::string& filePath);
 		OpenGLShader(const std::string& vertexSource, const std::string& fragmentSource);
 		virtual ~OpenGLShader();
 
@@ -31,6 +35,9 @@ namespace Uge
 		
 	private:
 		GLint GetUniformLocation(const std::string name) const;
+		std::string ReadFile(const std::string& filePath);
+		std::unordered_map<GLenum, std::string> PreProcess(const std::string& source);
+		void Compile(const std::unordered_map<GLenum, std::string>& shaderSources);
 
 	private:
 		uint32_t m_rendererID;

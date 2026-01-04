@@ -3,6 +3,7 @@
 
 #include "Uge/Layer.h"
 
+#include "imgui.h"
 #include <Uge/Events/MouseEvent.h>
 #include <Uge/Events/KeyEvent.h>
 #include <Uge/Events/ApplicationEvent.h>
@@ -28,7 +29,7 @@ namespace Uge
 	private:
 
 		float m_time = 0.0f;
-		
+		ImFont* mainFont;
 
 
 	};

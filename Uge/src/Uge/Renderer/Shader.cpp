@@ -7,6 +7,36 @@
 namespace Uge
 {
 
+	Shader* Shader::Create(const std::string& filePath)
+	{
+
+		switch (Renderer::GetAPI())
+		{
+
+		case RendererAPI::API::None:
+			UG_CORE_ASSERT(false, "Renderer API \"None\" not supported!");
+			return nullptr;
+			break;
+		case RendererAPI::API::OpenGL:
+
+			return new OpenGLShader(filePath);
+
+			break;
+
+		}
+
+
+		UG_CORE_ASSERT(false, "Unknown Renderer API!");
+		return nullptr;
+
+
+		return nullptr;
+
+
+
+	}
+
+
 	Shader* Shader::Create(const std::string& vertexSource, const std::string& fragmentSource)
 	{
 
@@ -34,6 +64,7 @@ namespace Uge
 		return nullptr;
 	}
 
+	
 
 
 }

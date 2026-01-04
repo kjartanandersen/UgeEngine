@@ -1,6 +1,6 @@
 #include <Uge.h>
 
-#include "imgui/imgui.h"
+#include "imgui.h"
 
 
 #include "Platform/OpenGL/OpenGLShader.h"
@@ -175,61 +175,20 @@ public:
 		)";
 
 		m_flatColorShader.reset(Uge::Shader::Create(flatColorVertexSrc, flatColorFragmentSrc));
-		
-		/**** Texture Shader ***/
-
-		std::string textureShaderVertexSrc = R"(
-			#version 330 core
-				
-			layout(location = 0) in vec3 a_Position;
-			layout(location = 1) in vec2 a_TextCoord;
-
-			uniform mat4 u_ViewProjection;
-			uniform mat4 u_ModelMatrix;
-
-			out vec2 v_TextCoord;
-
-			
-			void main()
-			{
-				v_TextCoord = a_TextCoord;
-				gl_Position = u_ViewProjection * u_ModelMatrix * vec4(a_Position, 1.0);
-
-				
-			}
-
-
-		)";
-
-
-		std::string textureShaderFragmentSrc = R"(
-			#version 330 core
-				
-			layout(location = 0) out vec4 fragColor;
-
-			in vec2 v_TextCoord;
-
-			uniform sampler2D u_Texture;
-			
-			void main()
-			{
-				fragColor = texture(u_Texture, v_TextCoord);
-			}
-
-
-		)";
 
 
 
-		m_textureShader.reset(Uge::Shader::Create(textureShaderVertexSrc, textureShaderFragmentSrc));
+		m_textureShader.reset(Uge::Shader::Create("assets/shaders/Texture.glsl"));
 
-		m_texture = Uge::Texture2D::Create("assets/textures/Checkerboard.png");
+		m_texture   = Uge::Texture2D::Create("assets/textures/Checkerboard.png");
+		m_chTexture = Uge::Texture2D::Create("assets/textures/ChernoLogo.png");
 
 		std::dynamic_pointer_cast<Uge::OpenGLShader>(m_textureShader)->Bind();
 		std::dynamic_pointer_cast<Uge::OpenGLShader>(m_textureShader)->UploadUniformInt("u_Texture", 0);
 
-
 	}
+
+	
 
 	void OnUpdate(Uge::Timestep timestep) override
 	{
@@ -294,30 +253,19 @@ public:
 			}
 
 			m_texture->Bind();
+			
 			Uge::Renderer::Submit(m_textureShader, m_squareVA, 
+				glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+
+			m_chTexture->Bind();
+
+			Uge::Renderer::Submit(m_textureShader, m_squareVA,
 				glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 		}
 		Uge::Renderer::EndScene();
 
 		
-
-
-	}
-
-	virtual void OnImGuiRender() override
-	{
-
-		//ImGui::Begin("Test");
-		//ImGui::Text("Hello World");
-		//ImGui::End();
-		
-		ImGui::Begin("Settings");
-		{
-			ImGui::ColorEdit4("Square Color", glm::value_ptr(m_squareColor));
-		}
-		ImGui::End();
-
 
 
 	}
@@ -329,6 +277,34 @@ public:
 
 	}
 
+	/******************* ImGui Methods ************/
+
+	void OnAttach() override
+	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		io.Fonts->AddFontDefault();
+		mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\Uge\\assets\\fonts\\PlayfairDisplayBold-nRv8g.ttf", 32.5f);
+		IM_ASSERT(mainFont != NULL);
+
+	}
+
+	virtual void OnImGuiRender() override
+	{
+
+		ImGui::PushFont(mainFont);
+		ImGui::Begin("Settings");
+		{
+
+			ImGui::ColorEdit4("Square Color", glm::value_ptr(m_squareColor));
+		}
+		ImGui::End();
+		ImGui::PopFont();
+
+
+
+	}
+
 private:
 	Uge::Ref<Uge::Shader> m_shader;
 	Uge::Ref<Uge::VertexArray> m_vertexArray;
@@ -336,7 +312,9 @@ private:
 	Uge::Ref<Uge::Shader> m_flatColorShader, m_textureShader;
 	Uge::Ref<Uge::VertexArray> m_squareVA;
 
-	Uge::Ref<Uge::Texture2D> m_texture;
+	Uge::Ref<Uge::Texture2D> m_texture, m_chTexture;
+
+	ImFont* mainFont;
 
 	Uge::OrthographicCamera m_camera;
 	glm::vec3 m_cameraPosition;

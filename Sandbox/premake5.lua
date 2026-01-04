@@ -18,17 +18,15 @@ project "Sandbox"
 	{
 		"../Uge/thirdparty/spdlog/include",
 		"../Uge/src",
-		"../Uge/thirdparty",
-		"../%{IncludeDir.GLM}",
-		"../%{IncludeDir.GLAD}"
+		"../%{IncludeDir.IMGUI}",
+		"../%{IncludeDir.GLM}"
 	}
 
 	links
 	{
 		"Uge",
 		"ImGui",
-		"glm",
-		"GLAD"
+		"glm"
 	}
 	
 	buildoptions {"/utf-8"}

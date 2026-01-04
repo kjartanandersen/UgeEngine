@@ -1,7 +1,7 @@
 #include "ugpch.h"
 #include "ImGuiLayer.h"
 
-#include "imgui.h"
+
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
@@ -67,8 +67,9 @@ namespace Uge
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init("#version 410");
         
-
-        
+		io.Fonts->AddFontDefault();
+		mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\Uge\\assets\\fonts\\PlayfairDisplayBold-nRv8g.ttf", 32.5f);
+		IM_ASSERT(mainFont != NULL);
 
 
 
@@ -87,8 +88,10 @@ namespace Uge
 	void ImGuiLayer::OnImGuiRender()
 	{
 
-		//static bool show = true;
-		//ImGui::ShowDemoWindow(&show);
+		static bool show = true;
+		ImGui::PushFont(mainFont);
+		ImGui::ShowDemoWindow(&show);
+		ImGui::PopFont();
 
 
 	}
