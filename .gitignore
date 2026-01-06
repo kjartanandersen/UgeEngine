@@ -445,3 +445,6 @@ ign/
 # Bin
 bin/
 bin-int/
+
+#.ini files
+Sandbox/imgui.ini

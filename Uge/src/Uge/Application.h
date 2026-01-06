@@ -34,11 +34,13 @@ namespace Uge
 
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
+		bool OnWindowResize(WindowResizeEvent& e);
 
 	private:
 		Scope<Window> m_window;
 		ImGuiLayer* m_ImGuiLayer;
 		bool m_running = true;
+		bool m_minimized = false;
 		LayerStack m_layerStack;
 
 		float m_lastFrameTime = 0.0f;

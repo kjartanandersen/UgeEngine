@@ -13,7 +13,7 @@ class ExampleLayer : public Uge::Layer
 
 public:
 	ExampleLayer()
-		: Layer("Example"), m_camera(-1.6f, 1.6f, -0.9f, 0.9f), m_cameraPosition({0.0f, 0.0f, 0.0f})
+		: Layer("Example"), m_cameraController(1280.0f / 720.0f, true)
 	{
 		m_vertexArray = Uge::VertexArray::Create();
 
@@ -131,7 +131,7 @@ public:
 
 
 
-		m_shader.reset(Uge::Shader::Create(vertexSrc, fragmentSrc));
+		m_shader = Uge::Shader::Create("triangleShader", vertexSrc, fragmentSrc);
 
 		// Flat Color Shader
 
@@ -174,56 +174,36 @@ public:
 
 		)";
 
-		m_flatColorShader.reset(Uge::Shader::Create(flatColorVertexSrc, flatColorFragmentSrc));
+		m_flatColorShader = Uge::Shader::Create("flatColorShader", flatColorVertexSrc, flatColorFragmentSrc);
 
 
-
-		m_textureShader.reset(Uge::Shader::Create("assets/shaders/Texture.glsl"));
+		auto textureShader = m_shaderLibrary.Load("assets/shaders/Texture.glsl");
 
 		m_texture   = Uge::Texture2D::Create("assets/textures/Checkerboard.png");
 		m_chTexture = Uge::Texture2D::Create("assets/textures/ChernoLogo.png");
 
-		std::dynamic_pointer_cast<Uge::OpenGLShader>(m_textureShader)->Bind();
-		std::dynamic_pointer_cast<Uge::OpenGLShader>(m_textureShader)->UploadUniformInt("u_Texture", 0);
+		std::dynamic_pointer_cast<Uge::OpenGLShader>(textureShader)->Bind();
+		std::dynamic_pointer_cast<Uge::OpenGLShader>(textureShader)->UploadUniformInt("u_Texture", 0);
 
 	}
 
 	
 
-	void OnUpdate(Uge::Timestep timestep) override
+	void OnUpdate(Uge::Timestep ts) override
 	{
 		 
+		
 		//UG_TRACE("Delta Time: {0}s ( {1}ms )", timestep.GetSeconds(), timestep.GetMilliseconds());
 
-		// Camera Position
-		if (Uge::Input::IsKeyPressed(UG_KEY_A))
-			m_cameraPosition.x -= m_cameraMovementSpeed * timestep;
+		// Update
+		m_cameraController.OnUpdate(ts);
 
-		else if (Uge::Input::IsKeyPressed(UG_KEY_D))
-			m_cameraPosition.x += m_cameraMovementSpeed * timestep;
-
-		if (Uge::Input::IsKeyPressed(UG_KEY_W))
-			m_cameraPosition.y += m_cameraMovementSpeed * timestep;
-
-		else if (Uge::Input::IsKeyPressed(UG_KEY_S))
-			m_cameraPosition.y -= m_cameraMovementSpeed * timestep;
-
-
-		// Camera Rotation
-		if (Uge::Input::IsKeyPressed(UG_KEY_Q))
-			m_cameraRotation += m_cameraRotationSpeed *   timestep;
-
-		if (Uge::Input::IsKeyPressed(UG_KEY_E))
-			m_cameraRotation -= m_cameraRotationSpeed *   timestep;
-
+		
+		// Render
 		Uge::RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
 		Uge::RenderCommand::Clear();
 
-		//m_camera.SetPosition(m_cameraPosition);
-		//m_camera.SetRotation(m_cameraRotation);
-		m_camera.SetPositionAndRotation(m_cameraPosition, m_cameraRotation);
-
-		Uge::Renderer::BeginScene(m_camera);
+		Uge::Renderer::BeginScene(m_cameraController.GetCamera());
 		{
 			
 
@@ -252,14 +232,16 @@ public:
 
 			}
 
+			auto textureShader = m_shaderLibrary.Get("Texture");
+
 			m_texture->Bind();
 			
-			Uge::Renderer::Submit(m_textureShader, m_squareVA, 
+			Uge::Renderer::Submit(textureShader, m_squareVA,
 				glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 			m_chTexture->Bind();
 
-			Uge::Renderer::Submit(m_textureShader, m_squareVA,
+			Uge::Renderer::Submit(textureShader, m_squareVA,
 				glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 		}
@@ -272,8 +254,11 @@ public:
 
 	
 
-	void OnEvent(Uge::Event& event) override
+	void OnEvent(Uge::Event& e) override
 	{
+
+		m_cameraController.OnEvent(e);
+
 
 	}
 
@@ -306,21 +291,18 @@ public:
 	}
 
 private:
+	Uge::ShaderLibrary m_shaderLibrary;
 	Uge::Ref<Uge::Shader> m_shader;
 	Uge::Ref<Uge::VertexArray> m_vertexArray;
 
-	Uge::Ref<Uge::Shader> m_flatColorShader, m_textureShader;
+	Uge::Ref<Uge::Shader> m_flatColorShader;
 	Uge::Ref<Uge::VertexArray> m_squareVA;
 
 	Uge::Ref<Uge::Texture2D> m_texture, m_chTexture;
 
 	ImFont* mainFont;
 
-	Uge::OrthographicCamera m_camera;
-	glm::vec3 m_cameraPosition;
-	float m_cameraRotation = 0.0f;
-	float m_cameraMovementSpeed = 1.0f;
-	float m_cameraRotationSpeed = 50.0f;
+	Uge::OrthographicCameraController m_cameraController;
 
 	glm::vec4 m_squareColor = {0.2f, 0.3f, 0.8f, 1.0f};
 

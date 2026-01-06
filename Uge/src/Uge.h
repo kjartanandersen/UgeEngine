@@ -11,6 +11,7 @@
 #include "Uge/Input.h"
 #include "Uge/KeyCodes.h"
 #include "Uge/MouseButtonCodes.h"
+#include "Uge/OrthographicCameraController.h"
 
 #include "Uge/ImGui/ImGuiLayer.h"
 

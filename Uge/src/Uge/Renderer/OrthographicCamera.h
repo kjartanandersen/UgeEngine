@@ -13,6 +13,7 @@ namespace Uge
 	public:
 		OrthographicCamera(float left, float right, float bottom, float top);
 
+		void SetProjection(float left, float right, float bottom, float top);
 
 		const glm::vec3 GetPosition() const { return m_position; }
 		void SetPosition(const glm::vec3& position) { m_position = position; RecalculateViewMatrix(); }
@@ -26,6 +27,7 @@ namespace Uge
 			m_rotation = rotation;
 			RecalculateViewMatrix();
 		}
+
 
 		const glm::mat4& GetProjectionMatrix() const { return m_projectionMatrix; }
 		const glm::mat4& GetViewMatrix() const { return m_viewMatrix; }

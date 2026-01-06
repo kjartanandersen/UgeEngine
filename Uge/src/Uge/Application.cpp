@@ -60,15 +60,22 @@ namespace Uge
 			if (Uge::Input::IsKeyPressed(UG_KEY_ESCAPE))
 				CloseProgram();
 
-			for (auto layer : m_layerStack)
-				layer->OnUpdate(timestep);
+			if (!m_minimized)
+			{
 
+				for (auto layer : m_layerStack)
+					layer->OnUpdate(timestep);
+
+				
+
+			}
 			m_ImGuiLayer->Begin();
 
 			for (auto layer : m_layerStack)
 				layer->OnImGuiRender();
 
 			m_ImGuiLayer->End();
+			
 
 			m_window->OnUpdate();
 
@@ -81,6 +88,7 @@ namespace Uge
 		EventDispatcher dispatcher(e);
 
 		dispatcher.Dispatch<WindowCloseEvent>(UG_BIND_EVENT_FN(Application::OnWindowClose));
+		dispatcher.Dispatch<WindowResizeEvent>(UG_BIND_EVENT_FN(Application::OnWindowResize));
 
 		for ( auto it = m_layerStack.end(); it != m_layerStack.begin(); )
 		{
@@ -104,6 +112,21 @@ namespace Uge
 
 		return true;
 
+	}
+
+	bool Application::OnWindowResize(WindowResizeEvent& e)
+	{
+
+		if (e.GetWidth() == 0 || e.GetHeight() == 0)
+		{
+			m_minimized = true;
+			return false;
+
+		}
+
+		m_minimized = false;
+		Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
+		return false;
 	}
 
 	void Application::PushLayer(Layer* layer)
