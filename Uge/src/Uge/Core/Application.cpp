@@ -2,11 +2,11 @@
 #include "Application.h"
 
 
-#include "Uge/Log.h"
-#include "Renderer/Renderer.h"
+#include "Uge/Core/Log.h"
+#include "Uge/Renderer/Renderer.h"
 
-#include "Uge/Input.h"
-#include "Uge/KeyCodes.h"
+#include "Uge/Core/Input.h"
+#include "Uge/Core/KeyCodes.h"
 
 #include <GLFW/glfw3.h>
 

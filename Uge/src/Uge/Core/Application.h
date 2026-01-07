@@ -3,7 +3,7 @@
 #include "Core.h"
 
 #include "Window.h"
-#include "Uge/LayerStack.h"
+#include "Uge/Core/LayerStack.h"
 
 #include "Uge/Events/Event.h"
 #include "Uge/Events/ApplicationEvent.h"

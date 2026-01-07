@@ -59,7 +59,10 @@ project "Uge"
 		
 		
 	filter "configurations:Debug"
-		defines "UG_DEBUG"
+		defines 
+		{
+			"UG_DEBUG"
+		}
 		runtime "Debug"
 		symbols "on"
 		

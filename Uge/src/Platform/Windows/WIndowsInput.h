@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Uge/Input.h"
+#include "Uge/Core/Input.h"
 
 namespace Uge
 {

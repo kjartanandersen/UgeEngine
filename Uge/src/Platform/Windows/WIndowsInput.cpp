@@ -2,7 +2,7 @@
 #include <ugpch.h>
 #include "WIndowsInput.h"
 
-#include "Uge/Application.h"
+#include "Uge/Core/Application.h"
 #include <GLFW/glfw3.h>
 
 

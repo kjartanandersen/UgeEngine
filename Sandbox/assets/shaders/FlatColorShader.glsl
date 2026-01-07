@@ -1,19 +1,16 @@
-// Texture Shader
+// Flat Color Shader
 #type vertex
 #version 330 core
 				
 layout(location = 0) in vec3 a_Position;
-layout(location = 1) in vec2 a_TextCoord;
+
 
 uniform mat4 u_ViewProjection;
 uniform mat4 u_ModelMatrix;
-
-out vec2 v_TextCoord;
-
 			
 void main()
 {
-	v_TextCoord = a_TextCoord;
+
 	gl_Position = u_ViewProjection * u_ModelMatrix * vec4(a_Position, 1.0);
 
 				
@@ -25,11 +22,11 @@ void main()
 				
 layout(location = 0) out vec4 fragColor;
 
-in vec2 v_TextCoord;
 
-uniform sampler2D u_Texture;
+
+uniform vec4 u_Color;
 			
 void main()
 {
-	fragColor = texture(u_Texture, v_TextCoord);
+	fragColor = u_Color;
 }

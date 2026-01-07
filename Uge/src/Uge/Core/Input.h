@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Uge/Core.h"
+#include "Uge/Core/Core.h"
 
 namespace Uge
 {

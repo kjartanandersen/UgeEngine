@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ugpch.h"
-#include "Uge/Core.h"
+#include "Uge/Core/Core.h"
 
 namespace Uge
 {

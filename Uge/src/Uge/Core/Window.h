@@ -2,7 +2,7 @@
 
 #include "ugpch.h"
 
-#include "Uge/Core.h"
+#include "Uge/Core/Core.h"
 #include "Uge/Events/Event.h"
 
 namespace Uge

@@ -5,7 +5,7 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
-#include "Uge/Application.h"
+#include "Uge/Core/Application.h"
 
 // TODO: TEMPORARY
 #include <GLFW/glfw3.h>

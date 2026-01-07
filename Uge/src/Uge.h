@@ -2,16 +2,16 @@
 
 // For use by Uge applications
 
-#include "Uge/Application.h"
-#include "Uge/Layer.h"
-#include "Uge/Log.h"
+#include "Uge/Core/Application.h"
+#include "Uge/Core/Layer.h"
+#include "Uge/Core/Log.h"
 
 #include "Uge/Core/Timestep.h"
 
-#include "Uge/Input.h"
-#include "Uge/KeyCodes.h"
-#include "Uge/MouseButtonCodes.h"
-#include "Uge/OrthographicCameraController.h"
+#include "Uge/Core/Input.h"
+#include "Uge/Core/KeyCodes.h"
+#include "Uge/Core/MouseButtonCodes.h"
+#include "Uge/Renderer/OrthographicCameraController.h"
 
 #include "Uge/ImGui/ImGuiLayer.h"
 
@@ -30,6 +30,3 @@
 
 
 
-// ************* Entry Point **************
-#include "Uge/EntryPoint.h"
-// ****************************************

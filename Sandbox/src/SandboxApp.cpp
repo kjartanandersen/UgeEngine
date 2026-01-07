@@ -1,4 +1,7 @@
 #include <Uge.h>
+// ************* Entry Point **************
+#include "Uge/Core/EntryPoint.h"
+// ****************************************
 
 #include "imgui.h"
 
@@ -7,6 +10,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <glm/gtc/type_ptr.hpp>
+
+#include "Sandbox2D.h"
+
+
 
 class ExampleLayer : public Uge::Layer
 {
@@ -282,6 +289,7 @@ public:
 		{
 
 			ImGui::ColorEdit4("Square Color", glm::value_ptr(m_squareColor));
+			ImGui::Text("SandboxApp");
 		}
 		ImGui::End();
 		ImGui::PopFont();
@@ -315,7 +323,9 @@ class Sandbox : public Uge::Application
 public:
 	Sandbox()
 	{
-		PushLayer(new ExampleLayer());
+		//PushLayer(new ExampleLayer());
+		PushLayer( new Sandbox2D());
+		
 	}
 	~Sandbox()
 	{

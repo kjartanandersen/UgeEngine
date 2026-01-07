@@ -20,7 +20,7 @@
 #include <cmath>
 
 
-#include "Uge/Log.h"
+#include "Uge/Core/Log.h"
 
 
 #ifdef UG_PLATFORM_WINDOWS

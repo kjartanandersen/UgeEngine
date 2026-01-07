@@ -26,19 +26,19 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -92,6 +92,8 @@
     <Lib>
       <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
+    <ProjectReference>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -118,6 +120,8 @@
     <Lib>
       <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
+    <ProjectReference>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
     <ClCompile>
@@ -144,9 +148,10 @@
     <Lib>
       <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
+    <ProjectReference>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\Uge\OrthographicCameraController.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLRendererAPI.h" />
@@ -156,36 +161,36 @@
     <ClInclude Include="src\Platform\Windows\WIndowsInput.h" />
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="src\Uge.h" />
-    <ClInclude Include="src\Uge\Application.h" />
-    <ClInclude Include="src\Uge\Core.h" />
+    <ClInclude Include="src\Uge\Core\Application.h" />
+    <ClInclude Include="src\Uge\Core\Core.h" />
+    <ClInclude Include="src\Uge\Core\EntryPoint.h" />
+    <ClInclude Include="src\Uge\Core\Input.h" />
+    <ClInclude Include="src\Uge\Core\KeyCodes.h" />
+    <ClInclude Include="src\Uge\Core\Layer.h" />
+    <ClInclude Include="src\Uge\Core\LayerStack.h" />
+    <ClInclude Include="src\Uge\Core\Log.h" />
+    <ClInclude Include="src\Uge\Core\MouseButtonCodes.h" />
     <ClInclude Include="src\Uge\Core\Timestep.h" />
-    <ClInclude Include="src\Uge\EntryPoint.h" />
+    <ClInclude Include="src\Uge\Core\Window.h" />
     <ClInclude Include="src\Uge\Events\ApplicationEvent.h" />
     <ClInclude Include="src\Uge\Events\Event.h" />
     <ClInclude Include="src\Uge\Events\KeyEvent.h" />
     <ClInclude Include="src\Uge\Events\MouseEvent.h" />
     <ClInclude Include="src\Uge\ImGui\ImGuiLayer.h" />
-    <ClInclude Include="src\Uge\Input.h" />
-    <ClInclude Include="src\Uge\KeyCodes.h" />
-    <ClInclude Include="src\Uge\Layer.h" />
-    <ClInclude Include="src\Uge\LayerStack.h" />
-    <ClInclude Include="src\Uge\Log.h" />
-    <ClInclude Include="src\Uge\MouseButtonCodes.h" />
     <ClInclude Include="src\Uge\Renderer\Buffer.h" />
     <ClInclude Include="src\Uge\Renderer\GraphicsContext.h" />
     <ClInclude Include="src\Uge\Renderer\OrthographicCamera.h" />
+    <ClInclude Include="src\Uge\Renderer\OrthographicCameraController.h" />
     <ClInclude Include="src\Uge\Renderer\RenderCommand.h" />
     <ClInclude Include="src\Uge\Renderer\Renderer.h" />
     <ClInclude Include="src\Uge\Renderer\RendererAPI.h" />
     <ClInclude Include="src\Uge\Renderer\Shader.h" />
     <ClInclude Include="src\Uge\Renderer\Texture.h" />
     <ClInclude Include="src\Uge\Renderer\VertexArray.h" />
-    <ClInclude Include="src\Uge\Window.h" />
     <ClInclude Include="src\ugpch.h" />
     <ClInclude Include="thirdparty\stb_image\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Uge\OrthographicCameraController.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLRendererAPI.cpp" />
@@ -194,14 +199,15 @@
     <ClCompile Include="src\Platform\OpenGL\OpenGLVertexArray.cpp" />
     <ClCompile Include="src\Platform\Windows\WIndowsInput.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
-    <ClCompile Include="src\Uge\Application.cpp" />
+    <ClCompile Include="src\Uge\Core\Application.cpp" />
+    <ClCompile Include="src\Uge\Core\Layer.cpp" />
+    <ClCompile Include="src\Uge\Core\LayerStack.cpp" />
+    <ClCompile Include="src\Uge\Core\Log.cpp" />
     <ClCompile Include="src\Uge\ImGui\ImGuiBuild.cpp" />
     <ClCompile Include="src\Uge\ImGui\ImGuiLayer.cpp" />
-    <ClCompile Include="src\Uge\Layer.cpp" />
-    <ClCompile Include="src\Uge\LayerStack.cpp" />
-    <ClCompile Include="src\Uge\Log.cpp" />
     <ClCompile Include="src\Uge\Renderer\Buffer.cpp" />
     <ClCompile Include="src\Uge\Renderer\OrthographicCamera.cpp" />
+    <ClCompile Include="src\Uge\Renderer\OrthographicCameraController.cpp" />
     <ClCompile Include="src\Uge\Renderer\RenderCommand.cpp" />
     <ClCompile Include="src\Uge\Renderer\Renderer.cpp" />
     <ClCompile Include="src\Uge\Renderer\RendererAPI.cpp" />
