@@ -2,9 +2,7 @@
 
 #include "imgui.h"
 
-#include <glm/gtc/matrix_transform.hpp>
 
-#include "Platform/OpenGL/OpenGLShader.h"
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -25,22 +23,27 @@ void Sandbox2D::OnUpdate(Uge::Timestep ts)
 	Uge::RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
 	Uge::RenderCommand::Clear();
 
-	Uge::Renderer::BeginScene(m_cameraController.GetCamera());
+	Uge::Renderer2D::BeginScene(m_cameraController.GetCamera());
 	{
 
+		// Flat color
+		Uge::Renderer2D::DrawQuad({ 1.0f, 0.0f, 0.0f }, 90.0f, { 0.3f, 0.3f },
+			m_squareColor);
+
+		Uge::Renderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, 90.0f, { 0.3f, 0.3f },
+			m_squareColor);
+		// Texture
+		Uge::Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, 90.0f, { 10.0f, 10.0f },
+			m_texture);
 
 
-		std::dynamic_pointer_cast<Uge::OpenGLShader>(m_flatColorShader)->Bind();
-		std::dynamic_pointer_cast<Uge::OpenGLShader>(m_flatColorShader)->UploadUniformFloat4("u_Color", m_squareColor);
-
-
-
-		Uge::Renderer::Submit(m_flatColorShader, m_squareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)));
 
 
 	}
-	Uge::Renderer::EndScene();
+	Uge::Renderer2D::EndScene();
 
+	//std::dynamic_pointer_cast<Uge::OpenGLShader>(m_flatColorShader)->Bind();
+	//std::dynamic_pointer_cast<Uge::OpenGLShader>(m_flatColorShader)->UploadUniformFloat4("u_Color", m_squareColor);
 }
 
 void Sandbox2D::OnEvent(Uge::Event& e)
@@ -57,42 +60,9 @@ void Sandbox2D::OnAttach()
 {
 
 	
+	m_texture = Uge::Texture2D::Create("assets/textures/Checkerboard.png");
 
-
-	m_squareVA = Uge::VertexArray::Create();
-
-	float squareVertices[3 * 4] =
-	{
-		/* Vertices */			
-	   -0.5f, -0.5f, 0.0f,		
-		0.5f, -0.5f, 0.0f,		
-		0.5f,  0.5f, 0.0f,		
-	   -0.5f,  0.5f, 0.0f		
-	};
-
-
-	Uge::Ref<Uge::VertexBuffer> squareVB;
-	squareVB = Uge::VertexBuffer::Create(squareVertices, sizeof(squareVertices));
-
-	Uge::BufferLayout squareVBlayout =
-	{
-		{ Uge::ShaderDataType::Float3, "a_Position"}
-	};
-
-	squareVB->SetLayout(squareVBlayout);
-	m_squareVA->AddVertexBuffer(squareVB);
-
-	uint32_t squareIndices[6] = { 0, 1, 2, 2, 3, 0 };
-
-	Uge::Ref<Uge::IndexBuffer> squareIB;
-
-	squareIB = Uge::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
-
-	m_squareVA->SetIndexBuffer(squareIB);
-
-
-	m_flatColorShader = Uge::Shader::Create("assets/shaders/FlatColorShader.glsl");
-
+	
 
 
 

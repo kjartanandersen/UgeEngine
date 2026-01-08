@@ -17,6 +17,7 @@
 
 // ************* Renderer *****************
 #include "Uge/Renderer/Renderer.h"
+#include "Uge/Renderer/Renderer2D.h"
 #include "Uge/Renderer/RenderCommand.h"
 
 #include "Uge/Renderer/Buffer.h"

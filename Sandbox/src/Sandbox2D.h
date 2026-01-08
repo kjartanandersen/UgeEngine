@@ -23,6 +23,7 @@ private:
 	// TODO: Temp
 	Uge::Ref<Uge::Shader> m_flatColorShader;
 	Uge::Ref<Uge::VertexArray> m_squareVA;
+	Uge::Ref<Uge::Texture2D> m_texture;
 
 	glm::vec4 m_squareColor = { 0.2f, 0.3f, 0.8f, 1.0f };
 

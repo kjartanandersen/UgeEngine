@@ -31,5 +31,6 @@ uniform sampler2D u_Texture;
 			
 void main()
 {
+	// TODO: Add variables so that for instance "texture(u_Texture, v_TextCoord * 1.0) * vec4(color)" could work
 	fragColor = texture(u_Texture, v_TextCoord);
 }
