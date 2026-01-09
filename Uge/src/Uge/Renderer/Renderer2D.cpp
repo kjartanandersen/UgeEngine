@@ -14,8 +14,8 @@ namespace Uge
 	struct Renderer2DStorage
 	{
 		Ref<VertexArray> m_squareVA;
-		Ref<Shader> m_flatColorShader;
 		Ref<Shader> m_textureShader;
+		Ref<Texture2D> m_whiteTexture;
 
 
 	};
@@ -59,8 +59,11 @@ namespace Uge
 
 		m_data->m_squareVA->SetIndexBuffer(squareIB);
 
+		m_data->m_whiteTexture = Texture2D::Create(1, 1);
+		uint32_t whiteTextureData = 0xffffffff;
+		m_data->m_whiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 
-		m_data->m_flatColorShader = Shader::Create("assets/shaders/FlatColorShader.glsl");
+
 		m_data->m_textureShader = Shader::Create("assets/shaders/Texture.glsl");
 		m_data->m_textureShader->Bind();
 		m_data->m_textureShader->SetInt("u_Texture", 0);
@@ -79,9 +82,6 @@ namespace Uge
 	void Renderer2D::BeginScene(const OrthographicCamera& camera)
 	{
 
-		m_data->m_flatColorShader->Bind();
-		m_data->m_flatColorShader->SetMat4(
-			"u_ViewProjection", camera.GetViewProjectionMatrix());
 
 		m_data->m_textureShader->Bind();
 		m_data->m_textureShader->SetMat4(
@@ -106,18 +106,18 @@ namespace Uge
 	void Renderer2D::DrawQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const glm::vec4& color)
 	{
 
-		m_data->m_flatColorShader->Bind();
-
-		m_data->m_flatColorShader->SetFloat4(
+		
+		m_data->m_textureShader->SetFloat4(
 			"u_Color", color);
+
+		m_data->m_whiteTexture->Bind();
 
 		glm::mat4 transform = 
 			glm::translate(glm::mat4(1.0f), position) *
 			glm::rotate(glm::mat4(1.0f), glm::radians(rotation), {0.0f, 0.0f, 1.0f}) *
 			glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-		m_data->m_flatColorShader->SetMat4("u_ModelMatrix", transform);
-
+		m_data->m_textureShader->SetMat4("u_ModelMatrix", transform);
 		
 
 		m_data->m_squareVA->Bind();
@@ -135,23 +135,23 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<Texture2D>& texture)
 	{
-
-		m_data->m_textureShader->Bind();
+		m_data->m_textureShader->SetFloat4("u_Color", glm::vec4(1.0f));
+		texture->Bind();
 
 		
 
 		glm::mat4 transform = 
 			glm::translate(glm::mat4(1.0f), position) *
 			glm::rotate(glm::mat4(1.0f), glm::radians(rotation), {0.0f, 0.0f, 1.0f}) *
-			glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
+			glm::scale(glm::mat4(1.0f), { size.x, size.y, 0.1f });
 
 		m_data->m_textureShader->SetMat4("u_ModelMatrix", transform);
 
-		texture->Bind();
 		
 
 		m_data->m_squareVA->Bind();
 		RenderCommand::DrawIndexed(m_data->m_squareVA);
+		texture->UnBind();
 
 
 	}

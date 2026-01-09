@@ -2,13 +2,33 @@
 #include "OpenGLTexture.h"
 
 #include <stb_image.h>
-#include <glad/glad.h>
+
 
 
 namespace Uge
 {
 
+	OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height)
+		: m_width(width), m_height(height)
+	{
 
+		m_internalFormat = GL_RGBA8;
+		m_dataFormat = GL_RGBA;
+
+
+
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_rendererID);
+		glTextureStorage2D(m_rendererID, 1, m_internalFormat, m_width, m_height);
+
+		glTextureParameteri(m_rendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(m_rendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glTextureParameteri(m_rendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTextureParameteri(m_rendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+
+
+	}
 
 
 	OpenGLTexture2D::OpenGLTexture2D(const std::string& path)
@@ -39,6 +59,9 @@ namespace Uge
 			dataFormat = GL_RGB;
 		}
 
+		m_internalFormat = internalFormat;
+		m_dataFormat = dataFormat;
+
 		UG_CORE_ASSERT(internalFormat & dataFormat, "Format not supported!");
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_rendererID);
@@ -56,10 +79,25 @@ namespace Uge
 
 	}
 
+	
+
 	OpenGLTexture2D::~OpenGLTexture2D()
 	{
 
 		glDeleteTextures(1, &m_rendererID);
+
+
+	}
+
+	void OpenGLTexture2D::SetData(void* data, uint32_t size)
+	{
+#ifdef UG_DEBUG
+		uint32_t bpp = m_dataFormat == GL_RGBA ? 4 : 3;
+		UG_CORE_ASSERT(size == m_width * m_height * bpp, "Data must be the entire texture!");
+
+#endif // UG_DEBUG
+
+		glTextureSubImage2D(m_rendererID, 0, 0, 0, m_width, m_height, m_dataFormat, GL_UNSIGNED_BYTE, data);
 
 
 	}
@@ -70,6 +108,12 @@ namespace Uge
 
 		glBindTextureUnit(slot, m_rendererID);
 
+	}
+
+	void OpenGLTexture2D::UnBind(uint32_t slot) const
+	{
+
+		glBindTextureUnit(slot, 0);
 	}
 
 }

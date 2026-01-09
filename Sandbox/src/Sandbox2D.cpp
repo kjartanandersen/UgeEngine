@@ -28,10 +28,10 @@ void Sandbox2D::OnUpdate(Uge::Timestep ts)
 
 		// Flat color
 		Uge::Renderer2D::DrawQuad({ 1.0f, 0.0f, 0.0f }, 90.0f, { 0.3f, 0.3f },
-			m_squareColor);
+			m_square1Color);
 
 		Uge::Renderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, 90.0f, { 0.3f, 0.3f },
-			m_squareColor);
+			m_square2Color);
 		// Texture
 		Uge::Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, 90.0f, { 10.0f, 10.0f },
 			m_texture);
@@ -83,7 +83,15 @@ void Sandbox2D::OnImGuiRender()
 	ImGui::Begin("Settings");
 	{
 
-		ImGui::ColorEdit4("Square Color", glm::value_ptr(m_squareColor));
+		
+		ImGui::PushID(0);
+		ImGui::ColorEdit4("Square Color", glm::value_ptr(m_square1Color));
+		ImGui::PopID();
+
+		ImGui::PushID(1);
+		ImGui::ColorEdit4("Square Color", glm::value_ptr(m_square2Color));
+		ImGui::PopID();
+
 		ImGui::Text("Sandbox2D");
 	}
 	ImGui::End();
