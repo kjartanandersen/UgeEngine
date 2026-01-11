@@ -12,12 +12,14 @@
 #include "Uge/Core/KeyCodes.h"
 #include "Uge/Core/MouseButtonCodes.h"
 #include "Uge/Renderer/OrthographicCameraController.h"
+#include "Uge/Renderer/PerspectiveCameraController.h"
 
 #include "Uge/ImGui/ImGuiLayer.h"
 
 // ************* Renderer *****************
 #include "Uge/Renderer/Renderer.h"
 #include "Uge/Renderer/Renderer2D.h"
+#include "Uge/Renderer/Renderer3D.h"
 #include "Uge/Renderer/RenderCommand.h"
 
 #include "Uge/Renderer/Buffer.h"
@@ -26,6 +28,7 @@
 #include "Uge/Renderer/VertexArray.h"
 
 #include "Uge/Renderer/OrthographicCamera.h"
+#include "Uge/Renderer/PerspectiveCamera.h"
 
 // ****************************************
 

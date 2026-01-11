@@ -148,6 +148,10 @@
       <Filter>thirdparty\stb_image</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Renderer\Renderer2D.h" />
+    <ClInclude Include="src\Uge\Renderer\Renderer3D.h" />
+    <ClInclude Include="src\Uge\Renderer\Camera.h" />
+    <ClInclude Include="src\Uge\Renderer\PerspectiveCamera.h" />
+    <ClInclude Include="src\Uge\Renderer\PerspectiveCameraController.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">
@@ -226,6 +230,10 @@
       <Filter>thirdparty\stb_image</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\Renderer\Renderer2D.cpp" />
+    <ClCompile Include="src\Uge\Renderer\Renderer3D.cpp" />
+    <ClCompile Include="src\Uge\Renderer\Camera.cpp" />
+    <ClCompile Include="src\Uge\Renderer\PerspectiveCamera.cpp" />
+    <ClCompile Include="src\Uge\Renderer\PerspectiveCameraController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="UgeClassDiagram.cd" />

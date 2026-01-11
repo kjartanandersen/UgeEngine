@@ -3,6 +3,7 @@
 
 #include "Platform/OpenGL/OpenGLShader.h"
 #include "Renderer2D.h"
+#include "Renderer3D.h"
 
 namespace Uge
 {
@@ -13,7 +14,8 @@ namespace Uge
 	{
 
 		RenderCommand::Init();
-		Renderer2D::Init();
+		//Renderer2D::Init();
+		Renderer3D::Init();
 
 
 	}
@@ -27,12 +29,13 @@ namespace Uge
 	}
 
 
-	void Renderer::BeginScene(OrthographicCamera& camera)
+	void Renderer::BeginScene(Camera& camera)
 	{
 
 		m_sceneData->viewProjectionMatrix = camera.GetViewProjectionMatrix();
 
 	}
+
 
 	void Renderer::EndScene()
 	{

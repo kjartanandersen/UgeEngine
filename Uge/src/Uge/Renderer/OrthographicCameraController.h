@@ -22,7 +22,7 @@ namespace Uge
 		const OrthographicCamera& GetCamera() const { return m_camera; }
 
 		void SetZoomLevel(float zLevel) { m_zoomLevel = zLevel; }
-		float GetZoomLevel(float zLevel) const { return m_zoomLevel; }
+		float GetZoomLevel() const { return m_zoomLevel; }
 
 	private:
 		bool OnMouseScrolled(MouseScrolledEvent& e);
