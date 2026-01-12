@@ -152,6 +152,7 @@
     <ClInclude Include="src\Uge\Renderer\Camera.h" />
     <ClInclude Include="src\Uge\Renderer\PerspectiveCamera.h" />
     <ClInclude Include="src\Uge\Renderer\PerspectiveCameraController.h" />
+    <ClInclude Include="src\Uge\Debug\Instrumentor.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">

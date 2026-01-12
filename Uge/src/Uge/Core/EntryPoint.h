@@ -8,16 +8,21 @@ extern Uge::Application* Uge::CreateApplication();
 
 int main(int argc, char** argv)
 {
-	int a = 42;
+	
 
 	Uge::Log::Init();
-	UG_CORE_WARN("Initialized Log!");
-	UG_INFO("Hello Var={0}!", a);
 
+	UG_PROFILE_BEGIN_SESSION("Startup", "UgeProfile-Startup.json");
 	auto app = Uge::CreateApplication();
+	UG_PROFILE_END_SESSION();
+	
+	UG_PROFILE_BEGIN_SESSION("Runtime", "UgeProfile-Runtime.json");
 	app->Run();
-
+	UG_PROFILE_END_SESSION();
+	
+	UG_PROFILE_BEGIN_SESSION("Shutdown", "UgeProfile-Shutdown.json");
 	delete app;
+	UG_PROFILE_END_SESSION();
 
 	return 0;
 }

@@ -448,3 +448,6 @@ bin-int/
 
 #.ini files
 Sandbox/imgui.ini
+
+#Profiling data
+Sandbox/UgeProfile*.json

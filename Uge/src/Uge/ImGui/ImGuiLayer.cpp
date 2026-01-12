@@ -88,10 +88,7 @@ namespace Uge
 	void ImGuiLayer::OnImGuiRender()
 	{
 
-		static bool show = true;
-		ImGui::PushFont(mainFont);
-		ImGui::ShowDemoWindow(&show);
-		ImGui::PopFont();
+		
 
 
 	}

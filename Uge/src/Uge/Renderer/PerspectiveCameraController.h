@@ -35,10 +35,13 @@ namespace Uge
 		float m_farClip = 1000.0f;
 		bool m_rotation;
 
+		float m_width, m_height;
+
 		PerspectiveCamera m_camera;
 		glm::vec3 m_cameraPosition = { 0.0f, 0.0f, 0.0f };
 		glm::quat m_qRotation = { 1.0f, 0.0f, 0.0f, 0.0f };
 		float m_cameraTranslationSpeed = 0.3f, m_cameraRotationSpeed = 180.0f;
+		float m_mouseSpeed = 1.0f;
 
 	};
 

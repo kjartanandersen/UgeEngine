@@ -152,6 +152,7 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Uge\Debug\Instrumentor.h" />
     <ClInclude Include="src\Uge\Renderer\PerspectiveCameraController.h" />
     <ClInclude Include="src\Uge\Renderer\PerspectiveCamera.h" />
     <ClInclude Include="src\Uge\Renderer\Camera.h" />

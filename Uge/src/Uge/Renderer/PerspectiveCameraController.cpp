@@ -3,6 +3,10 @@
 
 #include "Uge/Core/Input.h"
 #include "Uge/Core/KeyCodes.h"
+#include "Uge/Core/MouseButtonCodes.h"
+
+#include "Uge/Core/Application.h"
+#include "Platform/Windows/WindowsWindow.h"
 
 
 namespace Uge
@@ -13,7 +17,13 @@ namespace Uge
 		: m_fovY(fovYRadians), m_aspectRatio(aspectRatio), m_rotation(rotation), m_nearClip(nearClip), m_farClip(farClip),  m_camera(fovYRadians, aspectRatio, nearClip, farClip)
 	{
 
-		
+		Application& app = Application::Get();
+
+		// TODO: Needs to be fixed
+		auto& window = dynamic_cast<WindowsWindow&>(app.GetWindow());
+
+		m_width = window.GetWidth();
+		m_height = window.GetHeight();
 
 	}
 
@@ -29,40 +39,38 @@ namespace Uge
 
 		// Camera Position
 		if (Input::IsKeyPressed(UG_KEY_A))
-		{
-			
-			velocity -= right * m_cameraTranslationSpeed * ts.GetMilliseconds();
-
-		}
+			velocity += right * m_cameraTranslationSpeed * ts.GetMilliseconds();
 
 		else if (Input::IsKeyPressed(UG_KEY_D))
-		{
-			velocity += right * m_cameraTranslationSpeed * ts.GetMilliseconds();
-		}
+			velocity -= right * m_cameraTranslationSpeed * ts.GetMilliseconds();
 
 		if (Input::IsKeyPressed(UG_KEY_W))
-		{
 			velocity += forward * m_cameraTranslationSpeed * ts.GetMilliseconds();
-		}
 
 		else if (Input::IsKeyPressed(UG_KEY_S))
-		{
 			velocity -= forward * m_cameraTranslationSpeed * ts.GetMilliseconds();
-		}
+		
 
-
-		if (m_rotation)
+		if (Input::IsMouseButtonPressed(UG_MOUSE_BUTTON_RIGHT))
 		{
-			// Camera Rotation
-			//if (Input::IsKeyPressed(UG_KEY_Q))
-				
+			if (m_rotation)
+			{
+				// Camera Rotation
+				//if (Input::IsKeyPressed(UG_KEY_Q))
 
-			//if (Input::IsKeyPressed(UG_KEY_E))
-				
 
-			m_camera.SetQuatRotation(m_qRotation);
+				//if (Input::IsKeyPressed(UG_KEY_E))
+
+
+
+				m_camera.SetQuatRotation(m_qRotation);
+
+			}
+
 
 		}
+
+		
 		m_cameraPosition += velocity;
 		m_camera.SetPosition(m_cameraPosition);
 
@@ -90,8 +98,12 @@ namespace Uge
 	}
 	bool PerspectiveCameraController::OnWindowResized(WindowResizeEvent& e)
 	{
-
+		
 		m_aspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
+
+		m_width = (float)e.GetWidth();
+		m_height = (float)e.GetHeight();
+
 		m_camera.SetProjection(m_fovY, m_aspectRatio, m_nearClip, m_farClip);
 
 

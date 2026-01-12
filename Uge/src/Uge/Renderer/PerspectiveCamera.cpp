@@ -3,6 +3,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+
 namespace Uge
 {
 
@@ -10,6 +11,9 @@ namespace Uge
     PerspectiveCamera::PerspectiveCamera(float fovYRadians, float aspect, float nearClip, float farClip)
     {
         m_usingQuat = true;
+
+        
+
         SetProjection(fovYRadians, aspect, nearClip, farClip);
     }
 

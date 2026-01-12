@@ -18,7 +18,7 @@ namespace Uge
 	class Application
 	{
 	public:
-		Application();
+		Application(bool is3D);
 		virtual ~Application();
 
 		void Run();
@@ -31,6 +31,9 @@ namespace Uge
 		inline static Application& Get() { return *s_instance; }
 		inline Window& GetWindow() { return *m_window; }
 		inline void CloseProgram() { m_running = false; }
+
+	protected:
+		bool m_is3D;
 
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);

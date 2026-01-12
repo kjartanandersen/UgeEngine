@@ -24,17 +24,26 @@ void Sandbox3D::OnDetach()
 void Sandbox3D::OnUpdate(Uge::Timestep ts)
 {
 
+	UG_PROFILE_FUNCTION();
 	// Update
-	m_cameraController.OnUpdate(ts);
+	{
+		UG_PROFILE_SCOPE("CameraController::OnUpdate");
+		m_cameraController.OnUpdate(ts);
+
+	}
 
 
 	// Render
-	Uge::RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
-	Uge::RenderCommand::Clear();
+	{
+		UG_PROFILE_SCOPE("Render Prep");
+		Uge::RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
+		Uge::RenderCommand::Clear();
+
+	}
 
 	Uge::Renderer3D::BeginScene(m_cameraController.GetCamera());
 	{
-
+		UG_PROFILE_SCOPE("Render Draw");
 		// Flat color
 		Uge::Renderer3D::DrawCube({ 1.0f, 0.0f, 0.0f }, 90.0f, { 1.0f, 1.0f, 1.0f },
 			m_square1Color);
@@ -57,6 +66,7 @@ void Sandbox3D::OnEvent(Uge::Event& e)
 
 void Sandbox3D::OnImGuiRender()
 {
+	UG_PROFILE_FUNCTION();
 	ImGui::Begin("Settings");
 	{
 

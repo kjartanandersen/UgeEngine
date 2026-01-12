@@ -21,6 +21,7 @@
 
 
 #include "Uge/Core/Log.h"
+#include "Uge/Debug/Instrumentor.h"
 
 
 #ifdef UG_PLATFORM_WINDOWS

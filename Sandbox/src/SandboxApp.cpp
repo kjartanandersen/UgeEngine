@@ -11,15 +11,20 @@ class Sandbox : public Uge::Application
 {
 public:
 	Sandbox()
+		: Application(true)
 	{
-		//PushLayer( new Sandbox2D());
-		PushLayer( new Sandbox3D());
-		
+		if (m_is3D)
+			PushLayer( new Sandbox3D());
+		else
+			PushLayer( new Sandbox2D());
 	}
 	~Sandbox()
 	{
 
 	}
+
+private:
+	
 };
 
 Uge::Application* Uge::CreateApplication()

@@ -10,7 +10,7 @@ namespace Uge
 	{
 	public:
 
-		static void Init();
+		static void Init(bool is3D);
 		static void OnWindowResize(uint32_t width, uint32_t height);
 
 		static void BeginScene(Camera& camera);

@@ -19,10 +19,10 @@ namespace Uge
 	
 
 
-	Application::Application()
+	Application::Application(bool is3D)
 	{
 		
-
+		m_is3D = is3D;
 		UG_CORE_ASSERT(!s_instance, "Application Already Exists!");
 		s_instance = this;
 
@@ -31,7 +31,7 @@ namespace Uge
 
 		m_window->SetVSync(true);
 
-		Renderer::Init();
+		Renderer::Init(m_is3D);
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
