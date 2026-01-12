@@ -25,7 +25,7 @@ namespace Uge
 
 	void Renderer2D::Init()
 	{
-
+		UG_PROFILE_FUNCTION();
 		m_data = new Renderer2DStorage();
 		m_data->m_squareVA = VertexArray::Create();
 
@@ -74,6 +74,7 @@ namespace Uge
 
 	void Renderer2D::Shutdown()
 	{
+		UG_PROFILE_FUNCTION();
 
 		delete m_data;
 
@@ -81,7 +82,7 @@ namespace Uge
 
 	void Renderer2D::BeginScene(const OrthographicCamera& camera)
 	{
-
+		UG_PROFILE_FUNCTION();
 
 		m_data->m_textureShader->Bind();
 		m_data->m_textureShader->SetMat4(
@@ -93,6 +94,7 @@ namespace Uge
 
 	void Renderer2D::EndScene()
 	{
+		UG_PROFILE_FUNCTION();
 	}
 
 	void Renderer2D::DrawQuad(const glm::vec2& position, float rotation, const glm::vec2& size, const glm::vec4& color)
@@ -105,7 +107,7 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const glm::vec4& color)
 	{
-
+		UG_PROFILE_FUNCTION();
 		
 		m_data->m_textureShader->SetFloat4(
 			"u_Color", color);
@@ -135,6 +137,8 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<Texture2D>& texture)
 	{
+		UG_PROFILE_FUNCTION();
+
 		m_data->m_textureShader->SetFloat4("u_Color", glm::vec4(1.0f));
 		texture->Bind();
 

@@ -21,7 +21,7 @@ namespace Uge
 
 	Application::Application(bool is3D)
 	{
-		
+		UG_PROFILE_FUNCTION();
 		m_is3D = is3D;
 		UG_CORE_ASSERT(!s_instance, "Application Already Exists!");
 		s_instance = this;
@@ -42,13 +42,17 @@ namespace Uge
 	Application::~Application()
 	{
 
+		UG_PROFILE_FUNCTION();
+
 	}
 
 	void Application::Run()
 	{
+		UG_PROFILE_FUNCTION();
 
 		while (m_running)
 		{
+			UG_PROFILE_SCOPE("RunLoop");
 
 			float time = (float)glfwGetTime();			// Platform::GetTime
 			Timestep timestep = time - m_lastFrameTime;
@@ -62,17 +66,25 @@ namespace Uge
 
 			if (!m_minimized)
 			{
+				{
+					UG_PROFILE_SCOPE("LayerStack OnUpdate");
+					for (auto layer : m_layerStack)
+						layer->OnUpdate(timestep);
 
-				for (auto layer : m_layerStack)
-					layer->OnUpdate(timestep);
+
+				}
 
 				
 
 			}
 			m_ImGuiLayer->Begin();
+			{
+				UG_PROFILE_SCOPE("LayerStack OnImGuiRender");
 
-			for (auto layer : m_layerStack)
-				layer->OnImGuiRender();
+				for (auto layer : m_layerStack)
+					layer->OnImGuiRender();
+
+			}
 
 			m_ImGuiLayer->End();
 			
@@ -84,6 +96,7 @@ namespace Uge
 
 	void Application::OnEvent(Event& e)
 	{
+		UG_PROFILE_FUNCTION();
 
 		EventDispatcher dispatcher(e);
 
@@ -116,6 +129,8 @@ namespace Uge
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
+		UG_PROFILE_FUNCTION();
+
 
 		if (e.GetWidth() == 0 || e.GetHeight() == 0)
 		{
@@ -131,6 +146,7 @@ namespace Uge
 
 	void Application::PushLayer(Layer* layer)
 	{
+		UG_PROFILE_FUNCTION();
 
 		m_layerStack.PushLayer(layer);
 		layer->OnAttach();
@@ -140,6 +156,7 @@ namespace Uge
 
 	void Application::PushOverlay(Layer* overlay)
 	{
+		UG_PROFILE_FUNCTION();
 
 		m_layerStack.PushOverlay(overlay);
 		overlay->OnAttach();

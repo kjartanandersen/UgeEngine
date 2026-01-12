@@ -22,6 +22,7 @@ namespace Uge
 
 	OpenGLShader::OpenGLShader(const std::string& filePath)
 	{
+		UG_PROFILE_FUNCTION();
 
 		std::string source = ReadFile(filePath);
 		auto shaderSources = PreProcess(source);
@@ -41,6 +42,7 @@ namespace Uge
 	OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource)
 		: m_name(name)
 	{
+		UG_PROFILE_FUNCTION();
 
 		std::unordered_map<GLenum, std::string> sources;
 		sources[GL_VERTEX_SHADER] = vertexSource;
@@ -52,6 +54,7 @@ namespace Uge
 
 	OpenGLShader::~OpenGLShader()
 	{
+		UG_PROFILE_FUNCTION();
 
 		glDeleteProgram(m_rendererID);
 
@@ -59,7 +62,8 @@ namespace Uge
 
 	std::string OpenGLShader::ReadFile(const std::string& filePath)
 	{
-		
+		UG_PROFILE_FUNCTION();
+
 		std::string result;
 		std::ifstream in(filePath, std::ios::in | std::ios::binary);
 
@@ -84,6 +88,8 @@ namespace Uge
 
 	std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::string& source)
 	{
+		UG_PROFILE_FUNCTION();
+
 		std::unordered_map<GLenum, std::string> shaderSources;
 
 		const char* typeToken = "#type";
@@ -112,6 +118,7 @@ namespace Uge
 
 	void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources)
 	{
+		UG_PROFILE_FUNCTION();
 
 		// Now time to link them together into a program.
 		// Get a program object.
@@ -214,6 +221,7 @@ namespace Uge
 
 	void OpenGLShader::Bind() const
 	{
+		UG_PROFILE_FUNCTION();
 
 		glUseProgram(m_rendererID);
 
@@ -221,6 +229,7 @@ namespace Uge
 
 	void OpenGLShader::Unbind() const
 	{
+		UG_PROFILE_FUNCTION();
 
 		glUseProgram(0);
 
@@ -229,6 +238,7 @@ namespace Uge
 
 	void OpenGLShader::SetInt(const std::string name, int value)
 	{
+		UG_PROFILE_FUNCTION();
 
 		UploadUniformInt(name, value);
 
@@ -237,6 +247,8 @@ namespace Uge
 
 	void OpenGLShader::SetFloat3(const std::string name, const glm::vec3& values)
 	{
+		UG_PROFILE_FUNCTION();
+
 		UploadUniformFloat3(name, values);
 
 
@@ -244,6 +256,7 @@ namespace Uge
 
 	void OpenGLShader::SetFloat4(const std::string name, const glm::vec4& values)
 	{
+		UG_PROFILE_FUNCTION();
 
 		UploadUniformFloat4(name, values);
 
@@ -252,6 +265,7 @@ namespace Uge
 
 	void OpenGLShader::SetMat4(const std::string name, const glm::mat4& values)
 	{
+		UG_PROFILE_FUNCTION();
 
 		UploadUniformMat4(name, values);
 

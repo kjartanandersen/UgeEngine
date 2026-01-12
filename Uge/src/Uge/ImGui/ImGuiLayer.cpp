@@ -41,6 +41,8 @@ namespace Uge
 
 	void ImGuiLayer::OnAttach()
 	{
+		UG_PROFILE_FUNCTION();
+
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -77,6 +79,7 @@ namespace Uge
 	}
 	void ImGuiLayer::OnDetach()
 	{
+		UG_PROFILE_FUNCTION();
 
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
@@ -95,6 +98,7 @@ namespace Uge
 
 	void Uge::ImGuiLayer::Begin()
 	{
+		UG_PROFILE_FUNCTION();
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -105,6 +109,7 @@ namespace Uge
 
 	void Uge::ImGuiLayer::End()
 	{
+		UG_PROFILE_FUNCTION();
 
 		ImGuiIO& io = ImGui::GetIO();
 

@@ -21,6 +21,7 @@ namespace Uge
 
 	void OpenGLContext::Init()
 	{
+		UG_PROFILE_FUNCTION();
 
 		glfwMakeContextCurrent(m_windowHandle);
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -51,6 +52,7 @@ namespace Uge
 	void OpenGLContext::SwapBuffers()
 	{
 		
+		UG_PROFILE_FUNCTION();
 
 		glfwSwapBuffers(m_windowHandle);
 

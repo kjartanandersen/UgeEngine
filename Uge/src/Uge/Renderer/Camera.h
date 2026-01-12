@@ -52,6 +52,8 @@ namespace Uge
 
 		void SetProjectionMatrix(const glm::mat4& projection)
 		{
+			UG_PROFILE_FUNCTION();
+
 			m_projectionMatrix = projection;
 			m_viewProjectionMatrix = m_projectionMatrix * m_viewMatrix;
 		}

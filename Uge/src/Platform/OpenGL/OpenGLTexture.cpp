@@ -12,6 +12,8 @@ namespace Uge
 		: m_width(width), m_height(height)
 	{
 
+		UG_PROFILE_FUNCTION();
+
 		m_internalFormat = GL_RGBA8;
 		m_dataFormat = GL_RGBA;
 
@@ -34,12 +36,19 @@ namespace Uge
 	OpenGLTexture2D::OpenGLTexture2D(const std::string& path)
 		: m_path(path)
 	{
+		UG_PROFILE_FUNCTION();
 
 		int width, height, channels;
 		stbi_set_flip_vertically_on_load(1);
+		stbi_uc* data = nullptr;
 
-		stbi_uc* data = stbi_load(path.c_str(), &width, 
-			&height, &channels,  0);
+		{
+			UG_PROFILE_SCOPE("stbi_load - OpenGLTexture2D::OpenGLTexture2D(const std::string& path) stbi_load");
+
+			data = stbi_load(path.c_str(), &width, 
+				&height, &channels,  0);
+
+		}
 
 
 		UG_CORE_ASSERT(data, "Failed to load image!");
@@ -83,6 +92,7 @@ namespace Uge
 
 	OpenGLTexture2D::~OpenGLTexture2D()
 	{
+		UG_PROFILE_FUNCTION();
 
 		glDeleteTextures(1, &m_rendererID);
 
@@ -104,7 +114,7 @@ namespace Uge
 
 	void OpenGLTexture2D::Bind(uint32_t slot) const
 	{
-
+		UG_PROFILE_FUNCTION();
 
 		glBindTextureUnit(slot, m_rendererID);
 
@@ -112,6 +122,7 @@ namespace Uge
 
 	void OpenGLTexture2D::UnBind(uint32_t slot) const
 	{
+		UG_PROFILE_FUNCTION();
 
 		glBindTextureUnit(slot, 0);
 	}

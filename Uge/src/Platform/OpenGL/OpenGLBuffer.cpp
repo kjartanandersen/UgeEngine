@@ -13,6 +13,7 @@ namespace Uge
 
 	OpenGLVertexBuffer::OpenGLVertexBuffer(float* vertices, uint32_t size)
 	{
+		UG_PROFILE_FUNCTION();
 
 		//glCreateBuffers(1, &m_rendererID);
 
@@ -25,6 +26,8 @@ namespace Uge
 
 	OpenGLVertexBuffer::~OpenGLVertexBuffer()
 	{
+		UG_PROFILE_FUNCTION();
+
 
 		glDeleteBuffers(1, &m_rendererID);
 
@@ -34,6 +37,8 @@ namespace Uge
 	void OpenGLVertexBuffer::Bind() const
 	{
 
+		UG_PROFILE_FUNCTION();
+
 		glBindBuffer(GL_ARRAY_BUFFER, m_rendererID);
 
 
@@ -41,6 +46,7 @@ namespace Uge
 
 	void OpenGLVertexBuffer::Unbind() const
 	{
+		UG_PROFILE_FUNCTION();
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -56,6 +62,7 @@ namespace Uge
 	OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t* indices, uint32_t count)
 		: m_count(count)
 	{
+		UG_PROFILE_FUNCTION();
 
 		glCreateBuffers(1, &m_rendererID);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_rendererID);
@@ -66,6 +73,7 @@ namespace Uge
 
 	OpenGLIndexBuffer::~OpenGLIndexBuffer()
 	{
+		UG_PROFILE_FUNCTION();
 
 		glDeleteBuffers(1, &m_rendererID);
 
@@ -74,7 +82,7 @@ namespace Uge
 
 	void OpenGLIndexBuffer::Bind() const
 	{
-
+		UG_PROFILE_FUNCTION();
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_rendererID);
 
@@ -82,7 +90,7 @@ namespace Uge
 
 	void OpenGLIndexBuffer::Unbind() const
 	{
-
+		UG_PROFILE_FUNCTION();
 
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

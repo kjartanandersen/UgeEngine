@@ -29,7 +29,7 @@ namespace Uge
 
 	void PerspectiveCameraController::OnUpdate(Timestep ts)
 	{
-
+		UG_PROFILE_FUNCTION();
 
 		glm::vec3 forward = m_qRotation * glm::vec3(0.0f, 0.0f, -1.0f);
 		glm::vec3 right = m_qRotation * glm::vec3(1.0f, 0.0f, 0.0f);
@@ -77,6 +77,7 @@ namespace Uge
 	}
 	void PerspectiveCameraController::OnEvent(Event& e)
 	{
+		UG_PROFILE_FUNCTION();
 
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<MouseScrolledEvent>(UG_BIND_EVENT_FN(PerspectiveCameraController::OnMouseScrolled));
@@ -90,7 +91,7 @@ namespace Uge
 	bool PerspectiveCameraController::OnMouseScrolled(MouseScrolledEvent& e)
 	{
 
-		
+		UG_PROFILE_FUNCTION();
 
 
 
@@ -98,6 +99,7 @@ namespace Uge
 	}
 	bool PerspectiveCameraController::OnWindowResized(WindowResizeEvent& e)
 	{
+		UG_PROFILE_FUNCTION();
 		
 		m_aspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
 

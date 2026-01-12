@@ -25,6 +25,8 @@ private:
 	Uge::Ref<Uge::VertexArray> m_squareVA;
 	Uge::Ref<Uge::Texture2D> m_texture;
 
+	ImFont* m_mainFont;
+
 	glm::vec4 m_square1Color = { 1.0f, 0.1f, 0.1f, 1.0f };
 	glm::vec4 m_square2Color = { 0.1f, 0.1f, 1.1f, 1.0f };
 

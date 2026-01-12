@@ -13,24 +13,29 @@ Sandbox3D::Sandbox3D()
 
 void Sandbox3D::OnAttach()
 {
+	UG_PROFILE_FUNCTION();
+
+	ImGuiIO& io = ImGui::GetIO();
 	m_texture = Uge::Texture2D::Create("assets/textures/Checkerboard.png");
+	m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\Uge\\assets\\fonts\\PlayfairDisplayBold-nRv8g.ttf", 32.5f);
+	IM_ASSERT(m_mainFont != NULL);
 
 }
 
 void Sandbox3D::OnDetach()
 {
+	UG_PROFILE_FUNCTION();
 }
 
 void Sandbox3D::OnUpdate(Uge::Timestep ts)
 {
 
 	UG_PROFILE_FUNCTION();
-	// Update
-	{
-		UG_PROFILE_SCOPE("CameraController::OnUpdate");
-		m_cameraController.OnUpdate(ts);
 
-	}
+	// Update	
+	m_cameraController.OnUpdate(ts);
+
+	
 
 
 	// Render
@@ -67,6 +72,8 @@ void Sandbox3D::OnEvent(Uge::Event& e)
 void Sandbox3D::OnImGuiRender()
 {
 	UG_PROFILE_FUNCTION();
+
+	ImGui::PushFont(m_mainFont);
 	ImGui::Begin("Settings");
 	{
 
@@ -79,7 +86,10 @@ void Sandbox3D::OnImGuiRender()
 		ImGui::ColorEdit4("Square Color", glm::value_ptr(m_square2Color));
 		ImGui::PopID();
 
+
+
 		ImGui::Text("Sandbox2D");
 	}
+	ImGui::PopFont();
 	ImGui::End();
 }

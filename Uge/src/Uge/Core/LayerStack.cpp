@@ -19,7 +19,11 @@ namespace Uge
 	{
 
 		for (Layer* layer : m_layers)
+		{
+			layer->OnDetach();
 			delete layer;
+
+		}
 
 
 	}
@@ -28,6 +32,7 @@ namespace Uge
 	{
 
 		m_layers.emplace(m_layers.begin() + m_layerInsertIndex, layer);
+		m_layerInsertIndex++;
 		
 
 
@@ -38,18 +43,20 @@ namespace Uge
 
 
 		m_layers.emplace_back(overlay);
-		m_layerInsertIndex++;
+		
 
 	}
 
-	void LayerStack::PopLayer(Layer* layer)
+	void LayerStack::PopLayer(Layer* layer)	
 	{
 
 
-		auto it = std::find(m_layers.begin(), m_layers.end(), layer);
-		if (it != m_layers.end())
+		auto it = std::find(
+			m_layers.begin(), m_layers.begin() + m_layerInsertIndex, layer);
+		
+		if (it != m_layers.begin() + m_layerInsertIndex)
 		{
-
+			layer->OnDetach();
 			m_layers.erase(it);
 			m_layerInsertIndex--;
 
@@ -62,7 +69,9 @@ namespace Uge
 	{
 
 
-		auto it = std::find(m_layers.begin(), m_layers.end(), overlay);
+		auto it = std::find(
+			m_layers.begin() + m_layerInsertIndex, m_layers.end(), overlay);
+		
 		if (it != m_layers.end())
 		{
 

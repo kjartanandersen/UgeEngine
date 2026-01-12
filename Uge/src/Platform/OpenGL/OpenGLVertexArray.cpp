@@ -31,6 +31,7 @@ namespace Uge
 
 	OpenGLVertexArray::OpenGLVertexArray()
 	{
+		UG_PROFILE_FUNCTION();
 
 		glCreateVertexArrays(1, &m_rendererID);
 
@@ -38,7 +39,7 @@ namespace Uge
 	}
 	OpenGLVertexArray::~OpenGLVertexArray()
 	{
-
+		UG_PROFILE_FUNCTION();
 
 		glDeleteVertexArrays(1, &m_rendererID);
 
@@ -47,7 +48,7 @@ namespace Uge
 	}
 	void OpenGLVertexArray::Bind() const
 	{
-
+		UG_PROFILE_FUNCTION();
 
 		glBindVertexArray(m_rendererID);
 
@@ -55,7 +56,7 @@ namespace Uge
 
 	void OpenGLVertexArray::Unbind() const
 	{
-
+		UG_PROFILE_FUNCTION();
 
 		glBindVertexArray(0);
 
@@ -64,6 +65,8 @@ namespace Uge
 
 	void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
 	{
+
+		UG_PROFILE_FUNCTION();
 
 		UG_CORE_ASSERT(vertexBuffer->GetLayout().GetElements().size(), "Vertex Buffer has no layout!");
 
@@ -99,6 +102,8 @@ namespace Uge
 
 	void OpenGLVertexArray::SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer)
 	{
+
+		UG_PROFILE_FUNCTION();
 
 		glBindVertexArray(m_rendererID);
 

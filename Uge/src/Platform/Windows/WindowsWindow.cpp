@@ -22,28 +22,31 @@ namespace Uge
 
 	}
 
-	Window* Window::Create(const WindowProps& props)
+	Scope<Window> Window::Create(const WindowProps& props)
 	{
 
-		return new WindowsWindow(props);
+		return CreateScope<WindowsWindow>(props);
 
 	}
 
 	WindowsWindow::WindowsWindow(const WindowProps& props)
 	{
 
+		UG_PROFILE_FUNCTION();
 		Init(props);
 
 	}
 
 	WindowsWindow::~WindowsWindow() 
 	{ 
+		UG_PROFILE_FUNCTION();
+
 		Shutdown();
 	}
 
 	void WindowsWindow::Init(const WindowProps& props)
 	{
-
+		UG_PROFILE_FUNCTION();
 		m_data.m_title = props.m_title;
 		m_data.m_width = props.m_width;
 		m_data.m_height = props.m_height;
@@ -57,19 +60,27 @@ namespace Uge
 		{
 
 			// TODO: GLFW Terminate on system shutdown
-			int success = glfwInit();
-			UG_CORE_ASSERT(success, "Could not initialize GLFW!");
+			{
+				UG_PROFILE_SCOPE("glfwInit - WindowsWindow::Init");
+				int success = glfwInit();
+				UG_CORE_ASSERT(success, "Could not initialize GLFW!");
+				glfwSetErrorCallback(GLFWErrorCallback);
 
-			glfwSetErrorCallback(GLFWErrorCallback);
 
+
+			}
 			s_glfwInitialized = true;
 
 		}
 
-		m_window = glfwCreateWindow((int)props.m_width, (int)props.m_height,
-			m_data.m_title.c_str(), nullptr, nullptr);
+		{
+			UG_PROFILE_SCOPE("glfwCreateWindow - WindowsWindow::Init");
+			m_window = glfwCreateWindow((int)props.m_width, (int)props.m_height,
+				m_data.m_title.c_str(), nullptr, nullptr);
 
-		m_context = new OpenGLContext(m_window);
+
+		}
+		m_context = CreateScope<OpenGLContext>(m_window);
 		m_context->Init();
 
 		
@@ -230,6 +241,8 @@ namespace Uge
 
 	void WindowsWindow::Shutdown()
 	{
+		UG_PROFILE_FUNCTION();
+
 		glfwDestroyWindow(m_window);
 
 
@@ -237,6 +250,7 @@ namespace Uge
 
 	void WindowsWindow::OnUpdate()
 	{
+		UG_PROFILE_FUNCTION();
 
 		glfwPollEvents();
 		m_context->SwapBuffers();
@@ -246,6 +260,7 @@ namespace Uge
 	void WindowsWindow::SetVSync(bool enabled)
 	{
 
+		UG_PROFILE_FUNCTION();
 
 		if (enabled)
 		{

@@ -10,6 +10,7 @@ namespace Uge
 
     void Camera::RecalculateViewMatrix()
     {
+        UG_PROFILE_FUNCTION();
 
         glm::mat4 transform;
 

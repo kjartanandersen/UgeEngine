@@ -12,7 +12,7 @@ namespace Uge
 
 	void Renderer::Init(bool is3D)
 	{
-
+		UG_PROFILE_FUNCTION();
 		RenderCommand::Init();
 
 		if (is3D)

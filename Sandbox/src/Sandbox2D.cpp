@@ -17,13 +17,12 @@ void Sandbox2D::OnUpdate(Uge::Timestep ts)
 {
 
 	UG_PROFILE_FUNCTION();
-	// Update
-	{
-		UG_PROFILE_SCOPE("CameraController::OnUpdate");
-		m_cameraController.OnUpdate(ts);
+
+	// Update	
+	m_cameraController.OnUpdate(ts);
 	
 	
-	}
+	
 
 
 
@@ -79,6 +78,7 @@ void Sandbox2D::OnEvent(Uge::Event& e)
 
 void Sandbox2D::OnAttach()
 {
+	UG_PROFILE_FUNCTION();
 
 	ImGuiIO& io = ImGui::GetIO();
 	m_texture = Uge::Texture2D::Create("assets/textures/Checkerboard.png");
@@ -94,7 +94,7 @@ void Sandbox2D::OnDetach()
 {
 
 
-
+	UG_PROFILE_FUNCTION();
 
 }
 

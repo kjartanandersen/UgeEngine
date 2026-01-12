@@ -4,6 +4,7 @@
 #include "Uge/Renderer/GraphicsContext.h"
 
 #include "GLFW/glfw3.h"
+#include <Uge/Core/Core.h>
 
 
 namespace Uge
@@ -39,7 +40,7 @@ namespace Uge
 
 	private:
 		GLFWwindow* m_window;
-		GraphicsContext* m_context;
+		Scope<GraphicsContext> m_context;
 
 		struct WindowData
 		{

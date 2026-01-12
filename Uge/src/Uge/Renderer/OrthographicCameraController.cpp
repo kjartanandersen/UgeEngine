@@ -19,6 +19,7 @@ namespace Uge
 
 	void OrthographicCameraController::OnUpdate(Timestep ts)
 	{
+		UG_PROFILE_FUNCTION();
 
 		// Camera Position
 		if (Input::IsKeyPressed(UG_KEY_A))
@@ -64,6 +65,7 @@ namespace Uge
 	}
 	void OrthographicCameraController::OnEvent(Event& e)
 	{
+		UG_PROFILE_FUNCTION();
 
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<MouseScrolledEvent>(UG_BIND_EVENT_FN(OrthographicCameraController::OnMouseScrolled));
@@ -76,6 +78,7 @@ namespace Uge
 
 	bool OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent& e)
 	{
+		UG_PROFILE_FUNCTION();
 
 		m_zoomLevel -= e.GetYOffset() * 0.2f;
 		m_zoomLevel = std::clamp(m_zoomLevel, 0.1f, 5.0f);
@@ -88,6 +91,7 @@ namespace Uge
 	}
 	bool OrthographicCameraController::OnWindowResized(WindowResizeEvent& e)
 	{
+		UG_PROFILE_FUNCTION();
 
 		m_aspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
 		m_camera.SetProjection(-m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel,

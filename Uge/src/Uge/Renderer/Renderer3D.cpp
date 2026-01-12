@@ -23,7 +23,7 @@ namespace Uge
 
 	void Uge::Renderer3D::Init()
 	{
-
+		UG_PROFILE_FUNCTION();
 
 		m_data = new Renderer3DStorage();
 		m_data->m_squareVA = VertexArray::Create();
@@ -111,11 +111,15 @@ namespace Uge
 
 	void Renderer3D::Shutdown()
 	{
+		UG_PROFILE_FUNCTION();
+
 		delete m_data;
 	}
 
 	void Renderer3D::BeginScene(const PerspectiveCamera& camera)
 	{
+		UG_PROFILE_FUNCTION();
+
 		m_data->m_textureShader->Bind();
 		m_data->m_textureShader->SetMat4(
 			"u_ViewProjection", camera.GetViewProjectionMatrix());
@@ -123,10 +127,12 @@ namespace Uge
 
 	void Renderer3D::EndScene()
 	{
+		UG_PROFILE_FUNCTION();
 	}
 
 	void Renderer3D::DrawCube(const glm::vec3& position, float rotation, const glm::vec3& size, const glm::vec4& color)
 	{
+		UG_PROFILE_FUNCTION();
 
 		m_data->m_textureShader->SetFloat4(
 			"u_Color", color);

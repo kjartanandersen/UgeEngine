@@ -19,6 +19,8 @@ namespace Uge
 
     void PerspectiveCamera::SetProjection(float fovYRadians, float aspect, float nearClip, float farClip)
     {
+        UG_PROFILE_FUNCTION();
+
         m_fovY = fovYRadians;
         m_aspect = aspect;
         m_nearClip = nearClip;

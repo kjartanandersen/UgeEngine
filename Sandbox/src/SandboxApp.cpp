@@ -11,7 +11,7 @@ class Sandbox : public Uge::Application
 {
 public:
 	Sandbox()
-		: Application(true)
+		: Application(false)
 	{
 		if (m_is3D)
 			PushLayer( new Sandbox3D());
