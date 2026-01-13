@@ -11,6 +11,28 @@ namespace Uge
 
 
 
+	Ref<VertexBuffer> VertexBuffer::Create(uint32_t size)
+	{
+		
+
+		switch (Renderer::GetAPI())
+		{
+
+		case RendererAPI::API::None:
+			UG_CORE_ASSERT(false, "Renderer API \"None\" not supported!");
+			return nullptr;
+			break;
+		case RendererAPI::API::OpenGL:
+
+			return std::make_shared<OpenGLVertexBuffer>(size);
+
+			break;
+
+		}
+
+
+	}
+
 	Ref<VertexBuffer> VertexBuffer::Create(float* vertices, uint32_t size)
 	{
 
@@ -35,7 +57,7 @@ namespace Uge
 		return nullptr;
 	}
 
-	Ref<IndexBuffer> IndexBuffer::Create(uint32_t* indices, uint32_t size)
+	Ref<IndexBuffer> IndexBuffer::Create(uint32_t* indices, uint32_t count)
 	{
 
 		switch (Renderer::GetAPI())
@@ -47,7 +69,7 @@ namespace Uge
 			break;
 		case RendererAPI::API::OpenGL:
 
-			return std::make_shared<OpenGLIndexBuffer>(indices, size);
+			return std::make_shared<OpenGLIndexBuffer>(indices, count);
 
 			break;
 

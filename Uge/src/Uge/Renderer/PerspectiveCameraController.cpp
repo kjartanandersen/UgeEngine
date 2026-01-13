@@ -14,7 +14,9 @@ namespace Uge
 
 
 	PerspectiveCameraController::PerspectiveCameraController(float fovYRadians, float aspectRatio, bool rotation, float nearClip, float farClip)
-		: m_fovY(fovYRadians), m_aspectRatio(aspectRatio), m_rotation(rotation), m_nearClip(nearClip), m_farClip(farClip),  m_camera(fovYRadians, aspectRatio, nearClip, farClip)
+		: m_fovY(glm::radians(fovYRadians)), m_aspectRatio(aspectRatio), m_rotation(rotation), 
+		m_nearClip(nearClip), m_farClip(farClip),  
+		m_camera(fovYRadians, aspectRatio, nearClip, farClip)
 	{
 
 		Application& app = Application::Get();
@@ -44,10 +46,10 @@ namespace Uge
 
 		// Camera Position
 		if (Input::IsKeyPressed(UG_KEY_A))
-			velocity += right * m_cameraTranslationSpeed * ts.GetMilliseconds();
+			velocity -= right * m_cameraTranslationSpeed * ts.GetMilliseconds();
 
 		else if (Input::IsKeyPressed(UG_KEY_D))
-			velocity -= right * m_cameraTranslationSpeed * ts.GetMilliseconds();
+			velocity += right * m_cameraTranslationSpeed * ts.GetMilliseconds();
 
 		if (Input::IsKeyPressed(UG_KEY_W))
 			velocity += forward * m_cameraTranslationSpeed * ts.GetMilliseconds();
@@ -56,18 +58,19 @@ namespace Uge
 			velocity -= forward * m_cameraTranslationSpeed * ts.GetMilliseconds();
 		
 		auto [x, y] = Input::GetMousePos();
-		m_mouseXDelta = x - m_mouseXPrevPos;
-		m_mouseYDelta = y - m_mouseYPrevPos;
+		m_mouseXDelta = m_mouseXPrevPos - x;
+		m_mouseYDelta = m_mouseYPrevPos - y;
 
 		m_mouseXPrevPos = x;
 		m_mouseYPrevPos = y;
 
 		if (Input::IsMouseButtonPressed(UG_MOUSE_BUTTON_RIGHT))
 		{
+			
 			if (m_rotation)
 			{
-				float yaw = (m_mouseXDelta / 100.0f) * m_cameraRotationSpeed * ts.GetMilliseconds();
-				float pitch = (m_mouseYDelta / 100.0f) * m_cameraRotationSpeed * ts.GetMilliseconds();
+				float yaw = (m_mouseXDelta / 1000.0f) * m_cameraRotationSpeed * ts.GetMilliseconds() ;
+				float pitch = (m_mouseYDelta / 1000.0f) * m_cameraRotationSpeed * ts.GetMilliseconds();
 
 				glm::quat qYaw = glm::angleAxis(yaw, glm::vec3(0.0f, 1.0f, 0.0f));
 				m_qRotation = glm::normalize(qYaw * m_qRotation);

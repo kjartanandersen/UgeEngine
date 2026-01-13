@@ -11,62 +11,83 @@
 namespace Uge
 {
 
-	struct Renderer2DStorage
+	struct QuadVertex
 	{
-		Ref<VertexArray> m_squareVA;
-		Ref<Shader> m_textureShader;
-		Ref<Texture2D> m_whiteTexture;
+		glm::vec3 Position;
+		glm::vec4 Color;
+		glm::vec2 TexCoord;
+	};
+
+	struct Renderer2DData
+	{
+		const uint32_t MaxQuads = 10000;
+		const uint32_t MaxVertices = MaxQuads * 4;
+		const uint32_t MaxIndices = MaxQuads * 6;
+
+
+		Ref<VertexArray> QuadVA;
+		Ref<VertexBuffer> QuadVB;
+		Ref<Shader> TextureShader;
+		Ref<Texture2D> WhiteTexture;
+
+		uint32_t QuadIndexCount = 0;
+		QuadVertex* QuadVertexBufferBase = nullptr;
+		QuadVertex* QuadVertexBufferPtr = nullptr;
 
 
 	};
 
-	static Renderer2DStorage* m_data;
+	static Renderer2DData m_data;
+
+
 
 
 	void Renderer2D::Init()
 	{
 		UG_PROFILE_FUNCTION();
-		m_data = new Renderer2DStorage();
-		m_data->m_squareVA = VertexArray::Create();
+		m_data.QuadVA = VertexArray::Create();
 
-		float squareVertices[5 * 4] =
-		{
-			/* Vertices */		 /* Texture Coordinates */
-		   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f,
-			0.5f, -0.5f, 0.0f,	 1.0f, 0.0f,
-			0.5f,  0.5f, 0.0f,	 1.0f, 1.0f,
-		   -0.5f,  0.5f, 0.0f,	 0.0f, 1.0f
-		};
-
-
-		Ref<VertexBuffer> squareVB;
-		squareVB = VertexBuffer::Create(squareVertices, sizeof(squareVertices));
-
+		m_data.QuadVB = VertexBuffer::Create(m_data.MaxVertices * sizeof(QuadVertex));
 		BufferLayout squareVBlayout =
 		{
 			{ ShaderDataType::Float3, "a_Position"},
+			{ ShaderDataType::Float4, "a_Color"},
 			{ ShaderDataType::Float2, "a_TextCoord"}
 		};
+		m_data.QuadVB->SetLayout(squareVBlayout);
+		m_data.QuadVA->AddVertexBuffer(m_data.QuadVB);
 
-		squareVB->SetLayout(squareVBlayout);
-		m_data->m_squareVA->AddVertexBuffer(squareVB);
+		m_data.QuadVertexBufferBase = new QuadVertex[m_data.MaxVertices];
 
-		uint32_t squareIndices[6] = { 0, 1, 2, 2, 3, 0 };
 
-		Ref<IndexBuffer> squareIB;
+		uint32_t* quadIndices = new uint32_t[m_data.MaxIndices];
+		uint32_t offset = 0;
+		for (int i = 0; i < m_data.MaxIndices; i += 6)
+		{
 
-		squareIB = IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
+			quadIndices[i + 0] = offset + 0;
+			quadIndices[i + 1] = offset + 1;
+			quadIndices[i + 2] = offset + 2;
 
-		m_data->m_squareVA->SetIndexBuffer(squareIB);
+			quadIndices[i + 3] = offset + 2;
+			quadIndices[i + 4] = offset + 3;
+			quadIndices[i + 5] = offset + 0;
 
-		m_data->m_whiteTexture = Texture2D::Create(1, 1);
+			offset += 4;
+
+		}
+		Ref<IndexBuffer> squareIB = IndexBuffer::Create(quadIndices, m_data.MaxIndices);
+		m_data.QuadVA->SetIndexBuffer(squareIB);
+		delete[] quadIndices;
+
+		m_data.WhiteTexture = Texture2D::Create(1, 1);
 		uint32_t whiteTextureData = 0xffffffff;
-		m_data->m_whiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
+		m_data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 
 
-		m_data->m_textureShader = Shader::Create("assets/shaders/Texture.glsl");
-		m_data->m_textureShader->Bind();
-		m_data->m_textureShader->SetInt("u_Texture", 0);
+		m_data.TextureShader = Shader::Create("assets/shaders/Texture.glsl");
+		m_data.TextureShader->Bind();
+		m_data.TextureShader->SetInt("u_Texture", 0);
 
 
 
@@ -76,7 +97,7 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		delete m_data;
+		
 
 	}
 
@@ -84,9 +105,12 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		m_data->m_textureShader->Bind();
-		m_data->m_textureShader->SetMat4(
+		m_data.TextureShader->Bind();
+		m_data.TextureShader->SetMat4(
 			"u_ViewProjection", camera.GetViewProjectionMatrix());
+
+		m_data.QuadVertexBufferPtr = m_data.QuadVertexBufferBase;
+		m_data.QuadIndexCount = 0;
 		
 
 
@@ -95,6 +119,20 @@ namespace Uge
 	void Renderer2D::EndScene()
 	{
 		UG_PROFILE_FUNCTION();
+
+		uint32_t dataSize = (uint8_t*)m_data.QuadVertexBufferPtr - (uint8_t*)m_data.QuadVertexBufferBase;
+		m_data.QuadVB->SetData(m_data.QuadVertexBufferBase, dataSize);
+
+		Flush();
+
+	}
+
+	void Renderer2D::Flush()
+	{
+
+		RenderCommand::DrawIndexed(m_data.QuadVA, m_data.QuadIndexCount);
+
+
 	}
 
 	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
@@ -108,21 +146,41 @@ namespace Uge
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
 	{
 		UG_PROFILE_FUNCTION();
-		
-		m_data->m_textureShader->SetFloat4(
-			"u_Color", color);
 
-		m_data->m_whiteTexture->Bind();
+		m_data.QuadVertexBufferPtr->Position = position;
+		m_data.QuadVertexBufferPtr->Color = color;
+		m_data.QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+		m_data.QuadVertexBufferPtr++;
 
+		m_data.QuadVertexBufferPtr->Position = { position.x + size.x, position.y, 0.0f };
+		m_data.QuadVertexBufferPtr->Color = color;
+		m_data.QuadVertexBufferPtr->TexCoord = { 1.0f, 0.0f };
+		m_data.QuadVertexBufferPtr++;
+
+		m_data.QuadVertexBufferPtr->Position = { position.x + size.x, position.y + size.y, 0.0f };
+		m_data.QuadVertexBufferPtr->Color = color;
+		m_data.QuadVertexBufferPtr->TexCoord = { 1.0f, 1.0f };
+		m_data.QuadVertexBufferPtr++;
+
+		m_data.QuadVertexBufferPtr->Position = { position.x, position.y + size.y, 0.0f };
+		m_data.QuadVertexBufferPtr->Color = color;
+		m_data.QuadVertexBufferPtr->TexCoord = { 0.0f, 1.0f };
+		m_data.QuadVertexBufferPtr++;
+
+		m_data.QuadIndexCount += 6;
+
+		/*
+		m_data.TextureShader->SetFloat("u_TilingFactor", 1.0f);
+		m_data.WhiteTexture->Bind();
 		glm::mat4 transform = 
 			glm::translate(glm::mat4(1.0f), position) *
 			glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-		m_data->m_textureShader->SetMat4("u_ModelMatrix", transform);
-		
+		m_data.TextureShader->SetMat4("u_ModelMatrix", transform);
+		m_data.SquareVA->Bind();
+		RenderCommand::DrawIndexed(m_data.SquareVA);
+		*/
 
-		m_data->m_squareVA->Bind();
-		RenderCommand::DrawIndexed(m_data->m_squareVA);
 
 
 	}
@@ -138,8 +196,8 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		m_data->m_textureShader->SetFloat4("u_Color", tintColor);
-		m_data->m_textureShader->SetFloat("u_TilingFactor", tilingFactor);
+		m_data.TextureShader->SetFloat4("u_Color", tintColor);
+		m_data.TextureShader->SetFloat("u_TilingFactor", tilingFactor);
 		texture->Bind();
 
 		
@@ -148,12 +206,12 @@ namespace Uge
 			glm::translate(glm::mat4(1.0f), position) *
 			glm::scale(glm::mat4(1.0f), { size.x, size.y, 0.1f });
 
-		m_data->m_textureShader->SetMat4("u_ModelMatrix", transform);
+		m_data.TextureShader->SetMat4("u_ModelMatrix", transform);
 
 		
 
-		m_data->m_squareVA->Bind();
-		RenderCommand::DrawIndexed(m_data->m_squareVA);
+		m_data.QuadVA->Bind();
+		RenderCommand::DrawIndexed(m_data.QuadVA);
 		texture->UnBind();
 
 
@@ -169,21 +227,21 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
-		m_data->m_textureShader->SetFloat4(
+		m_data.TextureShader->SetFloat4(
 			"u_Color", color);
 
-		m_data->m_whiteTexture->Bind();
+		m_data.WhiteTexture->Bind();
 
 		glm::mat4 transform =
 			glm::translate(glm::mat4(1.0f), position) *
 			glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0, 0, 1) ) *
 			glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-		m_data->m_textureShader->SetMat4("u_ModelMatrix", transform);
+		m_data.TextureShader->SetMat4("u_ModelMatrix", transform);
 
 
-		m_data->m_squareVA->Bind();
-		RenderCommand::DrawIndexed(m_data->m_squareVA);
+		m_data.QuadVA->Bind();
+		RenderCommand::DrawIndexed(m_data.QuadVA);
 
 	}
 
@@ -197,8 +255,8 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
-		m_data->m_textureShader->SetFloat4("u_Color", tintColor);
-		m_data->m_textureShader->SetFloat("u_TilingFactor", tilingFactor);
+		m_data.TextureShader->SetFloat4("u_Color", tintColor);
+		m_data.TextureShader->SetFloat("u_TilingFactor", tilingFactor);
 		texture->Bind();
 
 
@@ -208,12 +266,12 @@ namespace Uge
 			glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0, 0, 1)) *
 			glm::scale(glm::mat4(1.0f), { size.x, size.y, 0.1f });
 
-		m_data->m_textureShader->SetMat4("u_ModelMatrix", transform);
+		m_data.TextureShader->SetMat4("u_ModelMatrix", transform);
 
 
 
-		m_data->m_squareVA->Bind();
-		RenderCommand::DrawIndexed(m_data->m_squareVA);
+		m_data.QuadVA->Bind();
+		RenderCommand::DrawIndexed(m_data.QuadVA);
 		texture->UnBind();
 
 	}

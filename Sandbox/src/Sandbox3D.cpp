@@ -7,7 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 Sandbox3D::Sandbox3D()
-	: Layer("Sandbox2D"), m_cameraController(75.0f,1280.0f / 720.0f, true)
+	: Layer("Sandbox2D"), m_cameraController(90.0f,1280.0f / 720.0f, true)
 {
 }
 

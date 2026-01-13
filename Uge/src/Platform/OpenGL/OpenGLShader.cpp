@@ -326,7 +326,7 @@ namespace Uge
 
 	}
 
-	void OpenGLShader::UploadUniformMat3(const std::string& name, const glm::mat4& matrix)
+	void OpenGLShader::UploadUniformMat3(const std::string& name, const glm::mat3& matrix)
 	{
 
 		GLint location = GetUniformLocation(name);

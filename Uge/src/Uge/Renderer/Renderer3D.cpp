@@ -9,24 +9,41 @@ namespace Uge
 {
 
 
-	struct Renderer3DStorage
+	struct QuadVertex
 	{
-		Ref<VertexArray> m_squareVA;
-		Ref<Shader> m_textureShader;
-		Ref<Texture2D> m_whiteTexture;
+		glm::vec3 Position;
+		glm::vec4 Color;
+		glm::vec2 TexCoord;
+	};
+
+	struct Renderer3DData
+	{
+		const uint32_t MaxQuads = 10000;
+		const uint32_t MaxVertices = MaxQuads * 4;
+		const uint32_t MaxIndices = MaxQuads * 6;
+
+
+		Ref<VertexArray> QuadVA;
+		Ref<VertexBuffer> QuadVB;
+		Ref<Shader> TextureShader;
+		Ref<Texture2D> WhiteTexture;
+
+		uint32_t QuadIndexCount = 0;
+		QuadVertex* QuadVertexBufferBase = nullptr;
+		QuadVertex* QuadVertexBufferPtr = nullptr;
 
 
 	};
 
-	static Renderer3DStorage* m_data;
+	static Renderer3DData m_data;
 
 
 	void Uge::Renderer3D::Init()
 	{
 		UG_PROFILE_FUNCTION();
 
-		m_data = new Renderer3DStorage();
-		m_data->m_squareVA = VertexArray::Create();
+		
+		m_data.QuadVA = VertexArray::Create();
 
 		float CubeVertices[] =
 {
@@ -79,7 +96,7 @@ namespace Uge
 		};
 
 		squareVB->SetLayout(squareVBlayout);
-		m_data->m_squareVA->AddVertexBuffer(squareVB);
+		m_data.QuadVA->AddVertexBuffer(squareVB);
 
 		uint32_t CubeIndices[] =
 		{
@@ -95,16 +112,16 @@ namespace Uge
 
 		squareIB = IndexBuffer::Create(CubeIndices, sizeof(CubeIndices) / sizeof(uint32_t));
 
-		m_data->m_squareVA->SetIndexBuffer(squareIB);
+		m_data.QuadVA->SetIndexBuffer(squareIB);
 
-		m_data->m_whiteTexture = Texture2D::Create(1, 1);
+		m_data.WhiteTexture = Texture2D::Create(1, 1);
 		uint32_t whiteTextureData = 0xffffffff;
-		m_data->m_whiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
+		m_data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 
 
-		m_data->m_textureShader = Shader::Create("assets/shaders/Texture.glsl");
-		m_data->m_textureShader->Bind();
-		m_data->m_textureShader->SetInt("u_Texture", 0);
+		m_data.TextureShader = Shader::Create("assets/shaders/Texture.glsl");
+		m_data.TextureShader->Bind();
+		m_data.TextureShader->SetInt("u_Texture", 0);
 
 
 	}
@@ -113,15 +130,14 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		delete m_data;
 	}
 
 	void Renderer3D::BeginScene(const PerspectiveCamera& camera)
 	{
 		UG_PROFILE_FUNCTION();
 
-		m_data->m_textureShader->Bind();
-		m_data->m_textureShader->SetMat4(
+		m_data.TextureShader->Bind();
+		m_data.TextureShader->SetMat4(
 			"u_ViewProjection", camera.GetViewProjectionMatrix());
 	}
 
@@ -134,21 +150,21 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		m_data->m_textureShader->SetFloat4(
+		m_data.TextureShader->SetFloat4(
 			"u_Color", color);
 
-		m_data->m_whiteTexture->Bind();
+		m_data.WhiteTexture->Bind();
 
 		glm::mat4 transform =
 			glm::translate(glm::mat4(1.0f), position) *
 			glm::rotate(glm::mat4(1.0f), glm::radians(rotation), { 0.0f, 0.0f, 1.0f }) *
 			glm::scale(glm::mat4(1.0f), { size.x, size.y, size.z });
 
-		m_data->m_textureShader->SetMat4("u_ModelMatrix", transform);
+		m_data.TextureShader->SetMat4("u_ModelMatrix", transform);
 
 
-		m_data->m_squareVA->Bind();
-		RenderCommand::DrawIndexed(m_data->m_squareVA);
+		m_data.QuadVA->Bind();
+		RenderCommand::DrawIndexed(m_data.QuadVA);
 
 	}
 
@@ -157,8 +173,8 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
-		m_data->m_textureShader->SetFloat4("u_Color", tintColor);
-		m_data->m_textureShader->SetFloat("u_TilingFactor", tilingFactor);
+		m_data.TextureShader->SetFloat4("u_Color", tintColor);
+		m_data.TextureShader->SetFloat("u_TilingFactor", tilingFactor);
 		texture->Bind();
 
 
@@ -168,12 +184,12 @@ namespace Uge
 			glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0, 0, 1)) *
 			glm::scale(glm::mat4(1.0f), { size.x, size.y, size.z });
 
-		m_data->m_textureShader->SetMat4("u_ModelMatrix", transform);
+		m_data.TextureShader->SetMat4("u_ModelMatrix", transform);
 
 
 
-		m_data->m_squareVA->Bind();
-		RenderCommand::DrawIndexed(m_data->m_squareVA);
+		m_data.QuadVA->Bind();
+		RenderCommand::DrawIndexed(m_data.QuadVA);
 		texture->UnBind();
 
 
