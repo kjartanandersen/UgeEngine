@@ -142,7 +142,7 @@ namespace Uge
 		glm::mat4 transform =
 			glm::translate(glm::mat4(1.0f), position) *
 			glm::rotate(glm::mat4(1.0f), glm::radians(rotation), { 0.0f, 0.0f, 1.0f }) *
-			glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
+			glm::scale(glm::mat4(1.0f), { size.x, size.y, size.z });
 
 		m_data->m_textureShader->SetMat4("u_ModelMatrix", transform);
 
@@ -151,5 +151,34 @@ namespace Uge
 		RenderCommand::DrawIndexed(m_data->m_squareVA);
 
 	}
+
+	void Renderer3D::DrawCube(const glm::vec3& position, float rotation, const glm::vec3& size, Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	{
+
+		UG_PROFILE_FUNCTION();
+
+		m_data->m_textureShader->SetFloat4("u_Color", tintColor);
+		m_data->m_textureShader->SetFloat("u_TilingFactor", tilingFactor);
+		texture->Bind();
+
+
+
+		glm::mat4 transform =
+			glm::translate(glm::mat4(1.0f), position) *
+			glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0, 0, 1)) *
+			glm::scale(glm::mat4(1.0f), { size.x, size.y, size.z });
+
+		m_data->m_textureShader->SetMat4("u_ModelMatrix", transform);
+
+
+
+		m_data->m_squareVA->Bind();
+		RenderCommand::DrawIndexed(m_data->m_squareVA);
+		texture->UnBind();
+
+
+	}
+
+
 
 }

@@ -50,8 +50,8 @@ void Sandbox3D::OnUpdate(Uge::Timestep ts)
 	{
 		UG_PROFILE_SCOPE("Render Draw");
 		// Flat color
-		Uge::Renderer3D::DrawCube({ 1.0f, 0.0f, 0.0f }, 90.0f, { 1.0f, 1.0f, 1.0f },
-			m_square1Color);
+		Uge::Renderer3D::DrawCube({ 1.0f, 0.0f, 0.0f }, 45.0f, { 1.0f, 1.0f, 1.0f },
+			m_texture, 1.0f, {1.0f, 0.9f, 0.9f, 1.0f});
 
 	
 

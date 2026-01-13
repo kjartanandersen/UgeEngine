@@ -19,6 +19,7 @@ namespace Uge
 
 		// Primitives
 		static void DrawCube(const glm::vec3& position, float rotation, const glm::vec3& size, const glm::vec4& color);
+		static void DrawCube(const glm::vec3& position, float rotation, const glm::vec3& size, Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor = glm::vec4(1.0f));
 
 
 

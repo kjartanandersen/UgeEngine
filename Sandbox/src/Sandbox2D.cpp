@@ -42,14 +42,14 @@ void Sandbox2D::OnUpdate(Uge::Timestep ts)
 			UG_PROFILE_SCOPE("Renderer Draw");
 
 			// Flat color
-			Uge::Renderer2D::DrawQuad({ 1.0f, 0.0f, 0.0f }, 90.0f, { 0.3f, 0.3f },
+			Uge::Renderer2D::DrawRotatedQuad({ 1.0f, 0.0f, 0.0f }, 90.0f, { 0.3f, 0.3f },
 				m_square1Color);
 
-			Uge::Renderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, 90.0f, { 0.3f, 0.3f },
+			Uge::Renderer2D::DrawRotatedQuad({ -1.0f, 0.0f, 0.0f }, 90.0f, { 0.3f, 0.3f },
 				m_square2Color);
 			// Texture
-			Uge::Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, 90.0f, { 10.0f, 10.0f },
-				m_texture);
+			Uge::Renderer2D::DrawRotatedQuad({ 0.0f, 0.0f, -0.1f },45.0f, { 10.0f, 10.0f },
+				m_texture, 1.0f, {1.0f, 0.9f, 0.9f, 1.0f});
 
 
 

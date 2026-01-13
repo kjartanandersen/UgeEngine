@@ -28,10 +28,11 @@ layout(location = 0) out vec4 fragColor;
 in vec2 v_TextCoord;
 
 uniform vec4 u_Color;
+uniform float u_TilingFactor;
 uniform sampler2D u_Texture;
 			
 void main()
 {
 	// TODO: Add variables so that for instance "texture(u_Texture, v_TextCoord * 1.0) * vec4(color)" could work
-	fragColor = texture(u_Texture, v_TextCoord * 10.0) * u_Color;
+	fragColor = texture(u_Texture, v_TextCoord * u_TilingFactor) * u_Color;
 }

@@ -25,6 +25,11 @@ namespace Uge
 		m_width = window.GetWidth();
 		m_height = window.GetHeight();
 
+		auto [x, y] = Input::GetMousePos();
+		m_mouseXPrevPos = x;
+		m_mouseYPrevPos = y;
+		
+
 	}
 
 	void PerspectiveCameraController::OnUpdate(Timestep ts)
@@ -50,11 +55,27 @@ namespace Uge
 		else if (Input::IsKeyPressed(UG_KEY_S))
 			velocity -= forward * m_cameraTranslationSpeed * ts.GetMilliseconds();
 		
+		auto [x, y] = Input::GetMousePos();
+		m_mouseXDelta = x - m_mouseXPrevPos;
+		m_mouseYDelta = y - m_mouseYPrevPos;
+
+		m_mouseXPrevPos = x;
+		m_mouseYPrevPos = y;
 
 		if (Input::IsMouseButtonPressed(UG_MOUSE_BUTTON_RIGHT))
 		{
 			if (m_rotation)
 			{
+				float yaw = (m_mouseXDelta / 100.0f) * m_cameraRotationSpeed * ts.GetMilliseconds();
+				float pitch = (m_mouseYDelta / 100.0f) * m_cameraRotationSpeed * ts.GetMilliseconds();
+
+				glm::quat qYaw = glm::angleAxis(yaw, glm::vec3(0.0f, 1.0f, 0.0f));
+				m_qRotation = glm::normalize(qYaw * m_qRotation);
+
+				glm::vec3 rightAxis = m_qRotation * glm::vec3(1.0f, 0.0f, 0.0f);
+				glm::quat qPitch = glm::angleAxis(pitch, glm::normalize(rightAxis));
+				m_qRotation = glm::normalize(qPitch * m_qRotation);
+
 				// Camera Rotation
 				//if (Input::IsKeyPressed(UG_KEY_Q))
 
