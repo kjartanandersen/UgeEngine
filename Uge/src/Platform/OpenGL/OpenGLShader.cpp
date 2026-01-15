@@ -245,6 +245,16 @@ namespace Uge
 
 	}
 
+	void OpenGLShader::SetIntArray(const std::string name, int* values, int count)
+	{
+
+
+		UG_PROFILE_FUNCTION();
+
+		UploadUniformIntArray(name, values, count);
+
+	}
+
 	void OpenGLShader::SetFloat(const std::string name, float value)
 	{
 
@@ -288,6 +298,14 @@ namespace Uge
 
 		GLint location = GetUniformLocation(name);
 		glUniform1i(location, value);
+
+
+	}
+
+	void OpenGLShader::UploadUniformIntArray(const std::string& name, int* values, int count)
+	{
+		GLint location = GetUniformLocation(name);
+		glUniform1iv(location, count, values);
 
 
 	}
