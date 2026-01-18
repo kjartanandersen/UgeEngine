@@ -27,6 +27,7 @@ namespace Uge
 		Ref<VertexBuffer> QuadVB;
 		Ref<Shader> TextureShader;
 		Ref<Texture2D> WhiteTexture;
+		Ref<Texture2D> CheckerboardTexture;
 
 		uint32_t QuadIndexCount = 0;
 		QuadVertex* QuadVertexBufferBase = nullptr;
@@ -45,45 +46,44 @@ namespace Uge
 		
 		m_data.QuadVA = VertexArray::Create();
 
-		float CubeVertices[] =
-{
-	/* Vertices */				/* Texture Coordinates */
-    // ---------- Front (+Z)
-    -0.5f, -0.5f,  0.5f,		0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,		1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,		1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,		0.0f, 1.0f,
+		 float CubeVertices[] =
+		{
+			// ---------- Front (+Z)
+			-1.f, -1.f,  1.f,   0.f, 0.f,
+			 1.f, -1.f,  1.f,   1.f, 0.f,
+			 1.f,  1.f,  1.f,   1.f, 1.f,
+			-1.f,  1.f,  1.f,   0.f, 1.f,
 
-    // ---------- Back (−Z)
-     0.5f, -0.5f, -0.5f,		0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,		1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,		1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,		0.0f, 1.0f,
+			// ---------- Back (−Z)
+			 1.f, -1.f, -1.f,   0.f, 0.f,
+			-1.f, -1.f, -1.f,   1.f, 0.f,
+			-1.f,  1.f, -1.f,   1.f, 1.f,
+			 1.f,  1.f, -1.f,   0.f, 1.f,
 
-    // ---------- Left (−X)
-    -0.5f, -0.5f, -0.5f,		0.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,		1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,		1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,		0.0f, 1.0f,
+			 // ---------- Left (−X)
+			 -1.f, -1.f, -1.f,   0.f, 0.f,
+			 -1.f, -1.f,  1.f,   1.f, 0.f,
+			 -1.f,  1.f,  1.f,   1.f, 1.f,
+			 -1.f,  1.f, -1.f,   0.f, 1.f,
 
-    // ---------- Right (+X)
-     0.5f, -0.5f,  0.5f,		0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,		1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,		1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,		0.0f, 1.0f,
+			 // ---------- Right (+X)
+			  1.f, -1.f,  1.f,   0.f, 0.f,
+			  1.f, -1.f, -1.f,   1.f, 0.f,
+			  1.f,  1.f, -1.f,   1.f, 1.f,
+			  1.f,  1.f,  1.f,   0.f, 1.f,
 
-    // ---------- Top (+Y)
-    -0.5f,  0.5f,  0.5f,		0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,		1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,		1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,		0.0f, 1.0f,
+			  // ---------- Top (+Y)
+			  -1.f,  1.f,  1.f,   0.f, 0.f,
+			   1.f,  1.f,  1.f,   1.f, 0.f,
+			   1.f,  1.f, -1.f,   1.f, 1.f,
+			  -1.f,  1.f, -1.f,   0.f, 1.f,
 
-    // ---------- Bottom(−Y)
-    -0.5f, -0.5f, -0.5f,		0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,		1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,		1.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,		0.0f, 1.0f,
-};
+			  // ---------- Bottom (−Y)
+			  -1.f, -1.f, -1.f,   0.f, 0.f,
+			   1.f, -1.f, -1.f,   1.f, 0.f,
+			   1.f, -1.f,  1.f,   1.f, 1.f,
+			  -1.f, -1.f,  1.f,   0.f, 1.f,
+		};
 
 
 		Ref<VertexBuffer> squareVB;
@@ -118,10 +118,13 @@ namespace Uge
 		uint32_t whiteTextureData = 0xffffffff;
 		m_data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 
+		
+		m_data.CheckerboardTexture = Texture2D::Create("C:\\Programming\\c++\\GameEngines\\Uge\\Sandbox\\assets\\textures\\Checkerboard.png");
 
-		m_data.TextureShader = Shader::Create("assets/shaders/Texture.glsl");
+
+		m_data.TextureShader = Shader::Create("assets/shaders/FlatTexture3D.glsl");
 		m_data.TextureShader->Bind();
-		m_data.TextureShader->SetInt("u_Texture", 0);
+		//m_data.TextureShader->SetInt("u_Texture", 0);
 
 
 	}
@@ -153,7 +156,7 @@ namespace Uge
 		m_data.TextureShader->SetFloat4(
 			"u_Color", color);
 
-		m_data.WhiteTexture->Bind();
+		m_data.CheckerboardTexture->Bind();
 
 		glm::mat4 transform =
 			glm::translate(glm::mat4(1.0f), position) *
@@ -172,6 +175,8 @@ namespace Uge
 	{
 
 		UG_PROFILE_FUNCTION();
+
+		m_data.CheckerboardTexture->Bind();
 
 		m_data.TextureShader->SetFloat4("u_Color", tintColor);
 		m_data.TextureShader->SetFloat("u_TilingFactor", tilingFactor);

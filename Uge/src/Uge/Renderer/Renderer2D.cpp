@@ -5,8 +5,7 @@
 #include "Shader.h"
 #include "RenderCommand.h"
 
-#include "glm/glm.hpp"
-#include <glm/ext/matrix_transform.hpp>
+
 
 namespace Uge
 {
@@ -22,9 +21,9 @@ namespace Uge
 
 	struct Renderer2DData
 	{
-		const uint32_t MaxQuads = 10000;
-		const uint32_t MaxVertices = MaxQuads * 4;
-		const uint32_t MaxIndices = MaxQuads * 6;
+		static const uint32_t MaxQuads = 10000;
+		static const uint32_t MaxVertices = MaxQuads * 4;
+		static const uint32_t MaxIndices = MaxQuads * 6;
 		static const uint32_t MaxTextureSlots = 32;
 
 		Ref<VertexArray> QuadVA;
@@ -40,6 +39,8 @@ namespace Uge
 		uint32_t TextureSlotIndex = 1; // 0 is white texture
 
 		glm::vec4 QuadVertexPositions[4];
+		
+		Renderer2D::Statistics Stats;
 
 
 	};
@@ -166,6 +167,19 @@ namespace Uge
 
 		RenderCommand::DrawIndexed(m_data.QuadVA, m_data.QuadIndexCount);
 
+		m_data.Stats.DrawCalls++;
+
+
+	}
+
+	void Uge::Renderer2D::FlushAndReset()
+	{
+		EndScene();
+
+		m_data.QuadVertexBufferPtr = m_data.QuadVertexBufferBase;
+		m_data.QuadIndexCount = 0;
+
+		m_data.TextureSlotIndex = 1;
 
 	}
 
@@ -180,6 +194,15 @@ namespace Uge
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
 	{
 		UG_PROFILE_FUNCTION();
+
+
+		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
+		{
+
+			FlushAndReset();
+
+		}
+
 
 		const float texIndex = 0.0f; // White texture
 		const float tilingFactor = 1.0f; // Tiling Factor
@@ -219,6 +242,8 @@ namespace Uge
 
 		m_data.QuadIndexCount += 6;
 
+		m_data.Stats.QuadCount++;
+
 		/*
 		m_data.TextureShader->SetFloat("u_TilingFactor", 1.0f);
 		m_data.WhiteTexture->Bind();
@@ -245,6 +270,17 @@ namespace Uge
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
 	{
 		UG_PROFILE_FUNCTION();
+
+		float x = 7.0f, y = 6.0f;
+		float sheetWidth = 2560.0f, sheetHeight = 1664.0f;
+		float spriteWidth = 128.0f, spriteHeight = 128.0f;
+
+		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
+		{
+
+			FlushAndReset();
+
+		}
 
 		constexpr glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -276,33 +312,35 @@ namespace Uge
 
 		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[0];
 		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+		m_data.QuadVertexBufferPtr->TexCoord = { (x * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight};
 		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
 		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
 		m_data.QuadVertexBufferPtr++;
 
 		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[1];
 		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 1.0f, 0.0f };
+		m_data.QuadVertexBufferPtr->TexCoord = { ((x + 1) * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight };
 		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
 		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
 		m_data.QuadVertexBufferPtr++;
 
 		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[2];
 		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 1.0f, 1.0f };
+		m_data.QuadVertexBufferPtr->TexCoord = { ((x + 1) * spriteWidth) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight };
 		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
 		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
 		m_data.QuadVertexBufferPtr++;
 
 		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[3];
 		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 0.0f, 1.0f };
+		m_data.QuadVertexBufferPtr->TexCoord = { (x * spriteWidth) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight };
 		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
 		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
 		m_data.QuadVertexBufferPtr++;
 
 		m_data.QuadIndexCount += 6;
+
+		m_data.Stats.QuadCount++;
 
 
 		/*m_data.TextureShader->SetFloat4("u_Color", tintColor);
@@ -336,11 +374,18 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
+		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
+		{
+
+			FlushAndReset();
+
+		}
+
 		const float texIndex = 0.0f; // White texture
 		const float tilingFactor = 1.0f; // Tiling Factor
 
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
-			* glm::rotate(glm::mat4(1.0f), glm::radians(rotation), { 0, 0, 1 })
+			* glm::rotate(glm::mat4(1.0f), rotation, { 0, 0, 1 })
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
 		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[0];
@@ -375,6 +420,8 @@ namespace Uge
 
 		m_data.QuadIndexCount += 6;
 
+		m_data.Stats.QuadCount++;
+
 	}
 
 	void Renderer2D::DrawRotatedQuad(const glm::vec2& position, float rotation, const glm::vec2& size, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
@@ -386,6 +433,13 @@ namespace Uge
 	{
 
 		UG_PROFILE_FUNCTION();
+
+		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
+		{
+
+			FlushAndReset();
+
+		}
 
 		constexpr glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -413,7 +467,7 @@ namespace Uge
 		}
 
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
-			* glm::rotate(glm::mat4(1.0f), glm::radians(rotation), { 0, 0, 1 })
+			* glm::rotate(glm::mat4(1.0f), rotation, { 0, 0, 1 })
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
 		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[0];
@@ -447,6 +501,23 @@ namespace Uge
 		
 
 		m_data.QuadIndexCount += 6;
+
+		m_data.Stats.QuadCount++;
+
+	}
+
+	void Renderer2D::ResetStats()
+	{
+
+		memset(&m_data.Stats, 0, sizeof(Statistics));
+
+	}
+
+	Renderer2D::Statistics Renderer2D::GetStats()
+	{
+
+		return m_data.Stats;
+
 
 	}
 

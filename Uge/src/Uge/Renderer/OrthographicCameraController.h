@@ -9,6 +9,16 @@
 namespace Uge
 {
 
+	struct OrthographicCameraBounds
+	{
+		float Left, Right;
+		float Bottom, Top;
+
+		float GetWidth() { return Right - Left; }
+		float GetHeight() { return Top - Bottom; }
+	};
+
+
 	class OrthographicCameraController
 	{
 
@@ -24,6 +34,9 @@ namespace Uge
 		void SetZoomLevel(float zLevel) { m_zoomLevel = zLevel; }
 		float GetZoomLevel() const { return m_zoomLevel; }
 
+
+		const OrthographicCameraBounds& GetBounds() const { return m_bounds; }
+
 	private:
 		bool OnMouseScrolled(MouseScrolledEvent& e);
 		bool OnWindowResized(WindowResizeEvent& e);
@@ -34,6 +47,7 @@ namespace Uge
 		float m_zoomLevel = 1.0f;
 		bool m_rotation;
 
+		OrthographicCameraBounds m_bounds;
 		OrthographicCamera m_camera;
 		glm::vec3 m_cameraPosition = { 0.0f, 0.0f, 0.0f };
 		float m_cameraRotation = 0.0f; //In degrees, in the anti-clockwise direction

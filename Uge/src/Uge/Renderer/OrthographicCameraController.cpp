@@ -10,7 +10,7 @@ namespace Uge
 
 
 	OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool rotation)
-		: m_aspectRatio(aspectRatio), m_camera(-m_aspectRatio * m_zoomLevel, m_aspectRatio* m_zoomLevel, -m_zoomLevel, m_zoomLevel), m_rotation(rotation)
+		: m_aspectRatio(aspectRatio), m_bounds({ -m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel, -m_zoomLevel, m_zoomLevel }), m_camera(m_bounds.Left, m_bounds.Right, m_bounds.Bottom, m_bounds.Top), m_rotation(rotation)
 	{
 
 
@@ -82,8 +82,8 @@ namespace Uge
 
 		m_zoomLevel -= e.GetYOffset() * 0.2f;
 		m_zoomLevel = std::clamp(m_zoomLevel, 0.1f, 5.0f);
-		m_camera.SetProjection(-m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel, 
-			-m_zoomLevel, m_zoomLevel);
+		m_bounds = { -m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel, -m_zoomLevel, m_zoomLevel };
+		m_camera.SetProjection(m_bounds.Left, m_bounds.Right, m_bounds.Bottom, m_bounds.Top);
 
 
 
@@ -94,8 +94,8 @@ namespace Uge
 		UG_PROFILE_FUNCTION();
 
 		m_aspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
-		m_camera.SetProjection(-m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel,
-			-m_zoomLevel, m_zoomLevel);
+		m_bounds = { -m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel, -m_zoomLevel, m_zoomLevel };
+		m_camera.SetProjection(m_bounds.Left, m_bounds.Right, m_bounds.Bottom, m_bounds.Top);
 
 
 		return false;

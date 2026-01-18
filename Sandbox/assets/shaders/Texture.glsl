@@ -45,5 +45,6 @@ void main()
 {
 	// TODO: Add variables so that for instance "texture(u_Texture, v_TextCoord * 1.0) * vec4(color)" could work
 	fragColor = texture(u_Textures[int(v_TexIndex)], v_TextCoord * v_TilingFactor ) * v_Color ;
+	//fragColor = vec4(v_TextCoord.x, v_TextCoord.y, 0.0f, 1.0f) ;
 	
 }

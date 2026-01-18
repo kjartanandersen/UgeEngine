@@ -38,7 +38,7 @@ namespace Uge
 		float m_width, m_height;
 
 		PerspectiveCamera m_camera;
-		glm::vec3 m_cameraPosition = { 0.0f, 0.0f, 0.0f };
+		glm::vec3 m_cameraPosition = { 1.0f, 0.0f, 1.0f };
 		glm::quat m_qRotation = { 1.0f, 0.0f, 0.0f, 0.0f };
 		float m_cameraTranslationSpeed = 0.03f, m_cameraRotationSpeed = 0.1f;
 		float m_mouseSpeed = 1.0f;
