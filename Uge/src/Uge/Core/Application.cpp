@@ -58,12 +58,6 @@ namespace Uge
 			Timestep timestep = time - m_lastFrameTime;
 			m_lastFrameTime = time;
 
-
-
-
-			if (Uge::Input::IsKeyPressed(UG_KEY_ESCAPE))
-				CloseProgram();
-
 			if (!m_minimized)
 			{
 				{
@@ -106,9 +100,10 @@ namespace Uge
 		for ( auto it = m_layerStack.end(); it != m_layerStack.begin(); )
 		{
 
-			(*--it)->OnEvent(e);
 			if (e.m_handled)
 				break;
+
+			(*--it)->OnEvent(e);
 
 
 		}

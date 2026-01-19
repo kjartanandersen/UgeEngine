@@ -27,6 +27,7 @@ private:
 
 	Uge::Ref<Uge::Texture2D> m_texture;
 	Uge::Ref<Uge::Texture2D> m_spriteSheet;
+	Uge::Ref<Uge::SubTexture2D> m_textureStairs, m_textureBarrel, m_textureDirt;
 
 	ImFont* m_mainFont;
 
@@ -35,5 +36,11 @@ private:
 
 	ParticleSystem m_particleSystem;
 	ParticleProps m_particle;
+
+
+	uint32_t m_mapWidth, m_mapHeight;
+	std::unordered_map<char, Uge::Ref<Uge::SubTexture2D>> m_textureMap;
+	bool dockspaceOpen = true;
+
 
 };

@@ -75,18 +75,23 @@ namespace Uge
 
 	}
 
+	void OrthographicCameraController::CalculateView()
+	{
+
+
+		m_bounds = { -m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel, -m_zoomLevel, m_zoomLevel };
+		m_camera.SetProjection(m_bounds.Left, m_bounds.Right, m_bounds.Bottom, m_bounds.Top);
+
+	}
+
 
 	bool OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent& e)
 	{
 		UG_PROFILE_FUNCTION();
 
 		m_zoomLevel -= e.GetYOffset() * 0.2f;
-		m_zoomLevel = std::clamp(m_zoomLevel, 0.1f, 5.0f);
-		m_bounds = { -m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel, -m_zoomLevel, m_zoomLevel };
-		m_camera.SetProjection(m_bounds.Left, m_bounds.Right, m_bounds.Bottom, m_bounds.Top);
-
-
-
+		m_zoomLevel = std::clamp(m_zoomLevel, 0.1f, 10.0f);
+		CalculateView();
 		return false;
 	}
 	bool OrthographicCameraController::OnWindowResized(WindowResizeEvent& e)
@@ -94,10 +99,7 @@ namespace Uge
 		UG_PROFILE_FUNCTION();
 
 		m_aspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
-		m_bounds = { -m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel, -m_zoomLevel, m_zoomLevel };
-		m_camera.SetProjection(m_bounds.Left, m_bounds.Right, m_bounds.Bottom, m_bounds.Top);
-
-
+		CalculateView();
 		return false;
 	}
 

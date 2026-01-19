@@ -4,6 +4,22 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
+static const uint32_t s_mapWidth = 24;
+static const char* s_mapTiles =
+"WWWWWWWWWWWWWWWWWWWWWWWW"
+"WWWWWWWWWWWWWWWWWWWWWWWW"
+"WWWWWWWWDDDDDDWWWWWWWWWW"
+"WWWWWWWDDDDDDDDDDWWWWWWW"
+"WWWWWWDDDDDDDDDDDDWWWWWW"
+"WWWWWDDDDWWDDDDDDDDDDDWW"
+"WWWWDDDDDWWDDDDDDDDDDDWW"
+"WWWDDDDDDDDDDDDDDDDDDDWW"
+"WWWWWDDDDDDDDDDDDDDDDDWW"
+"WWWWWDDDDDDDDDDDDDDDDDWW"
+"WWWWWWDDDDDDDDDDDDDDDDWW"
+"WWWWWWWWWWWWWWWWWWWWWWWW"
+"WWWWWWWWWWWWWWWWWWWWWWWW"
+"WWWWWWWWWWWWWWWWWWWWWWWW";
 
 
 Sandbox2D::Sandbox2D()
@@ -102,7 +118,26 @@ void Sandbox2D::OnUpdate(Uge::Timestep ts)
 			UG_PROFILE_SCOPE("Renderer Draw");
 
 			
-			Uge::Renderer2D::DrawQuad({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, m_spriteSheet);
+			//Uge::Renderer2D::DrawQuad({ 0.0f, 0.0f, 0.5f }, { 1.0f, 1.0f }, m_textureStairs);
+			//Uge::Renderer2D::DrawQuad({ 1.0f, 1.0f, 0.5f }, { 1.0f, 2.0f }, m_textureBarrel);
+
+
+			for (uint32_t y = 0; y < m_mapHeight; y++)
+			{
+				for (uint32_t x = 0; x < m_mapWidth; x++)
+				{
+					char tileType = s_mapTiles[x + y * m_mapWidth];
+					Uge::Ref<Uge::SubTexture2D> texture;
+					if (m_textureMap.find(tileType) != m_textureMap.end())
+						texture = m_textureMap[tileType];
+					else
+						texture = m_textureBarrel;
+
+					Uge::Renderer2D::DrawQuad({ x - (m_mapWidth / 2.0f),m_mapHeight - y - (m_mapHeight / 2.0f), 0.5f }, { 1.0f, 1.0f }, texture);
+
+
+				}
+			}
 
 
 		}
@@ -145,6 +180,15 @@ void Sandbox2D::OnAttach()
 	// Load sprite sheet
 	m_spriteSheet = Uge::Texture2D::Create("assets/game/textures/RPGpack_sheet_2X.png");
 
+	m_textureStairs = Uge::SubTexture2D::CreateFromCoords(m_spriteSheet, { 7, 6 }, { 128, 128 }, { 1, 1 });
+	m_textureBarrel = Uge::SubTexture2D::CreateFromCoords(m_spriteSheet, { 2, 1 }, { 128, 128  }, {1, 2});
+	
+	m_mapWidth = s_mapWidth;
+	m_mapHeight = strlen(s_mapTiles) / m_mapWidth;
+	
+	m_textureMap['D'] = Uge::SubTexture2D::CreateFromCoords(m_spriteSheet, { 6, 11 }, { 128, 128  }, {1, 2});
+	m_textureMap['W'] = Uge::SubTexture2D::CreateFromCoords(m_spriteSheet, { 11, 11 }, { 128, 128  }, {1, 2});
+	
 
 	// Init here
 	m_particle.ColorBegin = { 254 / 255.0f, 212 / 255.0f, 123 / 255.0f, 1.0f };
@@ -154,6 +198,11 @@ void Sandbox2D::OnAttach()
 	m_particle.Velocity = { 0.0f, 0.0f };
 	m_particle.VelocityVariation = { 3.0f, 1.0f };
 	m_particle.Position = { 0.0f, 0.0f };
+
+
+	m_cameraController.SetZoomLevel(5.0f);
+
+
 
 }
 
@@ -169,37 +218,133 @@ void Sandbox2D::OnImGuiRender()
 {
 	UG_PROFILE_FUNCTION();
 
+
+
+	/*****************************
+	*
+	* Dockspace
+	*
+	*****************************/
+
+
 	ImGui::PushFont(m_mainFont);
-	ImGui::Begin("Settings");
+
+	// TL;DR; this demo is more complicated than what most users you would normally use.
+// If we remove all options we are showcasing, this demo would become a simple call to ImGui::DockSpaceOverViewport() !!
+// In this specific demo, we are not using DockSpaceOverViewport() because:
+
+	static bool opt_fullscreen = true;
+	static bool opt_padding = false;
+	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+	// because it would be confusing to have two docking targets within each others.
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	if (opt_fullscreen)
+	{
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+	}
+	else
+	{
+		dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
+	}
+
+	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
+	// and handle the pass-thru hole, so we ask Begin() to not render a background.
+	if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+		window_flags |= ImGuiWindowFlags_NoBackground;
+
+	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+	// all active windows docked into it will lose their parent and become undocked.
+	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+	if (!opt_padding)
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+
+	ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
 	{
 
-		auto stats = Uge::Renderer2D::GetStats();
-		ImGui::Text("Renderer2D Stats:");
-		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
-		ImGui::Text("Quad Count: %d", stats.QuadCount);
-		ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
-		ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
+		if (!opt_padding)
+			ImGui::PopStyleVar();
 
-		
-		ImGui::Text("");
-		ImGui::Text("Squre Color Pickers:");
-		ImGui::PushID(0);
-		ImGui::ColorEdit4("Square Color", glm::value_ptr(m_square1Color));
-		ImGui::PopID();
+		if (opt_fullscreen)
+			ImGui::PopStyleVar(2);
 
-		ImGui::PushID(1);
-		ImGui::ColorEdit4("Square Color", glm::value_ptr(m_square2Color));
-		ImGui::PopID();
+		// Submit the DockSpace
+		// REMINDER: THIS IS A DEMO FOR ADVANCED USAGE OF DockSpace()!
+		// MOST REGULAR APPLICATIONS WILL SIMPLY WANT TO CALL DockSpaceOverViewport(). READ COMMENTS ABOVE.
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+		{
+			ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+		}
+	
+
+		// Show demo options and help
+		if (ImGui::BeginMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				// Disabling fullscreen would allow the window to be moved to the front of other windows,
+				// which we can't undo at the moment without finer window depth/z control.
+				ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen);
+				ImGui::MenuItem("Padding", NULL, &opt_padding);
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Exit", "")) Uge::Application::Get().CloseProgram();
+				ImGui::Separator();
+
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenuBar();
+		}
 
 
+	
+		ImGui::Begin("Settings");
+		{
 
-		
+			auto stats = Uge::Renderer2D::GetStats();
+			ImGui::Text("Renderer2D Stats:");
+			ImGui::Text("Draw Calls: %d", stats.DrawCalls);
+			ImGui::Text("Quad Count: %d", stats.QuadCount);
+			ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
+			ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
-		ImGui::Text("Sandbox2D");
+
+			ImGui::Text("");
+			ImGui::Text("Squre Color Pickers:");
+			ImGui::PushID(0);
+			ImGui::ColorEdit4("Square Color", glm::value_ptr(m_square1Color));
+			ImGui::PopID();
+
+			ImGui::PushID(1);
+			ImGui::ColorEdit4("Square Color", glm::value_ptr(m_square2Color));
+			ImGui::PopID();
+
+			ImGui::Image(m_texture->GetRendererID(), ImVec2{ 128.0f, 128.0f });
+
+
+			ImGui::Text("Sandbox2D");
+		}
+		ImGui::End();
+
 	}
-	ImGui::PopFont();
 	ImGui::End();
 
+	
+	ImGui::PopFont();
 
 
 }

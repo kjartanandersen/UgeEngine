@@ -31,13 +31,14 @@ namespace Uge
 		OrthographicCamera& GetCamera() { return m_camera; }
 		const OrthographicCamera& GetCamera() const { return m_camera; }
 
-		void SetZoomLevel(float zLevel) { m_zoomLevel = zLevel; }
+		void SetZoomLevel(float zLevel) { m_zoomLevel = zLevel; CalculateView(); }
 		float GetZoomLevel() const { return m_zoomLevel; }
 
 
 		const OrthographicCameraBounds& GetBounds() const { return m_bounds; }
 
 	private:
+		void CalculateView();
 		bool OnMouseScrolled(MouseScrolledEvent& e);
 		bool OnWindowResized(WindowResizeEvent& e);
 

@@ -191,6 +191,7 @@
     <ClInclude Include="src\Uge\Renderer\Renderer3D.h" />
     <ClInclude Include="src\Uge\Renderer\RendererAPI.h" />
     <ClInclude Include="src\Uge\Renderer\Shader.h" />
+    <ClInclude Include="src\Uge\Renderer\SubTexture2D.h" />
     <ClInclude Include="src\Uge\Renderer\Texture.h" />
     <ClInclude Include="src\Uge\Renderer\VertexArray.h" />
     <ClInclude Include="src\ugpch.h" />
@@ -223,6 +224,7 @@
     <ClCompile Include="src\Uge\Renderer\Renderer3D.cpp" />
     <ClCompile Include="src\Uge\Renderer\RendererAPI.cpp" />
     <ClCompile Include="src\Uge\Renderer\Shader.cpp" />
+    <ClCompile Include="src\Uge\Renderer\SubTexture2D.cpp" />
     <ClCompile Include="src\Uge\Renderer\Texture.cpp" />
     <ClCompile Include="src\Uge\Renderer\VertexArray.cpp" />
     <ClCompile Include="src\ugpch.cpp">

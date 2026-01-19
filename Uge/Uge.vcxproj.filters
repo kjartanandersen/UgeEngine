@@ -153,6 +153,7 @@
     <ClInclude Include="src\Uge\Renderer\PerspectiveCamera.h" />
     <ClInclude Include="src\Uge\Renderer\PerspectiveCameraController.h" />
     <ClInclude Include="src\Uge\Debug\Instrumentor.h" />
+    <ClInclude Include="src\Uge\Renderer\SubTexture2D.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">
@@ -235,6 +236,7 @@
     <ClCompile Include="src\Uge\Renderer\Camera.cpp" />
     <ClCompile Include="src\Uge\Renderer\PerspectiveCamera.cpp" />
     <ClCompile Include="src\Uge\Renderer\PerspectiveCameraController.cpp" />
+    <ClCompile Include="src\Uge\Renderer\SubTexture2D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="UgeClassDiagram.cd" />
