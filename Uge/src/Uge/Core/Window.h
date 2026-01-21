@@ -12,11 +12,11 @@ namespace Uge
 	{
 
 		std::string m_title;
-		unsigned int m_width;
-		unsigned int m_height;
+		uint32_t m_width;
+		uint32_t m_height;
 
 		WindowProps( const std::string& title = "Uge Engine",
-				unsigned int width = 1280, unsigned int height = 720) 
+				uint32_t width = 1280, uint32_t height = 720) 
 				: m_title(title), m_width(width), m_height(height)  {}
 	};
 
@@ -30,8 +30,8 @@ namespace Uge
 
 		virtual void OnUpdate() = 0;
 
-		virtual unsigned int GetWidth() const = 0;
-		virtual unsigned int GetHeight() const = 0;
+		virtual uint32_t GetWidth() const = 0;
+		virtual uint32_t GetHeight() const = 0;
 		
 
 		// Window Attributes

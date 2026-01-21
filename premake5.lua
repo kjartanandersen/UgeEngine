@@ -1,6 +1,6 @@
 workspace "Uge"
 	architecture "x64"
-	startproject "Sandbox"
+	startproject "Uge-Editor"
 	
 	configurations 
 	{
@@ -29,5 +29,7 @@ group "Dependencies"
 group ""
 
 include "Uge"
+include "UgeEditor"
 include "Sandbox"
+
 

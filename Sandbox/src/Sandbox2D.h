@@ -29,6 +29,7 @@ private:
 	Uge::Ref<Uge::Texture2D> m_spriteSheet;
 	Uge::Ref<Uge::SubTexture2D> m_textureStairs, m_textureBarrel, m_textureDirt;
 
+
 	ImFont* m_mainFont;
 
 	glm::vec4 m_square1Color = { 1.0f, 0.1f, 0.1f, 1.0f };
@@ -40,7 +41,7 @@ private:
 
 	uint32_t m_mapWidth, m_mapHeight;
 	std::unordered_map<char, Uge::Ref<Uge::SubTexture2D>> m_textureMap;
-	bool dockspaceOpen = true;
+
 
 
 };

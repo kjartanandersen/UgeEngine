@@ -15,10 +15,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{262A880B-9233-887C-1BAF-9E7C87B7937C}</ProjectGuid>
+    <ProjectGuid>{596F8D7C-45A6-8E0D-EE92-7410DAA80A0F}</ProjectGuid>
     <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>Uge</RootNamespace>
+    <RootNamespace>Uges</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -54,21 +54,21 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(ProjectDir)..\bin\Debug-windows-x86_64\Uge\</OutDir>
-    <IntDir>$(ProjectDir)..\bin-int\Debug-windows-x86_64\Uge\</IntDir>
-    <TargetName>Uge</TargetName>
+    <OutDir>$(ProjectDir)..\bin\Debug-windows-x86_64\Uges\</OutDir>
+    <IntDir>$(ProjectDir)..\bin-int\Debug-windows-x86_64\Uges\</IntDir>
+    <TargetName>Uges</TargetName>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(ProjectDir)..\bin\Release-windows-x86_64\Uge\</OutDir>
-    <IntDir>$(ProjectDir)..\bin-int\Release-windows-x86_64\Uge\</IntDir>
-    <TargetName>Uge</TargetName>
+    <OutDir>$(ProjectDir)..\bin\Release-windows-x86_64\Uges\</OutDir>
+    <IntDir>$(ProjectDir)..\bin-int\Release-windows-x86_64\Uges\</IntDir>
+    <TargetName>Uges</TargetName>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
-    <OutDir>$(ProjectDir)..\bin\Dist-windows-x86_64\Uge\</OutDir>
-    <IntDir>$(ProjectDir)..\bin-int\Dist-windows-x86_64\Uge\</IntDir>
-    <TargetName>Uge</TargetName>
+    <OutDir>$(ProjectDir)..\bin\Dist-windows-x86_64\Uges\</OutDir>
+    <IntDir>$(ProjectDir)..\bin-int\Dist-windows-x86_64\Uges\</IntDir>
+    <TargetName>Uges</TargetName>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -77,7 +77,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;UG_PLATFORM_WINDOWS;UG_BUILD_DLL;GLFW_INCLUDE_NONE;UG_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Uges\thirdparty\spdlog\include;..\Uges\src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -101,7 +101,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;UG_PLATFORM_WINDOWS;UG_BUILD_DLL;GLFW_INCLUDE_NONE;UG_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Uges\thirdparty\spdlog\include;..\Uges\src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -129,7 +129,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;UG_PLATFORM_WINDOWS;UG_BUILD_DLL;GLFW_INCLUDE_NONE;UG_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Uges\thirdparty\spdlog\include;..\Uges\src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>

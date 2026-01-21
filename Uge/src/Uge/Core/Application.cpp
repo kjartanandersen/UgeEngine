@@ -19,14 +19,14 @@ namespace Uge
 	
 
 
-	Application::Application(bool is3D)
+	Application::Application(bool is3D, const std::string& name)
 	{
 		UG_PROFILE_FUNCTION();
 		m_is3D = is3D;
 		UG_CORE_ASSERT(!s_instance, "Application Already Exists!");
 		s_instance = this;
 
-		m_window = Scope<Window>(Window::Create());
+		m_window = Window::Create(WindowProps(name));
 		m_window->SetEventCallback(UG_BIND_EVENT_FN(Application::OnEvent));
 
 		m_window->SetVSync(true);

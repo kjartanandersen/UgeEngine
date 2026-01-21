@@ -29,9 +29,6 @@ namespace Uge
 
 		UG_CORE_ASSERT(false, "Unknown Renderer API!");
 		return nullptr;
-
-
-		return nullptr;
 	}
 
 

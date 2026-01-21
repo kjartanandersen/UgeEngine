@@ -24,6 +24,7 @@
 
 #include "Uge/Renderer/Buffer.h"
 #include "Uge/Renderer/Shader.h"
+#include "Uge/Renderer/Framebuffer.h"
 #include "Uge/Renderer/Texture.h"
 #include "Uge/Renderer/SubTexture2D.h"
 #include "Uge/Renderer/VertexArray.h"

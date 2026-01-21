@@ -18,7 +18,7 @@ namespace Uge
 	class Application
 	{
 	public:
-		Application(bool is3D);
+		Application(bool is3D, const std::string& name = "Uge App");
 		virtual ~Application();
 
 		void Run();
