@@ -6,6 +6,9 @@
 namespace Uge
 {
 
+	static const uint32_t m_maxFramebufferSize = 8192;
+
+
 	OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferSpecification& spec)
 		: m_specification(spec)
 	{
@@ -17,12 +20,23 @@ namespace Uge
 	OpenGLFramebuffer::~OpenGLFramebuffer()
 	{
 		glDeleteFramebuffers(1, &m_rendererID);
+		glDeleteTextures(1, &m_colorAttachment);
+		glDeleteTextures(1, &m_depthAttachment);
 
 
 	}
 
 	void OpenGLFramebuffer::Invalidate()
 	{
+
+		if (m_rendererID)
+		{
+
+			glDeleteFramebuffers(1, &m_rendererID);
+			glDeleteTextures(1, &m_colorAttachment);
+			glDeleteTextures(1, &m_depthAttachment);
+
+		}
 
 		glCreateFramebuffers(1, &m_rendererID);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_rendererID);
@@ -64,12 +78,30 @@ namespace Uge
 	{
 
 		glBindFramebuffer(GL_FRAMEBUFFER, m_rendererID);
+		glViewport(0, 0, m_specification.Width, m_specification.Height);
 	}
 
 	void OpenGLFramebuffer::Unbind()
 	{
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	}
+
+	void OpenGLFramebuffer::Resize(uint32_t width, uint32_t height)
+	{
+
+		if (width == 0 || height == 0 || width > m_maxFramebufferSize || height > m_maxFramebufferSize)
+		{
+			UG_CORE_WARN("Attempt to resize framebuffer to: Width: {0}, Height: {1}", width, height);
+			return;
+		}
+
+		m_specification.Width = width;
+		m_specification.Height = height;
+
+		Invalidate();
+
 
 	}
 

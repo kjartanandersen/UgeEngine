@@ -5,7 +5,7 @@
 
 namespace Uge
 {
-	class UG_API MouseMovedEvent : public Event
+	class MouseMovedEvent : public Event
 	{
 
 	public:
@@ -31,7 +31,7 @@ namespace Uge
 	};
 
 
-	class UG_API MouseScrolledEvent : public Event
+	class MouseScrolledEvent : public Event
 	{
 
 	public:
@@ -57,7 +57,7 @@ namespace Uge
 	};
 
 
-	class UG_API MouseButtonEvent : public Event
+	class MouseButtonEvent : public Event
 	{
 
 	public:
@@ -76,7 +76,7 @@ namespace Uge
 
 
 
-	class UG_API MouseButtonPressedEvent : public MouseButtonEvent
+	class MouseButtonPressedEvent : public MouseButtonEvent
 	{
 
 	public:
@@ -95,7 +95,7 @@ namespace Uge
 
 
 
-	class UG_API MouseButtonReleasedEvent : public MouseButtonEvent
+	class MouseButtonReleasedEvent : public MouseButtonEvent
 	{
 
 	public:

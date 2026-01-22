@@ -32,6 +32,8 @@ namespace Uge
 		inline Window& GetWindow() { return *m_window; }
 		inline void CloseProgram() { m_running = false; }
 
+		ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
+
 	protected:
 		bool m_is3D;
 

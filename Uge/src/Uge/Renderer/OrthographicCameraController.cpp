@@ -75,6 +75,15 @@ namespace Uge
 
 	}
 
+	void OrthographicCameraController::OnResize(float width, float height)
+	{
+
+		m_aspectRatio = width / height;
+		CalculateView();
+
+
+	}
+
 	void OrthographicCameraController::CalculateView()
 	{
 
@@ -98,8 +107,7 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		m_aspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
-		CalculateView();
+		OnResize((float)e.GetWidth(), (float)e.GetHeight());
 		return false;
 	}
 

@@ -20,7 +20,7 @@ namespace Uge
 				: m_title(title), m_width(width), m_height(height)  {}
 	};
 
-	class UG_API Window
+	class Window
 	{
 
 	public:

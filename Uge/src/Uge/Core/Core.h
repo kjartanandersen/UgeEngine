@@ -21,7 +21,6 @@
 		#define UG_PLATFORM_MACOS
 		#error "MacOS not supported"
 	#else
-		#define UG_API __declspec(dllimport)
 		#error "Uknown Apple platform!"
 	#endif
 #elif defined(__ANDROID__)
@@ -34,33 +33,30 @@
 	#error "Unknown platform!"
 #endif
 
-// DLL Support
-#ifdef UG_PLATFORM_WINDOWS
-	#if UG_DYNAMIC_LINK
-		#ifdef UG_BUILD_DLL
-			#define UG_API __declspec(dllexport)
-		#else
-			#define UG_API __declspec(dllimport)
-		#endif // UG_BUILD_DLL
-	#else
-		#define UG_API
-	#endif
-#else
-	#error "Uge only supports Windows!"
-	
-#endif // UG_PLATFORM_WINDOWS
 
 #ifdef UG_DEBUG
-		#define UG_ENABLE_ASSERTS
+	#if defined(UG_PLATFORM_WINDOWS)
+		#define UG_DEBUGBREAK() __debugbreak()
+	#elif defined(UG_PLATFORM_LINUX)
+		#include <signal.h>
+		#define UG_DEBUGBREAK() raise(SIGTRAP)
+	#else
+		#error "Platform does not support debugbreak yet!"
+	#endif
+	#define UG_ENABLE_ASSERTS
 #endif // UG_DEBUG
 
 
 #ifdef UG_ENABLE_ASSERTS
-	#define UG_ASSERT(x, ...) { if (!(x)) { UG_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
-	#define UG_CORE_ASSERT(x, ...) { if (!(x)) { UG_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
+	#define UG_ASSERT(x) { if (!(x)) { UG_ERROR("Error!"); UG_DEBUGBREAK(); } }
+	#define UG_ASSERT(x, ...) { if (!(x)) { UG_ERROR("Assertion Failed: {0}", __VA_ARGS__); UG_DEBUGBREAK(); } }
+	#define UG_CORE_ASSERT(x, ...) { if (!(x)) { UG_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); UG_DEBUGBREAK(); } }
+	#define UG_CORE_ASSERT(x) { if (!(x)) { UG_CORE_ERROR("Error!"); UG_DEBUGBREAK(); } }
 #else
 	#define UG_ASSERT(x, ...)
+	#define UG_ASSERT(x)
 	#define UG_CORE_ASSERT(x, ...)
+	#define UG_CORE_ASSERT(x)
 #endif // UG_ENABLE_ASSERTS
 
 

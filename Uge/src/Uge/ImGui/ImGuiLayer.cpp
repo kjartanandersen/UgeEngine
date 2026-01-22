@@ -96,6 +96,21 @@ namespace Uge
 
 	}
 
+	void ImGuiLayer::OnEvent(Event& event)
+	{
+
+		if (m_blockEvents)
+		{
+
+			ImGuiIO& io = ImGui::GetIO();
+			event.m_handled |= event.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
+			event.m_handled |= event.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
+
+		}
+
+
+	}
+
 	void Uge::ImGuiLayer::Begin()
 	{
 		UG_PROFILE_FUNCTION();

@@ -21,12 +21,15 @@ namespace Uge
 		virtual void OnAttach() override;
 		virtual void OnDetach() override;
 		virtual void OnImGuiRender() override;
+		virtual void OnEvent(Event& event) override;
 
 		void Begin();
 		void End();
 
-
+		void BlockEvents(bool block) { m_blockEvents = block; };
 	private:
+
+		bool m_blockEvents = false;
 
 		float m_time = 0.0f;
 		ImFont* mainFont;

@@ -1,5 +1,6 @@
 #pragma once
 
+// TODO: Change to enums
 // From glfw3.h
 #define UG_MOUSE_BUTTON_1         0
 #define UG_MOUSE_BUTTON_2         1

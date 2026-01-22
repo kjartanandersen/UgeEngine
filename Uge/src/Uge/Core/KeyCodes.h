@@ -1,6 +1,7 @@
 #pragma once
 
 
+// TODO: Change to enums
 /* Printable keys */
 // From glfw3.h
 #define UG_KEY_SPACE              32
