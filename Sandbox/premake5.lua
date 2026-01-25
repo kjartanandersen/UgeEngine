@@ -19,7 +19,8 @@ project "Sandbox"
 		"../Uge/thirdparty/spdlog/include",
 		"../Uge/src",
 		"../%{IncludeDir.IMGUI}",
-		"../%{IncludeDir.GLM}"
+		"../%{IncludeDir.GLM}",
+		"../%{IncludeDir.ENTT}"
 	}
 
 	links

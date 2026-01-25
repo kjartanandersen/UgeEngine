@@ -33,6 +33,9 @@ namespace Uge
 
 		Ref<Framebuffer> m_frameBuffer;
 
+		Ref<Scene> m_activeScene;
+		entt::entity m_squareEnt;
+
 		ImFont* m_mainFont;
 
 		glm::vec4 m_square1Color = { 1.0f, 0.1f, 0.1f, 1.0f };

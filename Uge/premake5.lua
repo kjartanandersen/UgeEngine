@@ -33,7 +33,8 @@ project "Uge"
 		"../%{IncludeDir.GLAD}",
 		"../%{IncludeDir.IMGUI}",
 		"../%{IncludeDir.GLM}",
-		"../%{IncludeDir.STBI}"
+		"../%{IncludeDir.STBI}",
+		"../%{IncludeDir.ENTT}"
 	}
 
 	links

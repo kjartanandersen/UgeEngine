@@ -18,6 +18,7 @@ IncludeDir["GLAD"]   = "Uge/thirdparty/GLAD/include"
 IncludeDir["IMGUI"]  = "Uge/thirdparty/imgui"
 IncludeDir["GLM"]    = "Uge/thirdparty/glm"
 IncludeDir["STBI"]   = "Uge/thirdparty/stb_image"
+IncludeDir["ENTT"]   = "Uge/thirdparty/entt/include"
 
 
 group "Dependencies"

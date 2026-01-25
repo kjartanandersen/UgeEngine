@@ -77,7 +77,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;UG_PLATFORM_WINDOWS;UG_BUILD_DLL;GLFW_INCLUDE_NONE;UG_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;thirdparty\entt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -101,7 +101,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;UG_PLATFORM_WINDOWS;UG_BUILD_DLL;GLFW_INCLUDE_NONE;UG_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;thirdparty\entt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -129,7 +129,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;UG_PLATFORM_WINDOWS;UG_BUILD_DLL;GLFW_INCLUDE_NONE;UG_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;thirdparty\entt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -195,6 +195,8 @@
     <ClInclude Include="src\Uge\Renderer\SubTexture2D.h" />
     <ClInclude Include="src\Uge\Renderer\Texture.h" />
     <ClInclude Include="src\Uge\Renderer\VertexArray.h" />
+    <ClInclude Include="src\Uge\Scene\Components.h" />
+    <ClInclude Include="src\Uge\Scene\Scene.h" />
     <ClInclude Include="src\ugpch.h" />
     <ClInclude Include="thirdparty\stb_image\stb_image.h" />
   </ItemGroup>
@@ -230,6 +232,7 @@
     <ClCompile Include="src\Uge\Renderer\SubTexture2D.cpp" />
     <ClCompile Include="src\Uge\Renderer\Texture.cpp" />
     <ClCompile Include="src\Uge\Renderer\VertexArray.cpp" />
+    <ClCompile Include="src\Uge\Scene\Scene.cpp" />
     <ClCompile Include="src\ugpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

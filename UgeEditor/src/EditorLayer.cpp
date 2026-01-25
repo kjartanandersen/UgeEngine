@@ -31,7 +31,7 @@ namespace Uge
 	{
 	}
 
-	void EditorLayer::OnUpdate(Uge::Timestep ts)
+	void EditorLayer::OnUpdate(Timestep ts)
 	{
 
 		UG_PROFILE_FUNCTION();
@@ -51,47 +51,45 @@ namespace Uge
 
 		}
 
+		
+
 		// Render
-		Uge::Renderer2D::ResetStats();
+		Renderer2D::ResetStats();
 		{
-			UG_PROFILE_SCOPE("Renderer Prep");
-
-			
+			UG_PROFILE_SCOPE("Renderer Prep")
 			m_frameBuffer->Bind();
-
-			Uge::RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
-			Uge::RenderCommand::Clear();
-
-
+			RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
+			RenderCommand::Clear();
 		}
 
+		
+
 		{
-			static float rotation = 0.0f;
-			rotation += ts * 50.0f;
 
 #if 1
-			Uge::Renderer2D::BeginScene(m_cameraController.GetCamera());
+			Renderer2D::BeginScene(m_cameraController.GetCamera());
 			{
 				UG_PROFILE_SCOPE("Renderer Draw");
+				m_activeScene->OnUpdate(ts);
 
 				// Flat color
-				Uge::Renderer2D::DrawRotatedQuad({ 1.0f, 0.0f, 0.0f }, glm::radians(45.0f), { 0.3f, 0.3f }, m_square1Color);
-
-				Uge::Renderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, { 0.3f, 0.3f }, m_square2Color);
-				Uge::Renderer2D::DrawQuad({ 0.0f, 0.5f, 0.0f }, { 0.3f, 0.3f }, m_square1Color);
-				Uge::Renderer2D::DrawRotatedQuad({ 0.0f, 1.0f, 0.0f }, glm::radians(rotation), { 0.3f, 0.3f }, m_square2Color);
-				// Texture
-				Uge::Renderer2D::DrawRotatedQuad({ 0.0f, 0.0f, -0.1f }, glm::radians(0.0f), { 10.0f, 10.0f }, m_texture, 10.0f);
+				//Renderer2D::DrawRotatedQuad({ 1.0f, 0.0f, 0.0f }, glm::radians(45.0f), { 0.3f, 0.3f }, m_square1Color);
+				//
+				//Renderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, { 0.3f, 0.3f }, m_square2Color);
+				//Renderer2D::DrawQuad({ 0.0f, 0.5f, 0.0f }, { 0.3f, 0.3f }, m_square1Color);
+				//Renderer2D::DrawRotatedQuad({ 0.0f, 1.0f, 0.0f }, glm::radians(rotation), { 0.3f, 0.3f }, m_square2Color);
+				//// Texture
+				//Renderer2D::DrawRotatedQuad({ 0.0f, 0.0f, -0.1f }, glm::radians(0.0f), { 10.0f, 10.0f }, m_texture, 10.0f);
 
 
 
 
 			}
-			Uge::Renderer2D::EndScene();
+			Renderer2D::EndScene();
 
 
 #if 0
-			Uge::Renderer2D::BeginScene(m_cameraController.GetCamera());
+			Renderer2D::BeginScene(m_cameraController.GetCamera());
 			{
 				UG_PROFILE_SCOPE("Renderer Draw");
 
@@ -100,7 +98,7 @@ namespace Uge
 					for (float x = -5.0f; x < 5.0f; x += 0.5f)
 					{
 						glm::vec4 color = { (x + 5) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.5f };
-						Uge::Renderer2D::DrawQuad({ x, y }, { 0.45f, 0.45f }, color);
+						Renderer2D::DrawQuad({ x, y }, { 0.45f, 0.45f }, color);
 
 					}
 
@@ -112,16 +110,16 @@ namespace Uge
 
 
 			}
-			Uge::Renderer2D::EndScene();
+			Renderer2D::EndScene();
 #endif
 			
 
 #else
-			if (Uge::Input::IsMouseButtonPressed(UG_MOUSE_BUTTON_LEFT))
+			if (Input::IsMouseButtonPressed(UG_MOUSE_BUTTON_LEFT))
 			{
-				auto [x, y] = Uge::Input::GetMousePos();
-				auto width = Uge::Application::Get().GetWindow().GetWidth();
-				auto height = Uge::Application::Get().GetWindow().GetHeight();
+				auto [x, y] = Input::GetMousePos();
+				auto width = Application::Get().GetWindow().GetWidth();
+				auto height = Application::Get().GetWindow().GetHeight();
 
 				auto bounds = m_cameraController.GetBounds();
 				auto pos = m_cameraController.GetCamera().GetPosition();
@@ -130,13 +128,13 @@ namespace Uge
 
 			}
 
-			Uge::Renderer2D::BeginScene(m_cameraController.GetCamera());
+			Renderer2D::BeginScene(m_cameraController.GetCamera());
 			{
 				UG_PROFILE_SCOPE("Renderer Draw");
 
 
-				//Uge::Renderer2D::DrawQuad({ 0.0f, 0.0f, 0.5f }, { 1.0f, 1.0f }, m_textureStairs);
-				//Uge::Renderer2D::DrawQuad({ 1.0f, 1.0f, 0.5f }, { 1.0f, 2.0f }, m_textureBarrel);
+				//Renderer2D::DrawQuad({ 0.0f, 0.0f, 0.5f }, { 1.0f, 1.0f }, m_textureStairs);
+				//Renderer2D::DrawQuad({ 1.0f, 1.0f, 0.5f }, { 1.0f, 2.0f }, m_textureBarrel);
 
 
 				for (uint32_t y = 0; y < m_mapHeight; y++)
@@ -144,13 +142,13 @@ namespace Uge
 					for (uint32_t x = 0; x < m_mapWidth; x++)
 					{
 						char tileType = s_mapTiles[x + y * m_mapWidth];
-						Uge::Ref<Uge::SubTexture2D> texture;
+						Ref<SubTexture2D> texture;
 						if (m_textureMap.find(tileType) != m_textureMap.end())
 							texture = m_textureMap[tileType];
 						else
 							texture = m_textureBarrel;
 
-						Uge::Renderer2D::DrawQuad({ x - (m_mapWidth / 2.0f),m_mapHeight - y - (m_mapHeight / 2.0f), 0.5f }, { 1.0f, 1.0f }, texture);
+						Renderer2D::DrawQuad({ x - (m_mapWidth / 2.0f),m_mapHeight - y - (m_mapHeight / 2.0f), 0.5f }, { 1.0f, 1.0f }, texture);
 
 
 					}
@@ -158,7 +156,7 @@ namespace Uge
 
 
 			}
-			Uge::Renderer2D::EndScene();
+			Renderer2D::EndScene();
 
 
 #endif
@@ -169,11 +167,11 @@ namespace Uge
 
 
 
-		//std::dynamic_pointer_cast<Uge::OpenGLShader>(m_flatColorShader)->Bind();
-		//std::dynamic_pointer_cast<Uge::OpenGLShader>(m_flatColorShader)->UploadUniformFloat4("u_Color", m_squareColor);
+		//std::dynamic_pointer_cast<OpenGLShader>(m_flatColorShader)->Bind();
+		//std::dynamic_pointer_cast<OpenGLShader>(m_flatColorShader)->UploadUniformFloat4("u_Color", m_squareColor);
 	}
 
-	void EditorLayer::OnEvent(Uge::Event& e)
+	void EditorLayer::OnEvent(Event& e)
 	{
 
 		m_cameraController.OnEvent(e);
@@ -187,29 +185,34 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		Uge::FramebufferSpecification fbSpec{ 1280, 720 };
+		FramebufferSpecification fbSpec{ 1280, 720 };
+		m_frameBuffer = Framebuffer::Create(fbSpec);
 
-		m_frameBuffer = Uge::Framebuffer::Create(fbSpec);
+		m_activeScene = CreateRef<Scene>();
+		m_squareEnt = m_activeScene->CreateEntity();
+		m_activeScene->Reg().emplace<TransformComponent>(m_squareEnt);
+		m_activeScene->Reg().emplace<SpriteRendererComponent>(m_squareEnt, glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
+
 
 
 		ImGuiIO& io = ImGui::GetIO();
-		m_texture = Uge::Texture2D::Create("assets/textures/Checkerboard.png");
+		m_texture = Texture2D::Create("assets/textures/Checkerboard.png");
 		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\Uge\\assets\\fonts\\PlayfairDisplayBold-nRv8g.ttf", 32.5f);
 		IM_ASSERT(m_mainFont != NULL);
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 
 		// Load sprite sheet
-		m_spriteSheet = Uge::Texture2D::Create("assets/game/textures/RPGpack_sheet_2X.png");
+		m_spriteSheet = Texture2D::Create("assets/game/textures/RPGpack_sheet_2X.png");
 
-		m_textureStairs = Uge::SubTexture2D::CreateFromCoords(m_spriteSheet, { 7, 6 }, { 128, 128 }, { 1, 1 });
-		m_textureBarrel = Uge::SubTexture2D::CreateFromCoords(m_spriteSheet, { 2, 1 }, { 128, 128 }, { 1, 2 });
+		m_textureStairs = SubTexture2D::CreateFromCoords(m_spriteSheet, { 7, 6 }, { 128, 128 }, { 1, 1 });
+		m_textureBarrel = SubTexture2D::CreateFromCoords(m_spriteSheet, { 2, 1 }, { 128, 128 }, { 1, 2 });
 
 		m_mapWidth = s_mapWidth;
 		m_mapHeight = strlen(s_mapTiles) / m_mapWidth;
 
-		m_textureMap['D'] = Uge::SubTexture2D::CreateFromCoords(m_spriteSheet, { 6, 11 }, { 128, 128 }, { 1, 2 });
-		m_textureMap['W'] = Uge::SubTexture2D::CreateFromCoords(m_spriteSheet, { 11, 11 }, { 128, 128 }, { 1, 2 });
+		m_textureMap['D'] = SubTexture2D::CreateFromCoords(m_spriteSheet, { 6, 11 }, { 128, 128 }, { 1, 2 });
+		m_textureMap['W'] = SubTexture2D::CreateFromCoords(m_spriteSheet, { 11, 11 }, { 128, 128 }, { 1, 2 });
 
 
 
@@ -312,7 +315,7 @@ namespace Uge
 					ImGui::MenuItem("Padding", NULL, &opt_padding);
 					ImGui::Separator();
 
-					if (ImGui::MenuItem("Exit", "")) Uge::Application::Get().CloseProgram();
+					if (ImGui::MenuItem("Exit", "")) Application::Get().CloseProgram();
 					ImGui::Separator();
 
 					ImGui::EndMenu();
@@ -326,23 +329,26 @@ namespace Uge
 			ImGui::Begin("Settings");
 			{
 
-				auto stats = Uge::Renderer2D::GetStats();
+				auto stats = Renderer2D::GetStats();
 				ImGui::Text("Renderer2D Stats:");
 				ImGui::Text("Draw Calls: %d", stats.DrawCalls);
 				ImGui::Text("Quad Count: %d", stats.QuadCount);
 				ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
 				ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
+				auto& squareSRC = m_activeScene->Reg().get<SpriteRendererComponent>(m_squareEnt).Color;
 
 				ImGui::Text("");
 				ImGui::Text("Squre Color Pickers:");
+
+				
+
 				ImGui::PushID(0);
-				ImGui::ColorEdit4("Square Color", glm::value_ptr(m_square1Color));
+				ImGui::ColorEdit4("Square Color", glm::value_ptr(squareSRC));
 				ImGui::PopID();
 
-				ImGui::PushID(1);
-				ImGui::ColorEdit4("Square Color", glm::value_ptr(m_square2Color));
-				ImGui::PopID();
+				
+
 
 				ImGui::Text("Sandbox2D");
 				ImGui::Text("Viewport Panel Size");
