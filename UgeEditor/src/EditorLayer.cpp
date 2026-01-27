@@ -23,6 +23,8 @@ namespace Uge
 			m_frameBuffer->Resize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 
 			m_cameraController.OnResize(m_viewportSize.x, m_viewportSize.y);
+
+			m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 			m_shouldResize = false;
 		}
 
@@ -93,11 +95,48 @@ namespace Uge
 
 		// Camera Entities
 		m_cameraEnt = m_activeScene->CreateEntity("Camera Entity");
-		m_cameraEnt.AddComponent<CameraComponent>(glm::ortho(-16.0f, 16.0f, -9.0f, 9.0f, -1.0f, 1.0f));
+		m_cameraEnt.AddComponent<CameraComponent>();
 
 		m_secondCameraEnt = m_activeScene->CreateEntity("Clip Space Entity");
-		auto& cc = m_secondCameraEnt.AddComponent<CameraComponent>(glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f));
+		auto& cc = m_secondCameraEnt.AddComponent<CameraComponent>();
 		cc.Primary = false;
+
+		class CameraController : public ScriptableEntity
+		{
+
+		public:
+			void OnCreate()
+			{
+				
+				
+			}
+
+			void OnDestroy()
+			{
+
+			}
+
+			void OnUpdate(Timestep ts)
+			{
+				
+				auto& transform = GetComponent<TransformComponent>().Transform;
+				float speed = 5.0f;
+
+				if (Input::IsKeyPressed(UG_KEY_A))
+					transform[3][0] -= speed * ts;
+				if (Input::IsKeyPressed(UG_KEY_D))
+					transform[3][0] += speed * ts;
+				if (Input::IsKeyPressed(UG_KEY_W))
+					transform[3][1] += speed * ts;
+				if (Input::IsKeyPressed(UG_KEY_S))
+					transform[3][1] -= speed * ts;
+
+			}
+
+
+		};
+
+		m_cameraEnt.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 
 	}
 
@@ -240,6 +279,17 @@ namespace Uge
 					m_secondCameraEnt.GetComponent<CameraComponent>().Primary = !m_primaryCam;
 
 				}
+
+				{
+					auto& cam = m_secondCameraEnt.GetComponent<CameraComponent>().Cam;
+					float orthoSize = cam.GetOrthographicSize();
+					if (ImGui::DragFloat("Second Camera Ortho Size", &orthoSize))
+					{
+						cam.SetOrthographicSize(orthoSize);
+					}
+
+				}
+
 
 				
 				

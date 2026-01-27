@@ -14,43 +14,13 @@ namespace Uge
 
 	}
 
-	
 
 	Scene::Scene()
 	{
-
-#if 0
-		entt::entity entity = m_registry.create();
-		m_registry.emplace<TransformComponent>(entity, glm::mat4(1.0f));
-
-		m_registry.on_construct<TransformComponent>().connect<&OnTransformConstruct>();
-		if (m_registry.any_of<TransformComponent>(entity))
-		{
-			TransformComponent& transform = m_registry.get<TransformComponent>(entity);
-		}
-
-		auto view = m_registry.view<TransformComponent>();
-		for (auto ent : view)
-		{
-			TransformComponent& transform = view.get<TransformComponent>(ent);
-		}
-
-		auto group = m_registry.group<TransformComponent>(entt::get<MeshComponent>);
-		for (auto ent : group)
-		{
-			auto& [transform, mesh] = group.get<TransformComponent, MeshComponent>(ent);
-		}
-
-#endif
-
-
 	}
 
 	Scene::~Scene()
 	{
-
-
-
 	}
 
 	Entity Scene::CreateEntity(const std::string& name)
@@ -70,7 +40,25 @@ namespace Uge
 	void Scene::OnUpdate(Timestep ts)
 	{
 
-		
+		// Update Scripts
+		{
+
+			m_registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
+			{
+				if (!nsc.Instance)
+				{
+					nsc.InstantiateFunction();
+					nsc.Instance->m_entity = Entity{ entity, this };
+					nsc.OnCreateFunction(nsc.Instance);
+				}
+
+				nsc.OnUpdateFunction(nsc.Instance, ts);
+
+			});
+
+		}
+
+
 		// Render Scene
 		Camera* mainCam = nullptr;
 		glm::mat4* mainTransform = nullptr;
@@ -108,16 +96,33 @@ namespace Uge
 			}
 			Renderer2D::EndScene();
 
-			
+			}
+		}
+	}
+
+	void Uge::Scene::OnViewportResize(uint32_t width, uint32_t height)
+	{
+
+		m_viewportWidth = width;
+		m_viewportHeight = height;
+
+		{
+			auto view = m_registry.view<CameraComponent>();
+			for (auto [entity, camComp] : view.each())
+			{
+
+				if (!camComp.FixedAspectRatio)
+				{
+
+					camComp.Cam.SetViewportSize(width, height);
+
+				}
 
 
 			}
 
 
 		}
-
-
-		
 
 
 	}

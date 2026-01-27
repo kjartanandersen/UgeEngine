@@ -198,6 +198,8 @@
     <ClInclude Include="src\Uge\Scene\Components.h" />
     <ClInclude Include="src\Uge\Scene\Entity.h" />
     <ClInclude Include="src\Uge\Scene\Scene.h" />
+    <ClInclude Include="src\Uge\Scene\SceneCamera.h" />
+    <ClInclude Include="src\Uge\Scene\ScriptableEntity.h" />
     <ClInclude Include="src\ugpch.h" />
     <ClInclude Include="thirdparty\stb_image\stb_image.h" />
   </ItemGroup>
@@ -235,6 +237,7 @@
     <ClCompile Include="src\Uge\Renderer\VertexArray.cpp" />
     <ClCompile Include="src\Uge\Scene\Entity.cpp" />
     <ClCompile Include="src\Uge\Scene\Scene.cpp" />
+    <ClCompile Include="src\Uge\Scene\SceneCamera.cpp" />
     <ClCompile Include="src\ugpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

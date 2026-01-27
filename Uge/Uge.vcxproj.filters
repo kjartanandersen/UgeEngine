@@ -177,6 +177,8 @@
     <ClInclude Include="src\Uge\Scene\Scene.h" />
     <ClInclude Include="src\Uge\Scene\Components.h" />
     <ClInclude Include="src\Uge\Scene\Entity.h" />
+    <ClInclude Include="src\Uge\Scene\SceneCamera.h" />
+    <ClInclude Include="src\Uge\Scene\ScriptableEntity.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">
@@ -280,5 +282,6 @@
     </ClCompile>
     <ClCompile Include="src\Uge\Scene\Scene.cpp" />
     <ClCompile Include="src\Uge\Scene\Entity.cpp" />
+    <ClCompile Include="src\Uge\Scene\SceneCamera.cpp" />
   </ItemGroup>
 </Project>
