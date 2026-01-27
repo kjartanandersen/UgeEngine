@@ -176,6 +176,7 @@
     </ClInclude>
     <ClInclude Include="src\Uge\Scene\Scene.h" />
     <ClInclude Include="src\Uge\Scene\Components.h" />
+    <ClInclude Include="src\Uge\Scene\Entity.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">
@@ -278,8 +279,6 @@
       <Filter>thirdparty\stb_image</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\Scene\Scene.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="UgeClassDiagram.cd" />
+    <ClCompile Include="src\Uge\Scene\Entity.cpp" />
   </ItemGroup>
 </Project>

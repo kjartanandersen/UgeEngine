@@ -87,7 +87,7 @@ namespace Uge
 
 
 
-				m_camera.SetQuatRotation(m_qRotation);
+				//m_camera.SetQuatRotation(m_qRotation);
 
 			}
 
@@ -96,7 +96,7 @@ namespace Uge
 
 		
 		m_cameraPosition += velocity;
-		m_camera.SetPosition(m_cameraPosition);
+		//m_camera.SetPosition(m_cameraPosition);
 
 	}
 	void PerspectiveCameraController::OnEvent(Event& e)

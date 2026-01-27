@@ -108,10 +108,10 @@ void Sandbox2D::OnUpdate(Uge::Timestep ts)
 			auto height = Uge::Application::Get().GetWindow().GetHeight();
 
 			auto bounds = m_cameraController.GetBounds();
-			auto pos = m_cameraController.GetCamera().GetPosition();
+			//auto pos = m_cameraController.GetCamera().GetPosition();
 			x = (x / width) * bounds.GetWidth() - bounds.GetWidth() * 0.5f;
 			y = bounds.GetHeight() * 0.5f - (y / height) * bounds.GetHeight();
-			m_particle.Position = { x + pos.x, y + pos.y };
+			//m_particle.Position = { x + pos.x, y + pos.y };
 			for (int i = 0; i < 50; i++)
 				m_particleSystem.Emit(m_particle);
 		}

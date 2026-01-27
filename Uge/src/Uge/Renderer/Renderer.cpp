@@ -35,7 +35,7 @@ namespace Uge
 	void Renderer::BeginScene(Camera& camera)
 	{
 
-		m_sceneData->viewProjectionMatrix = camera.GetViewProjectionMatrix();
+		//m_sceneData->viewProjectionMatrix = camera.GetViewProjectionMatrix();
 
 	}
 

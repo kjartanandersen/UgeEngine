@@ -4,24 +4,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
-static const uint32_t s_mapWidth = 24;
-static const char* s_mapTiles =
-"WWWWWWWWWWWWWWWWWWWWWWWW"
-"WWWWWWWWWWWWWWWWWWWWWWWW"
-"WWWWWWWWDDDDDDWWWWWWWWWW"
-"WWWWWWWDDDDDDDDDDWWWWWWW"
-"WWWWWWDDDDDDDDDDDDWWWWWW"
-"WWWWWDDDDWWDDDDDDDDDDDWW"
-"WWWWDDDDDWWDDDDDDDDDDDWW"
-"WWWDDDDDDDDDDDDDDDDDDDWW"
-"WWWWWDDDDDDDDDDDDDDDDDWW"
-"WWWWWDDDDDDDDDDDDDDDDDWW"
-"WWWWWWDDDDDDDDDDDDDDDDWW"
-"WWWWWWWWWWWWWWWWWWWWWWWW"
-"WWWWWWWWWWWWWWWWWWWWWWWW"
-"WWWWWWWWWWWWWWWWWWWWWWWW";
-
-
 namespace Uge
 {
 
@@ -62,114 +44,12 @@ namespace Uge
 			RenderCommand::Clear();
 		}
 
-		
+		m_activeScene->OnUpdate(ts);
+		m_frameBuffer->Unbind();
 
-		{
-
-#if 1
-			Renderer2D::BeginScene(m_cameraController.GetCamera());
-			{
-				UG_PROFILE_SCOPE("Renderer Draw");
-				m_activeScene->OnUpdate(ts);
-
-				// Flat color
-				//Renderer2D::DrawRotatedQuad({ 1.0f, 0.0f, 0.0f }, glm::radians(45.0f), { 0.3f, 0.3f }, m_square1Color);
-				//
-				//Renderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, { 0.3f, 0.3f }, m_square2Color);
-				//Renderer2D::DrawQuad({ 0.0f, 0.5f, 0.0f }, { 0.3f, 0.3f }, m_square1Color);
-				//Renderer2D::DrawRotatedQuad({ 0.0f, 1.0f, 0.0f }, glm::radians(rotation), { 0.3f, 0.3f }, m_square2Color);
-				//// Texture
-				//Renderer2D::DrawRotatedQuad({ 0.0f, 0.0f, -0.1f }, glm::radians(0.0f), { 10.0f, 10.0f }, m_texture, 10.0f);
-
-
-
-
-			}
-			Renderer2D::EndScene();
-
-
-#if 0
-			Renderer2D::BeginScene(m_cameraController.GetCamera());
-			{
-				UG_PROFILE_SCOPE("Renderer Draw");
-
-				for (float y = -5.0f; y < 5.0f; y += 0.5f)
-				{
-					for (float x = -5.0f; x < 5.0f; x += 0.5f)
-					{
-						glm::vec4 color = { (x + 5) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.5f };
-						Renderer2D::DrawQuad({ x, y }, { 0.45f, 0.45f }, color);
-
-					}
-
-
-
-
-				}
-
-
-
-			}
-			Renderer2D::EndScene();
-#endif
-			
-
-#else
-			if (Input::IsMouseButtonPressed(UG_MOUSE_BUTTON_LEFT))
-			{
-				auto [x, y] = Input::GetMousePos();
-				auto width = Application::Get().GetWindow().GetWidth();
-				auto height = Application::Get().GetWindow().GetHeight();
-
-				auto bounds = m_cameraController.GetBounds();
-				auto pos = m_cameraController.GetCamera().GetPosition();
-				x = (x / width) * bounds.GetWidth() - bounds.GetWidth() * 0.5f;
-				y = bounds.GetHeight() * 0.5f - (y / height) * bounds.GetHeight();
-
-			}
-
-			Renderer2D::BeginScene(m_cameraController.GetCamera());
-			{
-				UG_PROFILE_SCOPE("Renderer Draw");
-
-
-				//Renderer2D::DrawQuad({ 0.0f, 0.0f, 0.5f }, { 1.0f, 1.0f }, m_textureStairs);
-				//Renderer2D::DrawQuad({ 1.0f, 1.0f, 0.5f }, { 1.0f, 2.0f }, m_textureBarrel);
-
-
-				for (uint32_t y = 0; y < m_mapHeight; y++)
-				{
-					for (uint32_t x = 0; x < m_mapWidth; x++)
-					{
-						char tileType = s_mapTiles[x + y * m_mapWidth];
-						Ref<SubTexture2D> texture;
-						if (m_textureMap.find(tileType) != m_textureMap.end())
-							texture = m_textureMap[tileType];
-						else
-							texture = m_textureBarrel;
-
-						Renderer2D::DrawQuad({ x - (m_mapWidth / 2.0f),m_mapHeight - y - (m_mapHeight / 2.0f), 0.5f }, { 1.0f, 1.0f }, texture);
-
-
-					}
-				}
-
-
-			}
-			Renderer2D::EndScene();
-
-
-#endif
-
-			m_frameBuffer->Unbind();
-
-		}
-
-
-
-		//std::dynamic_pointer_cast<OpenGLShader>(m_flatColorShader)->Bind();
-		//std::dynamic_pointer_cast<OpenGLShader>(m_flatColorShader)->UploadUniformFloat4("u_Color", m_squareColor);
 	}
+
+
 
 	void EditorLayer::OnEvent(Event& e)
 	{
@@ -188,13 +68,14 @@ namespace Uge
 		FramebufferSpecification fbSpec{ 1280, 720 };
 		m_frameBuffer = Framebuffer::Create(fbSpec);
 
+
 		m_activeScene = CreateRef<Scene>();
-		m_squareEnt = m_activeScene->CreateEntity();
-		m_activeScene->Reg().emplace<TransformComponent>(m_squareEnt);
-		m_activeScene->Reg().emplace<SpriteRendererComponent>(m_squareEnt, glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
+		
+		// Entity
+		m_squareEnt = m_activeScene->CreateEntity("Square Entity");
+		m_squareEnt.AddComponent<SpriteRendererComponent>(glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
 
-
-
+		// Load ImGui Font
 		ImGuiIO& io = ImGui::GetIO();
 		m_texture = Texture2D::Create("assets/textures/Checkerboard.png");
 		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\Uge\\assets\\fonts\\PlayfairDisplayBold-nRv8g.ttf", 32.5f);
@@ -203,22 +84,20 @@ namespace Uge
 
 
 		// Load sprite sheet
-		m_spriteSheet = Texture2D::Create("assets/game/textures/RPGpack_sheet_2X.png");
+		//m_spriteSheet = Texture2D::Create("assets/game/textures/RPGpack_sheet_2X.png");
 
-		m_textureStairs = SubTexture2D::CreateFromCoords(m_spriteSheet, { 7, 6 }, { 128, 128 }, { 1, 1 });
-		m_textureBarrel = SubTexture2D::CreateFromCoords(m_spriteSheet, { 2, 1 }, { 128, 128 }, { 1, 2 });
-
-		m_mapWidth = s_mapWidth;
-		m_mapHeight = strlen(s_mapTiles) / m_mapWidth;
-
-		m_textureMap['D'] = SubTexture2D::CreateFromCoords(m_spriteSheet, { 6, 11 }, { 128, 128 }, { 1, 2 });
-		m_textureMap['W'] = SubTexture2D::CreateFromCoords(m_spriteSheet, { 11, 11 }, { 128, 128 }, { 1, 2 });
-
-
+		//m_textureStairs = SubTexture2D::CreateFromCoords(m_spriteSheet, { 7, 6 }, { 128, 128 }, { 1, 1 });
+		//m_textureBarrel = SubTexture2D::CreateFromCoords(m_spriteSheet, { 2, 1 }, { 128, 128 }, { 1, 2 });
 
 		m_cameraController.SetZoomLevel(5.0f);
 
+		// Camera Entities
+		m_cameraEnt = m_activeScene->CreateEntity("Camera Entity");
+		m_cameraEnt.AddComponent<CameraComponent>(glm::ortho(-16.0f, 16.0f, -9.0f, 9.0f, -1.0f, 1.0f));
 
+		m_secondCameraEnt = m_activeScene->CreateEntity("Clip Space Entity");
+		auto& cc = m_secondCameraEnt.AddComponent<CameraComponent>(glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f));
+		cc.Primary = false;
 
 	}
 
@@ -234,6 +113,9 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 		
+		#pragma region DockspacePrep
+
+
 		/*****************************
 		*
 		* Dockspace
@@ -282,7 +164,7 @@ namespace Uge
 		// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
 		if (!opt_padding)
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
+#pragma endregion
 
 		ImGui::Begin("DockSpace Demo", &isOpen, window_flags);
 		{
@@ -325,7 +207,6 @@ namespace Uge
 			}
 
 
-
 			ImGui::Begin("Settings");
 			{
 
@@ -336,26 +217,38 @@ namespace Uge
 				ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
 				ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
-				auto& squareSRC = m_activeScene->Reg().get<SpriteRendererComponent>(m_squareEnt).Color;
 
-				ImGui::Text("");
+				ImGui::Separator();
 				ImGui::Text("Squre Color Pickers:");
+				if (m_squareEnt)
+				{
+					ImGui::Text(m_squareEnt.GetComponent<TagComponent>().Tag.c_str());
+					auto& squareSRC = m_squareEnt.GetComponent<SpriteRendererComponent>().Color;
+					ImGui::PushID(0);
+					ImGui::ColorEdit4("Square Color", glm::value_ptr(squareSRC));
+					ImGui::PopID();
+
+				}
+
+				ImGui::DragFloat3("Camera Transform", 
+					glm::value_ptr(m_cameraEnt.GetComponent<TransformComponent>().Transform[3]));
+
+				if (ImGui::Checkbox("Is Primary", &m_primaryCam))
+				{
+
+					m_cameraEnt.GetComponent<CameraComponent>().Primary = m_primaryCam;
+					m_secondCameraEnt.GetComponent<CameraComponent>().Primary = !m_primaryCam;
+
+				}
 
 				
-
-				ImGui::PushID(0);
-				ImGui::ColorEdit4("Square Color", glm::value_ptr(squareSRC));
-				ImGui::PopID();
-
 				
 
-
-				ImGui::Text("Sandbox2D");
+				//ImGui::Dummy({ 0.0f, 100.0f });
+				ImGui::Separator();
 				ImGui::Text("Viewport Panel Size");
 				ImGui::Text("X: %f", m_viewportSize.x);
 				ImGui::Text("Y: %f", m_viewportSize.y);
-
-				ImGui::InputText("Text", "", 0);
 			}
 			ImGui::End();
 

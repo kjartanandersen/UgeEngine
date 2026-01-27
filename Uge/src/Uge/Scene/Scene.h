@@ -7,6 +7,7 @@
 
 namespace Uge
 {
+	class Entity;
 
 	class Scene
 	{
@@ -15,15 +16,15 @@ namespace Uge
 		Scene();
 		~Scene();
 
-		entt::entity CreateEntity();
+		Entity CreateEntity(const std::string& name = std::string());
 
-		// TODO: TEMP, Remove
-		entt::registry& Reg() { return m_registry; }
 
 		void OnUpdate(Timestep ts);
 
 	private:
 		entt::registry m_registry;
+
+		friend class Entity;
 
 	};
 

@@ -9,8 +9,9 @@ namespace Uge
 
 
     PerspectiveCamera::PerspectiveCamera(float fovYRadians, float aspect, float nearClip, float farClip)
+        : Camera({1.0f})
     {
-        m_usingQuat = true;
+        //m_usingQuat = true;
 
         
 
@@ -26,7 +27,7 @@ namespace Uge
         m_nearClip = nearClip;
         m_farClip = farClip;
 
-        SetProjectionMatrix(glm::perspective(fovYRadians, aspect, nearClip, farClip));
+        //SetProjectionMatrix(glm::perspective(fovYRadians, aspect, nearClip, farClip));
     }
 
 

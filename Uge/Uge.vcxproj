@@ -196,6 +196,7 @@
     <ClInclude Include="src\Uge\Renderer\Texture.h" />
     <ClInclude Include="src\Uge\Renderer\VertexArray.h" />
     <ClInclude Include="src\Uge\Scene\Components.h" />
+    <ClInclude Include="src\Uge\Scene\Entity.h" />
     <ClInclude Include="src\Uge\Scene\Scene.h" />
     <ClInclude Include="src\ugpch.h" />
     <ClInclude Include="thirdparty\stb_image\stb_image.h" />
@@ -232,14 +233,12 @@
     <ClCompile Include="src\Uge\Renderer\SubTexture2D.cpp" />
     <ClCompile Include="src\Uge\Renderer\Texture.cpp" />
     <ClCompile Include="src\Uge\Renderer\VertexArray.cpp" />
+    <ClCompile Include="src\Uge\Scene\Entity.cpp" />
     <ClCompile Include="src\Uge\Scene\Scene.cpp" />
     <ClCompile Include="src\ugpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="thirdparty\stb_image\stb_image.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="UgeClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="thirdparty\GLFW\GLFW.vcxproj">

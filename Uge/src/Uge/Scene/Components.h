@@ -2,9 +2,22 @@
 
 #include <glm/glm.hpp>
 
+#include "Uge/Renderer/Camera.h"
+
 namespace Uge
 {
+	struct TagComponent
+	{
 
+		std::string Tag; 
+
+		TagComponent() = default;
+		TagComponent(const TagComponent&) = default;
+		TagComponent(const std::string& tag)
+			: Tag(tag) {}
+
+
+	};
 
 	struct MeshComponent
 	{
@@ -20,8 +33,7 @@ namespace Uge
 		TransformComponent() = default;
 		TransformComponent(const TransformComponent&) = default;
 		TransformComponent(const glm::mat4& transform)
-			: Transform(transform) {
-		};
+			: Transform(transform) {}
 
 		operator glm::mat4& () { return Transform; }
 		operator const glm::mat4& () const { return Transform; }
@@ -35,8 +47,22 @@ namespace Uge
 		SpriteRendererComponent() = default;
 		SpriteRendererComponent(const SpriteRendererComponent&) = default;
 		SpriteRendererComponent(const glm::vec4& color)
-			: Color(color) {
-		};
+			: Color(color) {}
+
+	};
+
+	struct CameraComponent
+	{
+
+		Camera Cam;
+		bool Primary = true; // TODO: Move to scene
+
+		CameraComponent() = default;
+		CameraComponent(const CameraComponent&) = default;
+		CameraComponent(const glm::mat4& proj)
+			: Cam(proj) {
+		}
+
 
 	};
 

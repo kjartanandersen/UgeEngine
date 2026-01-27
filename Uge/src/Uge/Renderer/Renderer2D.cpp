@@ -5,6 +5,8 @@
 #include "Shader.h"
 #include "RenderCommand.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 
 
 namespace Uge
@@ -133,14 +135,32 @@ namespace Uge
 		UG_PROFILE_FUNCTION();
 
 		m_data.TextureShader->Bind();
-		m_data.TextureShader->SetMat4(
-			"u_ViewProjection", camera.GetViewProjectionMatrix());
+		//m_data.TextureShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 
 		m_data.QuadVertexBufferPtr = m_data.QuadVertexBufferBase;
 		m_data.QuadIndexCount = 0;
 
 		m_data.TextureSlotIndex = 1;
 		
+
+
+	}
+
+	void Renderer2D::BeginScene(const Camera& camera, const glm::mat4& transform)
+	{
+
+		UG_PROFILE_FUNCTION();
+
+		glm::mat4 viewProj = camera.GetProjection() * glm::inverse(transform);
+
+		m_data.TextureShader->Bind();
+		m_data.TextureShader->SetMat4("u_ViewProjection", viewProj);
+
+		m_data.QuadVertexBufferPtr = m_data.QuadVertexBufferBase;
+		m_data.QuadIndexCount = 0;
+
+		m_data.TextureSlotIndex = 1;
+
 
 
 	}

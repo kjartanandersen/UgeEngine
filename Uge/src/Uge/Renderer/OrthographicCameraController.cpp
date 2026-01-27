@@ -56,11 +56,11 @@ namespace Uge
 			if (Input::IsKeyPressed(UG_KEY_E))
 				m_cameraRotation -= m_cameraRotationSpeed * ts;
 
-			m_camera.SetRotation(m_cameraRotation);
+			//m_camera.SetRotation(m_cameraRotation);
 
 		}
 
-		m_camera.SetPosition(m_cameraPosition);
+		//m_camera.SetPosition(m_cameraPosition);
 
 	}
 	void OrthographicCameraController::OnEvent(Event& e)

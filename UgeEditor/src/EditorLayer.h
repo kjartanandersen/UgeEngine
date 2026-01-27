@@ -34,7 +34,10 @@ namespace Uge
 		Ref<Framebuffer> m_frameBuffer;
 
 		Ref<Scene> m_activeScene;
-		entt::entity m_squareEnt;
+		Entity m_squareEnt;
+		Entity m_cameraEnt;
+		Entity m_secondCameraEnt;
+		bool m_primaryCam = true;
 
 		ImFont* m_mainFont;
 
@@ -47,8 +50,6 @@ namespace Uge
 		bool m_viewportFocused = false;
 		bool m_viewportHovered = false;
 
-		uint32_t m_mapWidth, m_mapHeight;
-		std::unordered_map<char, Ref<SubTexture2D>> m_textureMap;
 
 
 	};
