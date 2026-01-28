@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Uge.h"
+#include "Panels/SceneHierarchyPanel.h"
 
 namespace Uge
 {
@@ -45,6 +46,8 @@ namespace Uge
 		glm::vec4 m_square2Color = { 0.1f, 0.1f, 1.1f, 1.0f };
 
 		glm::vec2 m_viewportSize{0.0f, 0.0f};
+
+		SceneHierarchyPanel m_sceneHierarchyPanel;
 
 		bool m_shouldResize = false;
 		bool m_viewportFocused = false;

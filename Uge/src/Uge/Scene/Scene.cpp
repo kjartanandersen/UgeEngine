@@ -9,11 +9,6 @@
 namespace Uge
 {
 
-	static void OnTransformConstruct(entt::registry& registry, entt::entity entity)
-	{
-
-	}
-
 
 	Scene::Scene()
 	{
@@ -45,14 +40,15 @@ namespace Uge
 
 			m_registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
 			{
+				// TODO: Move to Scene::OnScenePlay
 				if (!nsc.Instance)
 				{
-					nsc.InstantiateFunction();
+					nsc.Instance = nsc.InstantiateScript();
 					nsc.Instance->m_entity = Entity{ entity, this };
-					nsc.OnCreateFunction(nsc.Instance);
+					nsc.Instance->OnCreate();
 				}
 
-				nsc.OnUpdateFunction(nsc.Instance, ts);
+				nsc.Instance->OnUpdate(ts);
 
 			});
 
@@ -67,7 +63,7 @@ namespace Uge
 			for (auto [entity, transform, camera] : view.each())
 			{
 
-				//auto& [transform, camera] = view.get<TransformComponent, CameraComponent>(entity);
+				//auto [transform, camera] = view.get<TransformComponent, CameraComponent>(entity);
 
 				if (camera.Primary)
 				{
@@ -89,7 +85,7 @@ namespace Uge
 				auto group = m_registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
 				for (auto ent : group)
 				{
-					auto& [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(ent);
+					auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(ent);
 
 					Renderer2D::DrawQuad(transform, sprite.Color);
 

@@ -30,6 +30,7 @@ namespace Uge
 
 
 		friend class Entity;
+		friend class SceneHierarchyPanel;
 
 	};
 

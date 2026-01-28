@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Entity.h"
+#include <Uge/Core/Timestep.h>
 
 namespace Uge
 {
@@ -9,12 +10,18 @@ namespace Uge
 	{
 
 	public:
+		virtual ~ScriptableEntity() {}
 
 		template<typename T>
 		T& GetComponent()
 		{
 			return m_entity.GetComponent<T>();
 		}
+
+	protected:
+		virtual void OnCreate() {}
+		virtual void OnDestroy() {}
+		virtual void OnUpdate(Timestep ts) {}
 
 
 	private:

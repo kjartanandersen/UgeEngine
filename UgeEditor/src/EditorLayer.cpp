@@ -128,7 +128,7 @@ namespace Uge
 					transform[3][0] += speed * ts;
 				if (Input::IsKeyPressed(UG_KEY_W))
 					transform[3][1] += speed * ts;
-				if (Input::IsKeyPressed(UG_KEY_S))
+				if (Input::IsKeyPressed(UG_KEY_S))	
 					transform[3][1] -= speed * ts;
 
 			}
@@ -137,6 +137,10 @@ namespace Uge
 		};
 
 		m_cameraEnt.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+		m_secondCameraEnt.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+
+
+		m_sceneHierarchyPanel.SetContext(m_activeScene);
 
 	}
 
@@ -244,6 +248,8 @@ namespace Uge
 
 				ImGui::EndMenuBar();
 			}
+
+			m_sceneHierarchyPanel.OnImGuiRender();
 
 
 			ImGui::Begin("Settings");
