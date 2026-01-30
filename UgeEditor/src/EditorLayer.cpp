@@ -288,10 +288,10 @@ namespace Uge
 
 				{
 					auto& cam = m_secondCameraEnt.GetComponent<CameraComponent>().Cam;
-					float orthoSize = cam.GetOrthographicSize();
+					float orthoSize = cam.GetOrthoSize();
 					if (ImGui::DragFloat("Second Camera Ortho Size", &orthoSize))
 					{
-						cam.SetOrthographicSize(orthoSize);
+						cam.SetOrthoSize(orthoSize);
 					}
 
 				}
