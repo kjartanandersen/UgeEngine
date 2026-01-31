@@ -35,7 +35,8 @@ namespace Uge
 		Ref<Framebuffer> m_frameBuffer;
 
 		Ref<Scene> m_activeScene;
-		Entity m_squareEnt;
+		Entity m_square1Ent;
+		Entity m_square2Ent;
 		Entity m_cameraEnt;
 		Entity m_secondCameraEnt;
 		bool m_primaryCam = true;

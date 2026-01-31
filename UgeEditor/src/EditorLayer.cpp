@@ -74,16 +74,21 @@ namespace Uge
 		m_activeScene = CreateRef<Scene>();
 		
 		// Entity
-		m_squareEnt = m_activeScene->CreateEntity("Square Entity");
-		m_squareEnt.AddComponent<SpriteRendererComponent>(glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
+		m_square1Ent = m_activeScene->CreateEntity("Red Square Entity");
+		m_square1Ent.AddComponent<SpriteRendererComponent>(glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
+
+		m_square2Ent = m_activeScene->CreateEntity("Green Square Entity");
+		m_square2Ent.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+		m_square2Ent.GetComponent<TransformComponent>().Translation = glm::vec3{ 1.0f, 0.0f, 0.0f };
+
 
 		// Load ImGui Font
 		ImGuiIO& io = ImGui::GetIO();
-		m_texture = Texture2D::Create("assets/textures/Checkerboard.png");
 		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\Uge\\assets\\fonts\\PlayfairDisplayBold-nRv8g.ttf", 32.5f);
 		IM_ASSERT(m_mainFont != NULL);
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
+		m_texture = Texture2D::Create("assets/textures/Checkerboard.png");
 
 		// Load sprite sheet
 		//m_spriteSheet = Texture2D::Create("assets/game/textures/RPGpack_sheet_2X.png");
@@ -94,10 +99,10 @@ namespace Uge
 		m_cameraController.SetZoomLevel(5.0f);
 
 		// Camera Entities
-		m_cameraEnt = m_activeScene->CreateEntity("Camera Entity");
+		m_cameraEnt = m_activeScene->CreateEntity("Camera A Entity");
 		m_cameraEnt.AddComponent<CameraComponent>();
 
-		m_secondCameraEnt = m_activeScene->CreateEntity("Clip Space Entity");
+		m_secondCameraEnt = m_activeScene->CreateEntity("Camera B Entity");
 		auto& cc = m_secondCameraEnt.AddComponent<CameraComponent>();
 		cc.Primary = false;
 
@@ -119,17 +124,17 @@ namespace Uge
 			void OnUpdate(Timestep ts)
 			{
 				
-				auto& transform = GetComponent<TransformComponent>().Transform;
+				auto& translation = GetComponent<TransformComponent>().Translation;
 				float speed = 5.0f;
 
 				if (Input::IsKeyPressed(UG_KEY_A))
-					transform[3][0] -= speed * ts;
+					translation.x -= speed * ts;
 				if (Input::IsKeyPressed(UG_KEY_D))
-					transform[3][0] += speed * ts;
+					translation.x += speed * ts;
 				if (Input::IsKeyPressed(UG_KEY_W))
-					transform[3][1] += speed * ts;
+					translation.y += speed * ts;
 				if (Input::IsKeyPressed(UG_KEY_S))	
-					transform[3][1] -= speed * ts;
+					translation.y -= speed * ts;
 
 			}
 
@@ -252,7 +257,7 @@ namespace Uge
 			m_sceneHierarchyPanel.OnImGuiRender();
 
 
-			ImGui::Begin("Settings");
+			ImGui::Begin("Stats");
 			{
 
 				auto stats = Renderer2D::GetStats();
@@ -261,44 +266,6 @@ namespace Uge
 				ImGui::Text("Quad Count: %d", stats.QuadCount);
 				ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
 				ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
-
-
-				ImGui::Separator();
-				ImGui::Text("Squre Color Pickers:");
-				if (m_squareEnt)
-				{
-					ImGui::Text(m_squareEnt.GetComponent<TagComponent>().Tag.c_str());
-					auto& squareSRC = m_squareEnt.GetComponent<SpriteRendererComponent>().Color;
-					ImGui::PushID(0);
-					ImGui::ColorEdit4("Square Color", glm::value_ptr(squareSRC));
-					ImGui::PopID();
-
-				}
-
-				ImGui::DragFloat3("Camera Transform", 
-					glm::value_ptr(m_cameraEnt.GetComponent<TransformComponent>().Transform[3]));
-
-				if (ImGui::Checkbox("Is Primary", &m_primaryCam))
-				{
-
-					m_cameraEnt.GetComponent<CameraComponent>().Primary = m_primaryCam;
-					m_secondCameraEnt.GetComponent<CameraComponent>().Primary = !m_primaryCam;
-
-				}
-
-				{
-					auto& cam = m_secondCameraEnt.GetComponent<CameraComponent>().Cam;
-					float orthoSize = cam.GetOrthoSize();
-					if (ImGui::DragFloat("Second Camera Ortho Size", &orthoSize))
-					{
-						cam.SetOrthoSize(orthoSize);
-					}
-
-				}
-
-
-				
-				
 
 				//ImGui::Dummy({ 0.0f, 100.0f });
 				ImGui::Separator();

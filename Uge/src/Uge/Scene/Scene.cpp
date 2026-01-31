@@ -57,7 +57,7 @@ namespace Uge
 
 		// Render Scene
 		Camera* mainCam = nullptr;
-		glm::mat4* mainTransform = nullptr;
+		glm::mat4 mainTransform;
 		{
 			auto view = m_registry.view<TransformComponent, CameraComponent>();
 			for (auto [entity, transform, camera] : view.each())
@@ -69,7 +69,7 @@ namespace Uge
 				{
 
 					mainCam = &camera.Cam;
-					mainTransform = &transform.Transform;
+					mainTransform = transform.GetTransform();
 					break;
 				}
 
@@ -79,7 +79,7 @@ namespace Uge
 		if (mainCam)
 		{
 
-			Renderer2D::BeginScene(mainCam->GetProjection(), *mainTransform);
+			Renderer2D::BeginScene(mainCam->GetProjection(), mainTransform);
 			{
 				UG_PROFILE_SCOPE("Scene Renderer Draw");
 				auto group = m_registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
@@ -87,7 +87,7 @@ namespace Uge
 				{
 					auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(ent);
 
-					Renderer2D::DrawQuad(transform, sprite.Color);
+					Renderer2D::DrawQuad(transform.GetTransform(), sprite.Color);
 
 			}
 			Renderer2D::EndScene();
