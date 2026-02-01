@@ -27,6 +27,11 @@ namespace Uge
 		void End();
 
 		void BlockEvents(bool block) { m_blockEvents = block; };
+
+		void SetDarkThemeColors();
+	private:
+
+
 	private:
 
 		bool m_blockEvents = false;

@@ -84,7 +84,9 @@ namespace Uge
 
 		// Load ImGui Font
 		ImGuiIO& io = ImGui::GetIO();
-		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\Uge\\assets\\fonts\\PlayfairDisplayBold-nRv8g.ttf", 32.5f);
+		m_mainFontBold = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Bold.ttf", 24.5f);
+		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Regular.ttf", 24.5f);
+		
 		IM_ASSERT(m_mainFont != NULL);
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
@@ -161,7 +163,7 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 		
-		#pragma region DockspacePrep
+#pragma region DockspacePrep
 
 
 		/*****************************
@@ -227,12 +229,16 @@ namespace Uge
 			// REMINDER: THIS IS A DEMO FOR ADVANCED USAGE OF DockSpace()!
 			// MOST REGULAR APPLICATIONS WILL SIMPLY WANT TO CALL DockSpaceOverViewport(). READ COMMENTS ABOVE.
 			ImGuiIO& io = ImGui::GetIO();
+			ImGuiStyle& style = ImGui::GetStyle();
+			float minWidthSize = style.WindowMinSize.x;
+			style.WindowMinSize.x = 370.0f;
 			if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 			{
 				ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 				ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 			}
 
+			style.WindowMinSize.x = minWidthSize;
 
 			// Show demo options and help
 			if (ImGui::BeginMenuBar())
@@ -304,11 +310,12 @@ namespace Uge
 
 			}
 			ImGui::End();
+			ImGui::PopStyleVar();
 
 		}
 		ImGui::End();
 
-		ImGui::PopStyleVar();
+		
 		ImGui::PopFont();
 
 	}

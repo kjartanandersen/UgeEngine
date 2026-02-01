@@ -19,8 +19,9 @@ namespace Uge
 		T& AddComponent(Args&&... args)
 		{
 			UG_CORE_ASSERT(!HasComponent<T>(), "Entity already has component!");
-
-			return m_scene->m_registry.emplace<T>(m_entityHandle, std::forward<Args>(args)...);
+			T& component = m_scene->m_registry.emplace<T>(m_entityHandle, std::forward<Args>(args)...);
+			m_scene->OnComponentAdded<T>(*this, component);
+			return component;
 		}
 
 		template<typename T>
@@ -44,6 +45,7 @@ namespace Uge
 
 		operator bool() const { return m_entityHandle != entt::null; }
 		operator uint32_t() const { return (uint32_t)m_entityHandle; }
+		operator entt::entity() const { return m_entityHandle; }
 
 		bool operator==(const Entity& other) const 
 		{ 

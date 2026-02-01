@@ -42,6 +42,7 @@ namespace Uge
 		bool m_primaryCam = true;
 
 		ImFont* m_mainFont;
+		ImFont* m_mainFontBold;
 
 		glm::vec4 m_square1Color = { 1.0f, 0.1f, 0.1f, 1.0f };
 		glm::vec4 m_square2Color = { 0.1f, 0.1f, 1.1f, 1.0f };

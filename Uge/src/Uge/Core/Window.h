@@ -16,7 +16,7 @@ namespace Uge
 		uint32_t m_height;
 
 		WindowProps( const std::string& title = "Uge Engine",
-				uint32_t width = 1280, uint32_t height = 720) 
+				uint32_t width = 1600, uint32_t height = 900) 
 				: m_title(title), m_width(width), m_height(height)  {}
 	};
 
