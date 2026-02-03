@@ -10,3 +10,6 @@
 [submodule "Uge/thirdparty/glm"]
 	path = Uge/thirdparty/glm
 	url = git@github.com:g-truc/glm.git
+[submodule "Uge/thirdparty/yaml-cpp"]
+	path = Uge/thirdparty/yaml-cpp
+	url = git@github.com:jbeder/yaml-cpp.git

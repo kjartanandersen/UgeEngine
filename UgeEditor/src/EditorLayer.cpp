@@ -4,6 +4,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
+
+
 namespace Uge
 {
 
@@ -72,7 +74,18 @@ namespace Uge
 
 
 		m_activeScene = CreateRef<Scene>();
+
+		// Load ImGui Font
+		ImGuiIO& io = ImGui::GetIO();
+		m_mainFontBold = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Bold.ttf", 24.5f);
+		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Regular.ttf", 24.5f);
+
+		IM_ASSERT(m_mainFont != NULL);
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+		m_texture = Texture2D::Create("assets/textures/Checkerboard.png");
 		
+#if 0
 		// Entity
 		m_square1Ent = m_activeScene->CreateEntity("Red Square Entity");
 		m_square1Ent.AddComponent<SpriteRendererComponent>(glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
@@ -82,15 +95,7 @@ namespace Uge
 		m_square2Ent.GetComponent<TransformComponent>().Translation = glm::vec3{ 1.0f, 0.0f, 0.0f };
 
 
-		// Load ImGui Font
-		ImGuiIO& io = ImGui::GetIO();
-		m_mainFontBold = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Bold.ttf", 24.5f);
-		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Regular.ttf", 24.5f);
 		
-		IM_ASSERT(m_mainFont != NULL);
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
-		m_texture = Texture2D::Create("assets/textures/Checkerboard.png");
 
 		// Load sprite sheet
 		//m_spriteSheet = Texture2D::Create("assets/game/textures/RPGpack_sheet_2X.png");
@@ -145,9 +150,12 @@ namespace Uge
 
 		m_cameraEnt.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 		m_secondCameraEnt.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+#endif
 
 
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
+
+		
 
 	}
 
@@ -245,13 +253,24 @@ namespace Uge
 			{
 				if (ImGui::BeginMenu("File"))
 				{
-					// Disabling fullscreen would allow the window to be moved to the front of other windows,
-					// which we can't undo at the moment without finer window depth/z control.
-					ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen);
-					ImGui::MenuItem("Padding", NULL, &opt_padding);
-					ImGui::Separator();
 
-					if (ImGui::MenuItem("Exit", "")) Application::Get().CloseProgram();
+					if (ImGui::MenuItem("Serialize"))
+					{
+						SceneSerializer serializer(m_activeScene);
+						serializer.Serialize("assets/scenes/Example.uge");
+					}
+
+					if (ImGui::MenuItem("DeSerialize"))
+					{
+						SceneSerializer serializer(m_activeScene);
+						serializer.DeSerialize("assets/scenes/Example.uge");
+					}
+
+					if (ImGui::MenuItem("Exit"))
+					{
+						Application::Get().CloseProgram();
+
+					}
 					ImGui::Separator();
 
 					ImGui::EndMenu();

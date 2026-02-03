@@ -20,6 +20,7 @@ project "Uge"
 		"UgeClassDiagram.cd"
 	}
 	
+
 	defines
 	{
 		"_CRT_SECURE_NO_WARNINGS"
@@ -34,7 +35,8 @@ project "Uge"
 		"../%{IncludeDir.IMGUI}",
 		"../%{IncludeDir.GLM}",
 		"../%{IncludeDir.STBI}",
-		"../%{IncludeDir.ENTT}"
+		"../%{IncludeDir.ENTT}",
+		"../%{IncludeDir.YAMLCPP}"
 	}
 
 	links
@@ -43,10 +45,16 @@ project "Uge"
 		"GLAD",
 		"ImGui",
 		"glm",
+		"yaml-cpp",
 		"opengl32.lib"
 	}
 	
 	buildoptions {"/utf-8"}
+	
+	defines
+	{
+		"YAML_CPP_STATIC_DEFINE"
+	}
 
 	filter "system:windows"
 		systemversion "latest"

@@ -20,6 +20,7 @@
 #include "Uge/Scene/Entity.h"
 #include "Uge/Scene/ScriptableEntity.h"
 #include "Uge/Scene/Components.h"
+#include "Uge/Scene/SceneSerializer.h"
 
 // ************* Renderer *****************
 #include "Uge/Renderer/Renderer.h"

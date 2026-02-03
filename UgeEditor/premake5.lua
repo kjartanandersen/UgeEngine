@@ -27,10 +27,12 @@ project "Uge-Editor"
 	{
 		"Uge",
 		"ImGui",
-		"glm"
+		"glm",
+		"yaml-cpp"
 	}
 	
 	buildoptions {"/utf-8"}
+	
 
 	filter "system:windows"
 		systemversion "latest"

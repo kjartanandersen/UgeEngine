@@ -35,6 +35,7 @@ namespace Uge
 
 
 		friend class Entity;
+		friend class SceneSerializer;
 		friend class SceneHierarchyPanel;
 
 	};
