@@ -55,16 +55,6 @@ namespace Uge
 
 
 
-	void EditorLayer::OnEvent(Event& e)
-	{
-
-		m_cameraController.OnEvent(e);
-
-
-	}
-
-
-
 	void EditorLayer::OnAttach()
 	{
 		UG_PROFILE_FUNCTION();
@@ -254,16 +244,22 @@ namespace Uge
 				if (ImGui::BeginMenu("File"))
 				{
 
-					if (ImGui::MenuItem("Serialize"))
+					if (ImGui::MenuItem("New", "Ctrl+N"))
 					{
-						SceneSerializer serializer(m_activeScene);
-						serializer.Serialize("assets/scenes/Example.uge");
+						NewScene();
+
 					}
 
-					if (ImGui::MenuItem("DeSerialize"))
+					if (ImGui::MenuItem("Open...", "Ctrl+O"))
 					{
-						SceneSerializer serializer(m_activeScene);
-						serializer.DeSerialize("assets/scenes/Example.uge");
+						OpenScene();
+
+					}
+
+					if (ImGui::MenuItem("Save As", "Ctrl+Shift+S"))
+					{
+						SaveSceneAs();
+
 					}
 
 					if (ImGui::MenuItem("Exit"))
@@ -336,6 +332,111 @@ namespace Uge
 
 		
 		ImGui::PopFont();
+
+	}
+
+	void EditorLayer::OnEvent(Event& e)
+	{
+
+		m_cameraController.OnEvent(e);
+
+		EventDispatcher dispatcher(e);
+		dispatcher.Dispatch<KeyPressedEvent>(UG_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+
+
+	}
+
+	bool EditorLayer::OnKeyPressed(KeyPressedEvent e)
+	{
+		// Shortcuts
+		if (e.GetRepeatCount() > 0)
+		{
+			return false;
+		}
+
+		bool ctrlPressed = (Input::IsKeyPressed(KeyCode::UG_KEY_LEFT_CONTROL) || Input::IsKeyPressed(KeyCode::UG_KEY_RIGHT_CONTROL));
+		bool shift = (Input::IsKeyPressed(KeyCode::UG_KEY_LEFT_SHIFT) || Input::IsKeyPressed(KeyCode::UG_KEY_RIGHT_SHIFT));
+		switch (e.GetKeyCode())
+		{
+			case KeyCode::UG_KEY_S:
+			{
+			
+
+				if (ctrlPressed && shift)
+				{
+					SaveSceneAs();
+				}
+
+			
+				break;
+			}
+			case KeyCode::UG_KEY_N:
+			{
+
+
+				if (ctrlPressed)
+				{
+					NewScene();
+				}
+
+
+				break;
+			}
+			case KeyCode::UG_KEY_O:
+			{
+
+
+				if (ctrlPressed)
+				{
+					OpenScene();
+				}
+
+
+				break;
+			}
+
+			default:
+				break;
+		}
+
+		return false;
+	}
+
+	void EditorLayer::SaveSceneAs()
+	{
+		std::string filepath = FileDialogs::SaveFile("Uge Scene (*.uge)\0*uge\0");
+
+		if (!filepath.empty())
+		{
+			SceneSerializer serializer(m_activeScene);
+			serializer.Serialize(filepath);
+
+		}
+
+	}
+
+	void EditorLayer::NewScene()
+	{
+		m_activeScene = CreateRef<Scene>();
+		m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+		m_sceneHierarchyPanel.SetContext(m_activeScene);
+
+	}
+
+	void EditorLayer::OpenScene()
+	{
+		std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*uge\0");
+		if (!filepath.empty())
+		{
+			m_activeScene = CreateRef<Scene>();
+			m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+			m_sceneHierarchyPanel.SetContext(m_activeScene);
+
+
+			SceneSerializer serializer(m_activeScene);
+			serializer.DeSerialize(filepath);
+
+		}
 
 	}
 

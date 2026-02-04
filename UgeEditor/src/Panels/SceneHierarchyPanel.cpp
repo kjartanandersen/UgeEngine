@@ -169,15 +169,13 @@ namespace Uge
 	SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene>& context)
 	{
 		SetContext(context);
-
-
 	}
 
 	void SceneHierarchyPanel::SetContext(const Ref<Scene>& context)
 	{
 		m_context = context;
 
-
+		m_selectionContext = {};
 	}
 
 	void SceneHierarchyPanel::OnImGuiRender()

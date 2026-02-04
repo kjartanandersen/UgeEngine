@@ -1,0 +1,56 @@
+Scene: Untitled
+Entities:
+  - Entity: 12313141561654
+    TagComponent:
+      Tag: Blue Square 4
+    TransformComponent:
+      Translation: [0, 0.5, -0.5]
+      Rotation: [-1.5620697, 0.006981317, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [0.19168971, 0.34286502, 0.96130955, 1]
+  - Entity: 12313141561654
+    TagComponent:
+      Tag: Blue Square 3
+    TransformComponent:
+      Translation: [0.5, 0, -0.5]
+      Rotation: [-0.0034906585, 1.5760324, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [0.24274556, 0.4040279, 0.9375, 1]
+  - Entity: 12313141561654
+    TagComponent:
+      Tag: Blue Square 2
+    TransformComponent:
+      Translation: [0, 0, -1]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [0.24423362, 0.36165366, 0.90178573, 1]
+  - Entity: 12313141561654
+    TagComponent:
+      Tag: Blue Square
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, -0.0017453292]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [0.22743939, 0.47037247, 0.94345236, 1]
+  - Entity: 12313141561654
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Translation: [2.7, 1.5, 1.5]
+      Rotation: [-0.27925268, 0.858702, 0.21642081]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 59
+        PerspectiveNear: 0.01
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false

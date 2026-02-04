@@ -201,6 +201,7 @@
     <ClInclude Include="src\Uge\Scene\SceneCamera.h" />
     <ClInclude Include="src\Uge\Scene\SceneSerializer.h" />
     <ClInclude Include="src\Uge\Scene\ScriptableEntity.h" />
+    <ClInclude Include="src\Uge\Utils\PlatformUtils.h" />
     <ClInclude Include="src\ugpch.h" />
     <ClInclude Include="thirdparty\stb_image\stb_image.h" />
   </ItemGroup>
@@ -213,6 +214,7 @@
     <ClCompile Include="src\Platform\OpenGL\OpenGLTexture.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLVertexArray.cpp" />
     <ClCompile Include="src\Platform\Windows\WIndowsInput.cpp" />
+    <ClCompile Include="src\Platform\Windows\WindowsPlatformUtils.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="src\Uge\Core\Application.cpp" />
     <ClCompile Include="src\Uge\Core\Layer.cpp" />

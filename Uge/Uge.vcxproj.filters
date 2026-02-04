@@ -34,6 +34,9 @@
     <Filter Include="src\Uge\Scene">
       <UniqueIdentifier>{9A7D17C0-063E-93F6-CF78-DC733BF8D7D2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Uge\Utils">
+      <UniqueIdentifier>{DD1145C0-49D2-C0F6-120D-0A747E8C05D3}</UniqueIdentifier>
+    </Filter>
     <Filter Include="thirdparty">
       <UniqueIdentifier>{50A5DA7C-3C5D-1CCA-A564-F525913BB7BA}</UniqueIdentifier>
     </Filter>
@@ -189,6 +192,9 @@
     <ClInclude Include="src\Uge\Scene\ScriptableEntity.h">
       <Filter>src\Uge\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="src\Uge\Utils\PlatformUtils.h">
+      <Filter>src\Uge\Utils</Filter>
+    </ClInclude>
     <ClInclude Include="src\ugpch.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -219,6 +225,9 @@
       <Filter>src\Platform\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\Windows\WIndowsInput.cpp">
+      <Filter>src\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Windows\WindowsPlatformUtils.cpp">
       <Filter>src\Platform\Windows</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp">

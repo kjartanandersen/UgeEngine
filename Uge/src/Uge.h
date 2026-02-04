@@ -38,6 +38,8 @@
 #include "Uge/Renderer/OrthographicCamera.h"
 #include "Uge/Renderer/PerspectiveCamera.h"
 
+#include "Uge/Utils/PlatformUtils.h"
+
 // ****************************************
 
 

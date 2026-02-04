@@ -21,6 +21,13 @@ namespace Uge
 		virtual void OnImGuiRender() override;
 
 	private:
+		bool OnKeyPressed(KeyPressedEvent e);
+
+		void SaveSceneAs();
+		void NewScene();
+		void OpenScene();
+
+	private:
 
 		OrthographicCameraController m_cameraController;
 

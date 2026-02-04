@@ -101,7 +101,7 @@ void Sandbox2D::OnUpdate(Uge::Timestep ts)
 
 
 
-		if (Uge::Input::IsMouseButtonPressed(UG_MOUSE_BUTTON_LEFT))
+		if (Uge::Input::IsMouseButtonPressed(Uge::MouseButton::UG_MOUSE_BUTTON_LEFT))
 		{
 			auto [x, y] = Uge::Input::GetMousePos();
 			auto width = Uge::Application::Get().GetWindow().GetWidth();
