@@ -20,6 +20,7 @@ IncludeDir["GLM"]    	= "Uge/thirdparty/glm"
 IncludeDir["STBI"]   	= "Uge/thirdparty/stb_image"
 IncludeDir["ENTT"]   	= "Uge/thirdparty/entt/include"
 IncludeDir["YAMLCPP"]	= "Uge/thirdparty/yaml-cpp/include"
+IncludeDir["IMGUIZMO"]	= "Uge/thirdparty/ImGuizmo"
 
 
 group "Dependencies"

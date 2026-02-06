@@ -3,7 +3,10 @@
 #include "imgui.h"
 #include <glm/gtc/type_ptr.hpp>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/matrix_decompose.hpp>
 
+#include <ImGuizmo.h>
 
 
 namespace Uge
@@ -303,7 +306,7 @@ namespace Uge
 				m_viewportFocused = ImGui::IsWindowFocused();
 				m_viewportHovered = ImGui::IsWindowHovered();
 				
-				Application::Get().GetImGuiLayer()->BlockEvents(!(m_viewportHovered && m_viewportFocused));
+				Application::Get().GetImGuiLayer()->BlockEvents(!m_viewportHovered && !m_viewportFocused);
 				
 
 				ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
@@ -321,6 +324,66 @@ namespace Uge
 
 				uint32_t textureID = m_frameBuffer->GetColorAttachment();
 				ImGui::Image((void*)textureID, ImVec2{ m_viewportSize.x, m_viewportSize.y }, { 0, 1 }, { 1, 0 });
+
+
+
+				// Gizmos
+				Entity selectedEntity = m_sceneHierarchyPanel.GetSelectedEntity();
+				if (selectedEntity && m_gizmoType != -1)
+				{
+
+					ImGuizmo::SetOrthographic(false);
+					ImGuizmo::SetDrawlist();
+					ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, 
+						ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+
+					// Camera
+					auto cameraEntity = m_activeScene->GetPrimaryCameraEntity();
+					const auto& camera = cameraEntity.GetComponent<CameraComponent>().Cam;
+					const glm::mat4& camProj = camera.GetProjection();
+					glm::mat4 cameraView = glm::inverse(
+						cameraEntity.GetComponent<TransformComponent>().GetTransform());
+
+					// Entity
+					auto& tc = selectedEntity.GetComponent<TransformComponent>();
+					glm::mat4 transform = tc.GetTransform();
+
+					// Snapping
+					bool snap = Input::IsKeyPressed(KeyCode::UG_KEY_LEFT_CONTROL);
+					float snapVal = 0.5f;		// Snap to 0.5 meters for translation and scale
+
+					if (m_gizmoType == ImGuizmo::OPERATION::ROTATE)
+					{
+						
+						snapVal = 45.0f;		// Snap to 45 degrees for rotation
+					}
+
+					float snapValues[3] = { snapVal, snapVal, snapVal };
+
+
+
+
+					ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(camProj),
+						(ImGuizmo::OPERATION)m_gizmoType, ImGuizmo::MODE::LOCAL, glm::value_ptr(transform)
+					, nullptr, snap ? snapValues : nullptr);
+
+					if (ImGuizmo::IsUsing())
+					{
+						glm::vec3 transl, rot, scale;
+						Math::DecomposeTransform(transform, transl, rot, scale);
+						glm::vec3 deltaRot = rot - tc.Rotation;
+
+						tc.Translation = transl;
+						tc.Rotation += deltaRot;
+						tc.Scale = scale;
+
+					}
+
+
+				}
+
+
+
 
 
 			}
@@ -392,6 +455,36 @@ namespace Uge
 				}
 
 
+				break;
+			}
+
+			case KeyCode::UG_KEY_Q:
+			{
+				m_gizmoType = -1;
+				break;
+			}
+
+			case KeyCode::UG_KEY_W:
+			{
+				m_gizmoType = ImGuizmo::OPERATION::TRANSLATE;
+				break;
+			}
+
+			case KeyCode::UG_KEY_E:
+			{
+				m_gizmoType = ImGuizmo::OPERATION::ROTATE;
+				break;
+			}
+
+			case KeyCode::UG_KEY_R:
+			{
+				m_gizmoType = ImGuizmo::OPERATION::SCALE;
+				break;
+			}
+
+			case KeyCode::UG_KEY_T:
+			{
+				m_gizmoType = ImGuizmo::OPERATION::UNIVERSAL;
 				break;
 			}
 

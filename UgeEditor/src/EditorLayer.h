@@ -58,6 +58,8 @@ namespace Uge
 
 		SceneHierarchyPanel m_sceneHierarchyPanel;
 
+		int m_gizmoType = -1;
+
 		bool m_shouldResize = false;
 		bool m_viewportFocused = false;
 		bool m_viewportHovered = false;

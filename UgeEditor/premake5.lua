@@ -20,7 +20,8 @@ project "Uge-Editor"
 		"../Uge/src",
 		"../%{IncludeDir.IMGUI}",
 		"../%{IncludeDir.GLM}",
-		"../%{IncludeDir.ENTT}"
+		"../%{IncludeDir.ENTT}",
+		"../%{IncludeDir.IMGUIZMO}"
 	}
 
 	links

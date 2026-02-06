@@ -13,3 +13,6 @@
 [submodule "Uge/thirdparty/yaml-cpp"]
 	path = Uge/thirdparty/yaml-cpp
 	url = git@github.com:jbeder/yaml-cpp.git
+[submodule "Uge/thirdparty/ImGuizmo"]
+	path = Uge/thirdparty/ImGuizmo
+	url = git@github.com:CedricGuillemet/ImGuizmo.git

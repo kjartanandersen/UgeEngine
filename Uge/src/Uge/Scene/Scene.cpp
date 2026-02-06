@@ -131,6 +131,24 @@ namespace Uge
 
 	}
 
+	Entity Scene::GetPrimaryCameraEntity()
+	{
+
+		auto view = m_registry.view<CameraComponent>();
+
+		for (auto camEntity : view)
+		{
+			const auto& camera = view.get<CameraComponent>(camEntity);
+			if (camera.Primary)
+			{
+				return Entity{ camEntity, this };
+			}
+		
+		}
+
+		return {};
+	}
+
 
 	template<typename T>
 	void Scene::OnComponentAdded(Entity entity, T& component)

@@ -17,8 +17,11 @@ project "Uge"
 		"src/**.cpp",
 		"thirdparty/stb_image/**.h",
 		"thirdparty/stb_image/**.cpp",
-		"UgeClassDiagram.cd"
+		"thirdparty/ImGuizmo/ImGuizmo.h",
+		"thirdparty/ImGuizmo/ImGuizmo.cpp"
+		
 	}
+
 	
 
 	defines
@@ -36,7 +39,8 @@ project "Uge"
 		"../%{IncludeDir.GLM}",
 		"../%{IncludeDir.STBI}",
 		"../%{IncludeDir.ENTT}",
-		"../%{IncludeDir.YAMLCPP}"
+		"../%{IncludeDir.YAMLCPP}",
+		"../%{IncludeDir.IMGUIZMO}"
 	}
 
 	links
@@ -49,12 +53,23 @@ project "Uge"
 		"opengl32.lib"
 	}
 	
+	
 	buildoptions {"/utf-8"}
 	
 	defines
 	{
 		"YAML_CPP_STATIC_DEFINE"
 	}
+	
+	
+	
+	
+	
+	
+	
+	filter "files:thirdparty/ImGuizmo/**.cpp"
+		enablepch "off"
+	
 
 	filter "system:windows"
 		systemversion "latest"
