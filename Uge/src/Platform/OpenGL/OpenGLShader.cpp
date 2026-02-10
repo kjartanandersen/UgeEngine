@@ -194,11 +194,6 @@ namespace Uge
 			for (auto id : glShaderIDs)
 				glDeleteShader(id);
 
-
-
-			
-			
-
 			UG_CORE_ERROR("{0}", (char*)infoLog.data());
 			UG_CORE_ASSERT(false, "Shader Link Failure!");
 			return;
@@ -206,7 +201,10 @@ namespace Uge
 
 		// Always detach shaders after a successful link.
 		for (auto id : glShaderIDs)
+		{
 			glDetachShader(program, id);
+			glDeleteShader(id);
+		}
 
 
 		m_rendererID = program;

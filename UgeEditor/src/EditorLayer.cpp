@@ -14,7 +14,7 @@ namespace Uge
 
 
 	EditorLayer::EditorLayer()
-		: Layer("Sandbox2D"), m_cameraController(1280.0f / 720.0f, true)
+		: Layer("Sandbox2D")
 	{
 	}
 
@@ -27,7 +27,8 @@ namespace Uge
 		{
 			m_frameBuffer->Resize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 
-			m_cameraController.OnResize(m_viewportSize.x, m_viewportSize.y);
+
+			m_editorCamera.SetViewportSize(m_viewportSize.x, m_viewportSize.y);
 
 			m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 			m_shouldResize = false;
@@ -36,37 +37,56 @@ namespace Uge
 		if (m_viewportFocused)
 		{
 			// Update	
-			m_cameraController.OnUpdate(ts);
 
 		}
 
-		
-
+		m_editorCamera.OnUpdate(ts);
 		// Render
-		Renderer2D::ResetStats();
+		m_frameBuffer->Bind();
 		{
-			UG_PROFILE_SCOPE("Renderer Prep")
-			m_frameBuffer->Bind();
-			RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
-			RenderCommand::Clear();
-		}
+			Renderer2D::ResetStats();
+			{
+				UG_PROFILE_SCOPE("Renderer Prep")
+				RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
+				RenderCommand::Clear();
+			}
 
-		m_activeScene->OnUpdate(ts);
+			m_activeScene->OnUpdateEditor(ts, m_editorCamera);
+		
+			auto [mx, my] = ImGui::GetMousePos();
+			mx -= m_viewportBounds[0].x;
+			my -= m_viewportBounds[0].y;
+			glm::vec2 viewportSize = m_viewportBounds[1] - m_viewportBounds[0];
+			my = viewportSize.y - my;
+
+			int mouseX = (int)mx;
+			int mouseY = (int)my;
+
+			if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
+			{
+				int pixelData = m_frameBuffer->ReadPixel(1, mouseX, mouseY);
+
+				UG_CORE_WARN("Pixel Data = {0}", pixelData);
+
+			}
+
+		}
 		m_frameBuffer->Unbind();
 
 	}
-
-
 
 	void EditorLayer::OnAttach()
 	{
 		UG_PROFILE_FUNCTION();
 
 		FramebufferSpecification fbSpec{ 1280, 720 };
+		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8,FramebufferTextureFormat::RED_INTEGER,  FramebufferTextureFormat::Depth };
 		m_frameBuffer = Framebuffer::Create(fbSpec);
 
 
 		m_activeScene = CreateRef<Scene>();
+
+		m_editorCamera = EditorCamera(30.0f, 16.0f/9.0f, 0.1f, 1000.0f);
 
 		// Load ImGui Font
 		ImGuiIO& io = ImGui::GetIO();
@@ -77,74 +97,6 @@ namespace Uge
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 		m_texture = Texture2D::Create("assets/textures/Checkerboard.png");
-		
-#if 0
-		// Entity
-		m_square1Ent = m_activeScene->CreateEntity("Red Square Entity");
-		m_square1Ent.AddComponent<SpriteRendererComponent>(glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
-
-		m_square2Ent = m_activeScene->CreateEntity("Green Square Entity");
-		m_square2Ent.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-		m_square2Ent.GetComponent<TransformComponent>().Translation = glm::vec3{ 1.0f, 0.0f, 0.0f };
-
-
-		
-
-		// Load sprite sheet
-		//m_spriteSheet = Texture2D::Create("assets/game/textures/RPGpack_sheet_2X.png");
-
-		//m_textureStairs = SubTexture2D::CreateFromCoords(m_spriteSheet, { 7, 6 }, { 128, 128 }, { 1, 1 });
-		//m_textureBarrel = SubTexture2D::CreateFromCoords(m_spriteSheet, { 2, 1 }, { 128, 128 }, { 1, 2 });
-
-		m_cameraController.SetZoomLevel(5.0f);
-
-		// Camera Entities
-		m_cameraEnt = m_activeScene->CreateEntity("Camera A Entity");
-		m_cameraEnt.AddComponent<CameraComponent>();
-
-		m_secondCameraEnt = m_activeScene->CreateEntity("Camera B Entity");
-		auto& cc = m_secondCameraEnt.AddComponent<CameraComponent>();
-		cc.Primary = false;
-
-		class CameraController : public ScriptableEntity
-		{
-
-		public:
-			void OnCreate()
-			{
-				
-				
-			}
-
-			void OnDestroy()
-			{
-
-			}
-
-			void OnUpdate(Timestep ts)
-			{
-				
-				auto& translation = GetComponent<TransformComponent>().Translation;
-				float speed = 5.0f;
-
-				if (Input::IsKeyPressed(UG_KEY_A))
-					translation.x -= speed * ts;
-				if (Input::IsKeyPressed(UG_KEY_D))
-					translation.x += speed * ts;
-				if (Input::IsKeyPressed(UG_KEY_W))
-					translation.y += speed * ts;
-				if (Input::IsKeyPressed(UG_KEY_S))	
-					translation.y -= speed * ts;
-
-			}
-
-
-		};
-
-		m_cameraEnt.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-		m_secondCameraEnt.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-#endif
-
 
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
 
@@ -303,6 +255,8 @@ namespace Uge
 
 			ImGui::Begin("Scene Viewport");
 			{
+				ImVec2 viewportOffset = ImGui::GetCursorPos();			// Includes Tab bar
+
 				m_viewportFocused = ImGui::IsWindowFocused();
 				m_viewportHovered = ImGui::IsWindowHovered();
 				
@@ -325,7 +279,15 @@ namespace Uge
 				uint32_t textureID = m_frameBuffer->GetColorAttachment();
 				ImGui::Image((void*)textureID, ImVec2{ m_viewportSize.x, m_viewportSize.y }, { 0, 1 }, { 1, 0 });
 
+				ImVec2 windowSize	= ImGui::GetWindowSize();
+				
+				ImVec2 minBound		= ImGui::GetWindowPos();
+				minBound.x += viewportOffset.x;
+				minBound.y += viewportOffset.y;
 
+				ImVec2 maxBound = { minBound.x + windowSize.x, minBound.y + windowSize.y };
+				m_viewportBounds[0] = { minBound.x, minBound.y };
+				m_viewportBounds[1] = { maxBound.x, maxBound.y };
 
 				// Gizmos
 				Entity selectedEntity = m_sceneHierarchyPanel.GetSelectedEntity();
@@ -338,11 +300,20 @@ namespace Uge
 						ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 
 					// Camera
-					auto cameraEntity = m_activeScene->GetPrimaryCameraEntity();
-					const auto& camera = cameraEntity.GetComponent<CameraComponent>().Cam;
-					const glm::mat4& camProj = camera.GetProjection();
-					glm::mat4 cameraView = glm::inverse(
-						cameraEntity.GetComponent<TransformComponent>().GetTransform());
+					
+					// Runtime camera from entity
+					//auto cameraEntity = m_activeScene->GetPrimaryCameraEntity();
+					//const auto& camera = cameraEntity.GetComponent<CameraComponent>().Cam;
+					//const glm::mat4& camProj = camera.GetProjection();
+					//glm::mat4 cameraView = glm::inverse(
+					//	cameraEntity.GetComponent<TransformComponent>().GetTransform());
+
+					// Editor Camera
+
+					const glm::mat4& camProj = m_editorCamera.GetProjection();
+					glm::mat4 cameraView = m_editorCamera.GetViewMatrix();
+
+
 
 					// Entity
 					auto& tc = selectedEntity.GetComponent<TransformComponent>();
@@ -401,7 +372,7 @@ namespace Uge
 	void EditorLayer::OnEvent(Event& e)
 	{
 
-		m_cameraController.OnEvent(e);
+		m_editorCamera.OnEvent(e);
 
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(UG_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
@@ -532,12 +503,6 @@ namespace Uge
 		}
 
 	}
-
-
-
-
-	
-
 
 }
 

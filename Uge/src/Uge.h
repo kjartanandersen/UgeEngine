@@ -34,6 +34,7 @@
 #include "Uge/Renderer/Texture.h"
 #include "Uge/Renderer/SubTexture2D.h"
 #include "Uge/Renderer/VertexArray.h"
+#include "Uge/Renderer/EditorCamera.h"
 
 #include "Uge/Renderer/OrthographicCamera.h"
 #include "Uge/Renderer/PerspectiveCamera.h"

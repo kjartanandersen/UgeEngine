@@ -2,7 +2,7 @@
 
 #include <entt.hpp>
 
-
+#include "Uge/Renderer/EditorCamera.h"
 #include "Uge/Core/Timestep.h"
 
 namespace Uge
@@ -20,7 +20,8 @@ namespace Uge
 		void DestroyEntity(Entity entity);
 
 
-		void OnUpdate(Timestep ts);
+		void OnUpdateEditor(Timestep ts, EditorCamera& camera);
+		void OnUpdateRuntime(Timestep ts);
 		void OnViewportResize(uint32_t width, uint32_t height);
 
 		Entity GetPrimaryCameraEntity();

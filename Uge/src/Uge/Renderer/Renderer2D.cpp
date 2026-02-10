@@ -156,11 +156,23 @@ namespace Uge
 		m_data.TextureShader->Bind();
 		m_data.TextureShader->SetMat4("u_ViewProjection", viewProj);
 
-		m_data.QuadVertexBufferPtr = m_data.QuadVertexBufferBase;
-		m_data.QuadIndexCount = 0;
+		StartBatch();
 
-		m_data.TextureSlotIndex = 1;
 
+
+	}
+
+	void Renderer2D::BeginScene(const EditorCamera& camera)
+	{
+
+		UG_PROFILE_FUNCTION();
+
+		glm::mat4 viewProj = camera.GetViewProjection();
+
+		m_data.TextureShader->Bind();
+		m_data.TextureShader->SetMat4("u_ViewProjection", viewProj);
+
+		StartBatch();
 
 
 	}
@@ -202,6 +214,8 @@ namespace Uge
 		m_data.TextureSlotIndex = 1;
 
 	}
+
+
 
 	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
 	{
@@ -705,6 +719,17 @@ namespace Uge
 
 		return m_data.Stats;
 
+
+	}
+
+
+	void Renderer2D::StartBatch()
+	{
+
+		m_data.QuadIndexCount = 0;
+		m_data.QuadVertexBufferPtr = m_data.QuadVertexBufferBase;
+
+		m_data.TextureSlotIndex = 1;
 
 	}
 

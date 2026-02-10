@@ -29,7 +29,6 @@ namespace Uge
 
 	private:
 
-		OrthographicCameraController m_cameraController;
 
 		// TODO: Temp
 		Ref<Shader> m_flatColorShader;
@@ -42,11 +41,8 @@ namespace Uge
 		Ref<Framebuffer> m_frameBuffer;
 
 		Ref<Scene> m_activeScene;
-		Entity m_square1Ent;
-		Entity m_square2Ent;
-		Entity m_cameraEnt;
-		Entity m_secondCameraEnt;
-		bool m_primaryCam = true;
+
+		EditorCamera m_editorCamera;
 
 		ImFont* m_mainFont;
 		ImFont* m_mainFontBold;
@@ -55,6 +51,7 @@ namespace Uge
 		glm::vec4 m_square2Color = { 0.1f, 0.1f, 1.1f, 1.0f };
 
 		glm::vec2 m_viewportSize{0.0f, 0.0f};
+		glm::vec2 m_viewportBounds[2];
 
 		SceneHierarchyPanel m_sceneHierarchyPanel;
 
