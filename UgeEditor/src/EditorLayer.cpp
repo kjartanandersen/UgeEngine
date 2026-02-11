@@ -50,7 +50,7 @@ namespace Uge
 				RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
 				RenderCommand::Clear();
 			}
-
+			m_frameBuffer->ClearAttachment(1, -1);
 			m_activeScene->OnUpdateEditor(ts, m_editorCamera);
 		
 			auto [mx, my] = ImGui::GetMousePos();
@@ -65,8 +65,11 @@ namespace Uge
 			if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
 			{
 				int pixelData = m_frameBuffer->ReadPixel(1, mouseX, mouseY);
+				m_hoveredEntity = 
+					pixelData == -1 
+						? Entity() 
+						: Entity( (entt::entity)pixelData, m_activeScene.get() );
 
-				UG_CORE_WARN("Pixel Data = {0}", pixelData);
 
 			}
 
@@ -235,6 +238,12 @@ namespace Uge
 
 			ImGui::Begin("Stats");
 			{
+				std::string name = "None";
+				if (m_hoveredEntity)
+				{
+					name = m_hoveredEntity.GetComponent<TagComponent>().Tag;
+				}
+				ImGui::Text("Hovered Entity: %s", name.c_str());
 
 				auto stats = Renderer2D::GetStats();
 				ImGui::Text("Renderer2D Stats:");

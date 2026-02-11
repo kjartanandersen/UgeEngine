@@ -82,18 +82,68 @@ namespace Uge
 		for (const auto& element : layout)
 		{
 
-			glEnableVertexAttribArray(index);
+			switch (element.type)
+			{
+				case Uge::ShaderDataType::None:
+				case Uge::ShaderDataType::Float:
+				case Uge::ShaderDataType::Float2:
+				case Uge::ShaderDataType::Float3:
+				case Uge::ShaderDataType::Float4:
+				{
+					glEnableVertexAttribArray(m_VertexBufferIndex);
+					glVertexAttribPointer(m_VertexBufferIndex,
+						element.GetComponentCount(),
+						ShaderDataTypeToOpenGLBaseType(element.type),
+						element.normalized ? GL_TRUE : GL_FALSE,
+						layout.GetStride(),
+						(const void*)element.offset);
+					m_VertexBufferIndex++;
+					break;
+				}
+				case Uge::ShaderDataType::Int:
+				case Uge::ShaderDataType::Int2:
+				case Uge::ShaderDataType::Int3:
+				case Uge::ShaderDataType::Int4:
+				case Uge::ShaderDataType::Bool:
+				{
+					glEnableVertexAttribArray(m_VertexBufferIndex);
+					glVertexAttribIPointer(m_VertexBufferIndex,
+						element.GetComponentCount(),
+						ShaderDataTypeToOpenGLBaseType(element.type),
+						layout.GetStride(),
+						(const void*)element.offset);
+					m_VertexBufferIndex++;
+					break;
 
-			glVertexAttribPointer(
-				index,
-				element.GetComponentCount(),
-				ShaderDataTypeToOpenGLBaseType(element.type),
-				element.normalized ? GL_TRUE : GL_FALSE,
-				layout.GetStride(),
-				(const void*)element.offset
-			);
+				}
 
-			index++;
+				case Uge::ShaderDataType::Mat3x3:
+				case Uge::ShaderDataType::Mat4x4:
+				{
+					uint8_t count = element.GetComponentCount();
+					for (uint8_t i = 0; i < count; i++)
+					{
+						glEnableVertexAttribArray(m_VertexBufferIndex);
+						glVertexAttribPointer(m_VertexBufferIndex,
+							count,
+							ShaderDataTypeToOpenGLBaseType(element.type),
+							element.normalized ? GL_TRUE : GL_FALSE,
+							layout.GetStride(),
+							(const void*)(element.offset + sizeof(float) * count * i));
+						glVertexAttribDivisor(m_VertexBufferIndex, 1);
+						m_VertexBufferIndex++;
+					}
+					break;
+				}
+				
+				
+				default:
+				{
+					UG_CORE_ASSERT(false, "Unknown ShaderDataType!");
+
+				}
+			
+			}
 		}
 
 		m_vertexBuffers.push_back(vertexBuffer);

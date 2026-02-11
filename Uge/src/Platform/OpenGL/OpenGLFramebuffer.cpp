@@ -102,6 +102,22 @@ namespace Uge
 			return false;
 		}
 
+		static GLenum UgeFBTextureFormatToGL(FramebufferTextureFormat format)
+		{
+			
+			switch (format)
+			{
+				case Uge::FramebufferTextureFormat::RGBA8:
+					return GL_RGBA8;
+				case Uge::FramebufferTextureFormat::RED_INTEGER:
+					return GL_RED_INTEGER;
+			}
+
+			UG_CORE_ASSERT(false);
+			return 0;
+
+		}
+
 	}
 
 
@@ -271,6 +287,18 @@ namespace Uge
 		return pixelData;
 
 
+
+	}
+
+	void OpenGLFramebuffer::ClearAttachment(uint32_t attachmentIndex, int value)
+	{
+
+		UG_CORE_ASSERT(attachmentIndex < m_colorAttachments.size());
+
+		auto& spec = m_colorAttachmentSpecifications[attachmentIndex];
+
+		glClearTexImage(m_colorAttachments[attachmentIndex], 0, 
+			Utils::UgeFBTextureFormatToGL(spec.TextureFormat), GL_INT, &value);
 
 	}
 

@@ -55,6 +55,8 @@ namespace Uge
 
 		SceneHierarchyPanel m_sceneHierarchyPanel;
 
+		Entity m_hoveredEntity;
+
 		int m_gizmoType = -1;
 
 		bool m_shouldResize = false;
