@@ -21,7 +21,8 @@ namespace Uge
 		virtual void OnImGuiRender() override;
 
 	private:
-		bool OnKeyPressed(KeyPressedEvent e);
+		bool OnKeyPressed(KeyPressedEvent& e);
+		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
 		void SaveSceneAs();
 		void NewScene();

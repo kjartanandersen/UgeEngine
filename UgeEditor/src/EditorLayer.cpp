@@ -12,7 +12,6 @@
 namespace Uge
 {
 
-
 	EditorLayer::EditorLayer()
 		: Layer("Sandbox2D")
 	{
@@ -264,10 +263,17 @@ namespace Uge
 
 			ImGui::Begin("Scene Viewport");
 			{
-				ImVec2 viewportOffset = ImGui::GetCursorPos();			// Includes Tab bar
+				//ImVec2 viewportOffset = ImGui::GetCursorPos();			// Includes Tab bar
+
+				auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+				auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+				auto viewportOffset = ImGui::GetWindowPos();
+				m_viewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+				m_viewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
 
 				m_viewportFocused = ImGui::IsWindowFocused();
 				m_viewportHovered = ImGui::IsWindowHovered();
+
 				
 				Application::Get().GetImGuiLayer()->BlockEvents(!m_viewportHovered && !m_viewportFocused);
 				
@@ -288,15 +294,15 @@ namespace Uge
 				uint32_t textureID = m_frameBuffer->GetColorAttachment();
 				ImGui::Image((void*)textureID, ImVec2{ m_viewportSize.x, m_viewportSize.y }, { 0, 1 }, { 1, 0 });
 
-				ImVec2 windowSize	= ImGui::GetWindowSize();
-				
-				ImVec2 minBound		= ImGui::GetWindowPos();
-				minBound.x += viewportOffset.x;
-				minBound.y += viewportOffset.y;
-
-				ImVec2 maxBound = { minBound.x + windowSize.x, minBound.y + windowSize.y };
-				m_viewportBounds[0] = { minBound.x, minBound.y };
-				m_viewportBounds[1] = { maxBound.x, maxBound.y };
+				// ImVec2 windowSize	= ImGui::GetWindowSize();
+				// 
+				// ImVec2 minBound		= ImGui::GetWindowPos();
+				// minBound.x += viewportOffset.x;
+				// minBound.y += viewportOffset.y;
+				// 
+				// ImVec2 maxBound = { minBound.x + windowSize.x, minBound.y + windowSize.y };
+				// m_viewportBounds[0] = { minBound.x, minBound.y };
+				// m_viewportBounds[1] = { maxBound.x, maxBound.y };
 
 				// Gizmos
 				Entity selectedEntity = m_sceneHierarchyPanel.GetSelectedEntity();
@@ -305,8 +311,12 @@ namespace Uge
 
 					ImGuizmo::SetOrthographic(false);
 					ImGuizmo::SetDrawlist();
-					ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, 
-						ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+					// ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, 
+					// 	ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+
+					ImGuizmo::SetRect(m_viewportBounds[0].x, m_viewportBounds[0].y, 
+						m_viewportBounds[1].x - m_viewportBounds[0].x, 
+						m_viewportBounds[1].y - m_viewportBounds[0].y);
 
 					// Camera
 					
@@ -385,11 +395,12 @@ namespace Uge
 
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(UG_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+		dispatcher.Dispatch<MouseButtonPressedEvent>(UG_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
 
 
 	}
 
-	bool EditorLayer::OnKeyPressed(KeyPressedEvent e)
+	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
 	{
 		// Shortcuts
 		if (e.GetRepeatCount() > 0)
@@ -470,6 +481,22 @@ namespace Uge
 
 			default:
 				break;
+		}
+
+		return false;
+	}
+
+	bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
+	{
+
+		if (e.GetMouseButton() == MouseButton::UG_MOUSE_BUTTON_LEFT)
+		{
+			if (m_viewportHovered && !ImGuizmo::IsOver() && !Input::IsKeyPressed(KeyCode::UG_KEY_LEFT_ALT))
+			{
+				m_sceneHierarchyPanel.SetSelectedEntity(m_hoveredEntity);
+
+			}
+
 		}
 
 		return false;
