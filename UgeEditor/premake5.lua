@@ -1,12 +1,11 @@
 project "Uge-Editor"
-	location "./"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "on"
+	staticruntime "off"
 
-	targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
-	objdir ("../bin-int/" .. outputdir .. "/%{prj.name}")
+	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 
 	files 
 	{
@@ -16,20 +15,17 @@ project "Uge-Editor"
 
 	includedirs
 	{
-		"../Uge/thirdparty/spdlog/include",
-		"../Uge/src",
-		"../%{IncludeDir.IMGUI}",
-		"../%{IncludeDir.GLM}",
-		"../%{IncludeDir.ENTT}",
-		"../%{IncludeDir.IMGUIZMO}"
+		"%{wks.location}/Uge/thirdparty/spdlog/include",
+		"%{wks.location}/Uge/src",
+		"%{wks.location}/%{IncludeDir.IMGUI}",
+		"%{wks.location}/%{IncludeDir.GLM}",
+		"%{wks.location}/%{IncludeDir.ENTT}",
+		"%{wks.location}/%{IncludeDir.IMGUIZMO}"
 	}
 
 	links
 	{
-		"Uge",
-		"ImGui",
-		"glm",
-		"yaml-cpp"
+		"Uge"
 	}
 	
 	buildoptions {"/utf-8"}

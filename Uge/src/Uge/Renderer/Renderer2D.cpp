@@ -4,8 +4,10 @@
 #include "VertexArray.h"
 #include "Shader.h"
 #include "RenderCommand.h"
+#include "UniformBuffer.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 
 
@@ -46,6 +48,14 @@ namespace Uge
 		glm::vec4 QuadVertexPositions[4];
 		
 		Renderer2D::Statistics Stats;
+
+		struct CameraData
+		{
+			glm::mat4 ViewProjection;
+		};
+
+		CameraData CameraBuffer;
+		Ref<UniformBuffer> CameraUniformBuffer;
 
 
 	};
@@ -108,8 +118,6 @@ namespace Uge
 
 
 		m_data.TextureShader = Shader::Create("assets/shaders/Texture.glsl");
-		m_data.TextureShader->Bind();
-		m_data.TextureShader->SetIntArray("u_Textures", samplers, m_data.MaxTextureSlots);
 
 
 		// Set all texture slots to zero
@@ -121,7 +129,7 @@ namespace Uge
 		m_data.QuadVertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
 		m_data.QuadVertexPositions[3] = { -0.5f,  0.5f, 0.0f, 1.0f };
 
-		
+		m_data.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
 
 
 	}
@@ -155,10 +163,8 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
-		glm::mat4 viewProj = camera.GetProjection() * glm::inverse(transform);
-
-		m_data.TextureShader->Bind();
-		m_data.TextureShader->SetMat4("u_ViewProjection", viewProj);
+		m_data.CameraBuffer.ViewProjection = camera.GetProjection() * glm::inverse(transform);
+		m_data.CameraUniformBuffer->SetData(&m_data.CameraBuffer, sizeof(Renderer2DData::CameraData));
 
 		StartBatch();
 
@@ -171,10 +177,8 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
-		glm::mat4 viewProj = camera.GetViewProjection();
-
-		m_data.TextureShader->Bind();
-		m_data.TextureShader->SetMat4("u_ViewProjection", viewProj);
+		m_data.CameraBuffer.ViewProjection = camera.GetViewProjection();
+		m_data.CameraUniformBuffer->SetData(&m_data.CameraBuffer, sizeof(Renderer2DData::CameraData));
 
 		StartBatch();
 
@@ -200,7 +204,7 @@ namespace Uge
 			m_data.TextureSlots[i]->Bind(i);
 
 		
-
+		m_data.TextureShader->Bind();
 		RenderCommand::DrawIndexed(m_data.QuadVA, m_data.QuadIndexCount);
 
 		m_data.Stats.DrawCalls++;

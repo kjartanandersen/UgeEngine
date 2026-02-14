@@ -10,8 +10,8 @@
 class Sandbox : public Uge::Application
 {
 public:
-	Sandbox()
-		: Application(false)
+	Sandbox(Uge::ApplicationCommandLineArgs args)
+		: Uge::Application(false, "Sandbox App", args)
 	{
 		if (m_is3D)
 			PushLayer( new Sandbox3D());
@@ -27,7 +27,7 @@ private:
 	
 };
 
-Uge::Application* Uge::CreateApplication()
+Uge::Application* Uge::CreateApplication(Uge::ApplicationCommandLineArgs args)
 {
-	return new Sandbox();
+	return new Sandbox(args);
 }

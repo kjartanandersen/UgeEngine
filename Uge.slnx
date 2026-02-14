@@ -12,13 +12,15 @@
   <Project Path="UgeEditor\Uge-Editor.vcxproj" Id="1A4778D1-06FF-B91E-6F06-937A5BDD540F" DefaultStartup="true">
   </Project>
   <Folder Name="/Dependencies/">
-    <Project Path="Uge\thirdparty\GLAD\GLAD.vcxproj" Id="5D4A857C-4981-860D-F26D-6C10DE83020F">
+    <Project Path="Uge\thirdparty\GLAD\Glad.vcxproj" Id="BDD6857C-A90D-870D-52FA-6C103E10030F">
     </Project>
     <Project Path="Uge\thirdparty\GLFW\GLFW.vcxproj" Id="154B857C-0182-860D-AA6E-6C109684020F">
     </Project>
     <Project Path="Uge\thirdparty\glm\glm.vcxproj" Id="6577880B-D180-887C-5AFC-9E7CC604947C">
     </Project>
     <Project Path="Uge\thirdparty\imgui\ImGui.vcxproj" Id="C0FF640D-2C14-8DBE-F595-301E616989EF">
+    </Project>
+    <Project Path="thirdparty\premake\Premake.vcxproj" Id="6ACC3F23-D6AB-BEBE-DFC3-49954B222520">
     </Project>
     <Project Path="Uge\thirdparty\yaml-cpp\yaml-cpp.vcxproj" Id="88F1A057-74BE-FB62-9DD7-E90A890331F1">
     </Project>

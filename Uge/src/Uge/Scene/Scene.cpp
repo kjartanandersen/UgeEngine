@@ -186,7 +186,10 @@ namespace Uge
 	void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
 	{
 
-		component.Cam.SetViewportSize(m_viewportWidth, m_viewportHeight);
+		if (m_viewportWidth > 0 && m_viewportHeight > 0)
+		{
+			component.Cam.SetViewportSize(m_viewportWidth, m_viewportHeight);
+		}
 
 	}
 

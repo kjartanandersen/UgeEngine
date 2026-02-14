@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="..">
+      <UniqueIdentifier>{61705900-4DFC-870B-B6AA-880BA255880B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\Sandbox">
+      <UniqueIdentifier>{3F7B6B1D-2B33-AD6A-943A-86C68011485B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\Uge">
+      <UniqueIdentifier>{F1F58776-DD97-B24C-C652-C6A0B293399D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\Uge\thirdparty">
+      <UniqueIdentifier>{4BCAD1B4-B7E0-CF4A-0058-5B6C6CADA0D2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\Uge\thirdparty\GLAD">
+      <UniqueIdentifier>{B2ABED43-9EA5-1696-8712-ADA673AB7C02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\Uge\thirdparty\GLFW">
+      <UniqueIdentifier>{6AACED43-56A6-1696-3F13-ADA62BAC7C02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\Uge\thirdparty\glm">
+      <UniqueIdentifier>{1A820F02-86EE-CAFC-4FE2-625ABB0DED64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\Uge\thirdparty\imgui">
+      <UniqueIdentifier>{F5231DC4-615B-655B-6A65-C97ED61B8C54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\Uge\thirdparty\yaml-cpp">
+      <UniqueIdentifier>{5DF55374-4905-0045-B2BE-64639EEDEEDD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\UgeEditor">
+      <UniqueIdentifier>{78FCBF9B-645F-4F40-0DE5-87F6F9261BC3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Sandbox\premake5.lua">
+      <Filter>..\Sandbox</Filter>
+    </None>
+    <None Include="..\..\Uge\premake5.lua">
+      <Filter>..\Uge</Filter>
+    </None>
+    <None Include="..\..\Uge\thirdparty\GLAD\premake5.lua">
+      <Filter>..\Uge\thirdparty\GLAD</Filter>
+    </None>
+    <None Include="..\..\Uge\thirdparty\GLFW\premake5.lua">
+      <Filter>..\Uge\thirdparty\GLFW</Filter>
+    </None>
+    <None Include="..\..\Uge\thirdparty\glm\premake5.lua">
+      <Filter>..\Uge\thirdparty\glm</Filter>
+    </None>
+    <None Include="..\..\Uge\thirdparty\imgui\premake5.lua">
+      <Filter>..\Uge\thirdparty\imgui</Filter>
+    </None>
+    <None Include="..\..\Uge\thirdparty\yaml-cpp\premake5.lua">
+      <Filter>..\Uge\thirdparty\yaml-cpp</Filter>
+    </None>
+    <None Include="..\..\UgeEditor\premake5.lua">
+      <Filter>..\UgeEditor</Filter>
+    </None>
+    <None Include="..\..\premake5.lua">
+      <Filter>..</Filter>
+    </None>
+    <None Include="premake5.lua" />
+  </ItemGroup>
+</Project>

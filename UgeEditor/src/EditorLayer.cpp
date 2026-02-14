@@ -88,6 +88,15 @@ namespace Uge
 
 		m_activeScene = CreateRef<Scene>();
 
+		auto commandLineArgs = Application::Get().GetCommandLineArgs();
+		if (commandLineArgs.Count > 1)
+		{
+			auto sceneFilePath = commandLineArgs[1];
+			SceneSerializer serializer(m_activeScene);
+			serializer.DeSerialize(sceneFilePath);
+		}
+
+
 		m_editorCamera = EditorCamera(30.0f, 16.0f/9.0f, 0.1f, 1000.0f);
 
 		// Load ImGui Font

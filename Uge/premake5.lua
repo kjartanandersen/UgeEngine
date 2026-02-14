@@ -1,12 +1,11 @@
 project "Uge"
-	location "./"
 	kind "StaticLib"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "on"
+	staticruntime "off"
 
-	targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
-	objdir ("../bin-int/" .. outputdir .. "/%{prj.name}")
+	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 
 	pchheader "ugpch.h"
 	pchsource "src/ugpch.cpp"
@@ -26,7 +25,8 @@ project "Uge"
 
 	defines
 	{
-		"_CRT_SECURE_NO_WARNINGS"
+		"_CRT_SECURE_NO_WARNINGS",
+		"GLFW_INCLUDE_NONE"
 	}
 
 	includedirs
@@ -40,7 +40,9 @@ project "Uge"
 		"../%{IncludeDir.STBI}",
 		"../%{IncludeDir.ENTT}",
 		"../%{IncludeDir.YAMLCPP}",
-		"../%{IncludeDir.IMGUIZMO}"
+		"../%{IncludeDir.IMGUIZMO}",
+		"../%{IncludeDir.VULKANSDK}"
+		
 	}
 
 	links
@@ -61,12 +63,6 @@ project "Uge"
 		"YAML_CPP_STATIC_DEFINE"
 	}
 	
-	
-	
-	
-	
-	
-	
 	filter "files:thirdparty/ImGuizmo/**.cpp"
 		enablepch "off"
 	
@@ -77,8 +73,7 @@ project "Uge"
 		defines 
 		{
 			"UG_PLATFORM_WINDOWS",
-			"UG_BUILD_DLL",
-			"GLFW_INCLUDE_NONE"
+			"UG_BUILD_DLL"
 		}
 		
 		
@@ -89,18 +84,38 @@ project "Uge"
 		}
 		runtime "Debug"
 		symbols "on"
+		links
+		{
+			"%{Library.ShaderC_Debug}",
+			"%{Library.SPIRV_Cross_Debug}",
+			"%{Library.SPIRV_Cross_GLSL_Debug}"
+		}
 		
 	
 	filter "configurations:Release"
 		defines "UG_RELEASE"
 		runtime "Release"
 		optimize "on"
+		
+		links
+		{
+			"%{Library.ShaderC_Release}",
+			"%{Library.SPIRV_Cross_Release}",
+			"%{Library.SPIRV_Cross_GLSL_Release}"
+		}
+
 	
 	filter "configurations:Dist"
 		defines "UG_DIST"
 		runtime "Release"
 		optimize "on"
 
+		links
+		{
+			"%{Library.ShaderC_Release}",
+			"%{Library.SPIRV_Cross_Release}",
+			"%{Library.SPIRV_Cross_GLSL_Release}"
+		}
 
-	filter { "system:windows", "configurations:Release" }
-		buildoptions "/MT"
+
+		
