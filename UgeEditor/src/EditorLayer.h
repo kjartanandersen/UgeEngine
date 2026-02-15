@@ -28,6 +28,7 @@ namespace Uge
 		void SaveSceneAs();
 		void NewScene();
 		void OpenScene();
+		void OpenScene(const std::filesystem::path& path);
 
 	private:
 

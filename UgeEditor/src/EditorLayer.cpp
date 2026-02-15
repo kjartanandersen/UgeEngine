@@ -13,6 +13,8 @@
 namespace Uge
 {
 
+	extern const std::filesystem::path g_assetPath = "assets";
+
 	EditorLayer::EditorLayer()
 		: Layer("Sandbox2D")
 	{
@@ -305,15 +307,19 @@ namespace Uge
 				uint32_t textureID = m_frameBuffer->GetColorAttachment();
 				ImGui::Image((void*)textureID, ImVec2{ m_viewportSize.x, m_viewportSize.y }, { 0, 1 }, { 1, 0 });
 
-				// ImVec2 windowSize	= ImGui::GetWindowSize();
-				// 
-				// ImVec2 minBound		= ImGui::GetWindowPos();
-				// minBound.x += viewportOffset.x;
-				// minBound.y += viewportOffset.y;
-				// 
-				// ImVec2 maxBound = { minBound.x + windowSize.x, minBound.y + windowSize.y };
-				// m_viewportBounds[0] = { minBound.x, minBound.y };
-				// m_viewportBounds[1] = { maxBound.x, maxBound.y };
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+					{
+						const wchar_t* path = (const wchar_t*)payload->Data;
+						OpenScene(std::filesystem::path(g_assetPath) / path);
+
+					}
+					
+
+
+					ImGui::EndDragDropTarget();
+				}
 
 				// Gizmos
 				Entity selectedEntity = m_sceneHierarchyPanel.GetSelectedEntity();
@@ -539,15 +545,23 @@ namespace Uge
 		std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*uge\0");
 		if (!filepath.empty())
 		{
-			m_activeScene = CreateRef<Scene>();
-			m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
-			m_sceneHierarchyPanel.SetContext(m_activeScene);
-
-
-			SceneSerializer serializer(m_activeScene);
-			serializer.DeSerialize(filepath);
+			
+			OpenScene(filepath);
 
 		}
+
+	}
+
+	void EditorLayer::OpenScene(const std::filesystem::path& path)
+	{
+
+		m_activeScene = CreateRef<Scene>();
+		m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+		m_sceneHierarchyPanel.SetContext(m_activeScene);
+
+
+		SceneSerializer serializer(m_activeScene);
+		serializer.DeSerialize(path.string());
 
 	}
 

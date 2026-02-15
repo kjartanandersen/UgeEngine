@@ -3,6 +3,8 @@
 
 #include <filesystem>
 
+#include "Uge.h"
+
 namespace Uge
 {
 
@@ -16,6 +18,9 @@ namespace Uge
 
 	private:
 		std::filesystem::path m_currentDirectory;
+
+		Ref<Texture2D> m_directoryIcon;
+		Ref<Texture2D> m_fileIcon;
 
 	};
 
