@@ -1,5 +1,6 @@
 ﻿#include "EditorLayer.h"
 
+
 #include "imgui.h"
 #include <glm/gtc/type_ptr.hpp>
 
@@ -242,6 +243,7 @@ namespace Uge
 			}
 
 			m_sceneHierarchyPanel.OnImGuiRender();
+			m_contentBrowserPanel.OnImGuiRender();
 
 
 			ImGui::Begin("Stats");

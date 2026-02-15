@@ -2,6 +2,7 @@
 
 #include "Uge.h"
 #include "Panels/SceneHierarchyPanel.h"
+#include "Panels/ContentBrowserPanel.h"
 
 namespace Uge
 {
@@ -54,7 +55,9 @@ namespace Uge
 		glm::vec2 m_viewportSize{0.0f, 0.0f};
 		glm::vec2 m_viewportBounds[2];
 
+		// Panels
 		SceneHierarchyPanel m_sceneHierarchyPanel;
+		ContentBrowserPanel m_contentBrowserPanel;
 
 		Entity m_hoveredEntity;
 
