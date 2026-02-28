@@ -81,6 +81,7 @@
     <None Include="..\..\Uge\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\GLAD\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\GLFW\premake5.lua" />
+    <None Include="..\..\Uge\thirdparty\assimp\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\glm\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\imgui\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\yaml-cpp\premake5.lua" />

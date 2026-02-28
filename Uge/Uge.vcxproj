@@ -77,7 +77,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;YAML_CPP_STATIC_DEFINE;UG_PLATFORM_WINDOWS;UG_BUILD_DLL;UG_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;thirdparty\entt\include;thirdparty\yaml-cpp\include;thirdparty\ImGuizmo;C:\VulkanSDK\1.4.341.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;thirdparty\entt\include;thirdparty\assimp\include;thirdparty\yaml-cpp\include;thirdparty\ImGuizmo;C:\VulkanSDK\1.4.341.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
@@ -103,7 +103,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;YAML_CPP_STATIC_DEFINE;UG_PLATFORM_WINDOWS;UG_BUILD_DLL;UG_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;thirdparty\entt\include;thirdparty\yaml-cpp\include;thirdparty\ImGuizmo;C:\VulkanSDK\1.4.341.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;thirdparty\entt\include;thirdparty\assimp\include;thirdparty\yaml-cpp\include;thirdparty\ImGuizmo;C:\VulkanSDK\1.4.341.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -132,7 +132,7 @@
       <PrecompiledHeaderFile>ugpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;YAML_CPP_STATIC_DEFINE;UG_PLATFORM_WINDOWS;UG_BUILD_DLL;UG_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;thirdparty\entt\include;thirdparty\yaml-cpp\include;thirdparty\ImGuizmo;C:\VulkanSDK\1.4.341.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>thirdparty\spdlog\include;src;thirdparty\GLFW\include;thirdparty\GLAD\include;thirdparty\imgui;thirdparty\glm;thirdparty\stb_image;thirdparty\entt\include;thirdparty\assimp\include;thirdparty\yaml-cpp\include;thirdparty\ImGuizmo;C:\VulkanSDK\1.4.341.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -190,6 +190,8 @@
     <ClInclude Include="src\Uge\Renderer\EditorCamera.h" />
     <ClInclude Include="src\Uge\Renderer\Framebuffer.h" />
     <ClInclude Include="src\Uge\Renderer\GraphicsContext.h" />
+    <ClInclude Include="src\Uge\Renderer\Mesh.h" />
+    <ClInclude Include="src\Uge\Renderer\Model.h" />
     <ClInclude Include="src\Uge\Renderer\OrthographicCamera.h" />
     <ClInclude Include="src\Uge\Renderer\OrthographicCameraController.h" />
     <ClInclude Include="src\Uge\Renderer\PerspectiveCamera.h" />
@@ -238,6 +240,8 @@
     <ClCompile Include="src\Uge\Renderer\Camera.cpp" />
     <ClCompile Include="src\Uge\Renderer\EditorCamera.cpp" />
     <ClCompile Include="src\Uge\Renderer\Framebuffer.cpp" />
+    <ClCompile Include="src\Uge\Renderer\Mesh.cpp" />
+    <ClCompile Include="src\Uge\Renderer\Model.cpp" />
     <ClCompile Include="src\Uge\Renderer\OrthographicCamera.cpp" />
     <ClCompile Include="src\Uge\Renderer\OrthographicCameraController.cpp" />
     <ClCompile Include="src\Uge\Renderer\PerspectiveCamera.cpp" />
@@ -276,6 +280,9 @@
     </ProjectReference>
     <ProjectReference Include="thirdparty\glm\glm.vcxproj">
       <Project>{6577880B-D180-887C-5AFC-9E7CC604947C}</Project>
+    </ProjectReference>
+    <ProjectReference Include="thirdparty\assimp\assimp.vcxproj">
+      <Project>{724885F2-5EEA-AFC8-47A5-C31C33E63619}</Project>
     </ProjectReference>
     <ProjectReference Include="thirdparty\yaml-cpp\yaml-cpp.vcxproj">
       <Project>{88F1A057-74BE-FB62-9DD7-E90A890331F1}</Project>

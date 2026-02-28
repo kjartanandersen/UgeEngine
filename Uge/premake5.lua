@@ -39,6 +39,7 @@ project "Uge"
 		"../%{IncludeDir.GLM}",
 		"../%{IncludeDir.STBI}",
 		"../%{IncludeDir.ENTT}",
+		"../%{IncludeDir.ASSIMP}",
 		"../%{IncludeDir.YAMLCPP}",
 		"../%{IncludeDir.IMGUIZMO}",
 		"../%{IncludeDir.VULKANSDK}"
@@ -51,6 +52,7 @@ project "Uge"
 		"GLAD",
 		"ImGui",
 		"glm",
+		"assimp",
 		"yaml-cpp",
 		"opengl32.lib"
 	}

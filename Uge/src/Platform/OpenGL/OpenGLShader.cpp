@@ -91,6 +91,34 @@ namespace Uge
 			return "";
 		}
 
+		static bool IsCacheFileValid(const std::filesystem::path& shaderFilePath, const std::filesystem::path& cachePath)
+		{
+			if (shaderFilePath.empty() || cachePath.empty())
+			{
+				return false;
+			}
+
+			std::error_code ec;
+			if (!std::filesystem::exists(shaderFilePath, ec) || !std::filesystem::exists(cachePath, ec))
+			{
+				return false;
+			}
+
+			const auto cacheTime = std::filesystem::last_write_time(cachePath, ec);
+			if (ec)
+			{
+				return false;
+			}
+
+			const auto shaderTime = std::filesystem::last_write_time(shaderFilePath, ec);
+			if (ec)
+			{
+				return false;
+			}
+
+			return cacheTime >= shaderTime;
+		}
+
 	}
 
 	OpenGLShader::OpenGLShader(const std::string& filePath)
@@ -231,7 +259,7 @@ namespace Uge
 			std::filesystem::path cachedPath = cacheDirectory / (shaderFilePath.filename().string() + Utils::GLShaderStageCachedVulkanFileExtension(stage));
 
 			std::ifstream in(cachedPath, std::ios::in | std::ios::binary);
-			if (in.is_open())
+			if (in.is_open() && Utils::IsCacheFileValid(shaderFilePath, cachedPath))
 			{
 				in.seekg(0, std::ios::end);
 				auto size = in.tellg();
@@ -293,7 +321,7 @@ namespace Uge
 			std::filesystem::path cachedPath = cacheDirectory / (shaderFilePath.filename().string() + Utils::GLShaderStageCachedOpenGLFileExtension(stage));
 
 			std::ifstream in(cachedPath, std::ios::in | std::ios::binary);
-			if (in.is_open())
+			if (in.is_open() && Utils::IsCacheFileValid(shaderFilePath, cachedPath))
 			{
 				in.seekg(0, std::ios::end);
 				auto size = in.tellg();

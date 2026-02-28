@@ -12,6 +12,8 @@
   <Project Path="UgeEditor\Uge-Editor.vcxproj" Id="1A4778D1-06FF-B91E-6F06-937A5BDD540F" DefaultStartup="true">
   </Project>
   <Folder Name="/Dependencies/">
+    <Project Path="Uge\thirdparty\assimp\assimp.vcxproj" Id="724885F2-5EEA-AFC8-47A5-C31C33E63619">
+    </Project>
     <Project Path="Uge\thirdparty\GLAD\Glad.vcxproj" Id="BDD6857C-A90D-870D-52FA-6C103E10030F">
     </Project>
     <Project Path="Uge\thirdparty\GLFW\GLFW.vcxproj" Id="154B857C-0182-860D-AA6E-6C109684020F">

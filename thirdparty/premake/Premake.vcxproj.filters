@@ -19,6 +19,9 @@
     <Filter Include="..\Uge\thirdparty\GLFW">
       <UniqueIdentifier>{6AACED43-56A6-1696-3F13-ADA62BAC7C02}</UniqueIdentifier>
     </Filter>
+    <Filter Include="..\Uge\thirdparty\assimp">
+      <UniqueIdentifier>{07538B35-F377-DAB5-1CC3-BF450847D9D3}</UniqueIdentifier>
+    </Filter>
     <Filter Include="..\Uge\thirdparty\glm">
       <UniqueIdentifier>{1A820F02-86EE-CAFC-4FE2-625ABB0DED64}</UniqueIdentifier>
     </Filter>
@@ -44,6 +47,9 @@
     </None>
     <None Include="..\..\Uge\thirdparty\GLFW\premake5.lua">
       <Filter>..\Uge\thirdparty\GLFW</Filter>
+    </None>
+    <None Include="..\..\Uge\thirdparty\assimp\premake5.lua">
+      <Filter>..\Uge\thirdparty\assimp</Filter>
     </None>
     <None Include="..\..\Uge\thirdparty\glm\premake5.lua">
       <Filter>..\Uge\thirdparty\glm</Filter>

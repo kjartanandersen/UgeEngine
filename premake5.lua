@@ -28,6 +28,7 @@ group "Dependencies"
 	include "Uge/thirdparty/GLAD"
 	include "Uge/thirdparty/imgui"
 	include "Uge/thirdparty/glm"
+	include "Uge/thirdparty/assimp"
 	include "Uge/thirdparty/yaml-cpp"
 
 group ""

@@ -1,9 +1,13 @@
 #pragma once
 
+#include <string>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include "Uge/Core/Core.h"
+#include "Uge/Renderer/Model.h"
 #include "SceneCamera.h"
 #include "ScriptableEntity.h"
 
@@ -24,8 +28,33 @@ namespace Uge
 
 	struct MeshComponent
 	{
-		float Value;
+		std::string FilePath;
+		Ref<Model> ModelAsset;
+
 		MeshComponent() = default;
+		MeshComponent(const MeshComponent&) = default;
+		explicit MeshComponent(const std::string& filePath)
+		{
+			SetModel(filePath);
+		}
+
+		void SetModel(const std::string& filePath)
+		{
+			FilePath = filePath;
+			if (FilePath.empty())
+			{
+				UG_CORE_WARN("MeshComponent::SetModel called with no filePath");
+				ModelAsset = nullptr;
+				return;
+			}
+
+			ModelAsset = CreateRef<Model>(FilePath);
+		}
+
+		bool HasModel() const
+		{
+			return (bool)ModelAsset;
+		}
 
 	};
 
@@ -55,6 +84,7 @@ namespace Uge
 
 	};
 
+	
 	struct SpriteRendererComponent
 	{
 		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -66,6 +96,7 @@ namespace Uge
 
 	};
 
+	
 	struct CameraComponent
 	{
 
@@ -78,7 +109,6 @@ namespace Uge
 
 
 	};
-
 
 	struct NativeScriptComponent
 	{

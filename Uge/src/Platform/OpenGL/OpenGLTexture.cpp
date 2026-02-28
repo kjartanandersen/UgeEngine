@@ -8,9 +8,11 @@
 namespace Uge
 {
 
-	OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height)
-		: m_width(width), m_height(height)
+	OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height, const std::string& name)
 	{
+		m_width = width;
+		m_height = height;
+		m_name = name;
 
 		UG_PROFILE_FUNCTION();
 
@@ -33,9 +35,10 @@ namespace Uge
 	}
 
 
-	OpenGLTexture2D::OpenGLTexture2D(const std::string& path)
-		: m_path(path)
+	OpenGLTexture2D::OpenGLTexture2D(const std::string& path, const std::string& name)
 	{
+		m_path = path;
+		m_name = name;
 		UG_PROFILE_FUNCTION();
 
 		int width, height, channels;

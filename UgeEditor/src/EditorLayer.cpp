@@ -2,6 +2,7 @@
 
 
 #include "imgui.h"
+#include <cstdint>
 #include <glm/gtc/type_ptr.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -64,15 +65,20 @@ namespace Uge
 			int mouseX = (int)mx;
 			int mouseY = (int)my;
 
-			if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
+			const auto& fbSpec = m_frameBuffer->GetSpecification();
+			if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)fbSpec.Width && mouseY < (int)fbSpec.Height)
 			{
 				int pixelData = m_frameBuffer->ReadPixel(1, mouseX, mouseY);
-				m_hoveredEntity = 
-					pixelData == -1 
-						? Entity() 
-						: Entity( (entt::entity)pixelData, m_activeScene.get() );
+				Entity hoveredEntity =
+					pixelData == -1
+					? Entity()
+					: Entity((entt::entity)pixelData, m_activeScene.get());
 
-
+				m_hoveredEntity = hoveredEntity ? hoveredEntity : Entity();
+			}
+			else
+			{
+				m_hoveredEntity = Entity();
 			}
 
 		}
@@ -305,7 +311,7 @@ namespace Uge
 
 
 				uint32_t textureID = m_frameBuffer->GetColorAttachment();
-				ImGui::Image((void*)textureID, ImVec2{ m_viewportSize.x, m_viewportSize.y }, { 0, 1 }, { 1, 0 });
+				ImGui::Image((void*)(uintptr_t)textureID, ImVec2{ m_viewportSize.x, m_viewportSize.y }, { 0, 1 }, { 1, 0 });
 
 				if (ImGui::BeginDragDropTarget())
 				{

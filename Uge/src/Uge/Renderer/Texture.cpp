@@ -8,7 +8,7 @@ namespace Uge
 {
 
 
-	Ref<Texture2D> Texture2D::Create(uint32_t width, uint32_t height)
+	Ref<Texture2D> Texture2D::Create(uint32_t width, uint32_t height, const std::string& name)
 	{
 		switch (Renderer::GetAPI())
 		{
@@ -17,7 +17,7 @@ namespace Uge
 			UG_CORE_ASSERT(false, "Renderer API \"None\" not supported!");
 			return nullptr;
 		case RendererAPI::API::OpenGL:
-			return CreateRef<OpenGLTexture2D>(width, height);
+			return CreateRef<OpenGLTexture2D>(width, height, name);
 
 
 		}
@@ -29,7 +29,7 @@ namespace Uge
 	}
 
 
-	Ref<Texture2D> Texture2D::Create(const std::string& path)
+	Ref<Texture2D> Texture2D::Create(const std::string& path, const std::string& name)
 	{
 
 		switch (Renderer::GetAPI())
@@ -41,7 +41,7 @@ namespace Uge
 			break;
 		case RendererAPI::API::OpenGL:
 
-			return CreateRef<OpenGLTexture2D>(path);
+			return CreateRef<OpenGLTexture2D>(path, name);
 
 			break;
 
