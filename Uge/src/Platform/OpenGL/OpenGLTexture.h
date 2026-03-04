@@ -12,8 +12,9 @@ namespace Uge
 	{
 
 	public:
-		OpenGLTexture2D(uint32_t width, uint32_t height);
-		OpenGLTexture2D(const std::string& path);
+		OpenGLTexture2D(uint32_t width, uint32_t height, const std::string& name);
+		OpenGLTexture2D(const std::string& path, const std::string& name = "");
+		OpenGLTexture2D(const unsigned char* encodedData, uint32_t size, const std::string& name = "");
 
 		virtual ~OpenGLTexture2D();
 
@@ -32,9 +33,6 @@ namespace Uge
 		}
 
 	private:
-		std::string m_path;
-		uint32_t m_width;
-		uint32_t m_height;
 		uint32_t m_rendererID;
 		GLenum m_internalFormat, m_dataFormat;
 

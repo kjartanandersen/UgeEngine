@@ -15,10 +15,27 @@
 
 namespace Uge
 {
+
+	struct ApplicationCommandLineArgs
+	{
+		int Count = 0;
+		char** Args = nullptr;
+
+		const char* operator[](int index) const
+		{
+			UG_CORE_ASSERT(index < Count);
+			return Args[index];
+		}
+	};
+
+
 	class Application
 	{
 	public:
 		Application(bool is3D, const std::string& name = "Uge App");
+		Application(bool is3D, const std::string& name = "Uge App", 
+			ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
+		
 		virtual ~Application();
 
 		void Run();
@@ -34,6 +51,9 @@ namespace Uge
 
 		ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
 
+
+		ApplicationCommandLineArgs GetCommandLineArgs() const { return m_CommandLineArgs; }
+
 	protected:
 		bool m_is3D;
 
@@ -42,6 +62,8 @@ namespace Uge
 		bool OnWindowResize(WindowResizeEvent& e);
 
 	private:
+		ApplicationCommandLineArgs m_CommandLineArgs;
+
 		Scope<Window> m_window;
 		ImGuiLayer* m_ImGuiLayer;
 		bool m_running = true;
@@ -57,5 +79,6 @@ namespace Uge
 
 	// To be defined in a client
 	Application* CreateApplication();
+	Application* CreateApplication(ApplicationCommandLineArgs args);
 
 }

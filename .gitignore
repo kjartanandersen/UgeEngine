@@ -446,9 +446,12 @@ ign/
 bin/
 bin-int/
 
-#.ini files
+# .ini files
 /Sandbox/imgui.ini
 UgeEditor/imgui.ini
 
-#Profiling data
+# Profiling data
 Sandbox/UgeProfile*.json
+
+# Python .venv
+/.venv

@@ -14,6 +14,9 @@ namespace Uge
 
 		void OnImGuiRender();
 
+		Entity GetSelectedEntity() const { return m_selectionContext; }
+		void SetSelectedEntity(Entity entity);
+
 	private:
 		void DrawEntityNode(Entity entity);
 		void DrawComponents(Entity entity);

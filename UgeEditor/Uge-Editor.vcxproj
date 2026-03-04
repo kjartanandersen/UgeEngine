@@ -79,10 +79,12 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Uge\thirdparty\spdlog\include;..\Uge\src;..\Uge\thirdparty\imgui;..\Uge\thirdparty\glm;..\Uge\thirdparty\entt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Uge\thirdparty\spdlog\include;..\Uge\src;..\Uge\thirdparty\imgui;..\Uge\thirdparty\glm;..\Uge\thirdparty\entt\include;..\Uge\thirdparty\ImGuizmo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
@@ -99,13 +101,14 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Uge\thirdparty\spdlog\include;..\Uge\src;..\Uge\thirdparty\imgui;..\Uge\thirdparty\glm;..\Uge\thirdparty\entt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Uge\thirdparty\spdlog\include;..\Uge\src;..\Uge\thirdparty\imgui;..\Uge\thirdparty\glm;..\Uge\thirdparty\entt\include;..\Uge\thirdparty\ImGuizmo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
@@ -123,13 +126,14 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>UG_PLATFORM_WINDOWS;UG_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Uge\thirdparty\spdlog\include;..\Uge\src;..\Uge\thirdparty\imgui;..\Uge\thirdparty\glm;..\Uge\thirdparty\entt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Uge\thirdparty\spdlog\include;..\Uge\src;..\Uge\thirdparty\imgui;..\Uge\thirdparty\glm;..\Uge\thirdparty\entt\include;..\Uge\thirdparty\ImGuizmo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
@@ -144,25 +148,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\EditorLayer.h" />
+    <ClInclude Include="src\Panels\ContentBrowserPanel.h" />
     <ClInclude Include="src\Panels\SceneHierarchyPanel.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\EditorLayer.cpp" />
+    <ClCompile Include="src\Panels\ContentBrowserPanel.cpp" />
     <ClCompile Include="src\Panels\SceneHierarchyPanel.cpp" />
     <ClCompile Include="src\UgeEditorApp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Uge\Uge.vcxproj">
       <Project>{262A880B-9233-887C-1BAF-9E7C87B7937C}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Uge\thirdparty\imgui\ImGui.vcxproj">
-      <Project>{C0FF640D-2C14-8DBE-F595-301E616989EF}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Uge\thirdparty\glm\glm.vcxproj">
-      <Project>{6577880B-D180-887C-5AFC-9E7CC604947C}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Uge\thirdparty\yaml-cpp\yaml-cpp.vcxproj">
-      <Project>{88F1A057-74BE-FB62-9DD7-E90A890331F1}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

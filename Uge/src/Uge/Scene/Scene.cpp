@@ -4,10 +4,14 @@
 #include "Uge/Scene/Components.h"
 #include "Uge/Renderer/Renderer2D.h"
 
+#include <type_traits>
+
 #include "Entity.h"
 
 namespace Uge
 {
+	template<typename T>
+	struct DependentFalse : std::false_type {};
 
 
 	Scene::Scene()
@@ -40,7 +44,7 @@ namespace Uge
 
 	}
 
-	void Scene::OnUpdate(Timestep ts)
+	void Scene::OnUpdateRuntime(Timestep ts)
 	{
 
 		// Update Scripts
@@ -86,6 +90,22 @@ namespace Uge
 
 		if (mainCam)
 		{
+			const glm::mat4 viewProjection = mainCam->GetProjection() * glm::inverse(mainTransform);
+
+			Model::BeginScene(viewProjection);
+			{
+				auto meshView = m_registry.view<TransformComponent, MeshComponent>();
+				for (auto [entity, transform, mesh] : meshView.each())
+				{
+					if (!mesh.ModelAsset)
+					{
+						continue;
+					}
+
+					mesh.ModelAsset->Draw(transform.GetTransform(), (int)entity);
+				}
+			}
+			Model::EndScene();
 
 			Renderer2D::BeginScene(mainCam->GetProjection(), mainTransform);
 			{
@@ -95,13 +115,46 @@ namespace Uge
 				{
 					auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(ent);
 
-					Renderer2D::DrawQuad(transform.GetTransform(), sprite.Color);
+					Renderer2D::DrawSprite(transform.GetTransform(), sprite);
 
 			}
 			Renderer2D::EndScene();
 
 			}
 		}
+	}
+
+	void Scene::OnUpdateEditor(Timestep ts, EditorCamera& camera)
+	{
+		Model::BeginScene(camera.GetViewProjection());
+		{
+			auto meshView = m_registry.view<TransformComponent, MeshComponent>();
+			for (auto [entity, transform, mesh] : meshView.each())
+			{
+				if (!mesh.ModelAsset)
+				{
+					continue;
+				}
+
+				mesh.ModelAsset->Draw(transform.GetTransform(), (int)entity);
+			}
+		}
+		Model::EndScene();
+
+		Renderer2D::BeginScene(camera);
+		{
+			UG_PROFILE_SCOPE("Scene Renderer Draw");
+			auto group = m_registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+			for (auto ent : group)
+			{
+				auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(ent);
+
+				Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)ent);
+
+			}
+		}
+		Renderer2D::EndScene();
+
 	}
 
 	void Scene::OnViewportResize(uint32_t width, uint32_t height)
@@ -131,12 +184,30 @@ namespace Uge
 
 	}
 
+	Entity Scene::GetPrimaryCameraEntity()
+	{
+
+		auto view = m_registry.view<CameraComponent>();
+
+		for (auto camEntity : view)
+		{
+			const auto& camera = view.get<CameraComponent>(camEntity);
+			if (camera.Primary)
+			{
+				return Entity{ camEntity, this };
+			}
+		
+		}
+
+		return {};
+	}
+
 
 	template<typename T>
 	void Scene::OnComponentAdded(Entity entity, T& component)
 	{
 
-		static_assert(false);
+		static_assert(DependentFalse<T>::value, "Unsupported component type");
 
 	}
 
@@ -149,12 +220,20 @@ namespace Uge
 	void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
 	{
 
-		component.Cam.SetViewportSize(m_viewportWidth, m_viewportHeight);
+		if (m_viewportWidth > 0 && m_viewportHeight > 0)
+		{
+			component.Cam.SetViewportSize(m_viewportWidth, m_viewportHeight);
+		}
 
 	}
 
 	template<>
 	void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<MeshComponent>(Entity entity, MeshComponent& component)
 	{
 	}
 

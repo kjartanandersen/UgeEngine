@@ -34,13 +34,18 @@
 #include "Uge/Renderer/Texture.h"
 #include "Uge/Renderer/SubTexture2D.h"
 #include "Uge/Renderer/VertexArray.h"
+#include "Uge/Renderer/Mesh.h"
+#include "Uge/Renderer/Model.h"
+#include "Uge/Renderer/EditorCamera.h"
 
 #include "Uge/Renderer/OrthographicCamera.h"
 #include "Uge/Renderer/PerspectiveCamera.h"
 
-#include "Uge/Utils/PlatformUtils.h"
 
 // ****************************************
 
+#include "Uge/Utils/PlatformUtils.h"
 
+// Math
+#include "Uge/Math/Math.h"
 

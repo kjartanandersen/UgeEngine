@@ -1,3 +1,6 @@
+include "./thirdparty/premake/premake_customization/solution_items.lua"
+include "Dependencies.lua"
+
 workspace "Uge"
 	architecture "x64"
 	startproject "Uge-Editor"
@@ -9,24 +12,23 @@ workspace "Uge"
 		"Dist"
 	}
 
-outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
+		solution_items
+	{
+		".editorconfig"
+	}
 
--- Include Directories relative to root folder (Solution Directory)
-IncludeDir = {}
-IncludeDir["GLFW"]   	= "Uge/thirdparty/GLFW/include"
-IncludeDir["GLAD"]   	= "Uge/thirdparty/GLAD/include"
-IncludeDir["IMGUI"]  	= "Uge/thirdparty/imgui"
-IncludeDir["GLM"]    	= "Uge/thirdparty/glm"
-IncludeDir["STBI"]   	= "Uge/thirdparty/stb_image"
-IncludeDir["ENTT"]   	= "Uge/thirdparty/entt/include"
-IncludeDir["YAMLCPP"]	= "Uge/thirdparty/yaml-cpp/include"
+	multiprocessorcompile ("on")
+
+outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 
 group "Dependencies"
+	include "thirdparty/premake"
 	include "Uge/thirdparty/GLFW"
 	include "Uge/thirdparty/GLAD"
 	include "Uge/thirdparty/imgui"
 	include "Uge/thirdparty/glm"
+	include "Uge/thirdparty/assimp"
 	include "Uge/thirdparty/yaml-cpp"
 
 group ""

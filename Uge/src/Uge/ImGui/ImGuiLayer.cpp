@@ -11,33 +11,19 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
+#include <ImGuizmo.h>
 
 namespace Uge
 {
 
-
-
-
-
 	ImGuiLayer::ImGuiLayer()
 		: Layer("ImGuiLayer")
 	{
-
-
-
 	}
 
 	ImGuiLayer::~ImGuiLayer()
 	{
-
-
-
-
 	}
-
-	
-
-
 
 	void ImGuiLayer::OnAttach()
 	{
@@ -88,10 +74,6 @@ namespace Uge
 
 	void ImGuiLayer::OnImGuiRender()
 	{
-
-		
-
-
 	}
 
 	void ImGuiLayer::OnEvent(Event& event)
@@ -117,6 +99,7 @@ namespace Uge
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+		ImGuizmo::BeginFrame();
 
 	}
 

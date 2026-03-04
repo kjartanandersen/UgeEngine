@@ -1,8 +1,13 @@
 #pragma once
 
+#include <string>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
+#include "Uge/Core/Core.h"
+#include "Uge/Renderer/Model.h"
 #include "SceneCamera.h"
 #include "ScriptableEntity.h"
 
@@ -23,8 +28,33 @@ namespace Uge
 
 	struct MeshComponent
 	{
-		float Value;
+		std::string FilePath;
+		Ref<Model> ModelAsset;
+
 		MeshComponent() = default;
+		MeshComponent(const MeshComponent&) = default;
+		explicit MeshComponent(const std::string& filePath)
+		{
+			SetModel(filePath);
+		}
+
+		void SetModel(const std::string& filePath)
+		{
+			FilePath = filePath;
+			if (FilePath.empty())
+			{
+				UG_CORE_WARN("MeshComponent::SetModel called with no filePath");
+				ModelAsset = nullptr;
+				return;
+			}
+
+			ModelAsset = CreateRef<Model>(FilePath);
+		}
+
+		bool HasModel() const
+		{
+			return (bool)ModelAsset;
+		}
 
 	};
 
@@ -45,9 +75,7 @@ namespace Uge
 		{
 			glm::mat4 translation = glm::translate(glm::mat4(1.0f), Translation);
 
-			glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), Rotation.x, { 1, 0, 0 })
-				* glm::rotate(glm::mat4(1.0f), Rotation.y, { 0, 1, 0 })
-				* glm::rotate(glm::mat4(1.0f), Rotation.z, { 0, 0, 1 });
+			glm::mat4 rotation = glm::mat4_cast(glm::quat(Rotation));
 
 			glm::mat4 scale = glm::scale(glm::mat4(1.0f), Scale);
 
@@ -56,6 +84,7 @@ namespace Uge
 
 	};
 
+	
 	struct SpriteRendererComponent
 	{
 		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -67,6 +96,7 @@ namespace Uge
 
 	};
 
+	
 	struct CameraComponent
 	{
 
@@ -79,7 +109,6 @@ namespace Uge
 
 
 	};
-
 
 	struct NativeScriptComponent
 	{

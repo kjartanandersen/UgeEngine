@@ -2,6 +2,7 @@
 
 #include "Uge.h"
 #include "Panels/SceneHierarchyPanel.h"
+#include "Panels/ContentBrowserPanel.h"
 
 namespace Uge
 {
@@ -21,15 +22,16 @@ namespace Uge
 		virtual void OnImGuiRender() override;
 
 	private:
-		bool OnKeyPressed(KeyPressedEvent e);
+		bool OnKeyPressed(KeyPressedEvent& e);
+		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
 		void SaveSceneAs();
 		void NewScene();
 		void OpenScene();
+		void OpenScene(const std::filesystem::path& path);
 
 	private:
 
-		OrthographicCameraController m_cameraController;
 
 		// TODO: Temp
 		Ref<Shader> m_flatColorShader;
@@ -42,11 +44,8 @@ namespace Uge
 		Ref<Framebuffer> m_frameBuffer;
 
 		Ref<Scene> m_activeScene;
-		Entity m_square1Ent;
-		Entity m_square2Ent;
-		Entity m_cameraEnt;
-		Entity m_secondCameraEnt;
-		bool m_primaryCam = true;
+
+		EditorCamera m_editorCamera;
 
 		ImFont* m_mainFont;
 		ImFont* m_mainFontBold;
@@ -55,8 +54,15 @@ namespace Uge
 		glm::vec4 m_square2Color = { 0.1f, 0.1f, 1.1f, 1.0f };
 
 		glm::vec2 m_viewportSize{0.0f, 0.0f};
+		glm::vec2 m_viewportBounds[2];
 
+		// Panels
 		SceneHierarchyPanel m_sceneHierarchyPanel;
+		ContentBrowserPanel m_contentBrowserPanel;
+
+		Entity m_hoveredEntity;
+
+		int m_gizmoType = -1;
 
 		bool m_shouldResize = false;
 		bool m_viewportFocused = false;

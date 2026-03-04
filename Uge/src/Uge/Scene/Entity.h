@@ -43,7 +43,12 @@ namespace Uge
 			m_scene->m_registry.remove<T>(m_entityHandle);
 		}
 
-		operator bool() const { return m_entityHandle != entt::null; }
+		bool IsValid() const
+		{
+			return m_scene && m_entityHandle != entt::null && m_scene->m_registry.valid(m_entityHandle);
+		}
+
+		operator bool() const { return IsValid(); }
 		operator uint32_t() const { return (uint32_t)m_entityHandle; }
 		operator entt::entity() const { return m_entityHandle; }
 
