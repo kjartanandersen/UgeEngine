@@ -5,6 +5,7 @@ layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec3 a_Normal;
 layout(location = 2) in vec2 a_TexCoord;
 layout(location = 3) in int a_HasDiffuseMap;
+layout(location = 4) in float a_TexIndex;
 
 layout(std140, binding = 0) uniform Camera
 {
@@ -14,7 +15,7 @@ layout(std140, binding = 0) uniform Camera
 layout(std140, binding = 1) uniform ModelData
 {
 	mat4 u_Model;
-	ivec4 u_EntityData;
+	int u_EntityData;
 };
 
 layout(location = 0) out vec3 v_Normal;
@@ -28,7 +29,7 @@ void main()
 	v_Normal = mat3(transpose(inverse(u_Model))) * a_Normal;
 	v_TexCoord = a_TexCoord;
 	v_HasDiffuseMap = a_HasDiffuseMap;
-	v_EntityID = u_EntityData.x;
+	v_EntityID = u_EntityData;
 
 	gl_Position = u_ViewProjection * worldPosition;
 }
@@ -44,7 +45,7 @@ layout(location = 1) in vec2 v_TexCoord;
 layout(location = 2) in flat int v_HasDiffuseMap;
 layout(location = 3) in flat int v_EntityID;
 
-layout(binding = 2) uniform sampler2D u_DiffuseMap;
+layout(binding = 0) uniform sampler2D u_DiffuseMap;
 
 
 void main()

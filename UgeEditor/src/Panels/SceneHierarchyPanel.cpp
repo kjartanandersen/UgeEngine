@@ -5,6 +5,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Uge/Utils/PlatformUtils.h"
 
 namespace Uge
 {
@@ -467,6 +468,8 @@ namespace Uge
 
 			if (ImGui::Button("Load Mesh"))
 			{
+				std::string filePath = FileDialogs::OpenFile("");
+				strcpy_s(buffer, sizeof(buffer), filePath.c_str());
 				component.SetModel(std::string(buffer));
 			}
 			ImGui::SameLine();

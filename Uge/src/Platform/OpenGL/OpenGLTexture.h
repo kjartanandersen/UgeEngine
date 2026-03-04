@@ -14,6 +14,7 @@ namespace Uge
 	public:
 		OpenGLTexture2D(uint32_t width, uint32_t height, const std::string& name);
 		OpenGLTexture2D(const std::string& path, const std::string& name = "");
+		OpenGLTexture2D(const unsigned char* encodedData, uint32_t size, const std::string& name = "");
 
 		virtual ~OpenGLTexture2D();
 

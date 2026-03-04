@@ -11,10 +11,14 @@
 #include "Uge/Renderer/UniformBuffer.h"
 #include "Uge/Renderer/Texture.h"
 
+
+
 struct aiNode;
 struct aiScene;
 struct aiMesh;
 struct aiMaterial;
+template<typename TReal>
+class aiMatrix4x4t;
 
 namespace Uge
 {
@@ -34,9 +38,9 @@ namespace Uge
 
 	private:
 		void LoadModel(const std::string& path);
-		void ProcessNode(aiNode* node, const aiScene* scene);
-		Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
-		std::vector<Ref<Texture2D>> LoadMaterialTextures(aiMaterial* material, int textureType, const std::string& typeName);
+		void ProcessNode(aiNode* node, const aiScene* scene, const aiMatrix4x4t<float>& parentTransform);
+		Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene, const aiMatrix4x4t<float>& transform);
+		std::vector<Ref<Texture2D>> LoadMaterialTextures(aiMaterial* material, const aiScene* scene, int textureType, const std::string& typeName);
 
 		static void EnsureSceneResources();
 

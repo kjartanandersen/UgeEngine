@@ -106,7 +106,7 @@ namespace Uge
 		}
 
 
-		m_editorCamera = EditorCamera(30.0f, 16.0f/9.0f, 0.1f, 1000.0f);
+		m_editorCamera = EditorCamera(60.0f, 16.0f/9.0f, 0.01f, 10000.0f);
 
 		// Load ImGui Font
 		ImGuiIO& io = ImGui::GetIO();

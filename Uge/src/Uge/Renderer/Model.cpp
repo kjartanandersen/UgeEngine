@@ -1,6 +1,7 @@
 #include <ugpch.h>
 #include "Model.h"
 
+#include <cstdlib>
 #include <filesystem>
 
 #include <assimp/Importer.hpp>
@@ -21,8 +22,18 @@ namespace Uge
 		struct ModelData
 		{
 			glm::mat4 ModelTransform;
-			glm::ivec4 EntityData;
+			int EntityData;
 		};
+
+		static glm::mat4 AssimpToGlm(const aiMatrix4x4t<float>& matrix)
+		{
+			glm::mat4 result;
+			result[0][0] = matrix.a1; result[1][0] = matrix.a2; result[2][0] = matrix.a3; result[3][0] = matrix.a4;
+			result[0][1] = matrix.b1; result[1][1] = matrix.b2; result[2][1] = matrix.b3; result[3][1] = matrix.b4;
+			result[0][2] = matrix.c1; result[1][2] = matrix.c2; result[2][2] = matrix.c3; result[3][2] = matrix.c4;
+			result[0][3] = matrix.d1; result[1][3] = matrix.d2; result[2][3] = matrix.d3; result[3][3] = matrix.d4;
+			return result;
+		}
 	}
 
 	Model::SceneData Model::s_sceneData;
@@ -68,7 +79,7 @@ namespace Uge
 		s_sceneData.ModelShader->Bind();
 		ModelData modelData{};
 		modelData.ModelTransform = transform;
-		modelData.EntityData = glm::ivec4(entityID, 0, 0, 0);
+		modelData.EntityData = entityID;
 		s_sceneData.ModelUniformBuffer->SetData(&modelData, sizeof(ModelData));
 
 		for (const auto& mesh : m_meshes)
@@ -91,10 +102,10 @@ namespace Uge
 
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(path,
+			aiProcess_CalcTangentSpace |
 			aiProcess_Triangulate |
-			aiProcess_GenSmoothNormals |
-			aiProcess_PreTransformVertices |
-			aiProcess_FlipUVs);
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_SortByPType);
 
 		if (!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)
 		{
@@ -105,34 +116,38 @@ namespace Uge
 		std::filesystem::path modelPath(path);
 		m_directory = modelPath.has_parent_path() ? modelPath.parent_path().string() : std::string();
 
-		ProcessNode(scene->mRootNode, scene);
+		ProcessNode(scene->mRootNode, scene, aiMatrix4x4t<float>());
 	}
 
-	void Model::ProcessNode(aiNode* node, const aiScene* scene)
+	void Model::ProcessNode(aiNode* node, const aiScene* scene, const aiMatrix4x4t<float>& parentTransform)
 	{
+		aiMatrix4x4t<float> nodeTransform = parentTransform * node->mTransformation;
+
 		for (uint32_t i = 0; i < node->mNumMeshes; i++)
 		{
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			m_meshes.emplace_back(ProcessMesh(mesh, scene));
+			m_meshes.emplace_back(ProcessMesh(mesh, scene, nodeTransform));
 		}
 
 		for (uint32_t i = 0; i < node->mNumChildren; i++)
 		{
-			ProcessNode(node->mChildren[i], scene);
+			ProcessNode(node->mChildren[i], scene, nodeTransform);
 		}
 	}
 
-	Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
+	Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene, const aiMatrix4x4t<float>& transform)
 	{
 		std::vector<MeshVertex> vertices;
 		std::vector<uint32_t> indices;
 		std::vector<Ref<Texture2D>> textures;
+		const glm::mat4 meshTransform = AssimpToGlm(transform);
+		const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(meshTransform)));
 
 		float diffuseTextureIndex = -1.0f;
 		if (mesh->mMaterialIndex >= 0)
 		{
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			auto diffuseMaps = LoadMaterialTextures(material, (int)aiTextureType_DIFFUSE, "texture_diffuse");
+			auto diffuseMaps = LoadMaterialTextures(material, scene, (int)aiTextureType_DIFFUSE, "texture_diffuse");
 			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
 			for (uint32_t i = 0; i < textures.size(); i++)
@@ -151,15 +166,13 @@ namespace Uge
 		{
 			MeshVertex vertex{};
 
-			vertex.Position.x = mesh->mVertices[i].x;
-			vertex.Position.y = mesh->mVertices[i].y;
-			vertex.Position.z = mesh->mVertices[i].z;
+			glm::vec4 transformedPosition = meshTransform * glm::vec4(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z, 1.0f);
+			vertex.Position = glm::vec3(transformedPosition);
 
 			if (mesh->HasNormals())
 			{
-				vertex.Normal.x = mesh->mNormals[i].x;
-				vertex.Normal.y = mesh->mNormals[i].y;
-				vertex.Normal.z = mesh->mNormals[i].z;
+				glm::vec3 transformedNormal = normalMatrix * glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+				vertex.Normal = glm::normalize(transformedNormal);
 			}
 			else
 			{
@@ -196,7 +209,7 @@ namespace Uge
 		return Mesh(vertices, indices, textures, scene->mName.C_Str());
 	}
 
-	std::vector<Ref<Texture2D>> Model::LoadMaterialTextures(aiMaterial* material, int textureType, const std::string& typeName)
+	std::vector<Ref<Texture2D>> Model::LoadMaterialTextures(aiMaterial* material, const aiScene* scene, int textureType, const std::string& typeName)
 	{
 		std::vector<Ref<Texture2D>> textures;
 		aiTextureType type = (aiTextureType)textureType;
@@ -207,7 +220,7 @@ namespace Uge
 			material->GetTexture(type, i, &str);
 			std::string relativePath = str.C_Str();
 
-			if (relativePath.empty() || relativePath[0] == '*')
+			if (relativePath.empty())
 			{
 				continue;
 			}
@@ -224,20 +237,78 @@ namespace Uge
 				continue;
 			}
 
-			std::filesystem::path texturePath(relativePath);
-			std::filesystem::path fullPath = texturePath.is_absolute()
-				? texturePath
-				: std::filesystem::path(m_directory) / texturePath;
-			fullPath = fullPath.lexically_normal();
-
-			if (!std::filesystem::exists(fullPath))
+			Ref<Texture2D> meshTexture;
+			if (relativePath[0] == '*')
 			{
-				UG_CORE_WARN("Model texture not found: {0}", fullPath.string());
+				if (!scene)
+				{
+					UG_CORE_WARN("Embedded texture reference '{0}' has no scene context", relativePath);
+					continue;
+				}
+
+				char* end = nullptr;
+				long textureIndex = std::strtol(relativePath.c_str() + 1, &end, 10);
+				if (end == relativePath.c_str() + 1 || *end != '\0' || textureIndex < 0 || textureIndex >= (long)scene->mNumTextures)
+				{
+					UG_CORE_WARN("Invalid embedded texture reference '{0}'", relativePath);
+					continue;
+				}
+
+				const aiTexture* embeddedTexture = scene->mTextures[textureIndex];
+				if (!embeddedTexture || !embeddedTexture->pcData)
+				{
+					UG_CORE_WARN("Embedded texture '{0}' has no texture data", relativePath);
+					continue;
+				}
+
+				if (embeddedTexture->mHeight == 0)
+				{
+					meshTexture = Texture2D::Create(reinterpret_cast<const unsigned char*>(embeddedTexture->pcData), embeddedTexture->mWidth);
+				}
+				else
+				{
+					const uint32_t width = embeddedTexture->mWidth;
+					const uint32_t height = embeddedTexture->mHeight;
+					std::vector<unsigned char> rgbaPixels;
+					rgbaPixels.resize(static_cast<size_t>(width) * static_cast<size_t>(height) * 4);
+
+					for (uint32_t texelIndex = 0; texelIndex < width * height; texelIndex++)
+					{
+						const aiTexel& src = embeddedTexture->pcData[texelIndex];
+						const size_t dstOffset = static_cast<size_t>(texelIndex) * 4;
+						rgbaPixels[dstOffset + 0] = src.r;
+						rgbaPixels[dstOffset + 1] = src.g;
+						rgbaPixels[dstOffset + 2] = src.b;
+						rgbaPixels[dstOffset + 3] = src.a;
+					}
+
+					meshTexture = Texture2D::Create(width, height, typeName);
+					meshTexture->SetData(rgbaPixels.data(), static_cast<uint32_t>(rgbaPixels.size()));
+				}
+			}
+			else
+			{
+				std::filesystem::path texturePath(relativePath);
+				std::filesystem::path fullPath = texturePath.is_absolute()
+					? texturePath
+					: std::filesystem::path(m_directory) / texturePath;
+				fullPath = fullPath.lexically_normal();
+
+				if (!std::filesystem::exists(fullPath))
+				{
+					UG_CORE_WARN("Model texture not found: {0}", fullPath.string());
+					continue;
+				}
+
+				meshTexture = Texture2D::Create(fullPath.string());
+			}
+
+			if (!meshTexture)
+			{
+				UG_CORE_WARN("Failed to create model texture '{0}'", relativePath);
 				continue;
 			}
 
-			Ref<Texture2D> meshTexture;
-			meshTexture = Texture2D::Create(fullPath.string());
 			meshTexture->m_name = typeName;
 			meshTexture->m_path = relativePath;
 

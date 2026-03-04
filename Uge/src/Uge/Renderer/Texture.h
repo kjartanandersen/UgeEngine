@@ -33,6 +33,7 @@ namespace Uge
 	public:
 		static Ref<Texture2D> Create(uint32_t width, uint32_t height, const std::string& name);
 		static Ref<Texture2D> Create(const std::string& path, const std::string& name = "");
+		static Ref<Texture2D> Create(const unsigned char* encodedData, uint32_t size, const std::string& name = "");
 
 	public:
 		std::string m_name;

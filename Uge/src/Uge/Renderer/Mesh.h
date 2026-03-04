@@ -10,7 +10,6 @@
 #include "Uge/Renderer/Shader.h"
 #include "Uge/Renderer/Texture.h"
 #include "Uge/Renderer/VertexArray.h"
-#include "Uge/Renderer/Texture.h"
 #include "Uge/Renderer/UniformBuffer.h"
 
 namespace Uge

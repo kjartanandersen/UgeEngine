@@ -143,6 +143,9 @@ namespace Uge
 		m_data.QuadIndexCount = 0;
 
 		m_data.TextureSlotIndex = 1;
+
+		m_data.QuadVB->Bind();
+		m_data.QuadVA->Bind();
 		
 
 
@@ -155,6 +158,9 @@ namespace Uge
 
 		m_data.CameraBuffer.ViewProjection = camera.GetProjection() * glm::inverse(transform);
 		m_data.CameraUniformBuffer->SetData(&m_data.CameraBuffer, sizeof(Renderer2DData::CameraData));
+
+		m_data.QuadVB->Bind();
+		m_data.QuadVA->Bind();
 
 		StartBatch();
 
@@ -169,6 +175,9 @@ namespace Uge
 
 		m_data.CameraBuffer.ViewProjection = camera.GetViewProjection();
 		m_data.CameraUniformBuffer->SetData(&m_data.CameraBuffer, sizeof(Renderer2DData::CameraData));
+
+		m_data.QuadVB->Bind();
+		m_data.QuadVA->Bind();
 
 		StartBatch();
 
@@ -198,6 +207,7 @@ namespace Uge
 		RenderCommand::DrawIndexed(m_data.QuadVA, m_data.QuadIndexCount);
 
 		m_data.Stats.DrawCalls++;
+		m_data.TextureShader->Unbind();
 
 
 	}

@@ -60,7 +60,7 @@ namespace Uge
 
 			if (texture->m_name == "texture_diffuse")
 			{
-				texture->Bind(2);
+				texture->Bind(0);
 				break;
 			}
 		}
