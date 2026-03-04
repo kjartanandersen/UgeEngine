@@ -183,6 +183,17 @@ namespace Uge
 			out << YAML::EndMap; // SpriteRendererComponent
 		}
 
+		if (entity.HasComponent<MeshComponent>())
+		{
+			out << YAML::Key << "MeshComponent";
+			out << YAML::BeginMap; // MeshComponent
+
+			auto& meshComponent = entity.GetComponent<MeshComponent>();
+			out << YAML::Key << "Path" << YAML::Value << meshComponent.FilePath;
+
+			out << YAML::EndMap; // MeshComponent
+		}
+
 
 
 		out << YAML::EndMap;	// Entity
@@ -305,6 +316,13 @@ namespace Uge
 					auto& src = deserializedEntity.AddComponent<SpriteRendererComponent>();
 					src.Color = ysrc["Color"].as<glm::vec4>();
 
+				}
+
+				auto ymc = entity["MeshComponent"];		// Mesh Component
+				if (ymc)
+				{
+					std::string path = ymc["Path"] ? ymc["Path"].as<std::string>() : std::string();
+					deserializedEntity.AddComponent<MeshComponent>(path);
 				}
 
 			}

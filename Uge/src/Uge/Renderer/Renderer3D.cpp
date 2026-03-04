@@ -117,7 +117,7 @@ namespace Uge
 
 		m_data.QuadVA->SetIndexBuffer(squareIB);
 
-		m_data.WhiteTexture = Texture2D::Create(1, 1);
+		m_data.WhiteTexture = Texture2D::Create(1, 1, "");
 		uint32_t whiteTextureData = 0xffffffff;
 		m_data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 

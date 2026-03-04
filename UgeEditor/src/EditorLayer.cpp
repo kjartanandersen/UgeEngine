@@ -1,6 +1,8 @@
 ﻿#include "EditorLayer.h"
 
+
 #include "imgui.h"
+#include <cstdint>
 #include <glm/gtc/type_ptr.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -12,6 +14,7 @@
 namespace Uge
 {
 
+	extern const std::filesystem::path g_assetPath = "assets";
 
 	EditorLayer::EditorLayer()
 		: Layer("Sandbox2D")
@@ -62,15 +65,20 @@ namespace Uge
 			int mouseX = (int)mx;
 			int mouseY = (int)my;
 
-			if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
+			const auto& fbSpec = m_frameBuffer->GetSpecification();
+			if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)fbSpec.Width && mouseY < (int)fbSpec.Height)
 			{
 				int pixelData = m_frameBuffer->ReadPixel(1, mouseX, mouseY);
-				m_hoveredEntity = 
-					pixelData == -1 
-						? Entity() 
-						: Entity( (entt::entity)pixelData, m_activeScene.get() );
+				Entity hoveredEntity =
+					pixelData == -1
+					? Entity()
+					: Entity((entt::entity)pixelData, m_activeScene.get());
 
-
+				m_hoveredEntity = hoveredEntity ? hoveredEntity : Entity();
+			}
+			else
+			{
+				m_hoveredEntity = Entity();
 			}
 
 		}
@@ -89,7 +97,16 @@ namespace Uge
 
 		m_activeScene = CreateRef<Scene>();
 
-		m_editorCamera = EditorCamera(30.0f, 16.0f/9.0f, 0.1f, 1000.0f);
+		auto commandLineArgs = Application::Get().GetCommandLineArgs();
+		if (commandLineArgs.Count > 1)
+		{
+			auto sceneFilePath = commandLineArgs[1];
+			SceneSerializer serializer(m_activeScene);
+			serializer.DeSerialize(sceneFilePath);
+		}
+
+
+		m_editorCamera = EditorCamera(60.0f, 16.0f/9.0f, 0.01f, 10000.0f);
 
 		// Load ImGui Font
 		ImGuiIO& io = ImGui::GetIO();
@@ -234,6 +251,7 @@ namespace Uge
 			}
 
 			m_sceneHierarchyPanel.OnImGuiRender();
+			m_contentBrowserPanel.OnImGuiRender();
 
 
 			ImGui::Begin("Stats");
@@ -264,10 +282,17 @@ namespace Uge
 
 			ImGui::Begin("Scene Viewport");
 			{
-				ImVec2 viewportOffset = ImGui::GetCursorPos();			// Includes Tab bar
+				//ImVec2 viewportOffset = ImGui::GetCursorPos();			// Includes Tab bar
+
+				auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+				auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+				auto viewportOffset = ImGui::GetWindowPos();
+				m_viewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+				m_viewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
 
 				m_viewportFocused = ImGui::IsWindowFocused();
 				m_viewportHovered = ImGui::IsWindowHovered();
+
 				
 				Application::Get().GetImGuiLayer()->BlockEvents(!m_viewportHovered && !m_viewportFocused);
 				
@@ -286,17 +311,21 @@ namespace Uge
 
 
 				uint32_t textureID = m_frameBuffer->GetColorAttachment();
-				ImGui::Image((void*)textureID, ImVec2{ m_viewportSize.x, m_viewportSize.y }, { 0, 1 }, { 1, 0 });
+				ImGui::Image((void*)(uintptr_t)textureID, ImVec2{ m_viewportSize.x, m_viewportSize.y }, { 0, 1 }, { 1, 0 });
 
-				ImVec2 windowSize	= ImGui::GetWindowSize();
-				
-				ImVec2 minBound		= ImGui::GetWindowPos();
-				minBound.x += viewportOffset.x;
-				minBound.y += viewportOffset.y;
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+					{
+						const wchar_t* path = (const wchar_t*)payload->Data;
+						OpenScene(std::filesystem::path(g_assetPath) / path);
 
-				ImVec2 maxBound = { minBound.x + windowSize.x, minBound.y + windowSize.y };
-				m_viewportBounds[0] = { minBound.x, minBound.y };
-				m_viewportBounds[1] = { maxBound.x, maxBound.y };
+					}
+					
+
+
+					ImGui::EndDragDropTarget();
+				}
 
 				// Gizmos
 				Entity selectedEntity = m_sceneHierarchyPanel.GetSelectedEntity();
@@ -305,8 +334,12 @@ namespace Uge
 
 					ImGuizmo::SetOrthographic(false);
 					ImGuizmo::SetDrawlist();
-					ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, 
-						ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+					// ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, 
+					// 	ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+
+					ImGuizmo::SetRect(m_viewportBounds[0].x, m_viewportBounds[0].y, 
+						m_viewportBounds[1].x - m_viewportBounds[0].x, 
+						m_viewportBounds[1].y - m_viewportBounds[0].y);
 
 					// Camera
 					
@@ -385,11 +418,12 @@ namespace Uge
 
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(UG_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+		dispatcher.Dispatch<MouseButtonPressedEvent>(UG_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
 
 
 	}
 
-	bool EditorLayer::OnKeyPressed(KeyPressedEvent e)
+	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
 	{
 		// Shortcuts
 		if (e.GetRepeatCount() > 0)
@@ -475,6 +509,22 @@ namespace Uge
 		return false;
 	}
 
+	bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
+	{
+
+		if (e.GetMouseButton() == MouseButton::UG_MOUSE_BUTTON_LEFT)
+		{
+			if (m_viewportHovered && !ImGuizmo::IsOver() && !Input::IsKeyPressed(KeyCode::UG_KEY_LEFT_ALT))
+			{
+				m_sceneHierarchyPanel.SetSelectedEntity(m_hoveredEntity);
+
+			}
+
+		}
+
+		return false;
+	}
+
 	void EditorLayer::SaveSceneAs()
 	{
 		std::string filepath = FileDialogs::SaveFile("Uge Scene (*.uge)\0*uge\0");
@@ -501,15 +551,23 @@ namespace Uge
 		std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*uge\0");
 		if (!filepath.empty())
 		{
-			m_activeScene = CreateRef<Scene>();
-			m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
-			m_sceneHierarchyPanel.SetContext(m_activeScene);
-
-
-			SceneSerializer serializer(m_activeScene);
-			serializer.DeSerialize(filepath);
+			
+			OpenScene(filepath);
 
 		}
+
+	}
+
+	void EditorLayer::OpenScene(const std::filesystem::path& path)
+	{
+
+		m_activeScene = CreateRef<Scene>();
+		m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+		m_sceneHierarchyPanel.SetContext(m_activeScene);
+
+
+		SceneSerializer serializer(m_activeScene);
+		serializer.DeSerialize(path.string());
 
 	}
 

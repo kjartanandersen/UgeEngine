@@ -16,3 +16,6 @@
 [submodule "Uge/thirdparty/ImGuizmo"]
 	path = Uge/thirdparty/ImGuizmo
 	url = git@github.com:CedricGuillemet/ImGuizmo.git
+[submodule "Uge/thirdparty/assimp"]
+	path = Uge/thirdparty/assimp
+	url = git@github.com:assimp/assimp.git

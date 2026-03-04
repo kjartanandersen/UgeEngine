@@ -5,6 +5,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Uge/Utils/PlatformUtils.h"
 
 namespace Uge
 {
@@ -229,6 +230,14 @@ namespace Uge
 
 	}
 
+	void SceneHierarchyPanel::SetSelectedEntity(Entity entity)
+	{
+
+		m_selectionContext = entity;
+
+
+	}
+
 	void SceneHierarchyPanel::DrawEntityNode(Entity entity)
 	{
 
@@ -316,6 +325,12 @@ namespace Uge
 			if (ImGui::MenuItem("Sprite Renderer"))
 			{
 				m_selectionContext.AddComponent<SpriteRendererComponent>();
+				ImGui::CloseCurrentPopup();
+			}
+
+			if (ImGui::MenuItem("Mesh"))
+			{
+				m_selectionContext.AddComponent<MeshComponent>();
 				ImGui::CloseCurrentPopup();
 			}
 
@@ -440,6 +455,30 @@ namespace Uge
 
 			}
 
+		});
+
+		DrawComponent<MeshComponent>("Mesh", entity, true, [](auto& component)
+		{
+			char buffer[512];
+			memset(buffer, 0, sizeof(buffer));
+			strcpy_s(buffer, sizeof(buffer), component.FilePath.c_str());
+
+			ImGui::InputText("Path", buffer, sizeof(buffer));
+			component.FilePath = buffer;
+
+			if (ImGui::Button("Load Mesh"))
+			{
+				std::string filePath = FileDialogs::OpenFile("");
+				strcpy_s(buffer, sizeof(buffer), filePath.c_str());
+				component.SetModel(std::string(buffer));
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Clear Mesh"))
+			{
+				component.SetModel(std::string());
+			}
+
+			ImGui::Text("Status: %s", component.HasModel() ? "Loaded" : "No model");
 		});
 
 		

@@ -33,7 +33,7 @@ namespace Uge
 
 		}
 
-		static void AttachColorTexture(uint32_t id, int samples, GLenum internalFormat, GLenum format,
+		static void AttachColorTexture(uint32_t id, int samples, GLenum internalFormat, GLenum format, GLenum type,
 			uint32_t width, uint32_t height, int index)
 		{
 
@@ -44,10 +44,11 @@ namespace Uge
 			}
 			else
 			{
-				glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
-			
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, nullptr);
+
+				const bool integerTexture = format == GL_RED_INTEGER;
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, integerTexture ? GL_NEAREST : GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, integerTexture ? GL_NEAREST : GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -187,14 +188,14 @@ namespace Uge
 					case FramebufferTextureFormat::RGBA8:
 					{
 						Utils::AttachColorTexture(m_colorAttachments[i], m_specification.Samples, 
-							GL_RGBA8, GL_RGBA, m_specification.Width, m_specification.Height, i);
+							GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, m_specification.Width, m_specification.Height, i);
 						
 						break;
 					}
 					case FramebufferTextureFormat::RED_INTEGER:
 					{
 						Utils::AttachColorTexture(m_colorAttachments[i], m_specification.Samples,
-							GL_R32I, GL_RED_INTEGER, m_specification.Width, m_specification.Height, i);
+							GL_R32I, GL_RED_INTEGER, GL_INT, m_specification.Width, m_specification.Height, i);
 
 						break;
 					}

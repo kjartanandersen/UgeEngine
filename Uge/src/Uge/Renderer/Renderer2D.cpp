@@ -4,25 +4,17 @@
 #include "VertexArray.h"
 #include "Shader.h"
 #include "RenderCommand.h"
+#include "UniformBuffer.h"
+#include "Mesh.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 
 
 
 namespace Uge
 {
-
-	struct QuadVertex
-	{
-		glm::vec3 Position;
-		glm::vec4 Color;
-		glm::vec2 TexCoord;
-		float TexIndex;
-		float TilingFactor;
-
-		// Editor Only
-		int EntityID;
-	};
 
 	struct Renderer2DData
 	{
@@ -37,15 +29,23 @@ namespace Uge
 		Ref<Texture2D> WhiteTexture;
 
 		uint32_t QuadIndexCount = 0;
-		QuadVertex* QuadVertexBufferBase = nullptr;
-		QuadVertex* QuadVertexBufferPtr = nullptr;
+		Vertex* VertexBufferBase = nullptr;
+		Vertex* VertexBufferPtr = nullptr;
 
 		std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots;
 		uint32_t TextureSlotIndex = 1; // 0 is white texture
 
-		glm::vec4 QuadVertexPositions[4];
+		glm::vec4 VertexPositions[4];
 		
 		Renderer2D::Statistics Stats;
+
+		struct CameraData
+		{
+			glm::mat4 ViewProjection;
+		};
+
+		CameraData CameraBuffer;
+		Ref<UniformBuffer> CameraUniformBuffer;
 
 
 	};
@@ -60,7 +60,7 @@ namespace Uge
 		UG_PROFILE_FUNCTION();
 		m_data.QuadVA = VertexArray::Create();
 
-		m_data.QuadVB = VertexBuffer::Create(m_data.MaxVertices * sizeof(QuadVertex));
+		m_data.QuadVB = VertexBuffer::Create(m_data.MaxVertices * sizeof(Vertex));
 		BufferLayout squareVBlayout =
 		{
 			{ ShaderDataType::Float3, "a_Position"     },
@@ -73,7 +73,7 @@ namespace Uge
 		m_data.QuadVB->SetLayout(squareVBlayout);
 		m_data.QuadVA->AddVertexBuffer(m_data.QuadVB);
 
-		m_data.QuadVertexBufferBase = new QuadVertex[m_data.MaxVertices];
+		m_data.VertexBufferBase = new Vertex[m_data.MaxVertices];
 
 
 		uint32_t* quadIndices = new uint32_t[m_data.MaxIndices];
@@ -96,7 +96,7 @@ namespace Uge
 		m_data.QuadVA->SetIndexBuffer(squareIB);
 		delete[] quadIndices;
 
-		m_data.WhiteTexture = Texture2D::Create(1, 1);
+		m_data.WhiteTexture = Texture2D::Create(1, 1, "");
 		uint32_t whiteTextureData = 0xffffffff;
 		m_data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 
@@ -108,20 +108,18 @@ namespace Uge
 
 
 		m_data.TextureShader = Shader::Create("assets/shaders/Texture.glsl");
-		m_data.TextureShader->Bind();
-		m_data.TextureShader->SetIntArray("u_Textures", samplers, m_data.MaxTextureSlots);
 
 
 		// Set all texture slots to zero
 		
 		m_data.TextureSlots[0] = m_data.WhiteTexture;
 
-		m_data.QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
-		m_data.QuadVertexPositions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };
-		m_data.QuadVertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
-		m_data.QuadVertexPositions[3] = { -0.5f,  0.5f, 0.0f, 1.0f };
+		m_data.VertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
+		m_data.VertexPositions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };
+		m_data.VertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
+		m_data.VertexPositions[3] = { -0.5f,  0.5f, 0.0f, 1.0f };
 
-		
+		m_data.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
 
 
 	}
@@ -141,10 +139,13 @@ namespace Uge
 		m_data.TextureShader->Bind();
 		//m_data.TextureShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 
-		m_data.QuadVertexBufferPtr = m_data.QuadVertexBufferBase;
+		m_data.VertexBufferPtr = m_data.VertexBufferBase;
 		m_data.QuadIndexCount = 0;
 
 		m_data.TextureSlotIndex = 1;
+
+		m_data.QuadVB->Bind();
+		m_data.QuadVA->Bind();
 		
 
 
@@ -155,10 +156,11 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
-		glm::mat4 viewProj = camera.GetProjection() * glm::inverse(transform);
+		m_data.CameraBuffer.ViewProjection = camera.GetProjection() * glm::inverse(transform);
+		m_data.CameraUniformBuffer->SetData(&m_data.CameraBuffer, sizeof(Renderer2DData::CameraData));
 
-		m_data.TextureShader->Bind();
-		m_data.TextureShader->SetMat4("u_ViewProjection", viewProj);
+		m_data.QuadVB->Bind();
+		m_data.QuadVA->Bind();
 
 		StartBatch();
 
@@ -171,10 +173,11 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
-		glm::mat4 viewProj = camera.GetViewProjection();
+		m_data.CameraBuffer.ViewProjection = camera.GetViewProjection();
+		m_data.CameraUniformBuffer->SetData(&m_data.CameraBuffer, sizeof(Renderer2DData::CameraData));
 
-		m_data.TextureShader->Bind();
-		m_data.TextureShader->SetMat4("u_ViewProjection", viewProj);
+		m_data.QuadVB->Bind();
+		m_data.QuadVA->Bind();
 
 		StartBatch();
 
@@ -185,8 +188,8 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		uint32_t dataSize = (uint8_t*)m_data.QuadVertexBufferPtr - (uint8_t*)m_data.QuadVertexBufferBase;
-		m_data.QuadVB->SetData(m_data.QuadVertexBufferBase, dataSize);
+		uint32_t dataSize = (uint8_t*)m_data.VertexBufferPtr - (uint8_t*)m_data.VertexBufferBase;
+		m_data.QuadVB->SetData(m_data.VertexBufferBase, dataSize);
 
 		Flush();
 
@@ -200,10 +203,11 @@ namespace Uge
 			m_data.TextureSlots[i]->Bind(i);
 
 		
-
+		m_data.TextureShader->Bind();
 		RenderCommand::DrawIndexed(m_data.QuadVA, m_data.QuadIndexCount);
 
 		m_data.Stats.DrawCalls++;
+		m_data.TextureShader->Unbind();
 
 
 	}
@@ -212,7 +216,7 @@ namespace Uge
 	{
 		EndScene();
 
-		m_data.QuadVertexBufferPtr = m_data.QuadVertexBufferBase;
+		m_data.VertexBufferPtr = m_data.VertexBufferBase;
 		m_data.QuadIndexCount = 0;
 
 		m_data.TextureSlotIndex = 1;
@@ -301,33 +305,33 @@ namespace Uge
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[0];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = textureCoords[0];
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[0];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = textureCoords[0];
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[1];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = textureCoords[1];
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[1];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = textureCoords[1];
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[2];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = textureCoords[2];
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[2];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = textureCoords[2];
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[3];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = textureCoords[3];
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[3];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = textureCoords[3];
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
 
 
@@ -350,7 +354,7 @@ namespace Uge
 
 		}
 
-		constexpr size_t quadVertexCount = 4;
+		constexpr size_t VertexCount = 4;
 		const float texIndex = 0.0f; // White texture
 		const float tilingFactor = 1.0f; // Tiling Factor
 		constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
@@ -358,16 +362,16 @@ namespace Uge
 
 		
 
-		for (size_t i = 0; i < quadVertexCount; i++)
+		for (size_t i = 0; i < VertexCount; i++)
 		{
 
-			m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[i];
-			m_data.QuadVertexBufferPtr->Color = color;
-			m_data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
-			m_data.QuadVertexBufferPtr->TexIndex = texIndex;
-			m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-			m_data.QuadVertexBufferPtr->EntityID = entityID;
-			m_data.QuadVertexBufferPtr++;
+			m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[i];
+			m_data.VertexBufferPtr->Color = color;
+			m_data.VertexBufferPtr->TexCoord = textureCoords[i];
+			m_data.VertexBufferPtr->TexIndex = texIndex;
+			m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+			m_data.VertexBufferPtr->EntityID = entityID;
+			m_data.VertexBufferPtr++;
 
 		}
 
@@ -394,7 +398,7 @@ namespace Uge
 
 		constexpr glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-		constexpr size_t quadVertexCount = 4;
+		constexpr size_t VertexCount = 4;
 		constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 		float texIndex = 0.0f;
 
@@ -420,16 +424,16 @@ namespace Uge
 
 		}
 
-		for (size_t i = 0; i < quadVertexCount; i++)
+		for (size_t i = 0; i < VertexCount; i++)
 		{
 
-			m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[i];
-			m_data.QuadVertexBufferPtr->Color = color;
-			m_data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
-			m_data.QuadVertexBufferPtr->TexIndex = texIndex;
-			m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-			m_data.QuadVertexBufferPtr->EntityID = entityID;
-			m_data.QuadVertexBufferPtr++;
+			m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[i];
+			m_data.VertexBufferPtr->Color = color;
+			m_data.VertexBufferPtr->TexCoord = textureCoords[i];
+			m_data.VertexBufferPtr->TexIndex = texIndex;
+			m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+			m_data.VertexBufferPtr->EntityID = entityID;
+			m_data.VertexBufferPtr++;
 
 		}
 
@@ -478,33 +482,33 @@ namespace Uge
 			* glm::rotate(glm::mat4(1.0f), rotation, { 0, 0, 1 })
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[0];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
-		m_data.QuadVertexBufferPtr->TexIndex = texIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[0];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+		m_data.VertexBufferPtr->TexIndex = texIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[1];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 1.0f, 0.0f };
-		m_data.QuadVertexBufferPtr->TexIndex = texIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[1];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = { 1.0f, 0.0f };
+		m_data.VertexBufferPtr->TexIndex = texIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[2];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 1.0f, 1.0f };
-		m_data.QuadVertexBufferPtr->TexIndex = texIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[2];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = { 1.0f, 1.0f };
+		m_data.VertexBufferPtr->TexIndex = texIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[3];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 0.0f, 1.0f };
-		m_data.QuadVertexBufferPtr->TexIndex = texIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[3];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = { 0.0f, 1.0f };
+		m_data.VertexBufferPtr->TexIndex = texIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
 
 
@@ -560,33 +564,33 @@ namespace Uge
 			* glm::rotate(glm::mat4(1.0f), rotation, { 0, 0, 1 })
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[0];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[0];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[1];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 1.0f, 0.0f };
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[1];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = { 1.0f, 0.0f };
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[2];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 1.0f, 1.0f };
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[2];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = { 1.0f, 1.0f };
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[3];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = { 0.0f, 1.0f };
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[3];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = { 0.0f, 1.0f };
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
 		
 
@@ -647,33 +651,33 @@ namespace Uge
 			* glm::rotate(glm::mat4(1.0f), rotation, { 0, 0, 1 })
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[0];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = textureCoords[0];
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[0];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = textureCoords[0];
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[1];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = textureCoords[1];
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[1];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = textureCoords[1];
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[2];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = textureCoords[2];
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[2];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = textureCoords[2];
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
-		m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[3];
-		m_data.QuadVertexBufferPtr->Color = color;
-		m_data.QuadVertexBufferPtr->TexCoord = textureCoords[3];
-		m_data.QuadVertexBufferPtr->TexIndex = textureIndex;
-		m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		m_data.QuadVertexBufferPtr++;
+		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[3];
+		m_data.VertexBufferPtr->Color = color;
+		m_data.VertexBufferPtr->TexCoord = textureCoords[3];
+		m_data.VertexBufferPtr->TexIndex = textureIndex;
+		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr++;
 
 
 
@@ -704,7 +708,7 @@ namespace Uge
 	{
 
 		m_data.QuadIndexCount = 0;
-		m_data.QuadVertexBufferPtr = m_data.QuadVertexBufferBase;
+		m_data.VertexBufferPtr = m_data.VertexBufferBase;
 
 		m_data.TextureSlotIndex = 1;
 
@@ -718,7 +722,7 @@ namespace Uge
 		// 
 		// const float texIndex = 0.0f; // White texture
 		// const float tilingFactor = 1.0f; // Tiling Factor
-		// constexpr size_t quadVertexCount = 4;
+		// constexpr size_t VertexCount = 4;
 		// constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 		// 
 		// if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
@@ -727,15 +731,15 @@ namespace Uge
 		// }
 		// 
 		// 
-		// for (size_t i = 0; i < quadVertexCount; i++)
+		// for (size_t i = 0; i < VertexCount; i++)
 		// {
 		// 
-		// 	m_data.QuadVertexBufferPtr->Position = transform * m_data.QuadVertexPositions[i];
-		// 	m_data.QuadVertexBufferPtr->Color = src.Color;
-		// 	m_data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
-		// 	m_data.QuadVertexBufferPtr->TexIndex = texIndex;
-		// 	m_data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-		// 	m_data.QuadVertexBufferPtr++;
+		// 	m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[i];
+		// 	m_data.VertexBufferPtr->Color = src.Color;
+		// 	m_data.VertexBufferPtr->TexCoord = textureCoords[i];
+		// 	m_data.VertexBufferPtr->TexIndex = texIndex;
+		// 	m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		// 	m_data.VertexBufferPtr++;
 		// 
 		// }
 		// 

@@ -69,6 +69,9 @@
     <ClInclude Include="src\Platform\OpenGL\OpenGLTexture.h">
       <Filter>src\Platform\OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\OpenGLUniformBuffer.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
     <ClInclude Include="src\Platform\OpenGL\OpenGLVertexArray.h">
       <Filter>src\Platform\OpenGL</Filter>
     </ClInclude>
@@ -105,6 +108,9 @@
     <ClInclude Include="src\Uge\Core\MouseButtonCodes.h">
       <Filter>src\Uge\Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\Uge\Core\Timer.h">
+      <Filter>src\Uge\Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\Uge\Core\Timestep.h">
       <Filter>src\Uge\Core</Filter>
     </ClInclude>
@@ -138,10 +144,19 @@
     <ClInclude Include="src\Uge\Renderer\Camera.h">
       <Filter>src\Uge\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\Uge\Renderer\EditorCamera.h">
+      <Filter>src\Uge\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="src\Uge\Renderer\Framebuffer.h">
       <Filter>src\Uge\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Renderer\GraphicsContext.h">
+      <Filter>src\Uge\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Uge\Renderer\Mesh.h">
+      <Filter>src\Uge\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Uge\Renderer\Model.h">
       <Filter>src\Uge\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Uge\Renderer\OrthographicCamera.h">
@@ -180,6 +195,9 @@
     <ClInclude Include="src\Uge\Renderer\Texture.h">
       <Filter>src\Uge\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\Uge\Renderer\UniformBuffer.h">
+      <Filter>src\Uge\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="src\Uge\Renderer\VertexArray.h">
       <Filter>src\Uge\Renderer</Filter>
     </ClInclude>
@@ -213,7 +231,6 @@
     <ClInclude Include="thirdparty\stb_image\stb_image.h">
       <Filter>thirdparty\stb_image</Filter>
     </ClInclude>
-    <ClInclude Include="src\Uge\Renderer\EditorCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">
@@ -232,6 +249,9 @@
       <Filter>src\Platform\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLTexture.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLUniformBuffer.cpp">
       <Filter>src\Platform\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLVertexArray.cpp">
@@ -273,7 +293,16 @@
     <ClCompile Include="src\Uge\Renderer\Camera.cpp">
       <Filter>src\Uge\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\Uge\Renderer\EditorCamera.cpp">
+      <Filter>src\Uge\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="src\Uge\Renderer\Framebuffer.cpp">
+      <Filter>src\Uge\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Uge\Renderer\Mesh.cpp">
+      <Filter>src\Uge\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Uge\Renderer\Model.cpp">
       <Filter>src\Uge\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\Renderer\OrthographicCamera.cpp">
@@ -312,6 +341,9 @@
     <ClCompile Include="src\Uge\Renderer\Texture.cpp">
       <Filter>src\Uge\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\Uge\Renderer\UniformBuffer.cpp">
+      <Filter>src\Uge\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="src\Uge\Renderer\VertexArray.cpp">
       <Filter>src\Uge\Renderer</Filter>
     </ClCompile>
@@ -336,6 +368,5 @@
     <ClCompile Include="thirdparty\stb_image\stb_image.cpp">
       <Filter>thirdparty\stb_image</Filter>
     </ClCompile>
-    <ClCompile Include="src\Uge\Renderer\EditorCamera.cpp" />
   </ItemGroup>
 </Project>

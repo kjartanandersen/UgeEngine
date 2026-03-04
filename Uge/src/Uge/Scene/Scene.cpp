@@ -4,10 +4,14 @@
 #include "Uge/Scene/Components.h"
 #include "Uge/Renderer/Renderer2D.h"
 
+#include <type_traits>
+
 #include "Entity.h"
 
 namespace Uge
 {
+	template<typename T>
+	struct DependentFalse : std::false_type {};
 
 
 	Scene::Scene()
@@ -86,6 +90,22 @@ namespace Uge
 
 		if (mainCam)
 		{
+			const glm::mat4 viewProjection = mainCam->GetProjection() * glm::inverse(mainTransform);
+
+			Model::BeginScene(viewProjection);
+			{
+				auto meshView = m_registry.view<TransformComponent, MeshComponent>();
+				for (auto [entity, transform, mesh] : meshView.each())
+				{
+					if (!mesh.ModelAsset)
+					{
+						continue;
+					}
+
+					mesh.ModelAsset->Draw(transform.GetTransform(), (int)entity);
+				}
+			}
+			Model::EndScene();
 
 			Renderer2D::BeginScene(mainCam->GetProjection(), mainTransform);
 			{
@@ -106,6 +126,20 @@ namespace Uge
 
 	void Scene::OnUpdateEditor(Timestep ts, EditorCamera& camera)
 	{
+		Model::BeginScene(camera.GetViewProjection());
+		{
+			auto meshView = m_registry.view<TransformComponent, MeshComponent>();
+			for (auto [entity, transform, mesh] : meshView.each())
+			{
+				if (!mesh.ModelAsset)
+				{
+					continue;
+				}
+
+				mesh.ModelAsset->Draw(transform.GetTransform(), (int)entity);
+			}
+		}
+		Model::EndScene();
 
 		Renderer2D::BeginScene(camera);
 		{
@@ -173,7 +207,7 @@ namespace Uge
 	void Scene::OnComponentAdded(Entity entity, T& component)
 	{
 
-		static_assert(false);
+		static_assert(DependentFalse<T>::value, "Unsupported component type");
 
 	}
 
@@ -186,12 +220,20 @@ namespace Uge
 	void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
 	{
 
-		component.Cam.SetViewportSize(m_viewportWidth, m_viewportHeight);
+		if (m_viewportWidth > 0 && m_viewportHeight > 0)
+		{
+			component.Cam.SetViewportSize(m_viewportWidth, m_viewportHeight);
+		}
 
 	}
 
 	template<>
 	void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<MeshComponent>(Entity entity, MeshComponent& component)
 	{
 	}
 

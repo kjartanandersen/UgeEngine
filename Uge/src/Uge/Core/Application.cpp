@@ -17,9 +17,29 @@ namespace Uge
 	Application* Application::s_instance = nullptr;
 
 	
-
-
 	Application::Application(bool is3D, const std::string& name)
+		: m_CommandLineArgs({  })
+	{
+		UG_PROFILE_FUNCTION();
+		m_is3D = is3D;
+		UG_CORE_ASSERT(!s_instance, "Application Already Exists!");
+		s_instance = this;
+
+		m_window = Window::Create(WindowProps(name));
+		m_window->SetEventCallback(UG_BIND_EVENT_FN(Application::OnEvent));
+
+		m_window->SetVSync(true);
+
+		Renderer::Init(m_is3D);
+
+		m_ImGuiLayer = new ImGuiLayer();
+		PushOverlay(m_ImGuiLayer);
+
+
+	}
+
+	Application::Application(bool is3D, const std::string& name, ApplicationCommandLineArgs args)
+		: m_CommandLineArgs(args)
 	{
 		UG_PROFILE_FUNCTION();
 		m_is3D = is3D;
