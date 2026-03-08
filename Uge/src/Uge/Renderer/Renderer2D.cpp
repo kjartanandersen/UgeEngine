@@ -247,22 +247,22 @@ namespace Uge
 
 	}
 
-	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
 	{
 
-		DrawQuad({ position.x, position.y, 0.0f }, size, texture, tilingFactor, tintColor);
+		DrawQuad({ position.x, position.y, 0.0f }, size, texture, tintColor);
 
 	}
 
-	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor)
 	{
 
-		DrawQuad({ position.x, position.y, 0.0f }, size, subTexture, tilingFactor, tintColor);
+		DrawQuad({ position.x, position.y, 0.0f }, size, subTexture, tintColor);
 
 
 	}
 
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor)
 	{
 
 		UG_PROFILE_FUNCTION();
@@ -309,28 +309,28 @@ namespace Uge
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = textureCoords[0];
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[1];
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = textureCoords[1];
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[2];
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = textureCoords[2];
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[3];
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = textureCoords[3];
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 
@@ -384,7 +384,7 @@ namespace Uge
 
 	}
 
-	void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, int entityID )
+	void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int entityID )
 	{
 
 		UG_PROFILE_FUNCTION();
@@ -396,7 +396,6 @@ namespace Uge
 
 		}
 
-		constexpr glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		constexpr size_t VertexCount = 4;
 		constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
@@ -428,10 +427,10 @@ namespace Uge
 		{
 
 			m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[i];
-			m_data.VertexBufferPtr->Color = color;
+			m_data.VertexBufferPtr->Color = tintColor;
 			m_data.VertexBufferPtr->TexCoord = textureCoords[i];
 			m_data.VertexBufferPtr->TexIndex = texIndex;
-			m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+			m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 			m_data.VertexBufferPtr->EntityID = entityID;
 			m_data.VertexBufferPtr++;
 
@@ -447,14 +446,14 @@ namespace Uge
 	}
 
 
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
 	{
 		UG_PROFILE_FUNCTION();
 
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-		DrawQuad(transform, texture, tilingFactor, tintColor);
+		DrawQuad(transform, texture, tintColor);
 
 	}
 
@@ -518,12 +517,12 @@ namespace Uge
 
 	}
 
-	void Renderer2D::DrawRotatedQuad(const glm::vec2& position, float rotation, const glm::vec2& size, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawRotatedQuad(const glm::vec2& position, float rotation, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
 	{
-		DrawRotatedQuad({ position.x, position.y, 0.0f }, rotation, size, texture, tilingFactor, tintColor);
+		DrawRotatedQuad({ position.x, position.y, 0.0f }, rotation, size, texture, tintColor);
 	}
 
-	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
 	{
 
 		UG_PROFILE_FUNCTION();
@@ -568,28 +567,28 @@ namespace Uge
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = { 0.0f, 0.0f };
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[1];
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = { 1.0f, 0.0f };
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[2];
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = { 1.0f, 1.0f };
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[3];
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = { 0.0f, 1.0f };
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 		
@@ -600,14 +599,14 @@ namespace Uge
 
 	}
 
-	void Renderer2D::DrawRotatedQuad(const glm::vec2& position, float rotation, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawRotatedQuad(const glm::vec2& position, float rotation, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor)
 	{
 
-		DrawRotatedQuad({position.x, position.y, 0.0f}, rotation, size, subTexture, tilingFactor, tintColor);
+		DrawRotatedQuad({position.x, position.y, 0.0f}, rotation, size, subTexture, tintColor);
 
 	}
 
-	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor)
 	{
 
 		UG_PROFILE_FUNCTION();
@@ -655,28 +654,28 @@ namespace Uge
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = textureCoords[0];
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[1];
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = textureCoords[1];
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[2];
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = textureCoords[2];
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 		m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[3];
 		m_data.VertexBufferPtr->Color = color;
 		m_data.VertexBufferPtr->TexCoord = textureCoords[3];
 		m_data.VertexBufferPtr->TexIndex = textureIndex;
-		m_data.VertexBufferPtr->TilingFactor = tilingFactor;
+		m_data.VertexBufferPtr->TilingFactor = texture->m_tilingFactor;
 		m_data.VertexBufferPtr++;
 
 
@@ -715,42 +714,22 @@ namespace Uge
 	}
 
 
-	void Renderer2D::DrawSprite(const glm::mat4& transform, SpriteRendererComponent& src, int entityID)
+	void Renderer2D::DrawSprite(const glm::mat4& transform, const SpriteRendererComponent& src, int entityID)
 	{
 
-		// UG_PROFILE_FUNCTION();
-		// 
-		// const float texIndex = 0.0f; // White texture
-		// const float tilingFactor = 1.0f; // Tiling Factor
-		// constexpr size_t VertexCount = 4;
-		// constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
-		// 
-		// if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
-		// {
-		// 	FlushAndReset();
-		// }
-		// 
-		// 
-		// for (size_t i = 0; i < VertexCount; i++)
-		// {
-		// 
-		// 	m_data.VertexBufferPtr->Position = transform * m_data.VertexPositions[i];
-		// 	m_data.VertexBufferPtr->Color = src.Color;
-		// 	m_data.VertexBufferPtr->TexCoord = textureCoords[i];
-		// 	m_data.VertexBufferPtr->TexIndex = texIndex;
-		// 	m_data.VertexBufferPtr->TilingFactor = tilingFactor;
-		// 	m_data.VertexBufferPtr++;
-		// 
-		// }
-		// 
-		// 
-		// 
-		// m_data.QuadIndexCount += 6;
-		// 
-		// m_data.Stats.QuadCount++;
+		UG_PROFILE_FUNCTION();
 
+		if (src.Texture)
+		{
+			DrawQuad(transform, src.Texture, src.Color, entityID);
 
-		DrawQuad(transform, src.Color, entityID);
+		}
+		else
+		{
+			DrawQuad(transform, src.Color, entityID);
+
+		}
+
 
 	}
 

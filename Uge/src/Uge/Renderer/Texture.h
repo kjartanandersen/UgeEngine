@@ -22,6 +22,8 @@ namespace Uge
 		virtual void Bind(uint32_t slot = 0) const = 0;
 		virtual void UnBind(uint32_t slot = 0) const = 0;
 
+		virtual void SetTilingFactor(float tilingFactor) = 0;
+
 		virtual bool operator==(const Texture& other) const = 0;
 
 	};
@@ -40,6 +42,8 @@ namespace Uge
 		std::string m_path;
 		uint32_t m_width;
 		uint32_t m_height;
+
+		float m_tilingFactor = 1.0f;
 
 
 

@@ -1,3 +1,4 @@
+#include <ugpch.h>
 #include "SceneHierarchyPanel.h"
 
 #include <imgui.h>
@@ -6,9 +7,15 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Uge/Utils/PlatformUtils.h"
+#include <filesystem>
+
+
 
 namespace Uge
 {
+
+	extern const std::filesystem::path g_assetPath;
+
 	static bool DrawVec3Control(const std::string& label, glm::vec3& values,
 		float resetValue = 0.0f, float columnWidth = 100.0f)
 	{
@@ -450,11 +457,36 @@ namespace Uge
 
 		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, true, [](auto& component) 
 		{
+			// Color
 			if (ImGui::ColorEdit4("Color", glm::value_ptr(component.Color)))
 			{
 
 			}
 
+			// Texture
+			
+			ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
+			
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				{
+					const wchar_t* path = (const wchar_t*)payload->Data;
+					std::filesystem::path texturePath = std::filesystem::path(g_assetPath) / path;
+					component.Texture = Texture2D::Create(texturePath.string());
+					
+
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			// Tiling Factor
+			if (ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1, 0.0f, 100.0f))
+			{
+
+				component.Texture->SetTilingFactor(component.TilingFactor);
+			}
 		});
 
 		DrawComponent<MeshComponent>("Mesh", entity, true, [](auto& component)

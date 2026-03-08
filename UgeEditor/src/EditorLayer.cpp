@@ -43,7 +43,6 @@ namespace Uge
 
 		}
 
-		m_editorCamera.OnUpdate(ts);
 		// Render
 		m_frameBuffer->Bind();
 		{
@@ -54,7 +53,23 @@ namespace Uge
 				RenderCommand::Clear();
 			}
 			m_frameBuffer->ClearAttachment(1, -1);
-			m_activeScene->OnUpdateEditor(ts, m_editorCamera);
+
+			switch (m_sceneState)
+			{
+			case Uge::EditorLayer::SceneState::Edit:
+				m_editorCamera.OnUpdate(ts);
+				m_activeScene->OnUpdateEditor(ts, m_editorCamera);
+				
+				break;
+			case Uge::EditorLayer::SceneState::Play:
+				m_activeScene->OnUpdateRuntime(ts);
+
+				break;
+			default:
+				
+				break;
+			}
+
 		
 			auto [mx, my] = ImGui::GetMousePos();
 			mx -= m_viewportBounds[0].x;
@@ -90,12 +105,26 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
+		m_texture = Texture2D::Create("assets/textures/Checkerboard.png");
+		m_iconPlay = Texture2D::Create("Resources/Icons/PlayButton.png");
+		m_iconStop = Texture2D::Create("Resources/Icons/StopButton.png");
+		
+
+		m_activeScene = CreateRef<Scene>();
+		
+		// Load ImGui Font
+		ImGuiIO& io = ImGui::GetIO();
+		m_mainFontBold = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Bold.ttf", 24.5f);
+		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Regular.ttf", 24.5f);
+
+		IM_ASSERT(m_mainFont != NULL);
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+		
 		FramebufferSpecification fbSpec{ 1280, 720 };
 		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8,FramebufferTextureFormat::RED_INTEGER,  FramebufferTextureFormat::Depth };
 		m_frameBuffer = Framebuffer::Create(fbSpec);
 
 
-		m_activeScene = CreateRef<Scene>();
 
 		auto commandLineArgs = Application::Get().GetCommandLineArgs();
 		if (commandLineArgs.Count > 1)
@@ -108,15 +137,7 @@ namespace Uge
 
 		m_editorCamera = EditorCamera(60.0f, 16.0f/9.0f, 0.01f, 10000.0f);
 
-		// Load ImGui Font
-		ImGuiIO& io = ImGui::GetIO();
-		m_mainFontBold = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Bold.ttf", 24.5f);
-		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Regular.ttf", 24.5f);
 
-		IM_ASSERT(m_mainFont != NULL);
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
-		m_texture = Texture2D::Create("assets/textures/Checkerboard.png");
 
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
 
@@ -329,7 +350,7 @@ namespace Uge
 
 				// Gizmos
 				Entity selectedEntity = m_sceneHierarchyPanel.GetSelectedEntity();
-				if (selectedEntity && m_gizmoType != -1)
+				if (selectedEntity && m_gizmoType != -1 && m_sceneState == SceneState::Edit)
 				{
 
 					ImGuizmo::SetOrthographic(false);
@@ -404,10 +425,51 @@ namespace Uge
 			ImGui::PopStyleVar();
 
 		}
+		UI_Toolbar();
 		ImGui::End();
 
 		
 		ImGui::PopFont();
+
+	}
+
+	void EditorLayer::UI_Toolbar()
+	{
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+		auto& colors = ImGui::GetStyle().Colors;
+		const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
+		const auto& buttonActive = colors[ImGuiCol_ButtonActive];
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
+
+
+		ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+		{
+
+			float size = ImGui::GetWindowHeight() - 16.0f;
+
+			Ref<Texture2D> icon = m_sceneState == SceneState::Play ? m_iconStop : m_iconPlay;
+			ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+			if (ImGui::ImageButton("SceneState", (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)))
+			{
+				if (m_sceneState == SceneState::Edit)
+				{
+					OnScenePlay();
+				}
+				else if (m_sceneState == SceneState::Play)
+				{
+					OnSceneStop();
+				}
+			}
+
+			
+		}
+		ImGui::PopStyleVar(2);
+		ImGui::PopStyleColor(3);
+		ImGui::End();
 
 	}
 
@@ -570,6 +632,22 @@ namespace Uge
 		serializer.DeSerialize(path.string());
 
 	}
+
+	void EditorLayer::OnScenePlay()
+	{
+
+		m_sceneState = SceneState::Play;
+
+	}
+
+	void EditorLayer::OnSceneStop()
+	{
+
+		m_sceneState = SceneState::Edit;
+	
+	}
+
+	
 
 }
 

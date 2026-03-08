@@ -30,6 +30,12 @@ namespace Uge
 		void OpenScene();
 		void OpenScene(const std::filesystem::path& path);
 
+		void OnScenePlay();
+		void OnSceneStop();
+
+		// UI panels
+		void UI_Toolbar();
+
 	private:
 
 
@@ -67,6 +73,16 @@ namespace Uge
 		bool m_shouldResize = false;
 		bool m_viewportFocused = false;
 		bool m_viewportHovered = false;
+
+		// Editor Resources
+		enum class SceneState
+		{
+			Edit = 0, Play = 1
+		};
+
+		SceneState m_sceneState = SceneState::Edit;
+
+		Ref<Texture2D> m_iconPlay, m_iconStop;
 
 
 
