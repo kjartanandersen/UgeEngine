@@ -2,6 +2,7 @@
 #include "Scene.h"
 
 #include "Uge/Scene/Components.h"
+#include "Uge/Scene/ScriptableEntity.h"
 #include "Uge/Renderer/Renderer2D.h"
 
 #include <type_traits>
@@ -24,14 +25,20 @@ namespace Uge
 
 	Entity Scene::CreateEntity(const std::string& name)
 	{
+		return CreateEntityWithUUID(UUID(), name);
+	}
+
+	Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name)
+	{
+
 		Entity entity = { m_registry.create(), this };
+		entity.AddComponent<IDComponent>(uuid);
 		entity.AddComponent<TransformComponent>();
 		auto& tag = entity.AddComponent<TagComponent>();
-		
+
 		tag.Tag = name.empty() ? "Entity" : name;
 
 		return entity;
-
 
 
 	}
@@ -212,6 +219,11 @@ namespace Uge
 	}
 
 	template<>
+	void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component)
+	{
+	}
+
+	template<>
 	void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
 	{
 	}
@@ -250,3 +262,5 @@ namespace Uge
 
 
 }
+
+

@@ -1,19 +1,29 @@
 #pragma once
 
+#include "Uge/Core/Core.h"
+#include "Uge/Core/UUID.h"
+#include "Uge/Renderer/Model.h"
+#include "SceneCamera.h"
+#include "Uge/Renderer/Texture.h"
+
 #include <string>
+
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include "Uge/Core/Core.h"
-#include "Uge/Renderer/Model.h"
-#include "SceneCamera.h"
-#include "ScriptableEntity.h"
-#include "Uge/Renderer/Texture.h"
-
 namespace Uge
 {
+
+	struct IDComponent
+	{
+		UUID ID;
+		IDComponent() = default;
+		IDComponent(const IDComponent&) = default;
+
+	};
+
 	struct TagComponent
 	{
 
@@ -113,6 +123,9 @@ namespace Uge
 
 	};
 
+	// Forward Decleration
+	class ScriptableEntity;
+
 	struct NativeScriptComponent
 	{
 
@@ -138,5 +151,7 @@ namespace Uge
 
 
 }
+
+
 
 

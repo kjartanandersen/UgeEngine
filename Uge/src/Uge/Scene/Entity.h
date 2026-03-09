@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Scene.h"
+#include "Uge/Core/UUID.h"
+#include <Uge/Scene/Components.h>
+
 
 #include <entt.hpp>
 
@@ -51,6 +54,8 @@ namespace Uge
 		operator bool() const { return IsValid(); }
 		operator uint32_t() const { return (uint32_t)m_entityHandle; }
 		operator entt::entity() const { return m_entityHandle; }
+
+		UUID GetUUID() { return GetComponent<IDComponent>().ID; }
 
 		bool operator==(const Entity& other) const 
 		{ 

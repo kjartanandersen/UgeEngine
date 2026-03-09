@@ -117,9 +117,10 @@ namespace Uge
 
 	static void SerializeEntity(YAML::Emitter& out, Entity entity)
 	{
+		UG_CORE_ASSERT(entity.HasComponent<IDComponent>());
 
 		out << YAML::BeginMap;	// Entity
-		out << YAML::Key << "Entity" << YAML::Value << "12313141561654"; // TODO: Entity ID goes here
+		out << YAML::Key << "Entity" << YAML::Value << entity.GetUUID();
 
 		// Get tag component
 		if (entity.HasComponent<TagComponent>())
@@ -277,7 +278,7 @@ namespace Uge
 
 				UG_CORE_TRACE("Deserialized entity with ID {0} and name {1}", uuid, name);
 
-				Entity deserializedEntity = m_scene->CreateEntity(name);
+				Entity deserializedEntity = m_scene->CreateEntityWithUUID(uuid, name);
 
 				auto ytc = entity["TransformComponent"];	// Tranform Component
 				if (ytc)

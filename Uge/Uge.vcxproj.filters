@@ -114,6 +114,9 @@
     <ClInclude Include="src\Uge\Core\Timestep.h">
       <Filter>src\Uge\Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\Uge\Core\UUID.h">
+      <Filter>src\Uge\Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\Uge\Core\Window.h">
       <Filter>src\Uge\Core</Filter>
     </ClInclude>
@@ -276,6 +279,9 @@
       <Filter>src\Uge\Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\Core\Log.cpp">
+      <Filter>src\Uge\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Uge\Core\UUID.cpp">
       <Filter>src\Uge\Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Uge\ImGui\ImGuiBuild.cpp">

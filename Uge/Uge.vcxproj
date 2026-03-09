@@ -177,6 +177,7 @@
     <ClInclude Include="src\Uge\Core\MouseButtonCodes.h" />
     <ClInclude Include="src\Uge\Core\Timer.h" />
     <ClInclude Include="src\Uge\Core\Timestep.h" />
+    <ClInclude Include="src\Uge\Core\UUID.h" />
     <ClInclude Include="src\Uge\Core\Window.h" />
     <ClInclude Include="src\Uge\Debug\Instrumentor.h" />
     <ClInclude Include="src\Uge\Events\ApplicationEvent.h" />
@@ -233,6 +234,7 @@
     <ClCompile Include="src\Uge\Core\Layer.cpp" />
     <ClCompile Include="src\Uge\Core\LayerStack.cpp" />
     <ClCompile Include="src\Uge\Core\Log.cpp" />
+    <ClCompile Include="src\Uge\Core\UUID.cpp" />
     <ClCompile Include="src\Uge\ImGui\ImGuiBuild.cpp" />
     <ClCompile Include="src\Uge\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\Uge\Math\Math.cpp" />

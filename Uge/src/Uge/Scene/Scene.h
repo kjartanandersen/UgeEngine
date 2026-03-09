@@ -3,6 +3,7 @@
 #include <entt.hpp>
 
 #include "Uge/Renderer/EditorCamera.h"
+#include "Uge/Core/UUID.h"
 #include "Uge/Core/Timestep.h"
 
 namespace Uge
@@ -17,6 +18,7 @@ namespace Uge
 		~Scene();
 
 		Entity CreateEntity(const std::string& name = std::string());
+		Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
 		void DestroyEntity(Entity entity);
 
 

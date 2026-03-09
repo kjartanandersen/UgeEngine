@@ -6,6 +6,7 @@
 namespace Uge
 {
 
+	
 	class ScriptableEntity
 	{
 
