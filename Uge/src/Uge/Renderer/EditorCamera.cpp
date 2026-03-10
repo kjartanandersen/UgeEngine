@@ -57,7 +57,7 @@ namespace Uge
 
 	float EditorCamera::RotationSpeed() const
 	{
-		return 16.0f;
+		return 20.0f;
 	}
 
 	float EditorCamera::MovementSpeed() const
@@ -77,7 +77,7 @@ namespace Uge
 	void EditorCamera::OnUpdate(Timestep ts)
 	{
 		const glm::vec2& mouse{ Input::GetMouseX(), Input::GetMouseY() };
-		glm::vec2 delta = (mouse - m_initialMousePosition) * 0.003f;
+		glm::vec2 delta = (mouse - m_initialMousePosition) * (ts * RotationSpeed());
 		m_initialMousePosition = mouse;
 		if (Input::IsKeyPressed(KeyCode::UG_KEY_LEFT_ALT))
 		{
@@ -97,12 +97,12 @@ namespace Uge
 
 			if (Input::IsKeyPressed(KeyCode::UG_KEY_W))
 			{
-				moveVec -= GetForwardDirection() * (MovementSpeed() * ts);
+				moveVec += GetForwardDirection() * (MovementSpeed() * ts);
 			}
 
 			if (Input::IsKeyPressed(KeyCode::UG_KEY_S))
 			{
-				moveVec += GetForwardDirection() * (MovementSpeed() * ts);
+				moveVec -= GetForwardDirection() * (MovementSpeed() * ts);
 			}
 
 			if (Input::IsKeyPressed(KeyCode::UG_KEY_A))
@@ -151,10 +151,33 @@ namespace Uge
 		// m_Yaw += yawSign * delta.x * RotationSpeed();
 		// m_pitch += delta.y * RotationSpeed();
 	
-		glm::quat yaw = glm::angleAxis(glm::radians(-delta.x * RotationSpeed()), GetUpDirection());
+		glm::quat yaw = glm::angleAxis(glm::radians(-delta.x ), glm::vec3(0, 1, 0));
+
+		// 2. Clamp and Handle Pitch (Vertical)
+		float newPitch = m_currentPitch + delta.y;
+		float newYOffset = delta.y;
+
+		// Lock pitch between -89 and 89 degrees to prevent flipping/singularities
+		if (newPitch > 89.0f) 
+		{
+			newYOffset = (89.0f - m_currentPitch);
+			m_currentPitch = 89.0f;
+		}
+		else if (newPitch < -89.0f) 
+		{
+			newYOffset = (-89.0f - m_currentPitch);
+			m_currentPitch = -89.0f;
+		}
+		else 
+		{
+			m_currentPitch = newPitch;
+			
+		}
+
+		// UG_CORE_INFO("Current Pitch: {0}", m_currentPitch);
 
 		// Vertical rotation around the camera's local Right axis
-		glm::quat pitch = glm::angleAxis(glm::radians(-delta.y * RotationSpeed()), GetRightDirection());
+		glm::quat pitch = glm::angleAxis(glm::radians(-newYOffset), glm::vec3(1, 0, 0));
 
 		// Update orientation: Yaw happens in world space, Pitch in local space
 		m_orientation = glm::normalize(yaw * m_orientation * pitch);
@@ -184,7 +207,7 @@ namespace Uge
 
 	glm::vec3 EditorCamera::GetForwardDirection() const
 	{
-		return m_orientation * glm::vec3(0.0f, 0.0f, 1.0f);
+		return m_orientation * glm::vec3(0.0f, 0.0f, -1.0f);
 		// return glm::rotate(GetOrientation(), glm::vec3(0.0f, 0.0f, -1.0f));
 	}
 

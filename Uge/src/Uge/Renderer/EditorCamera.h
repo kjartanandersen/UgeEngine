@@ -57,13 +57,14 @@ namespace Uge {
 		float MovementSpeed() const;
 		float ZoomSpeed() const;
 	private:
-		float m_FOV = 45.0f, m_aspectRatio = 1.778f, m_nearClip = 0.1f, m_farClip = 1000.0f;
+		float m_FOV = 70.0f, m_aspectRatio = 1.778f, m_nearClip = 0.1f, m_farClip = 1000.0f;
 
 		glm::mat4 m_viewMatrix;
-		glm::vec3 m_position = { 0.0f, 3.0f, 0.0f };
+		glm::vec3 m_position = { 0.0f, 0.0f, 3.0f };
 		glm::vec3 m_focalPoint = { 0.0f, 0.0f, 0.0f };
 
 		glm::quat m_orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+		float m_currentPitch = 0.0f;
 
 		glm::vec2 m_initialMousePosition = { 0.0f, 0.0f };
 
