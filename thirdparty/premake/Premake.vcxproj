@@ -23,15 +23,15 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -60,24 +60,25 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PostBuildEvent>
-      <Command>$(ProjectDir)bin/premake5 vs2026 --file="$(SolutionDir)premake5.lua"</Command>
+      <Command>$(ProjectDir)bin/premake5 vs2022 --file="$(SolutionDir)premake5.lua"</Command>
       <Message>Regenerating project files with Premake5!</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PostBuildEvent>
-      <Command>$(ProjectDir)bin/premake5 vs2026 --file="$(SolutionDir)premake5.lua"</Command>
+      <Command>$(ProjectDir)bin/premake5 vs2022 --file="$(SolutionDir)premake5.lua"</Command>
       <Message>Regenerating project files with Premake5!</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
     <PostBuildEvent>
-      <Command>$(ProjectDir)bin/premake5 vs2026 --file="$(SolutionDir)premake5.lua"</Command>
+      <Command>$(ProjectDir)bin/premake5 vs2022 --file="$(SolutionDir)premake5.lua"</Command>
       <Message>Regenerating project files with Premake5!</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="..\..\Sandbox\premake5.lua" />
+    <None Include="..\..\Uge-ScriptCore\premake5.lua" />
     <None Include="..\..\Uge\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\GLAD\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\GLFW\premake5.lua" />

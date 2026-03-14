@@ -419,6 +419,14 @@ FodyWeavers.xsd
 !.vscode/extensions.json
 !.vscode/*.code-snippets
 
+# Visual Studio files and folder
+.vs/
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+**.csproj
+
 # Local History for Visual Studio Code
 .history/
 
@@ -445,6 +453,17 @@ ign/
 # Bin
 bin/
 bin-int/
+
+# Intermediates
+UgeEditor/Resources/Scripts/Intermediates
+
+# C# DLL's and other
+UgeEditor/Resources/Scripts/Uge-ScriptCore.dll
+UgeEditor/Resources/Scripts/Uge-ScriptCore.pdb
+
+# Mono
+UgeEditor/mono/**
+
 
 # .ini files
 /Sandbox/imgui.ini

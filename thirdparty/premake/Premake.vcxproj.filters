@@ -31,6 +31,9 @@
     <Filter Include="..\Uge\thirdparty\yaml-cpp">
       <UniqueIdentifier>{5DF55374-4905-0045-B2BE-64639EEDEEDD}</UniqueIdentifier>
     </Filter>
+    <Filter Include="..\Uge-ScriptCore">
+      <UniqueIdentifier>{BC970794-28AE-052A-7125-914BDD7AD6B1}</UniqueIdentifier>
+    </Filter>
     <Filter Include="..\UgeEditor">
       <UniqueIdentifier>{78FCBF9B-645F-4F40-0DE5-87F6F9261BC3}</UniqueIdentifier>
     </Filter>
@@ -38,6 +41,9 @@
   <ItemGroup>
     <None Include="..\..\Sandbox\premake5.lua">
       <Filter>..\Sandbox</Filter>
+    </None>
+    <None Include="..\..\Uge-ScriptCore\premake5.lua">
+      <Filter>..\Uge-ScriptCore</Filter>
     </None>
     <None Include="..\..\Uge\premake5.lua">
       <Filter>..\Uge</Filter>

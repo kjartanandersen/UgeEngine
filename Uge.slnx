@@ -5,12 +5,12 @@
     <BuildType Name="Release" />
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="Sandbox\Sandbox.vcxproj" Id="F4C124E3-60A1-A37E-69B9-2E55D5170AE0">
-  </Project>
-  <Project Path="Uge\Uge.vcxproj" Id="262A880B-9233-887C-1BAF-9E7C87B7937C">
-  </Project>
-  <Project Path="UgeEditor\Uge-Editor.vcxproj" Id="1A4778D1-06FF-B91E-6F06-937A5BDD540F" DefaultStartup="true">
-  </Project>
+  <Folder Name="/Core/">
+    <Project Path="Uge\Uge.vcxproj" Id="262A880B-9233-887C-1BAF-9E7C87B7937C">
+    </Project>
+    <Project Path="Uge-ScriptCore\Uge-ScriptCore.csproj" Id="D1A0619A-BD6E-55A0-A602-C6C6926F3105">
+    </Project>
+  </Folder>
   <Folder Name="/Dependencies/">
     <Project Path="Uge\thirdparty\assimp\assimp.vcxproj" Id="724885F2-5EEA-AFC8-47A5-C31C33E63619">
     </Project>
@@ -25,6 +25,14 @@
     <Project Path="thirdparty\premake\Premake.vcxproj" Id="6ACC3F23-D6AB-BEBE-DFC3-49954B222520">
     </Project>
     <Project Path="Uge\thirdparty\yaml-cpp\yaml-cpp.vcxproj" Id="88F1A057-74BE-FB62-9DD7-E90A890331F1">
+    </Project>
+  </Folder>
+  <Folder Name="/Misc/">
+    <Project Path="Sandbox\Sandbox.vcxproj" Id="F4C124E3-60A1-A37E-69B9-2E55D5170AE0">
+    </Project>
+  </Folder>
+  <Folder Name="/Tools/">
+    <Project Path="UgeEditor\Uge-Editor.vcxproj" Id="1A4778D1-06FF-B91E-6F06-937A5BDD540F" DefaultStartup="true">
     </Project>
   </Folder>
 </Solution>

@@ -4,6 +4,7 @@
 
 #include "Uge/Core/Log.h"
 #include "Uge/Renderer/Renderer.h"
+#include "Uge/Scripting/ScriptEngine.h"
 
 #include "Uge/Core/Input.h"
 #include "Uge/Core/KeyCodes.h"
@@ -31,6 +32,7 @@ namespace Uge
 		m_window->SetVSync(true);
 
 		Renderer::Init(m_is3D);
+		ScriptEngine::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
@@ -52,6 +54,7 @@ namespace Uge
 		m_window->SetVSync(true);
 
 		Renderer::Init(m_is3D);
+		ScriptEngine::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
@@ -63,6 +66,9 @@ namespace Uge
 	{
 
 		UG_PROFILE_FUNCTION();
+
+		ScriptEngine::Shutdown();
+		Renderer::Shutdown();
 
 	}
 

@@ -39,6 +39,7 @@ project "Uge"
 		"../%{IncludeDir.GLM}",
 		"../%{IncludeDir.STBI}",
 		"../%{IncludeDir.ENTT}",
+		"../%{IncludeDir.MONO}",
 		"../%{IncludeDir.ASSIMP}",
 		"../%{IncludeDir.YAMLCPP}",
 		"../%{IncludeDir.IMGUIZMO}",
@@ -54,7 +55,9 @@ project "Uge"
 		"glm",
 		"assimp",
 		"yaml-cpp",
-		"opengl32.lib"
+		"opengl32.lib",
+
+		"%{Library.MONO}"
 	}
 	
 	
@@ -76,6 +79,14 @@ project "Uge"
 		{
 			"UG_PLATFORM_WINDOWS",
 			"UG_BUILD_DLL"
+		}
+
+		links
+		{
+			"%{Library.WINSOCK}",
+			"%{Library.WINMM}",
+			"%{Library.WINVER}",
+			"%{Library.WINCRYPT}"
 		}
 		
 		

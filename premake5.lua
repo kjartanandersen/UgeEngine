@@ -33,8 +33,16 @@ group "Dependencies"
 
 group ""
 
-include "Uge"
-include "UgeEditor"
-include "Sandbox"
+group "Core"
+	include "Uge"
+	include "Uge-ScriptCore"
+group ""
 
+group "Tools"
+	include "UgeEditor"
+group ""
+
+group "Misc"
+	include "Sandbox"
+group ""
 

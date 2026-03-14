@@ -37,6 +37,9 @@
     <Filter Include="src\Uge\Scene">
       <UniqueIdentifier>{9A7D17C0-063E-93F6-CF78-DC733BF8D7D2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Uge\Scripting">
+      <UniqueIdentifier>{FF7B84B2-6B92-8248-B409-0E6A205F53D0}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\Uge\Utils">
       <UniqueIdentifier>{DD1145C0-49D2-C0F6-120D-0A747E8C05D3}</UniqueIdentifier>
     </Filter>
@@ -222,6 +225,9 @@
     <ClInclude Include="src\Uge\Scene\ScriptableEntity.h">
       <Filter>src\Uge\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="src\Uge\Scripting\ScriptEngine.h">
+      <Filter>src\Uge\Scripting</Filter>
+    </ClInclude>
     <ClInclude Include="src\Uge\Utils\PlatformUtils.h">
       <Filter>src\Uge\Utils</Filter>
     </ClInclude>
@@ -364,6 +370,9 @@
     </ClCompile>
     <ClCompile Include="src\Uge\Scene\SceneSerializer.cpp">
       <Filter>src\Uge\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Uge\Scripting\ScriptEngine.cpp">
+      <Filter>src\Uge\Scripting</Filter>
     </ClCompile>
     <ClCompile Include="src\ugpch.cpp">
       <Filter>src</Filter>
