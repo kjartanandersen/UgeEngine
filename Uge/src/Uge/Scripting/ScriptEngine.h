@@ -1,5 +1,15 @@
 #pragma once
 
+#include <filesystem>
+#include <string>
+
+extern "C"
+{
+	typedef struct _MonoClass MonoClass;
+	typedef struct _MonoObject MonoObject;
+	typedef struct _MonoMethod MonoMethod;
+}
+
 namespace Uge
 {
 
@@ -10,9 +20,36 @@ namespace Uge
 		static void Init();
 		static void Shutdown();
 
+		static void LoadAssembly(const std::filesystem::path& filePath);
+
 	private:
 		static void InitMono();
 		static void ShutdownMono();
+
+		static MonoObject* InstantiateClass(MonoClass* monoClass);
+		
+		friend class ScriptClass;
+
+	};
+
+	class ScriptClass
+	{
+	public:
+		ScriptClass() = default;
+
+		ScriptClass(const std::string& classNamespace, const std::string& className);
+
+		MonoObject* Instantiate();
+
+		MonoMethod* GetMethod(const std::string& name, int parameterCount);
+		MonoObject* InvokeMethod(MonoObject* instance, MonoMethod* method, void** params = nullptr);
+
+
+
+	private:
+		std::string m_classNamspace;
+		std::string m_className;
+		MonoClass* m_monoClass = nullptr;
 
 
 	};
