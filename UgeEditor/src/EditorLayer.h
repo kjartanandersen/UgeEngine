@@ -25,6 +25,7 @@ namespace Uge
 		bool OnKeyPressed(KeyPressedEvent& e);
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
+		void SaveScene();
 		void SaveSceneAs();
 		void NewScene();
 		void OpenScene();
@@ -32,6 +33,8 @@ namespace Uge
 
 		void OnScenePlay();
 		void OnSceneStop();
+
+		void SerializeScene(Ref<Scene> scene, const std::filesystem::path& path);
 
 		// UI panels
 		void UI_Toolbar();
@@ -50,6 +53,8 @@ namespace Uge
 		Ref<Framebuffer> m_frameBuffer;
 
 		Ref<Scene> m_activeScene;
+		Ref<Scene> m_editorScene;
+		std::filesystem::path m_editorScenePath;
 
 		EditorCamera m_editorCamera;
 

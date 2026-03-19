@@ -4,23 +4,7 @@ using System.Runtime.CompilerServices;
 namespace Uge
 {
 
-    public struct Vector3
-    {
-
-        public float X, Y, Z;
-
-        public Vector3(float x, float y, float z)
-        {
-
-            X = x;
-            Y = y;
-            Z = z;
-
-        }
-
-    }
-
-    public static class InternalCalls
+    public static class InternalCalls_Old
     {
 
 
@@ -36,19 +20,19 @@ namespace Uge
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float NativeLogDot(ref Vector3 vector1, ref Vector3 vector2);
     }
-    public class Entity
+    public class Main_Old
     {
 
         
 
         public float FloatVar { get; set; }
 
-        public Entity()
+        public Main_Old()
         {
 
             Console.WriteLine("Main Constructor!");
 
-            InternalCalls.CppFunction();
+            InternalCalls_Old.CppFunction();
             Log("Native Logging", 1);
 
             Vector3 pos = new Vector3(5, 2, 1);
@@ -89,12 +73,12 @@ namespace Uge
 
         private void Log(string text, int parameter)
         {
-            InternalCalls.NativeLog(text, parameter);
+            InternalCalls_Old.NativeLog(text, parameter);
         }
 
         private Vector3 Log(Vector3 parameter)
         {
-            InternalCalls.NativeLogVector3(ref parameter, out Vector3 result);
+            InternalCalls_Old.NativeLogVector3(ref parameter, out Vector3 result);
 
             return result;
         }
@@ -102,7 +86,7 @@ namespace Uge
         private float Dot(Vector3 vector1, Vector3 vector2)
         {
            
-            return InternalCalls.NativeLogDot(ref vector1, ref vector2);
+            return InternalCalls_Old.NativeLogDot(ref vector1, ref vector2);
         }
 
         

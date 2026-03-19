@@ -17,13 +17,22 @@ namespace Uge
 		Scene();
 		~Scene();
 
+		static Ref<Scene> Copy(Ref<Scene> other);
+
 		Entity CreateEntity(const std::string& name = std::string());
 		Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
+		Entity GetEntityByUUID(UUID uuid);
+
 		void DestroyEntity(Entity entity);
 
-
-		void OnUpdateEditor(Timestep ts, EditorCamera& camera);
+		void OnRuntimeStart();
+		void OnRuntimeStop();
 		void OnUpdateRuntime(Timestep ts);
+
+
+		
+		void OnUpdateEditor(Timestep ts, EditorCamera& camera);
+
 		void OnViewportResize(uint32_t width, uint32_t height);
 
 		Entity GetPrimaryCameraEntity();
@@ -35,6 +44,8 @@ namespace Uge
 
 	private:
 		entt::registry m_registry;
+
+		std::unordered_map<UUID, entt::entity> m_entityMap;
 
 		uint32_t m_viewportWidth = 0, m_viewportHeight = 0;
 

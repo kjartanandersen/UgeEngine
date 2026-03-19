@@ -92,6 +92,7 @@ namespace Uge
 
 		if (Input::IsMouseButtonPressed(MouseButton::UG_MOUSE_BUTTON_RIGHT))
 		{
+			m_beingRotated = true;
 			MouseRotate(delta);
 			glm::vec3 moveVec = { 0, 0, 0 };
 
@@ -116,6 +117,10 @@ namespace Uge
 			}
 
 			m_position += moveVec;
+		}
+		else
+		{
+			m_beingRotated = false;
 		}
 
 
@@ -226,6 +231,11 @@ namespace Uge
 
 		m_orientation = glm::quatLookAt(direction, up);
 
+	}
+
+	bool EditorCamera::IsBeingRotated()
+	{
+		return m_beingRotated;
 	}
 
 

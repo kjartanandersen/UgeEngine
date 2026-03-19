@@ -124,6 +124,9 @@ namespace Uge
 		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8,FramebufferTextureFormat::RED_INTEGER,  FramebufferTextureFormat::Depth };
 		m_frameBuffer = Framebuffer::Create(fbSpec);
 
+		m_editorScene = CreateRef<Scene>();
+		m_activeScene = m_editorScene;
+
 
 
 		auto commandLineArgs = Application::Get().GetCommandLineArgs();
@@ -139,7 +142,7 @@ namespace Uge
 
 
 
-		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		// m_sceneHierarchyPanel.SetContext(m_activeScene);
 
 		
 
@@ -495,78 +498,84 @@ namespace Uge
 
 		bool ctrlPressed = (Input::IsKeyPressed(KeyCode::UG_KEY_LEFT_CONTROL) || Input::IsKeyPressed(KeyCode::UG_KEY_RIGHT_CONTROL));
 		bool shift = (Input::IsKeyPressed(KeyCode::UG_KEY_LEFT_SHIFT) || Input::IsKeyPressed(KeyCode::UG_KEY_RIGHT_SHIFT));
-		switch (e.GetKeyCode())
+
+		if (!m_editorCamera.IsBeingRotated())
 		{
-			case KeyCode::UG_KEY_S:
+			switch (e.GetKeyCode())
 			{
+				case KeyCode::UG_KEY_S:
+				{
 			
 
-				if (ctrlPressed && shift)
-				{
-					SaveSceneAs();
-				}
+					if (ctrlPressed && shift)
+					{
+						SaveSceneAs();
+					}
 
 			
-				break;
-			}
-			case KeyCode::UG_KEY_N:
-			{
-
-
-				if (ctrlPressed)
+					break;
+				}
+				case KeyCode::UG_KEY_N:
 				{
-					NewScene();
+
+
+					if (ctrlPressed)
+					{
+						NewScene();
+					}
+
+
+					break;
+				}
+				case KeyCode::UG_KEY_O:
+				{
+
+
+					if (ctrlPressed)
+					{
+						OpenScene();
+					}
+
+
+					break;
 				}
 
-
-				break;
-			}
-			case KeyCode::UG_KEY_O:
-			{
-
-
-				if (ctrlPressed)
+				case KeyCode::UG_KEY_Q:
 				{
-					OpenScene();
+					m_gizmoType = -1;
+					break;
 				}
 
+				case KeyCode::UG_KEY_W:
+				{
+					m_gizmoType = ImGuizmo::OPERATION::TRANSLATE;
+					break;
+				}
 
-				break;
+				case KeyCode::UG_KEY_E:
+				{
+					m_gizmoType = ImGuizmo::OPERATION::ROTATE;
+					break;
+				}
+
+				case KeyCode::UG_KEY_R:
+				{
+					m_gizmoType = ImGuizmo::OPERATION::SCALE;
+					break;
+				}
+
+				case KeyCode::UG_KEY_T:
+				{
+					m_gizmoType = ImGuizmo::OPERATION::UNIVERSAL;
+					break;
+				}
+
+				default:
+					break;
 			}
 
-			case KeyCode::UG_KEY_Q:
-			{
-				m_gizmoType = -1;
-				break;
-			}
-
-			case KeyCode::UG_KEY_W:
-			{
-				m_gizmoType = ImGuizmo::OPERATION::TRANSLATE;
-				break;
-			}
-
-			case KeyCode::UG_KEY_E:
-			{
-				m_gizmoType = ImGuizmo::OPERATION::ROTATE;
-				break;
-			}
-
-			case KeyCode::UG_KEY_R:
-			{
-				m_gizmoType = ImGuizmo::OPERATION::SCALE;
-				break;
-			}
-
-			case KeyCode::UG_KEY_T:
-			{
-				m_gizmoType = ImGuizmo::OPERATION::UNIVERSAL;
-				break;
-			}
-
-			default:
-				break;
 		}
+
 
 		return false;
 	}
@@ -587,14 +596,28 @@ namespace Uge
 		return false;
 	}
 
+	void EditorLayer::SaveScene()
+	{
+
+		if (!m_editorScenePath.empty())
+		{
+			SerializeScene(m_activeScene, m_editorScenePath);
+		}
+		else
+		{
+			SaveSceneAs();
+		}
+
+	}
+
 	void EditorLayer::SaveSceneAs()
 	{
-		std::string filepath = FileDialogs::SaveFile("Uge Scene (*.uge)\0*uge\0");
+		std::string filepath = FileDialogs::SaveFile("Uge Scene (*.uge)\0*.uge\0\0");
 
 		if (!filepath.empty())
 		{
-			SceneSerializer serializer(m_activeScene);
-			serializer.Serialize(filepath);
+			SerializeScene(m_activeScene, filepath);
+			m_editorScenePath = filepath;
 
 		}
 
@@ -606,11 +629,13 @@ namespace Uge
 		m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
 
+		m_editorScenePath = std::filesystem::path();
+
 	}
 
 	void EditorLayer::OpenScene()
 	{
-		std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*uge\0");
+		std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*.uge\0");
 		if (!filepath.empty())
 		{
 			
@@ -623,13 +648,35 @@ namespace Uge
 	void EditorLayer::OpenScene(const std::filesystem::path& path)
 	{
 
+		if (m_sceneState != SceneState::Edit)
+		{
+			OnSceneStop();
+		}
+
+		if (path.extension().string() != ".uge")
+		{
+			UG_WARN("Could not load {0}: Not a scene file!", path.filename().string());
+			return;
+		}
+
+		Ref<Scene> newScene = CreateRef<Scene>();
+
 		m_activeScene = CreateRef<Scene>();
-		m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
-		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		SceneSerializer serializer(newScene);
+		
+		if (serializer.DeSerialize(path.string()))
+		{
+			m_editorScene = newScene;
+
+			m_editorScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+			m_sceneHierarchyPanel.SetContext(m_editorScene);
+
+			m_activeScene = m_editorScene;
+			m_editorScenePath = path;
 
 
-		SceneSerializer serializer(m_activeScene);
-		serializer.DeSerialize(path.string());
+		}
+
 
 	}
 
@@ -638,13 +685,39 @@ namespace Uge
 
 		m_sceneState = SceneState::Play;
 
+		m_activeScene = Scene::Copy(m_editorScene);
+		m_activeScene->OnRuntimeStart();
+
+		m_sceneHierarchyPanel.SetContext(m_activeScene);
+
 	}
 
 	void EditorLayer::OnSceneStop()
 	{
 
+		UG_CORE_ASSERT(m_sceneState == SceneState::Play);
+
+		if (m_sceneState == SceneState::Play)
+		{
+			m_activeScene->OnRuntimeStop();
+
+		}
+		
 		m_sceneState = SceneState::Edit;
+
+		m_activeScene = m_editorScene;
+
+		m_sceneHierarchyPanel.SetContext(m_activeScene);
 	
+	}
+
+	void EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)
+	{
+
+		SceneSerializer serializer(scene);
+		serializer.Serialize(path.string());
+
+
 	}
 
 	

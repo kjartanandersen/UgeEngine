@@ -108,6 +108,13 @@ namespace Uge
 		MonoImage* CoreAssemblyImage = nullptr;
 
 		ScriptClass EntityMonoClass;
+
+		std::unordered_map<std::string, Ref<ScriptClass>> EntityClasses;
+		std::unordered_map<UUID, Ref<ScriptInstance>> EntityInstances;
+
+
+		// Runtime
+		Scene* SceneContext = nullptr;
 	};
 
 	static ScriptEngineData* s_data = nullptr;
@@ -120,12 +127,16 @@ namespace Uge
 		InitMono();
 
 		LoadAssembly("Resources/Scripts/Uge-ScriptCore.dll");
+		LoadAssemblyClasses(s_data->CoreAssembly);
 
+		ScriptGlue::RegisterComponents();
 		ScriptGlue::RegisterFunctions();
-
-
-		// Retrieve and instantiate class (w. constructor)
+		
 		s_data->EntityMonoClass = ScriptClass("Uge", "Entity");
+
+
+#if 0
+		// Retrieve and instantiate class (w. constructor)
 		
 		MonoObject* instance = s_data->EntityMonoClass.Instantiate();
 		// Call function
@@ -182,6 +193,7 @@ namespace Uge
 		}
 
 		// UG_CORE_ASSERT(false);
+#endif
 
 	}
 
@@ -233,6 +245,17 @@ namespace Uge
 
 	}
 
+	std::unordered_map<std::string, Ref<ScriptClass>> ScriptEngine::GetEntityClasses()
+	{
+		return s_data->EntityClasses;
+	}
+
+	bool ScriptEngine::EntityClassExists(const std::string& fullClassName)
+	{
+
+		return s_data->EntityClasses.find(fullClassName) != s_data->EntityClasses.end();
+	}
+
 	MonoObject* ScriptEngine::InstantiateClass(MonoClass* monoClass)
 	{
 
@@ -272,7 +295,140 @@ namespace Uge
 		
 	}
 
+	void ScriptEngine::LoadAssemblyClasses(MonoAssembly* assembly)
+	{
+
+		s_data->EntityClasses.clear();
+
+		MonoImage* image = mono_assembly_get_image(assembly);
+		const MonoTableInfo* typeDefinitionsTable = mono_image_get_table_info(image, MONO_TABLE_TYPEDEF);
+		int32_t numTypes = mono_table_info_get_rows(typeDefinitionsTable);
+		MonoClass* entityClass = mono_class_from_name(image, "Uge", "Entity");
+
+		printf("\n");
+		for (int32_t i = 0; i < numTypes; i++)
+		{
+			uint32_t cols[MONO_TYPEDEF_SIZE];
+			mono_metadata_decode_row(typeDefinitionsTable, i, cols, MONO_TYPEDEF_SIZE);
+
+			const char* nameSpace = mono_metadata_string_heap(image, cols[MONO_TYPEDEF_NAMESPACE]);
+			const char* name = mono_metadata_string_heap(image, cols[MONO_TYPEDEF_NAME]);
+			std::string fullName;
+			if (strlen(nameSpace) != 0)
+			{
+
+				fullName = fmt::format("{}.{}", nameSpace, name);
+			}
+			else
+			{
+
+				fullName = name;
+			}
+			UG_CORE_TRACE("{0}", fullName.c_str());
+
+			MonoClass* monoClass = mono_class_from_name(image, nameSpace, name);
+
+			if (monoClass == entityClass)
+			{
+
+				continue;
+			}
+
+			bool isEntity = mono_class_is_subclass_of(monoClass, entityClass, false);
+			if (isEntity)
+			{
+				s_data->EntityClasses[fullName] = CreateRef<ScriptClass>(nameSpace, name);
+			}
+		}
+		printf("\n");
+
+	}
 
 
+
+
+	ScriptInstance::ScriptInstance(Ref<ScriptClass> scriptClass, Entity entity)
+		: m_scriptClass(scriptClass)
+	{
+
+		m_instance = scriptClass->Instantiate();
+
+		m_constructor = s_data->EntityMonoClass.GetMethod(".ctor", 1);
+		m_onCreateMethod = scriptClass->GetMethod("OnCreate", 0);
+		m_onUpdateMethod = scriptClass->GetMethod("OnUpdate", 1);
+
+		// Call Entity constructor
+		{
+			UUID entityID = entity.GetUUID();
+			void* param = &entityID;
+			m_scriptClass->InvokeMethod(m_instance, m_constructor, &param);
+		}
+	}
+
+	void ScriptInstance::InvokeOnCreate()
+	{
+
+		m_scriptClass->InvokeMethod(m_instance, m_onCreateMethod);
+	}
+
+	void ScriptInstance::InvokeOnUpdate(float ts)
+	{
+
+		void* param = &ts;
+
+		m_scriptClass->InvokeMethod(m_instance, m_onUpdateMethod, &param);
+	}
+
+	void ScriptEngine::OnRuntimeStop()
+	{
+
+		s_data->SceneContext = nullptr;
+
+		s_data->EntityInstances.clear();
+
+	}
+
+	void ScriptEngine::OnRuntimeStart(Scene* scene)
+	{
+
+		s_data->SceneContext = scene;
+	}
+
+	void ScriptEngine::OnCreateEntity(Entity entity)
+	{
+
+		const auto& sc = entity.GetComponent<ScriptComponent>();
+		if (ScriptEngine::EntityClassExists(sc.ClassName))
+		{
+			Ref<ScriptInstance> instance = CreateRef<ScriptInstance>(s_data->EntityClasses[sc.ClassName], entity);
+			s_data->EntityInstances[entity.GetUUID()] = instance;
+			instance->InvokeOnCreate();
+		}
+	}
+
+	void ScriptEngine::OnUpdateEntity(Entity entity, Timestep ts)
+	{
+
+		UUID entityUUID = entity.GetUUID();
+		UG_CORE_ASSERT(s_data->EntityInstances.find(entityUUID) != s_data->EntityInstances.end());
+
+		Ref<ScriptInstance> instance = s_data->EntityInstances[entityUUID];
+		instance->InvokeOnUpdate((float)ts);
+
+	}
+
+	Scene* ScriptEngine::GetSceneContext()
+	{
+
+		return s_data->SceneContext;
+	}
+
+	MonoImage* ScriptEngine::GetCoreAssemblyImage()
+	{
+
+
+
+		return s_data->CoreAssemblyImage;
+	}
 
 }

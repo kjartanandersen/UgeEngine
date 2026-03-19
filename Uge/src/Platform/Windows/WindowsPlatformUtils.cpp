@@ -5,12 +5,43 @@
 #include <commdlg.h>
 #include <GLFW/glfw3.h>
 
+#include <cstring>
+
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
 
 namespace Uge
 {
+	namespace
+	{
+		void ExtractDefaultExtension(const char* filter, char* output, size_t outputSize)
+		{
+			if (!filter || !output || outputSize == 0)
+			{
+				return;
+			}
+
+			const char* pattern = filter + std::strlen(filter) + 1;
+			if (*pattern == '\0')
+			{
+				return;
+			}
+
+			while (*pattern == '*' || *pattern == '.')
+			{
+				pattern++;
+			}
+
+			size_t index = 0;
+			while (*pattern != '\0' && *pattern != ';' && index + 1 < outputSize)
+			{
+				output[index++] = *pattern++;
+			}
+
+			output[index] = '\0';
+		}
+	}
 
 	std::string FileDialogs::OpenFile(const char* filter)
 	{
@@ -47,6 +78,7 @@ namespace Uge
 		OPENFILENAMEA ofn;			// Common dialog box structure
 		CHAR szFile[260] = { 0 };	// If using TCHAR Macros
 		CHAR currentDir[256] = { 0 };
+		CHAR defaultExt[32] = { 0 };
 
 		// Initialize OPENFILENAME
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
@@ -62,10 +94,10 @@ namespace Uge
 
 		ofn.lpstrFilter = filter;
 		ofn.nFilterIndex = 1;
-		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-		ofn.lpstrDefExt = strchr(filter, '\0') + 1;
+		ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
+		ExtractDefaultExtension(filter, defaultExt, sizeof(defaultExt));
+		ofn.lpstrDefExt = defaultExt[0] != '\0' ? defaultExt : nullptr;
 
-		// Sets the default extension by extracting it from the filter
 		if (GetSaveFileNameA(&ofn) == TRUE)
 		{
 			return ofn.lpstrFile;

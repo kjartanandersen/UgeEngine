@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Uge/Scene/Scene.h"
+#include "Uge/Scene/Entity.h"
+
 #include <filesystem>
 #include <string>
 
@@ -8,29 +11,12 @@ extern "C"
 	typedef struct _MonoClass MonoClass;
 	typedef struct _MonoObject MonoObject;
 	typedef struct _MonoMethod MonoMethod;
+	typedef struct _MonoAssembly MonoAssembly;
+	typedef struct _MonoImage MonoImage;
 }
 
 namespace Uge
 {
-
-	class ScriptEngine
-	{
-
-	public:
-		static void Init();
-		static void Shutdown();
-
-		static void LoadAssembly(const std::filesystem::path& filePath);
-
-	private:
-		static void InitMono();
-		static void ShutdownMono();
-
-		static MonoObject* InstantiateClass(MonoClass* monoClass);
-		
-		friend class ScriptClass;
-
-	};
 
 	class ScriptClass
 	{
@@ -45,12 +31,67 @@ namespace Uge
 		MonoObject* InvokeMethod(MonoObject* instance, MonoMethod* method, void** params = nullptr);
 
 
-
 	private:
 		std::string m_classNamspace;
 		std::string m_className;
 		MonoClass* m_monoClass = nullptr;
 
+
+	};
+
+
+	class ScriptInstance
+	{
+
+	public:
+		ScriptInstance(Ref<ScriptClass> scriptClass, Entity entity);
+
+		void InvokeOnCreate();
+		void InvokeOnUpdate(float ts);
+
+	private:
+
+		Ref<ScriptClass> m_scriptClass;
+		MonoObject* m_instance = nullptr;
+		MonoMethod* m_constructor = nullptr;
+		MonoMethod* m_onCreateMethod = nullptr;
+		MonoMethod* m_onUpdateMethod = nullptr;
+
+
+	};
+
+	class ScriptEngine
+	{
+
+	public:
+		static void Init();
+		static void Shutdown();
+
+		static void LoadAssembly(const std::filesystem::path& filePath);
+
+		static std::unordered_map<std::string, Ref<ScriptClass>> GetEntityClasses();
+
+		static void OnRuntimeStart(Scene* scene);
+		static void OnRuntimeStop();
+
+		static void OnCreateEntity(Entity entity);
+
+		static void OnUpdateEntity(Entity entity, Timestep ts);
+
+		static Scene* GetSceneContext();
+
+		static MonoImage* GetCoreAssemblyImage();
+
+		static bool EntityClassExists(const std::string& fullClassName);
+
+	private:
+		static void InitMono();
+		static void ShutdownMono();
+
+		static MonoObject* InstantiateClass(MonoClass* monoClass);
+		static void LoadAssemblyClasses(MonoAssembly* assembly);
+
+		friend class ScriptClass;
 
 	};
 

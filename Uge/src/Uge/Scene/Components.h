@@ -123,6 +123,16 @@ namespace Uge
 
 	};
 
+	struct ScriptComponent
+	{
+
+		std::string ClassName;
+
+		ScriptComponent() = default;
+		ScriptComponent(const ScriptComponent&) = default;
+
+	};
+
 	// Forward Decleration
 	class ScriptableEntity;
 
@@ -148,6 +158,16 @@ namespace Uge
 
 
 	};
+
+	template<typename... Component>
+	struct ComponentGroup
+	{
+	};
+
+	using AllComponents =
+		ComponentGroup<TransformComponent, SpriteRendererComponent,
+		 CameraComponent, ScriptComponent, MeshComponent,
+		NativeScriptComponent>;
 
 
 }

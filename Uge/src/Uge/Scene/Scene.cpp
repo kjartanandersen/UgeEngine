@@ -4,6 +4,8 @@
 #include "Uge/Scene/Components.h"
 #include "Uge/Scene/ScriptableEntity.h"
 #include "Uge/Renderer/Renderer2D.h"
+#include "Uge/Scripting/ScriptEngine.h"
+#include "Uge/Scripting/ScriptEngine.h"
 
 #include <type_traits>
 
@@ -23,6 +25,72 @@ namespace Uge
 	{
 	}
 
+	template<typename... Component>
+	static void CopyComponent(entt::registry& dst, entt::registry& src, const std::unordered_map<UUID, entt::entity>& enttMap)
+	{
+		([&]()
+			{
+				auto view = src.view<Component>();
+				for (auto srcEntity : view)
+				{
+					entt::entity dstEntity = enttMap.at(src.get<IDComponent>(srcEntity).ID);
+
+					auto& srcComponent = src.get<Component>(srcEntity);
+					dst.emplace_or_replace<Component>(dstEntity, srcComponent);
+				}
+			}(), ...);
+	}
+
+	template<typename... Component>
+	static void CopyComponent(ComponentGroup<Component...>, entt::registry& dst, entt::registry& src, const std::unordered_map<UUID, entt::entity>& enttMap)
+	{
+		CopyComponent<Component...>(dst, src, enttMap);
+	}
+
+	template<typename... Component>
+	static void CopyComponentIfExists(Entity dst, Entity src)
+	{
+		([&]()
+			{
+				if (src.HasComponent<Component>())
+					dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
+			}(), ...);
+	}
+
+	template<typename... Component>
+	static void CopyComponentIfExists(ComponentGroup<Component...>, Entity dst, Entity src)
+	{
+		CopyComponentIfExists<Component...>(dst, src);
+	}
+
+	Ref<Scene> Scene::Copy(Ref<Scene> other)
+	{
+		Ref<Scene> newScene = CreateRef<Scene>();
+
+		newScene->m_viewportWidth = other->m_viewportWidth;
+		newScene->m_viewportHeight = other->m_viewportHeight;
+
+		auto& srcSceneRegistry = other->m_registry;
+		auto& dstSceneRegistry = newScene->m_registry;
+		std::unordered_map<UUID, entt::entity> enttMap;
+
+		// Create entities in new scene
+		auto idView = srcSceneRegistry.view<IDComponent>();
+		for (auto e : idView)
+		{
+			UUID uuid = srcSceneRegistry.get<IDComponent>(e).ID;
+			const auto& name = srcSceneRegistry.get<TagComponent>(e).Tag;
+			Entity newEntity = newScene->CreateEntityWithUUID(uuid, name);
+			enttMap[uuid] = (entt::entity)newEntity;
+		}
+
+		// Copy components (except IDComponent and TagComponent)
+		CopyComponent(AllComponents{}, dstSceneRegistry, srcSceneRegistry, enttMap);
+
+		return newScene;
+	}
+
+
 	Entity Scene::CreateEntity(const std::string& name)
 	{
 		return CreateEntityWithUUID(UUID(), name);
@@ -37,17 +105,59 @@ namespace Uge
 		auto& tag = entity.AddComponent<TagComponent>();
 
 		tag.Tag = name.empty() ? "Entity" : name;
+		m_entityMap[uuid] = entity;
 
 		return entity;
 
 
 	}
 
+	Entity Scene::GetEntityByUUID(UUID uuid)
+	{
+
+		if (m_entityMap.find(uuid) != m_entityMap.end())
+		{
+
+			return { m_entityMap.at(uuid), this };
+
+		}
+
+		return {  };
+	}
+
 	void Scene::DestroyEntity(Entity entity)
 	{
 
 		m_registry.destroy(entity);
+		m_entityMap.erase(entity.GetUUID());
 
+
+	}
+
+	void Scene::OnRuntimeStart()
+	{
+
+		// Scripting
+		{
+			ScriptEngine::OnRuntimeStart(this);
+			// Instantiate all script entities
+
+			auto view = m_registry.view<ScriptComponent>();
+			for (auto e : view)
+			{
+				Entity entity = { e, this };
+				ScriptEngine::OnCreateEntity(entity);
+			}
+		}
+
+	}
+
+	
+
+	void Scene::OnRuntimeStop()
+	{
+
+		ScriptEngine::OnRuntimeStop();
 
 	}
 
@@ -56,6 +166,14 @@ namespace Uge
 
 		// Update Scripts
 		{
+
+			// C# Entity OnUpdate
+			auto view = m_registry.view<ScriptComponent>();
+			for (auto e : view)
+			{
+				Entity entity = { e, this };
+				ScriptEngine::OnUpdateEntity(entity, ts);
+			}
 
 			m_registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
 			{
@@ -258,6 +376,12 @@ namespace Uge
 	void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
 	{
 	}
+
+	template<>
+	void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent& component)
+	{
+	}
+
 
 
 

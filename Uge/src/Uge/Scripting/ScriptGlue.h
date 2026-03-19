@@ -8,6 +8,7 @@ namespace Uge
 
 	public:
 		static void RegisterFunctions();
+		static void RegisterComponents();
 
 	private:
 

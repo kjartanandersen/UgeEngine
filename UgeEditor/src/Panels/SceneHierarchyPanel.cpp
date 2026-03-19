@@ -1,6 +1,8 @@
 #include <ugpch.h>
 #include "SceneHierarchyPanel.h"
 
+#include "Uge/Scripting/ScriptEngine.h"
+
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -192,32 +194,39 @@ namespace Uge
 		ImGui::Begin("Scene Hierarchy");
 		{
 
-			for (auto entityID : m_context->m_registry.view<entt::entity>())
-			{
-				Entity entity{ entityID, m_context.get() };
-				DrawEntityNode(entity);
-
-			}
-
-			if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
-			{
-				m_selectionContext = {};
-			}
-
-
-			if (ImGui::BeginPopupContextWindow(0, 
-					ImGuiPopupFlags_NoOpenOverItems |
-					ImGuiPopupFlags_MouseButtonRight |
-					ImGuiPopupFlags_NoOpenOverExistingPopup))
+			if (m_context)
 			{
 
-				if (ImGui::MenuItem("Create Empty Entity"))
+				for (auto entityID : m_context->m_registry.view<entt::entity>())
 				{
-					m_context->CreateEntity("Empty Entity");
+					Entity entity{ entityID, m_context.get() };
+					DrawEntityNode(entity);
+
 				}
-				ImGui::EndPopup();
+
+				if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+				{
+					m_selectionContext = {};
+				}
+
+
+				if (ImGui::BeginPopupContextWindow(0, 
+						ImGuiPopupFlags_NoOpenOverItems |
+						ImGuiPopupFlags_MouseButtonRight |
+						ImGuiPopupFlags_NoOpenOverExistingPopup))
+				{
+
+					if (ImGui::MenuItem("Create Empty Entity"))
+					{
+						m_context->CreateEntity("Empty Entity");
+					}
+					ImGui::EndPopup();
+
+				}
+
 
 			}
+
 
 		}
 		ImGui::End();
@@ -323,23 +332,11 @@ namespace Uge
 		if (ImGui::BeginPopup("AddComponent"))
 		{
 
-			if (ImGui::MenuItem("Camera"))
-			{
-				auto& camComp = m_selectionContext.AddComponent<CameraComponent>();
-				ImGui::CloseCurrentPopup();
-			}
-
-			if (ImGui::MenuItem("Sprite Renderer"))
-			{
-				m_selectionContext.AddComponent<SpriteRendererComponent>();
-				ImGui::CloseCurrentPopup();
-			}
-
-			if (ImGui::MenuItem("Mesh"))
-			{
-				m_selectionContext.AddComponent<MeshComponent>();
-				ImGui::CloseCurrentPopup();
-			}
+			DisplayAddComponentEntry<CameraComponent>("Camera");
+			DisplayAddComponentEntry<ScriptComponent>("Script");
+			DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
+			DisplayAddComponentEntry<MeshComponent>("Mesh");
+			
 
 			ImGui::EndPopup();
 		}
@@ -455,6 +452,34 @@ namespace Uge
 			
 		});
 
+		DrawComponent<ScriptComponent>("Script", entity, true, [](auto& component)
+		{
+
+			bool scriptClassExists = ScriptEngine::EntityClassExists(component.ClassName);
+
+			static char buffer[64];
+			strcpy(buffer, component.ClassName.c_str());
+
+			if (!scriptClassExists)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f));
+
+			}
+
+			if (ImGui::InputText("Class", buffer, sizeof(buffer)))
+			{
+				component.ClassName = buffer;
+
+			}
+
+			if (!scriptClassExists)
+			{
+				ImGui::PopStyleColor();
+
+			}
+
+		});
+
 		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, true, [](auto& component) 
 		{
 			// Color
@@ -515,6 +540,18 @@ namespace Uge
 
 		
 
+	}
+
+	template<typename T>
+	void SceneHierarchyPanel::DisplayAddComponentEntry(const std::string& entryName) {
+		if (!m_selectionContext.HasComponent<T>())
+		{
+			if (ImGui::MenuItem(entryName.c_str()))
+			{
+				m_selectionContext.AddComponent<T>();
+				ImGui::CloseCurrentPopup();
+			}
+		}
 	}
 
 }

@@ -40,6 +40,8 @@ namespace Uge {
 		float GetYaw() const { return m_Yaw; }
 
 		void LookAt(const glm::vec3& direction, const glm::vec3& up);
+		bool IsBeingRotated();
+
 	private:
 		void UpdateProjection();
 		void UpdateView();
@@ -49,6 +51,7 @@ namespace Uge {
 		void MousePan(const glm::vec2& delta);
 		void MouseRotate(const glm::vec2& delta);
 		void MouseZoom(float delta);
+
 
 		glm::vec3 CalculatePosition() const;
 
@@ -72,6 +75,8 @@ namespace Uge {
 		float m_pitch = 0.0f, m_Yaw = 0.0f;
 
 		float m_viewportWidth = 1280, m_viewportHeight = 720;
+
+		bool m_beingRotated = false; 
 	};
 
 }

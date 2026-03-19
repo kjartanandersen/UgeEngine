@@ -172,6 +172,18 @@ namespace Uge
 			out << YAML::EndMap; // CameraComponent
 		}
 
+		if (entity.HasComponent<ScriptComponent>())
+		{
+			out << YAML::Key << "ScriptComponent";
+
+			out << YAML::BeginMap; // SpriteRendererComponent
+
+			auto& scriptComponent = entity.GetComponent<ScriptComponent>();
+
+			out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.ClassName;
+			out << YAML::EndMap; // CameraComponent
+		}
+
 		if (entity.HasComponent<SpriteRendererComponent>())
 		{
 			out << YAML::Key << "SpriteRendererComponent";
@@ -309,6 +321,15 @@ namespace Uge
 
 					cc.Primary = ycc["Primary"].as<bool>();
 					cc.FixedAspectRatio = ycc["FixedAspectRatio"].as<bool>();
+				}
+
+				auto ysc = entity["ScriptComponent"];
+				if (ysc)
+				{
+					auto& sc = deserializedEntity.AddComponent<ScriptComponent>();
+
+					sc.ClassName = ysc["ClassName"].as<std::string>();
+
 				}
 
 				auto ysrc = entity["SpriteRendererComponent"];		// Sprite Renderer Component
