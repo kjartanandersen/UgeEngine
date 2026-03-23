@@ -30,6 +30,7 @@ group "Dependencies"
 	include "Uge/thirdparty/glm"
 	include "Uge/thirdparty/assimp"
 	include "Uge/thirdparty/yaml-cpp"
+	include "Uge/thirdparty/JoltPhysics"
 
 group ""
 

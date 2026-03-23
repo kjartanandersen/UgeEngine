@@ -42,6 +42,7 @@ project "Uge"
 		"../%{IncludeDir.MONO}",
 		"../%{IncludeDir.ASSIMP}",
 		"../%{IncludeDir.YAMLCPP}",
+		"../%{IncludeDir.JOLT}",
 		"../%{IncludeDir.IMGUIZMO}",
 		"../%{IncludeDir.VULKANSDK}"
 		

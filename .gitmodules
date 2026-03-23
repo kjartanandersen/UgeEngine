@@ -19,3 +19,6 @@
 [submodule "Uge/thirdparty/assimp"]
 	path = Uge/thirdparty/assimp
 	url = git@github.com:assimp/assimp.git
+[submodule "Uge/thirdparty/JoltPhysics"]
+	path = Uge/thirdparty/JoltPhysics
+	url = git@github.com:jrouwe/JoltPhysics.git
