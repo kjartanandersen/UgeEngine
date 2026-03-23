@@ -5,7 +5,6 @@
 #include "Uge/Scene/ScriptableEntity.h"
 #include "Uge/Renderer/Renderer2D.h"
 #include "Uge/Scripting/ScriptEngine.h"
-#include "Uge/Scripting/ScriptEngine.h"
 
 #include <type_traits>
 

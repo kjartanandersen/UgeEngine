@@ -19,5 +19,17 @@ namespace Uge
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Input_IsKeyDown(KeyCode keycode);
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void CppFunction();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void NativeLog(string text, int parameter);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void NativeLogVector3(ref Vector3 parameter, out Vector3 outResult);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float NativeLogDot(ref Vector3 vector1, ref Vector3 vector2);
+
     }
 }

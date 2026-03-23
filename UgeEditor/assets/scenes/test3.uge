@@ -1,0 +1,38 @@
+Scene: Untitled
+Entities:
+  - Entity: 14757395258967641292
+    TagComponent:
+      Tag: Sprite
+    TransformComponent:
+      Translation: [0, 0, -2.3607163]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+  - Entity: 14757395258967641292
+    TagComponent:
+      Tag: Mesh
+    TransformComponent:
+      Translation: [0, 0, -0.8457955]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Path: C:\Programming\c++\GameEngines\Uge\UgeEditor\assets\mesh\ABeautifulGame.glb
+  - Entity: 14757395258967641292
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Translation: [0, 0, 1.3813407]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 84
+        PerspectiveNear: 0.01
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false

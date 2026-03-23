@@ -306,18 +306,19 @@ namespace Uge
 				auto ycc = entity["CameraComponent"];	// Camera Component
 				if (ycc)
 				{
+					UG_CORE_TRACE("Deserializing Camera Component");
 					auto& cc = deserializedEntity.AddComponent<CameraComponent>();
 
 					auto& cameraProps = ycc["Camera"];
 					cc.Cam.SetProjectionType((SceneCamera::ProjectionType)cameraProps["ProjectionType"].as<int>());
 
-					cc.Cam.SetPerspVerticalFOV(cameraProps["PerspectiveFOV"].as<float>());
-					cc.Cam.SetPerspNearClip(cameraProps["PerspectiveNear"].as<float>());
-					cc.Cam.SetPerspFarClip(cameraProps["PerspectiveFar"].as<float>());
+					cc.Cam.SetPerspVerticalFOV(	cameraProps["PerspectiveFOV"	].as<float>());
+					cc.Cam.SetPerspNearClip(	cameraProps["PerspectiveNear"	].as<float>());
+					cc.Cam.SetPerspFarClip(		cameraProps["PerspectiveFar"	].as<float>());
 
-					cc.Cam.SetOrthoSize(cameraProps["OrthographicSize"].as<float>());
-					cc.Cam.SetOrthoNearClip(cameraProps["OrthographicNear"].as<float>());
-					cc.Cam.SetOrthoFarClip(cameraProps["OrthographicFar"].as<float>());
+					cc.Cam.SetOrthoSize(		cameraProps["OrthographicSize"	].as<float>());
+					cc.Cam.SetOrthoNearClip(	cameraProps["OrthographicNear"	].as<float>());
+					cc.Cam.SetOrthoFarClip(		cameraProps["OrthographicFar"	].as<float>());
 
 					cc.Primary = ycc["Primary"].as<bool>();
 					cc.FixedAspectRatio = ycc["FixedAspectRatio"].as<bool>();
@@ -326,6 +327,8 @@ namespace Uge
 				auto ysc = entity["ScriptComponent"];
 				if (ysc)
 				{
+					UG_CORE_TRACE("Deserializing Script Component");
+
 					auto& sc = deserializedEntity.AddComponent<ScriptComponent>();
 
 					sc.ClassName = ysc["ClassName"].as<std::string>();
@@ -335,6 +338,8 @@ namespace Uge
 				auto ysrc = entity["SpriteRendererComponent"];		// Sprite Renderer Component
 				if (ysrc)
 				{
+					UG_CORE_TRACE("Deserializing Sprite Renderer Component");
+
 					auto& src = deserializedEntity.AddComponent<SpriteRendererComponent>();
 					src.Color = ysrc["Color"].as<glm::vec4>();
 
@@ -343,6 +348,8 @@ namespace Uge
 				auto ymc = entity["MeshComponent"];		// Mesh Component
 				if (ymc)
 				{
+					UG_CORE_TRACE("Deserializing Mesh Component");
+
 					std::string path = ymc["Path"] ? ymc["Path"].as<std::string>() : std::string();
 					deserializedEntity.AddComponent<MeshComponent>(path);
 				}

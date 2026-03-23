@@ -4,13 +4,6 @@
 #include <random>
 #include <unordered_map>
 
-static std::unordered_map<Uge::UUID, std::string> s_map;
-
-static void AddToMap()
-{
-	s_map[Uge::UUID()] = "";
-}
-
 namespace Uge
 {
 
@@ -26,6 +19,7 @@ namespace Uge
 	}
 
 	UUID::UUID(uint64_t uuid)
+		: m_UUID(uuid)
 	{
 	}
 

@@ -118,6 +118,34 @@ namespace Uge
 	};
 
 	static ScriptEngineData* s_data = nullptr;
+
+	ScriptClass::ScriptClass(const std::string& classNamespace, const std::string& className)
+		: m_classNamspace(classNamespace), m_className(className)
+	{
+
+		m_monoClass = mono_class_from_name(s_data->CoreAssemblyImage, classNamespace.c_str(), className.c_str());
+
+	}
+
+	MonoObject* ScriptClass::Instantiate()
+	{
+		return ScriptEngine::InstantiateClass(m_monoClass);
+	}
+
+	MonoMethod* ScriptClass::GetMethod(const std::string& name, int parameterCount)
+	{
+
+		return mono_class_get_method_from_name(m_monoClass, name.c_str(), parameterCount);
+
+
+	}
+
+	MonoObject* ScriptClass::InvokeMethod(MonoObject* instance, MonoMethod* method, void** params)
+	{
+
+		return mono_runtime_invoke(method, instance, params, nullptr);
+
+	}
 	
 
 	void ScriptEngine::Init()
@@ -267,34 +295,6 @@ namespace Uge
 
 	}
 
-	ScriptClass::ScriptClass(const std::string& classNamespace, const std::string& className)
-		: m_classNamspace(classNamespace), m_className(className)
-	{
-
-		m_monoClass = mono_class_from_name(s_data->CoreAssemblyImage, classNamespace.c_str(), className.c_str());
-
-	}
-
-	MonoObject* ScriptClass::Instantiate()
-	{
-		return ScriptEngine::InstantiateClass(m_monoClass);
-	}
-
-	MonoMethod* ScriptClass::GetMethod(const std::string& name, int parameterCount)
-	{
-
-		return mono_class_get_method_from_name(m_monoClass, name.c_str(), parameterCount);
-
-
-	}
-
-	MonoObject* ScriptClass::InvokeMethod(MonoObject* instance, MonoMethod* method, void** params)
-	{
-
-		return mono_runtime_invoke(method, instance, params, nullptr);
-		
-	}
-
 	void ScriptEngine::LoadAssemblyClasses(MonoAssembly* assembly)
 	{
 
@@ -343,9 +343,6 @@ namespace Uge
 		printf("\n");
 
 	}
-
-
-
 
 	ScriptInstance::ScriptInstance(Ref<ScriptClass> scriptClass, Entity entity)
 		: m_scriptClass(scriptClass)

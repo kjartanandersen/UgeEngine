@@ -142,7 +142,7 @@ namespace Uge
 
 
 
-		// m_sceneHierarchyPanel.SetContext(m_activeScene);
+		m_sceneHierarchyPanel.SetContext(m_activeScene);
 
 		
 
