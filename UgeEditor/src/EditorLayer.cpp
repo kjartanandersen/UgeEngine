@@ -46,7 +46,6 @@ namespace Uge
 		// Render
 		m_frameBuffer->Bind();
 		{
-			Renderer2D::ResetStats();
 			{
 				UG_PROFILE_SCOPE("Renderer Prep")
 				RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
@@ -286,13 +285,6 @@ namespace Uge
 					name = m_hoveredEntity.GetComponent<TagComponent>().Tag;
 				}
 				ImGui::Text("Hovered Entity: %s", name.c_str());
-
-				auto stats = Renderer2D::GetStats();
-				ImGui::Text("Renderer2D Stats:");
-				ImGui::Text("Draw Calls: %d", stats.DrawCalls);
-				ImGui::Text("Quad Count: %d", stats.QuadCount);
-				ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
-				ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
 				//ImGui::Dummy({ 0.0f, 100.0f });
 				ImGui::Separator();

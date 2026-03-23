@@ -38,6 +38,7 @@ namespace Uge
 		template<typename T>
 		T& GetComponent()
 		{
+			bool hasC = HasComponent<T>();
 			UG_CORE_ASSERT(HasComponent<T>(), "Entity does not have component!");
 
 			return m_scene->m_registry.get<T>(m_entityHandle);

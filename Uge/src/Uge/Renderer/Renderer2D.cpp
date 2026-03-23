@@ -37,7 +37,6 @@ namespace Uge
 
 		glm::vec4 VertexPositions[4];
 		
-		Renderer2D::Statistics Stats;
 
 		struct CameraData
 		{
@@ -204,10 +203,17 @@ namespace Uge
 
 		
 		m_data.TextureShader->Bind();
-		RenderCommand::DrawIndexed(m_data.QuadVA, m_data.QuadIndexCount);
+		if (m_data.QuadIndexCount != 0)
+		{
+			RenderCommand::DrawIndexed(m_data.QuadVA, m_data.QuadIndexCount);
+		}
 
-		m_data.Stats.DrawCalls++;
 		m_data.TextureShader->Unbind();
+
+		m_data.VertexBufferPtr = m_data.VertexBufferBase;
+		m_data.QuadIndexCount = 0;
+
+		m_data.TextureSlotIndex = 1;
 
 
 	}
@@ -337,7 +343,6 @@ namespace Uge
 
 		m_data.QuadIndexCount += 6;
 
-		m_data.Stats.QuadCount++;
 
 
 	}
@@ -379,7 +384,6 @@ namespace Uge
 
 		m_data.QuadIndexCount += 6;
 
-		m_data.Stats.QuadCount++;
 
 
 	}
@@ -440,7 +444,6 @@ namespace Uge
 
 		m_data.QuadIndexCount += 6;
 
-		m_data.Stats.QuadCount++;
 
 
 	}
@@ -513,7 +516,6 @@ namespace Uge
 
 		m_data.QuadIndexCount += 6;
 
-		m_data.Stats.QuadCount++;
 
 	}
 
@@ -595,7 +597,6 @@ namespace Uge
 
 		m_data.QuadIndexCount += 6;
 
-		m_data.Stats.QuadCount++;
 
 	}
 
@@ -681,23 +682,6 @@ namespace Uge
 
 
 		m_data.QuadIndexCount += 6;
-
-		m_data.Stats.QuadCount++;
-
-	}
-
-
-	void Renderer2D::ResetStats()
-	{
-
-		memset(&m_data.Stats, 0, sizeof(Statistics));
-
-	}
-
-	Renderer2D::Statistics Renderer2D::GetStats()
-	{
-
-		return m_data.Stats;
 
 
 	}

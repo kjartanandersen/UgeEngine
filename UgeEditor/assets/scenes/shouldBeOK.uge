@@ -1,5 +1,25 @@
 Scene: Untitled
 Entities:
+  - Entity: 14416478944363043427
+    TagComponent:
+      Tag: Sprite
+    TransformComponent:
+      Translation: [0, 0, -1.0870514]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+  - Entity: 15340325315977831053
+    TagComponent:
+      Tag: Chessboard
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ScriptComponent:
+      ClassName: Sandbox.Player
+    MeshComponent:
+      Path: C:\Programming\c++\GameEngines\Uge\UgeEditor\assets\mesh\ABeautifulGame.glb
   - Entity: 4388734508828723484
     TagComponent:
       Tag: Camera
@@ -18,21 +38,3 @@ Entities:
         OrthographicFar: 1
       Primary: true
       FixedAspectRatio: false
-  - Entity: 15340325315977831053
-    TagComponent:
-      Tag: Chessboard
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    MeshComponent:
-      Path: C:\Programming\c++\GameEngines\Uge\UgeEditor\assets\mesh\ABeautifulGame.glb
-  - Entity: 14416478944363043427
-    TagComponent:
-      Tag: Sprite
-    TransformComponent:
-      Translation: [0, 0, -1.0870514]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    SpriteRendererComponent:
-      Color: [1, 1, 1, 1]

@@ -127,8 +127,8 @@ namespace Uge
 	void Scene::DestroyEntity(Entity entity)
 	{
 
-		m_registry.destroy(entity);
 		m_entityMap.erase(entity.GetUUID());
+		m_registry.destroy(entity);
 
 
 	}
