@@ -40,6 +40,15 @@
     <Filter Include="..\UgeEditor">
       <UniqueIdentifier>{78FCBF9B-645F-4F40-0DE5-87F6F9261BC3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="..\UgeEditor\SandboxProject">
+      <UniqueIdentifier>{8D80DDD8-F98D-0BBF-8274-07AAEE80D775}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\UgeEditor\SandboxProject\Assets">
+      <UniqueIdentifier>{CF06E26A-BB42-E5D4-2455-FDCB10B08DEF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\UgeEditor\SandboxProject\Assets\Scripts">
+      <UniqueIdentifier>{064D988C-F2B4-5E5A-5B20-737047A77546}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Sandbox\premake5.lua">
@@ -71,6 +80,9 @@
     </None>
     <None Include="..\..\Uge\thirdparty\yaml-cpp\premake5.lua">
       <Filter>..\Uge\thirdparty\yaml-cpp</Filter>
+    </None>
+    <None Include="..\..\UgeEditor\SandboxProject\Assets\Scripts\premake5.lua">
+      <Filter>..\UgeEditor\SandboxProject\Assets\Scripts</Filter>
     </None>
     <None Include="..\..\UgeEditor\premake5.lua">
       <Filter>..\UgeEditor</Filter>

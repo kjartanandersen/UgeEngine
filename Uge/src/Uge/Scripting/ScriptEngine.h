@@ -23,7 +23,7 @@ namespace Uge
 	public:
 		ScriptClass() = default;
 
-		ScriptClass(const std::string& classNamespace, const std::string& className);
+		ScriptClass(const std::string& classNamespace, const std::string& className, bool isCore = false);
 
 		MonoObject* Instantiate();
 
@@ -68,6 +68,7 @@ namespace Uge
 		static void Shutdown();
 
 		static void LoadAssembly(const std::filesystem::path& filePath);
+		static void LoadAppAssembly(const std::filesystem::path& filePath);
 
 		static std::unordered_map<std::string, Ref<ScriptClass>> GetEntityClasses();
 
@@ -89,7 +90,7 @@ namespace Uge
 		static void ShutdownMono();
 
 		static MonoObject* InstantiateClass(MonoClass* monoClass);
-		static void LoadAssemblyClasses(MonoAssembly* assembly);
+		static void LoadAssemblyClasses();
 
 		friend class ScriptClass;
 

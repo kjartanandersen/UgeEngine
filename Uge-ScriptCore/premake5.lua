@@ -3,8 +3,8 @@ project "Uge-ScriptCore"
 	language "C#"
 	dotnetframework "4.7.2"
 
-	targetdir ("%{wks.location}/UgeEditor/Resources/Scripts")
-	objdir ("%{wks.location}/UgeEditor/Resources/Scripts/Intermediates")
+	targetdir ("../UgeEditor/Resources/Scripts")
+	objdir ("../UgeEditor/Resources/Scripts/Intermediates")
 	
 	files 
 	{

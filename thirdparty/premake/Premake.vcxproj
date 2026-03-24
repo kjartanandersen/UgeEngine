@@ -87,6 +87,7 @@
     <None Include="..\..\Uge\thirdparty\glm\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\imgui\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\yaml-cpp\premake5.lua" />
+    <None Include="..\..\UgeEditor\SandboxProject\Assets\Scripts\premake5.lua" />
     <None Include="..\..\UgeEditor\premake5.lua" />
     <None Include="..\..\premake5.lua" />
     <None Include="premake5.lua" />
