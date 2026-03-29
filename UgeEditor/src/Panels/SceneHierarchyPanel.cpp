@@ -452,7 +452,7 @@ namespace Uge
 			
 		});
 
-		DrawComponent<ScriptComponent>("Script", entity, true, [](auto& component)
+		DrawComponent<ScriptComponent>("Script", entity, true, [entity](auto& component) mutable
 		{
 
 			bool scriptClassExists = ScriptEngine::EntityClassExists(component.ClassName);
@@ -470,6 +470,31 @@ namespace Uge
 			{
 				component.ClassName = buffer;
 
+			}
+
+			// Fields
+			Ref<ScriptInstance> scriptInstance = ScriptEngine::GetEntityScriptInstance(entity.GetUUID());
+			if (scriptInstance)
+			{
+				const auto& fields = scriptInstance->GetScriptClass()->GetFields();
+
+				for (const auto& [name, fields]: fields)
+				{
+
+					if (fields.Type == ScriptFieldType::Float)
+					{
+						
+						float data = scriptInstance->GetFieldValue<float>(name);
+						if (ImGui::DragFloat(fields.Name.c_str(), &data, 0.1f))
+						{
+
+							scriptInstance->SetFieldValue(name, data);
+
+						}
+
+					}
+
+				}
 			}
 
 			if (!scriptClassExists)

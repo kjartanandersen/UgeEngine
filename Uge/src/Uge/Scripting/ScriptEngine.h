@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <string>
+#include <unordered_map>
 
 extern "C"
 {
@@ -13,10 +14,45 @@ extern "C"
 	typedef struct _MonoMethod MonoMethod;
 	typedef struct _MonoAssembly MonoAssembly;
 	typedef struct _MonoImage MonoImage;
+	typedef struct _MonoClassField MonoClassField;
 }
 
 namespace Uge
 {
+
+	enum class ScriptFieldType
+	{
+		None = 0,
+		Float, 
+		Double, 
+
+		Vector2, 
+		Vector3, 
+		Vector4,
+
+		Int, 
+		UInt, 
+		Long, 
+		Short, 
+
+		Bool, 
+
+		Byte,
+		Char,
+
+		String,
+
+		Entity
+	};
+
+	struct ScriptField
+	{
+		std::string Name;
+		ScriptFieldType Type;
+		MonoClassField* ClassField;
+
+
+	};
 
 	class ScriptClass
 	{
@@ -30,12 +66,17 @@ namespace Uge
 		MonoMethod* GetMethod(const std::string& name, int parameterCount);
 		MonoObject* InvokeMethod(MonoObject* instance, MonoMethod* method, void** params = nullptr);
 
+		const std::unordered_map<std::string, ScriptField>& GetFields() const { return m_fields; }
 
 	private:
 		std::string m_classNamspace;
 		std::string m_className;
+
+		std::unordered_map<std::string, ScriptField> m_fields;
+
 		MonoClass* m_monoClass = nullptr;
 
+		friend class ScriptEngine;
 
 	};
 
@@ -49,14 +90,41 @@ namespace Uge
 		void InvokeOnCreate();
 		void InvokeOnUpdate(float ts);
 
+		Ref<ScriptClass> GetScriptClass() { return m_scriptClass; }
+
+		template<typename T>
+		T GetFieldValue(const std::string& name)
+		{
+			bool success = GetFieldValueInternal(name, s_fieldValueBuffer);
+			if (!success)
+			{
+				return T();
+			}
+
+			return *(T*)s_fieldValueBuffer;
+		}
+
+		template<typename T>
+		void SetFieldValue(const std::string& name, const T& value)
+		{
+			SetFieldValueInternal(name, &value);
+			
+		}
+	
 	private:
 
+		
+		bool GetFieldValueInternal(const std::string& name, void* buf);
+		bool SetFieldValueInternal(const std::string& name, const void* val);
+
+	private:
 		Ref<ScriptClass> m_scriptClass;
 		MonoObject* m_instance = nullptr;
 		MonoMethod* m_constructor = nullptr;
 		MonoMethod* m_onCreateMethod = nullptr;
 		MonoMethod* m_onUpdateMethod = nullptr;
 
+		inline static char s_fieldValueBuffer[8];
 
 	};
 
@@ -80,6 +148,7 @@ namespace Uge
 		static void OnUpdateEntity(Entity entity, Timestep ts);
 
 		static Scene* GetSceneContext();
+		static Ref<ScriptInstance> GetEntityScriptInstance(UUID entityID);
 
 		static MonoImage* GetCoreAssemblyImage();
 

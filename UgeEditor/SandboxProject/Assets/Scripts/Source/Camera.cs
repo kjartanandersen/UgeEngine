@@ -9,6 +9,9 @@ namespace Source.Uge
 {
     public class Camera : Entity
     {
+        public Entity Ent;
+
+
         void OnUpdate(float ts)
         {
             float speed = 1.0f;

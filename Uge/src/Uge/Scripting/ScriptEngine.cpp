@@ -6,12 +6,35 @@
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/object.h>
+#include <mono/metadata/attrdefs.h>
 
 #include <glm/glm.hpp>
 
 namespace Uge
 {
 
+	static std::unordered_map<std::string, ScriptFieldType> s_scriptFieldTypeMap =
+	{
+		{ "System.Single", ScriptFieldType::Float },
+		{ "System.Double", ScriptFieldType::Double },
+
+		{ "Uge.Vector2", ScriptFieldType::Vector2 },
+		{ "Uge.Vector3", ScriptFieldType::Vector3 },
+		{ "Uge.Vector4", ScriptFieldType::Vector4 },
+
+		{ "System.Int64", ScriptFieldType::Long },
+		{ "System.Int", ScriptFieldType::Int },
+		{ "System.UInt32", ScriptFieldType::UInt },
+		{ "System.Int16", ScriptFieldType::Short },
+
+		{ "System.Boolean", ScriptFieldType::Bool },
+		{ "System.Byte", ScriptFieldType::Byte },
+		{ "System.Char", ScriptFieldType::Char },
+
+		{ "System.String", ScriptFieldType::String },
+
+		{ "Uge.Entity", ScriptFieldType::Entity }
+	};
 
 	namespace Utils
 	{
@@ -96,6 +119,105 @@ namespace Uge
 			return assembly;
 
 		}
+
+		ScriptFieldType MonoTypeToScriptFieldType(MonoType* monoType)
+		{
+			std::string typeName = mono_type_get_name(monoType);
+
+			auto it = s_scriptFieldTypeMap.find(typeName);
+			if (it == s_scriptFieldTypeMap.end())
+			{
+				UG_CORE_ERROR("Typename is {0}", typeName);
+				return ScriptFieldType::None;
+			}
+			return it->second;
+
+			// if (s_scriptFieldTypeMap.find(typeName) == s_scriptFieldTypeMap.end())
+			// {
+			// 	return ScriptFieldType::None;
+			// }
+			// 
+			// return s_scriptFieldTypeMap.at(typeName);
+
+			
+
+		}
+
+		const char* ScriptFieldTypeToString(ScriptFieldType fieldtype)
+		{
+
+			switch (fieldtype)
+			{
+				case Uge::ScriptFieldType::None:
+				{
+					return "<invalid>";
+
+				}
+				case Uge::ScriptFieldType::Float:
+				{
+					return "Float";
+				}
+				case Uge::ScriptFieldType::Double:
+				{
+					return "Double";
+				}
+				case Uge::ScriptFieldType::Vector2:
+				{
+					return "Vector2";
+				}
+				case Uge::ScriptFieldType::Vector3:
+				{
+					return "Vector3";
+				}
+				case Uge::ScriptFieldType::Vector4:
+				{
+					return "Vector4";
+				}
+				case Uge::ScriptFieldType::Long:
+				{
+					return "Long";
+				}
+				case Uge::ScriptFieldType::Int:
+				{
+					return "Int";
+				}
+				case Uge::ScriptFieldType::UInt:
+				{
+					return "UInt";
+				}
+				case Uge::ScriptFieldType::Bool:
+				{
+					return "Bool";
+				}
+				case Uge::ScriptFieldType::Short:
+				{
+					return "Short";
+				}
+				case Uge::ScriptFieldType::Byte:
+				{
+					return "Byte";
+				}
+				case Uge::ScriptFieldType::Char:
+				{
+					return "Char";
+				}
+				case Uge::ScriptFieldType::String:
+				{
+					return "String";
+				}
+				case Uge::ScriptFieldType::Entity:
+				{
+					return "Entity";
+				}
+				default:
+				{
+					return "<invalid>";
+				}
+			}
+
+		}
+
+
 
 	}
 
@@ -326,21 +448,21 @@ namespace Uge
 			mono_metadata_decode_row(typeDefinitionsTable, i, cols, MONO_TYPEDEF_SIZE);
 
 			const char* nameSpace = mono_metadata_string_heap(s_data->AppAssemblyImage, cols[MONO_TYPEDEF_NAMESPACE]);
-			const char* name = mono_metadata_string_heap(s_data->AppAssemblyImage, cols[MONO_TYPEDEF_NAME]);
+			const char* className = mono_metadata_string_heap(s_data->AppAssemblyImage, cols[MONO_TYPEDEF_NAME]);
 			std::string fullName;
 			if (strlen(nameSpace) != 0)
 			{
 
-				fullName = fmt::format("{}.{}", nameSpace, name);
+				fullName = fmt::format("{}.{}", nameSpace, className);
 			}
 			else
 			{
 
-				fullName = name;
+				fullName = className;
 			}
 			UG_CORE_TRACE("{0}", fullName.c_str());
 
-			MonoClass* monoClass = mono_class_from_name(s_data->AppAssemblyImage, nameSpace, name);
+			MonoClass* monoClass = mono_class_from_name(s_data->AppAssemblyImage, nameSpace, className);
 
 			if (monoClass == entityClass)
 			{
@@ -349,11 +471,46 @@ namespace Uge
 			}
 
 			bool isEntity = mono_class_is_subclass_of(monoClass, entityClass, false);
-			if (isEntity)
+			if (!isEntity)
 			{
-				s_data->EntityClasses[fullName] = CreateRef<ScriptClass>(nameSpace, name);
+				continue;
 			}
+
+			Ref<ScriptClass> scriptClass = CreateRef<ScriptClass>(nameSpace, className);
+
+			s_data->EntityClasses[fullName] = scriptClass;
+			
+			int fieldCount = mono_class_num_fields(monoClass);
+
+			UG_CORE_WARN("{0} has {1} Fields: ", className, fieldCount);
+			void* it = nullptr;
+			MonoClassField* field;
+			while ((field = mono_class_get_fields(monoClass, &it)) != nullptr)
+			{
+				const char* fieldName = mono_field_get_name(field);
+				uint32_t flags = mono_field_get_flags(field);
+				UG_CORE_WARN("  {0} flags = {1}", fieldName, flags);
+				if (flags & MONO_FIELD_ATTR_PUBLIC)
+				{
+					MonoType* type = mono_field_get_type(field);
+					const char* typeName = mono_type_get_name(type);
+
+					ScriptFieldType fieldType = Utils::MonoTypeToScriptFieldType(type);
+
+					UG_CORE_WARN("   {0} ({1}) is public", fieldName, Utils::ScriptFieldTypeToString(fieldType));
+
+					scriptClass->m_fields[fieldName] = { fieldName, fieldType, field };
+
+				}
+
+
+			}
+
+
+		
 		}
+		
+
 		printf("\n");
 
 	}
@@ -388,6 +545,40 @@ namespace Uge
 		void* param = &ts;
 
 		m_scriptClass->InvokeMethod(m_instance, m_onUpdateMethod, &param);
+	}
+
+	bool ScriptInstance::GetFieldValueInternal(const std::string& name, void* buf)
+	{
+		const auto& fields = m_scriptClass->GetFields();
+		auto it = fields.find(name);
+
+		if (it == fields.end())
+		{
+			return false;
+		}
+
+		
+		const ScriptField& field = it->second;
+		mono_field_get_value(m_instance, field.ClassField, buf);
+
+		return true;
+	}
+
+	bool ScriptInstance::SetFieldValueInternal(const std::string& name, const void* val)
+	{
+		const auto& fields = m_scriptClass->GetFields();
+		auto it = fields.find(name);
+
+		if (it == fields.end())
+		{
+			return false;
+		}
+
+
+		const ScriptField& field = it->second;
+		mono_field_set_value(m_instance, field.ClassField, (void*)val);
+
+		return true;
 	}
 
 	void ScriptEngine::OnRuntimeStop()
@@ -432,6 +623,20 @@ namespace Uge
 	{
 
 		return s_data->SceneContext;
+	}
+
+	Ref<ScriptInstance> ScriptEngine::GetEntityScriptInstance(UUID entityID)
+	{
+
+		auto it = s_data->EntityInstances.find(entityID);
+
+		if (it == s_data->EntityInstances.end())
+		{
+			return nullptr;
+		}
+
+		return it->second;
+
 	}
 
 	MonoImage* ScriptEngine::GetCoreAssemblyImage()

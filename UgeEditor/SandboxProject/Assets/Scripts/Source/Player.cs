@@ -8,6 +8,10 @@ namespace Sandbox
     public class Player : Entity
     {
         private TransformComponent m_Transform;
+        public float Speed1 = 1.0f;
+        public float Speed2;
+        public long test;
+        
 
         void OnCreate()
         {
@@ -20,7 +24,7 @@ namespace Sandbox
         {
             // Console.WriteLine($"Player.OnUpdate: {ts}");
 
-            float speed = 0.01f;
+            float speed = Speed1;
             Vector3 velocity = Vector3.Zero;
 
             if (Input.IsKeyDown(KeyCode.W))

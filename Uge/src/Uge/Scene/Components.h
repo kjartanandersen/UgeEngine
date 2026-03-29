@@ -128,6 +128,7 @@ namespace Uge
 
 		std::string ClassName;
 
+
 		ScriptComponent() = default;
 		ScriptComponent(const ScriptComponent&) = default;
 
