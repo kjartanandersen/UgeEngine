@@ -9,8 +9,7 @@ namespace Sandbox
     {
         private TransformComponent m_Transform;
         public float Speed1 = 1.0f;
-        public float Speed2;
-        public long test;
+        public float Time;
         
 
         void OnCreate()
@@ -22,6 +21,7 @@ namespace Sandbox
 
         void OnUpdate(float ts)
         {
+            Time += ts;
             // Console.WriteLine($"Player.OnUpdate: {ts}");
 
             float speed = Speed1;

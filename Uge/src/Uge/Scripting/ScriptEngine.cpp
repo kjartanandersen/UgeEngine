@@ -223,6 +223,7 @@ namespace Uge
 
 	struct ScriptEngineData
 	{
+
 		MonoDomain* RootDomain = nullptr;
 		MonoDomain* AppDomain = nullptr;
 
@@ -236,6 +237,7 @@ namespace Uge
 
 		std::unordered_map<std::string, Ref<ScriptClass>> EntityClasses;
 		std::unordered_map<UUID, Ref<ScriptInstance>> EntityInstances;
+		std::unordered_map<UUID, ScriptFieldMap> EntityScriptFields;
 
 
 		// Runtime
@@ -410,9 +412,34 @@ namespace Uge
 		
 	}
 
+	Ref<ScriptClass> ScriptEngine::GetEntityClass(const std::string& name)
+	{
+
+		auto it = s_data->EntityClasses.find(name);
+		if (it == s_data->EntityClasses.end())
+		{
+			nullptr;
+		}
+
+		return it->second;
+
+
+		return Ref<ScriptClass>();
+	}
+
 	std::unordered_map<std::string, Ref<ScriptClass>> ScriptEngine::GetEntityClasses()
 	{
 		return s_data->EntityClasses;
+	}
+
+	ScriptFieldMap& ScriptEngine::GetScriptFieldMap(UUID entityID)
+	{
+		
+		auto it = s_data->EntityScriptFields.find(entityID);
+		// UG_CORE_ASSERT(it != s_data->EntityScriptFields.end());
+
+		return s_data->EntityScriptFields[entityID];
+
 	}
 
 	bool ScriptEngine::EntityClassExists(const std::string& fullClassName)
@@ -602,8 +629,23 @@ namespace Uge
 		const auto& sc = entity.GetComponent<ScriptComponent>();
 		if (ScriptEngine::EntityClassExists(sc.ClassName))
 		{
+			UUID entityID = entity.GetUUID();
 			Ref<ScriptInstance> instance = CreateRef<ScriptInstance>(s_data->EntityClasses[sc.ClassName], entity);
-			s_data->EntityInstances[entity.GetUUID()] = instance;
+			s_data->EntityInstances[entityID] = instance;
+
+			// Copy field values
+			if (s_data->EntityScriptFields.find(entityID) != s_data->EntityScriptFields.end())
+			{
+				const ScriptFieldMap& fieldMap = s_data->EntityScriptFields.at(entityID);
+				for (const auto& [name, fieldInstance] : fieldMap)
+				{
+					instance->SetFieldValueInternal(name, fieldInstance.m_dataBuffer);
+
+				}
+
+
+			}
+
 			instance->InvokeOnCreate();
 		}
 	}

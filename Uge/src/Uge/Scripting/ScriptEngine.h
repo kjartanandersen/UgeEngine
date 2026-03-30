@@ -49,10 +49,49 @@ namespace Uge
 	{
 		std::string Name;
 		ScriptFieldType Type;
-		MonoClassField* ClassField;
+		MonoClassField* ClassField = nullptr;
 
 
 	};
+
+
+	// Script Field + data storage
+	struct ScriptFieldInstance
+	{
+		ScriptField Field;
+
+		ScriptFieldInstance()
+		{
+			memset(m_dataBuffer, 0, sizeof(m_dataBuffer));
+		}
+
+		template<typename T>
+		T GetValue()
+		{
+			static_assert(sizeof(T) <= 8, "Type too large!");
+			return *(T*)m_dataBuffer;
+			
+
+		}
+
+		template<typename T>
+		void SetValue(T value)
+		{
+			static_assert(sizeof(T) <= 8, "Type too large!");
+			memcpy(m_dataBuffer, &value, sizeof(T));
+			
+		}
+
+	private:
+		char m_dataBuffer[8];
+
+		friend class ScriptEngine;
+		friend class ScriptInstance;
+
+	};
+
+	using ScriptFieldMap = std::unordered_map<std::string, ScriptFieldInstance>;
+
 
 	class ScriptClass
 	{
@@ -95,6 +134,8 @@ namespace Uge
 		template<typename T>
 		T GetFieldValue(const std::string& name)
 		{
+			static_assert(sizeof(T) <= 8, "Type too large!");
+
 			bool success = GetFieldValueInternal(name, s_fieldValueBuffer);
 			if (!success)
 			{
@@ -105,8 +146,10 @@ namespace Uge
 		}
 
 		template<typename T>
-		void SetFieldValue(const std::string& name, const T& value)
+		void SetFieldValue(const std::string& name, T value)
 		{
+			static_assert(sizeof(T) <= 8, "Type too large!");
+
 			SetFieldValueInternal(name, &value);
 			
 		}
@@ -126,6 +169,9 @@ namespace Uge
 
 		inline static char s_fieldValueBuffer[8];
 
+		friend class ScriptEngine;
+		friend struct ScriptFieldInstance;
+
 	};
 
 	class ScriptEngine
@@ -138,7 +184,9 @@ namespace Uge
 		static void LoadAssembly(const std::filesystem::path& filePath);
 		static void LoadAppAssembly(const std::filesystem::path& filePath);
 
+		static Ref<ScriptClass> GetEntityClass(const std::string& name);
 		static std::unordered_map<std::string, Ref<ScriptClass>> GetEntityClasses();
+		static ScriptFieldMap& GetScriptFieldMap(UUID entityID);
 
 		static void OnRuntimeStart(Scene* scene);
 		static void OnRuntimeStop();

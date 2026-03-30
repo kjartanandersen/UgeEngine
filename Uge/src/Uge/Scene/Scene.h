@@ -37,6 +37,8 @@ namespace Uge
 
 		Entity GetPrimaryCameraEntity();
 
+		bool IsRunning() const { return m_isRunning; }
+
 	private:
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);
@@ -48,6 +50,8 @@ namespace Uge
 		std::unordered_map<UUID, entt::entity> m_entityMap;
 
 		uint32_t m_viewportWidth = 0, m_viewportHeight = 0;
+
+		bool m_isRunning = false;
 
 
 		friend class Entity;

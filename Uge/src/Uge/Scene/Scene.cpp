@@ -135,6 +135,7 @@ namespace Uge
 
 	void Scene::OnRuntimeStart()
 	{
+		m_isRunning = true;
 
 		// Scripting
 		{
@@ -155,7 +156,7 @@ namespace Uge
 
 	void Scene::OnRuntimeStop()
 	{
-
+		m_isRunning = false;
 		ScriptEngine::OnRuntimeStop();
 
 	}

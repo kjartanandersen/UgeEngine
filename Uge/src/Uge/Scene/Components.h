@@ -7,7 +7,7 @@
 #include "Uge/Renderer/Texture.h"
 
 #include <string>
-
+#include <unordered_map>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -127,7 +127,7 @@ namespace Uge
 	{
 
 		std::string ClassName;
-
+		
 
 		ScriptComponent() = default;
 		ScriptComponent(const ScriptComponent&) = default;
@@ -144,8 +144,8 @@ namespace Uge
 
 
 
-		ScriptableEntity*(*InstantiateScript)();
-		void (*DestroyScript)(NativeScriptComponent*);
+		ScriptableEntity*(*InstantiateScript)() = nullptr;
+		void (*DestroyScript)(NativeScriptComponent*) = nullptr;
 
 
 		template<typename T>
