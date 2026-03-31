@@ -10,7 +10,7 @@ namespace Source.Uge
     public class Camera : Entity
     {
         public Entity Ent;
-
+        public byte test;
 
         void OnUpdate(float ts)
         {

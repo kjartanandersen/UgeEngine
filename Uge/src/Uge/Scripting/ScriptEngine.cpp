@@ -22,13 +22,16 @@ namespace Uge
 		{ "Uge.Vector3", ScriptFieldType::Vector3 },
 		{ "Uge.Vector4", ScriptFieldType::Vector4 },
 
-		{ "System.Int64", ScriptFieldType::Long },
 		{ "System.Int", ScriptFieldType::Int },
 		{ "System.UInt32", ScriptFieldType::UInt },
+		{ "System.Int64", ScriptFieldType::Long },
+		{ "System.UInt64", ScriptFieldType::ULong },
 		{ "System.Int16", ScriptFieldType::Short },
+		{ "System.UInt16", ScriptFieldType::UShort },
 
 		{ "System.Boolean", ScriptFieldType::Bool },
-		{ "System.Byte", ScriptFieldType::Byte },
+		{ "System.SByte", ScriptFieldType::Byte },
+		{ "System.Byte", ScriptFieldType::UByte },
 		{ "System.Char", ScriptFieldType::Char },
 
 		{ "System.String", ScriptFieldType::String },
@@ -142,82 +145,6 @@ namespace Uge
 			
 
 		}
-
-		const char* ScriptFieldTypeToString(ScriptFieldType fieldtype)
-		{
-
-			switch (fieldtype)
-			{
-				case Uge::ScriptFieldType::None:
-				{
-					return "<invalid>";
-
-				}
-				case Uge::ScriptFieldType::Float:
-				{
-					return "Float";
-				}
-				case Uge::ScriptFieldType::Double:
-				{
-					return "Double";
-				}
-				case Uge::ScriptFieldType::Vector2:
-				{
-					return "Vector2";
-				}
-				case Uge::ScriptFieldType::Vector3:
-				{
-					return "Vector3";
-				}
-				case Uge::ScriptFieldType::Vector4:
-				{
-					return "Vector4";
-				}
-				case Uge::ScriptFieldType::Long:
-				{
-					return "Long";
-				}
-				case Uge::ScriptFieldType::Int:
-				{
-					return "Int";
-				}
-				case Uge::ScriptFieldType::UInt:
-				{
-					return "UInt";
-				}
-				case Uge::ScriptFieldType::Bool:
-				{
-					return "Bool";
-				}
-				case Uge::ScriptFieldType::Short:
-				{
-					return "Short";
-				}
-				case Uge::ScriptFieldType::Byte:
-				{
-					return "Byte";
-				}
-				case Uge::ScriptFieldType::Char:
-				{
-					return "Char";
-				}
-				case Uge::ScriptFieldType::String:
-				{
-					return "String";
-				}
-				case Uge::ScriptFieldType::Entity:
-				{
-					return "Entity";
-				}
-				default:
-				{
-					return "<invalid>";
-				}
-			}
-
-		}
-
-
 
 	}
 

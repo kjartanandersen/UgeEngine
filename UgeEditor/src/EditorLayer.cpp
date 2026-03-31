@@ -132,8 +132,7 @@ namespace Uge
 		if (commandLineArgs.Count > 1)
 		{
 			auto sceneFilePath = commandLineArgs[1];
-			SceneSerializer serializer(m_activeScene);
-			serializer.DeSerialize(sceneFilePath);
+			OpenScene(sceneFilePath);
 		}
 
 
@@ -310,7 +309,7 @@ namespace Uge
 				m_viewportHovered = ImGui::IsWindowHovered();
 
 				
-				Application::Get().GetImGuiLayer()->BlockEvents(!m_viewportHovered && !m_viewportFocused);
+				Application::Get().GetImGuiLayer()->BlockEvents(!m_viewportHovered);
 				
 
 				ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
@@ -618,7 +617,7 @@ namespace Uge
 	void EditorLayer::NewScene()
 	{
 		m_activeScene = CreateRef<Scene>();
-		m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+		// m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
 
 		m_editorScenePath = std::filesystem::path();
@@ -660,7 +659,7 @@ namespace Uge
 		{
 			m_editorScene = newScene;
 
-			m_editorScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+			// m_editorScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 			m_sceneHierarchyPanel.SetContext(m_editorScene);
 
 			m_activeScene = m_editorScene;

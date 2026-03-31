@@ -503,11 +503,7 @@ namespace Uge
 					}
 				}
 
-				if (!scriptClassExists)
-				{
-					ImGui::PopStyleColor();
-
-				}
+				
 			}
 			else
 			{
@@ -560,7 +556,11 @@ namespace Uge
 				}
 
 			}
-			
+			if (!scriptClassExists)
+			{
+				ImGui::PopStyleColor();
+
+			}
 
 		});
 
