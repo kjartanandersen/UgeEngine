@@ -616,4 +616,12 @@ namespace Uge
 		return s_data->CoreAssemblyImage;
 	}
 
+	MonoObject* ScriptEngine::GetManagedInstance(UUID entityID)
+	{
+		
+		UG_CORE_ASSERT(s_data->EntityInstances.find(entityID) != s_data->EntityInstances.end());
+
+		return s_data->EntityInstances.at(entityID)->GetManagedMonoObject();
+	}
+
 }

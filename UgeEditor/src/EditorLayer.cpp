@@ -26,6 +26,7 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
+		m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 		if (m_shouldResize)
 		{
 			m_frameBuffer->Resize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
@@ -33,7 +34,6 @@ namespace Uge
 
 			m_editorCamera.SetViewportSize(m_viewportSize.x, m_viewportSize.y);
 
-			m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 			m_shouldResize = false;
 		}
 
@@ -659,7 +659,7 @@ namespace Uge
 		{
 			m_editorScene = newScene;
 
-			// m_editorScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+			m_editorScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 			m_sceneHierarchyPanel.SetContext(m_editorScene);
 
 			m_activeScene = m_editorScene;

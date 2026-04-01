@@ -28,14 +28,45 @@ namespace Sandbox
             Vector3 velocity = Vector3.Zero;
 
             if (Input.IsKeyDown(KeyCode.W))
+            {
                 velocity.Y = 10.0f;
+
+            }
             else if (Input.IsKeyDown(KeyCode.S))
+            {
                 velocity.Y = -10.0f;
 
+            }
+
             if (Input.IsKeyDown(KeyCode.A))
+            {
                 velocity.X = -10.0f;
+
+            }
             else if (Input.IsKeyDown(KeyCode.D))
+            {
                 velocity.X = 10.0f;
+
+            }
+
+            Entity cameraEnt = FindEntityByName("Camera");
+            if (cameraEnt != null)
+            {
+                Camera cam = cameraEnt.As<Camera>();
+
+                if (Input.IsKeyDown(KeyCode.Q))
+                {
+                    cam.DistFromPlayer -= (1f * ts);
+
+                }
+                else if (Input.IsKeyDown(KeyCode.E))
+                {
+                
+                    cam.DistFromPlayer += (1f * ts);
+
+                }
+            }
+
 
             velocity *= speed;
 

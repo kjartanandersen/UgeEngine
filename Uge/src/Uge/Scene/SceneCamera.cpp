@@ -40,8 +40,8 @@ namespace Uge
 	void SceneCamera::SetViewportSize(uint32_t width, uint32_t height)
 	{
 		UG_CORE_ASSERT(width > 0 && height > 0);
-		m_aspectRatio = (float)width / (float)height;
 
+		m_aspectRatio = (float)width / (float)height;
 		RecalculateProjection();
 		
 

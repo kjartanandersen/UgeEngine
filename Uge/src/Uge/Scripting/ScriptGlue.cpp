@@ -63,6 +63,12 @@ namespace Uge
 
 	}
 
+	static MonoObject* GetScriptInstance(UUID entityID)
+	{
+
+		return ScriptEngine::GetManagedInstance(entityID);
+
+	}
 
 	static bool Entity_HasComponent(UUID entityID, MonoReflectionType* componentType)
 	{
@@ -74,6 +80,24 @@ namespace Uge
 		MonoType* managedType = mono_reflection_type_get_type(componentType);
 		UG_CORE_ASSERT(s_entityHasComponentFuncs.find(managedType) != s_entityHasComponentFuncs.end());
 		return s_entityHasComponentFuncs.at(managedType)(entity);
+	}
+
+	static uint64_t Entity_FindEntityByName(MonoString* name)
+	{
+
+		char* msString = mono_string_to_utf8(name);
+
+		Scene* scene = ScriptEngine::GetSceneContext();
+		UG_CORE_ASSERT(scene);
+		Entity entity = scene->FindEntityByName(msString);
+		mono_free(msString);
+
+		if (!entity)
+		{
+			return 0;
+		}
+
+		return entity.GetUUID();
 	}
 
 	static void TransformComponent_GetTranslation(UUID entityID, glm::vec3* outTranslation)
@@ -110,7 +134,10 @@ namespace Uge
 		UG_ADD_INTERNAL_CALL(NativeLogVector3);
 		UG_ADD_INTERNAL_CALL(NativeLogDot);
 
+		UG_ADD_INTERNAL_CALL(GetScriptInstance);
 		UG_ADD_INTERNAL_CALL(Entity_HasComponent);
+		UG_ADD_INTERNAL_CALL(Entity_FindEntityByName);
+
 		UG_ADD_INTERNAL_CALL(TransformComponent_GetTranslation);
 		UG_ADD_INTERNAL_CALL(TransformComponent_SetTranslation);
 		

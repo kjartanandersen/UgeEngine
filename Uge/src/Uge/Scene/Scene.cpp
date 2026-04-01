@@ -124,6 +124,25 @@ namespace Uge
 		return {  };
 	}
 
+	Entity Scene::FindEntityByName(std::string_view name)
+	{
+
+		auto view = m_registry.view<TagComponent>();
+
+		for (auto entity : view)
+		{
+			const auto& tagComponent = view.get<TagComponent>(entity);
+			if (name == tagComponent.Tag)
+			{
+				return Entity{ entity, this };
+			}
+
+		}
+
+		return {};
+
+	}
+
 	void Scene::DestroyEntity(Entity entity)
 	{
 
@@ -284,6 +303,10 @@ namespace Uge
 
 	void Scene::OnViewportResize(uint32_t width, uint32_t height)
 	{
+		if (m_viewportWidth == width && m_viewportHeight == height)
+		{
+			return;
+		}
 
 		m_viewportWidth = width;
 		m_viewportHeight = height;

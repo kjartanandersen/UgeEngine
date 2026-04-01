@@ -156,6 +156,8 @@ namespace Uge
 			SetFieldValueInternal(name, &value);
 			
 		}
+
+		MonoObject* GetManagedMonoObject() { return m_instance; }
 	
 	private:
 
@@ -202,6 +204,8 @@ namespace Uge
 		static Ref<ScriptInstance> GetEntityScriptInstance(UUID entityID);
 
 		static MonoImage* GetCoreAssemblyImage();
+
+		static MonoObject* GetManagedInstance(UUID entityID);
 
 		static bool EntityClassExists(const std::string& fullClassName);
 

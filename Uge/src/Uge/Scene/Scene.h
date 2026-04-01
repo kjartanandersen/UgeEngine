@@ -22,6 +22,7 @@ namespace Uge
 		Entity CreateEntity(const std::string& name = std::string());
 		Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
 		Entity GetEntityByUUID(UUID uuid);
+		Entity FindEntityByName(std::string_view name);
 
 		void DestroyEntity(Entity entity);
 

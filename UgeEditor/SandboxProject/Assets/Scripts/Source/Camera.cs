@@ -1,20 +1,42 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Source.Uge;
 using Uge;
 
-namespace Source.Uge
+namespace Sandbox
 {
     public class Camera : Entity
     {
-        public Entity Ent;
-        public byte test;
+
+        public float DistFromPlayer = 10.0f;
+        private Entity Player;
+
+        void OnCreate()
+        {
+
+            Player = FindEntityByName("Player");
+
+        }
 
         void OnUpdate(float ts)
         {
-            float speed = 1.0f;
+
+            if (Player != null)
+            {
+
+                Translation = new Vector3(Player.Translation.XY, DistFromPlayer);
+            }
+            else
+            {
+                Console.WriteLine("Player is NULL!");
+            }
+
+
+                float speed = 1.0f;
             Vector3 velocity = Vector3.Zero;
 
             if (Input.IsKeyDown(KeyCode.Up))
