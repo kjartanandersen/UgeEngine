@@ -1,5 +1,7 @@
 ﻿#include "EditorLayer.h"
 
+#include "Uge/Scripting/ScriptEngine.h"
+
 
 #include "imgui.h"
 #include <cstdint>
@@ -268,7 +270,18 @@ namespace Uge
 
 					ImGui::EndMenu();
 				}
+				//ImGui::EndMenuBar();
 
+				if (ImGui::BeginMenu("Script"))
+				{
+					if (ImGui::MenuItem("Reload assembly", "Ctrl+R"))
+					{
+						ScriptEngine::ReloadAssembly();
+
+					}
+
+					ImGui::EndMenu();
+				}
 				ImGui::EndMenuBar();
 			}
 
@@ -551,8 +564,17 @@ namespace Uge
 
 				case KeyCode::UG_KEY_R:
 				{
-					m_gizmoType = ImGuizmo::OPERATION::SCALE;
+					if (ctrlPressed)
+					{
+						ScriptEngine::ReloadAssembly();
+					}
+					else
+					{
+						m_gizmoType = ImGuizmo::OPERATION::SCALE;
+
+					}
 					break;
+
 				}
 
 				case KeyCode::UG_KEY_T:

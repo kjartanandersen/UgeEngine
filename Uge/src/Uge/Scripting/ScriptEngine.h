@@ -189,6 +189,8 @@ namespace Uge
 		static void LoadAssembly(const std::filesystem::path& filePath);
 		static void LoadAppAssembly(const std::filesystem::path& filePath);
 
+		static void ReloadAssembly();
+
 		static Ref<ScriptClass> GetEntityClass(const std::string& name);
 		static std::unordered_map<std::string, Ref<ScriptClass>> GetEntityClasses();
 		static ScriptFieldMap& GetScriptFieldMap(UUID entityID);

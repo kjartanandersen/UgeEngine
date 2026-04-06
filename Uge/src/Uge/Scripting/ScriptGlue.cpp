@@ -175,6 +175,7 @@ namespace Uge
 
 	void ScriptGlue::RegisterComponents()
 	{
+		s_entityHasComponentFuncs.clear();
 		RegisterComponent(AllComponents{});
 	}
 

@@ -160,6 +160,9 @@ namespace Uge
 		MonoAssembly* AppAssembly = nullptr;
 		MonoImage* AppAssemblyImage = nullptr;
 
+		std::filesystem::path CoreAssemblyFilePath;
+		std::filesystem::path AppAssemblyFilePath;
+
 		ScriptClass EntityMonoClass;
 
 		std::unordered_map<std::string, Ref<ScriptClass>> EntityClasses;
@@ -208,13 +211,13 @@ namespace Uge
 		s_data = new ScriptEngineData();
 
 		InitMono();
+		ScriptGlue::RegisterFunctions();
 
 		LoadAssembly("Resources/Scripts/Uge-ScriptCore.dll");
 		LoadAppAssembly("SandboxProject/Assets/Scripts/Binaries/Sandbox.dll");
 		LoadAssemblyClasses();
 
 		ScriptGlue::RegisterComponents();
-		ScriptGlue::RegisterFunctions();
 		
 		s_data->EntityMonoClass = ScriptClass("Uge", "Entity" ,true);
 
@@ -307,10 +310,13 @@ namespace Uge
 		
 		// Might need fixing
 
-		// mono_domain_unload(s_data->AppDomain);
+		mono_domain_set(mono_get_root_domain(), false);
+
+
+		mono_domain_unload(s_data->AppDomain);
 		s_data->AppDomain = nullptr;
 		
-		// mono_jit_cleanup(s_data->RootDomain);
+		mono_jit_cleanup(s_data->RootDomain);
 		s_data->RootDomain = nullptr;
 		
 	}
@@ -322,6 +328,7 @@ namespace Uge
 		s_data->AppDomain = mono_domain_create_appdomain("UgeScriptRuntime", nullptr);
 		mono_domain_set(s_data->AppDomain, true);
 
+		s_data->CoreAssemblyFilePath = filePath;
 		s_data->CoreAssembly = Utils::LoadMonoAssembly(filePath);
 		s_data->CoreAssemblyImage = mono_assembly_get_image(s_data->CoreAssembly);
 
@@ -332,11 +339,32 @@ namespace Uge
 	void ScriptEngine::LoadAppAssembly(const std::filesystem::path& filePath)
 	{
 
+		s_data->AppAssemblyFilePath = filePath;
 		s_data->AppAssembly = Utils::LoadMonoAssembly(filePath);
 		s_data->AppAssemblyImage = mono_assembly_get_image(s_data->AppAssembly);
 
 		// Utils::PrintAssemblyTypes(s_data->CoreAssembly);
 		
+	}
+
+	void ScriptEngine::ReloadAssembly()
+	{
+
+		mono_domain_set(mono_get_root_domain(), false);
+
+		// mono_domain_free(s_data->AppDomain, false);
+		mono_domain_unload(s_data->AppDomain);
+
+		LoadAssembly(s_data->CoreAssemblyFilePath);
+		LoadAppAssembly(s_data->AppAssemblyFilePath);
+
+		LoadAssemblyClasses();
+
+		s_data->EntityMonoClass = ScriptClass("Uge", "Entity", true);
+
+		ScriptGlue::RegisterComponents();
+
+
 	}
 
 	Ref<ScriptClass> ScriptEngine::GetEntityClass(const std::string& name)

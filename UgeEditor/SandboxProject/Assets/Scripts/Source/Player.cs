@@ -9,6 +9,7 @@ namespace Sandbox
     {
         private TransformComponent m_Transform;
         public float Speed1 = 1.0f;
+        public float Val = 1.0f;
         public float Time;
         
 
@@ -21,6 +22,7 @@ namespace Sandbox
 
         void OnUpdate(float ts)
         {
+            // Console.WriteLine($"Value: {Val}");
             Time += ts;
             // Console.WriteLine($"Player.OnUpdate: {ts}");
 
