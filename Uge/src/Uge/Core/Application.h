@@ -54,12 +54,16 @@ namespace Uge
 
 		ApplicationCommandLineArgs GetCommandLineArgs() const { return m_CommandLineArgs; }
 
+		void SubmitToMainThreadQueue(const std::function<void()> func);
+
 	protected:
 		bool m_is3D;
 
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 		bool OnWindowResize(WindowResizeEvent& e);
+
+		void ExecuteMainThreadQueue();
 
 	private:
 		ApplicationCommandLineArgs m_CommandLineArgs;
@@ -71,6 +75,9 @@ namespace Uge
 		LayerStack m_layerStack;
 
 		float m_lastFrameTime = 0.0f;
+
+		std::mutex m_mainThreadQueueMutex;
+		std::vector<std::function<void()>> m_mainThreadQueue;
 
 	private:
 		static Application* s_instance;

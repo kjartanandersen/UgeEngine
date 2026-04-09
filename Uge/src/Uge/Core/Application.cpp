@@ -84,6 +84,8 @@ namespace Uge
 			Timestep timestep = time - m_lastFrameTime;
 			m_lastFrameTime = time;
 
+			ExecuteMainThreadQueue();
+
 			if (!m_minimized)
 			{
 				{
@@ -137,6 +139,15 @@ namespace Uge
 
 	}
 
+	void Application::SubmitToMainThreadQueue(const std::function<void()> func)
+	{
+		std::scoped_lock<std::mutex> lock(m_mainThreadQueueMutex);
+
+		m_mainThreadQueue.emplace_back(func);
+		
+		
+	}
+
 	bool Application::OnWindowClose(WindowCloseEvent& e)
 	{
 		
@@ -163,6 +174,20 @@ namespace Uge
 		m_minimized = false;
 		Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
 		return false;
+	}
+
+	void Application::ExecuteMainThreadQueue()
+	{
+
+		std::scoped_lock<std::mutex> lock(m_mainThreadQueueMutex);
+
+		for (auto& func : m_mainThreadQueue)
+		{
+			func();
+		}
+
+		m_mainThreadQueue.clear();
+
 	}
 
 	void Application::PushLayer(Layer* layer)

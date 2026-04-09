@@ -20,6 +20,7 @@ project "Uge-Editor"
 		"%{wks.location}/%{IncludeDir.IMGUI}",
 		"%{wks.location}/%{IncludeDir.GLM}",
 		"%{wks.location}/%{IncludeDir.ENTT}",
+		"%{wks.location}/%{IncludeDir.FILEWATCH}",
 		"%{wks.location}/%{IncludeDir.IMGUIZMO}"
 	}
 

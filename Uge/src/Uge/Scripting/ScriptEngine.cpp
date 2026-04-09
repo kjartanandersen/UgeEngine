@@ -2,6 +2,8 @@
 #include "ScriptEngine.h"
 
 #include "ScriptGlue.h"
+#include "Uge/Core/Application.h"
+#include "Uge/Core/Timer.h"
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
@@ -9,6 +11,7 @@
 #include <mono/metadata/attrdefs.h>
 
 #include <glm/glm.hpp>
+#include <FileWatch.hpp>
 
 namespace Uge
 {
@@ -168,6 +171,11 @@ namespace Uge
 		std::unordered_map<std::string, Ref<ScriptClass>> EntityClasses;
 		std::unordered_map<UUID, Ref<ScriptInstance>> EntityInstances;
 		std::unordered_map<UUID, ScriptFieldMap> EntityScriptFields;
+
+		Scope<filewatch::FileWatch<std::string>> AppAssemblyFileWatcher = nullptr;
+		bool AppAssemblyReloadPending = false;
+
+		Timer ReloadTimer;
 
 
 		// Runtime
@@ -336,6 +344,28 @@ namespace Uge
 
 	}
 
+	static void OnAppAssemblyFileSystemEvent(const std::string& path, const filewatch::Event change_type)
+	{
+		if (!s_data->AppAssemblyReloadPending && change_type == filewatch::Event::modified)
+		{
+			s_data->AppAssemblyReloadPending = true;
+		
+			s_data->ReloadTimer = Timer();
+
+			Application::Get().SubmitToMainThreadQueue([]() 
+				{ 
+					
+
+					s_data->AppAssemblyFileWatcher.reset();
+					ScriptEngine::ReloadAssembly(); 
+
+				}
+			);
+
+		}
+
+	}
+
 	void ScriptEngine::LoadAppAssembly(const std::filesystem::path& filePath)
 	{
 
@@ -345,10 +375,18 @@ namespace Uge
 
 		// Utils::PrintAssemblyTypes(s_data->CoreAssembly);
 		
+
+		s_data->AppAssemblyFileWatcher = CreateScope<filewatch::FileWatch<std::string>>( 
+			filePath.string(), OnAppAssemblyFileSystemEvent
+		);
+		s_data->AppAssemblyReloadPending = false;
+
+		
 	}
 
 	void ScriptEngine::ReloadAssembly()
 	{
+		UG_CORE_WARN("Reloading Took {0}ms", s_data->ReloadTimer.ElapsedMillis());
 
 		mono_domain_set(mono_get_root_domain(), false);
 

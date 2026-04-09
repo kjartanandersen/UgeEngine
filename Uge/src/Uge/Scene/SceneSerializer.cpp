@@ -433,7 +433,7 @@ namespace Uge
 							ScriptFieldInstance& fieldInstance = entityFields[name];
 
 							// TODO: turn this assert into log warning
-							UG_CORE_ASSERT(fields.find(name) != fields.end());
+							// UG_CORE_ASSERT(fields.find(name) != fields.end());
 
 							if (fields.find(name) == fields.end())
 								continue;

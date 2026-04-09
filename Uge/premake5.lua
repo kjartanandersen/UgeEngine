@@ -40,6 +40,7 @@ project "Uge"
 		"../%{IncludeDir.STBI}",
 		"../%{IncludeDir.ENTT}",
 		"../%{IncludeDir.MONO}",
+		"../%{IncludeDir.FILEWATCH}",
 		"../%{IncludeDir.ASSIMP}",
 		"../%{IncludeDir.YAMLCPP}",
 		"../%{IncludeDir.JOLT}",
