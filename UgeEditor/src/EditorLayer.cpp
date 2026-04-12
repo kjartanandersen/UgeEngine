@@ -107,8 +107,11 @@ namespace Uge
 		UG_PROFILE_FUNCTION();
 
 		m_texture = Texture2D::Create("assets/textures/Checkerboard.png");
+
 		m_iconPlay = Texture2D::Create("Resources/Icons/PlayButton.png");
 		m_iconStop = Texture2D::Create("Resources/Icons/StopButton.png");
+		m_iconPause = Texture2D::Create("Resources/Icons/PauseButton.png");
+		m_iconStep = Texture2D::Create("Resources/Icons/StepButton.png");
 		
 
 		m_activeScene = CreateRef<Scene>();
@@ -422,11 +425,6 @@ namespace Uge
 
 
 				}
-
-
-
-
-
 			}
 			ImGui::End();
 			ImGui::PopStyleVar();
@@ -458,18 +456,50 @@ namespace Uge
 
 			float size = ImGui::GetWindowHeight() - 16.0f;
 
-			Ref<Texture2D> icon = m_sceneState == SceneState::Play ? m_iconStop : m_iconPlay;
-			ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
-			if (ImGui::ImageButton("SceneState", (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)))
 			{
-				if (m_sceneState == SceneState::Edit)
+				Ref<Texture2D> icon = m_sceneState == SceneState::Play ? m_iconStop : m_iconPlay;
+				ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+				if (ImGui::ImageButton("SceneState", (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)))
 				{
-					OnScenePlay();
+					if (m_sceneState == SceneState::Edit)
+					{
+						OnScenePlay();
+					}
+					else if (m_sceneState == SceneState::Play)
+					{
+						OnSceneStop();
+					}
 				}
-				else if (m_sceneState == SceneState::Play)
+
+			}
+			if (m_sceneState != SceneState::Edit)
+			{
+				bool isPaused = m_activeScene->IsPaused();
+				ImGui::SameLine();
 				{
-					OnSceneStop();
+					Ref<Texture2D> icon = m_iconPause;
+					if (ImGui::ImageButton("PauseBtn", (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)))
+					{
+						m_activeScene->SetPaused(!isPaused);
+					}
+
 				}
+
+				if (isPaused)
+				{
+
+					ImGui::SameLine();
+					{
+						Ref<Texture2D> icon = m_iconStep;
+						if (ImGui::ImageButton("StepBtn", (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)))
+						{
+							m_activeScene->Step(1);
+						}
+
+					}
+
+				}
+
 			}
 
 			
@@ -722,6 +752,16 @@ namespace Uge
 
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
 	
+	}
+
+	void EditorLayer::OnScenePause()
+	{
+		if (m_sceneState == SceneState::Edit)
+		{
+			return;
+		}
+
+		m_activeScene->SetPaused(true);
 	}
 
 	void EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)

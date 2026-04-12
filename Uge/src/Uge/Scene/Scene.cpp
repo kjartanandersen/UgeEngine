@@ -183,8 +183,9 @@ namespace Uge
 	void Scene::OnUpdateRuntime(Timestep ts)
 	{
 
-		// Update Scripts
+		if (!m_isPaused || m_stepFrames-- > 0)
 		{
+			// Update Scripts
 
 			// C# Entity OnUpdate
 			auto view = m_registry.view<ScriptComponent>();
@@ -195,20 +196,28 @@ namespace Uge
 			}
 
 			m_registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
-			{
-				// TODO: Move to Scene::OnScenePlay
-				if (!nsc.Instance)
 				{
-					nsc.Instance = nsc.InstantiateScript();
-					nsc.Instance->m_entity = Entity{ entity, this };
-					nsc.Instance->OnCreate();
-				}
+					// TODO: Move to Scene::OnScenePlay
+					if (!nsc.Instance)
+					{
+						nsc.Instance = nsc.InstantiateScript();
+						nsc.Instance->m_entity = Entity{ entity, this };
+						nsc.Instance->OnCreate();
+					}
 
-				nsc.Instance->OnUpdate(ts);
+					nsc.Instance->OnUpdate(ts);
 
-			});
-
+				});
 		}
+		
+
+		OnRenderUpdateRuntime(ts);
+
+	}
+
+	void Scene::OnRenderUpdateRuntime(Timestep ts)
+	{
+
 
 
 		// Render Scene
@@ -261,11 +270,12 @@ namespace Uge
 
 					Renderer2D::DrawSprite(transform.GetTransform(), sprite);
 
-			}
-			Renderer2D::EndScene();
+				}
+				Renderer2D::EndScene();
 
 			}
 		}
+
 	}
 
 	void Scene::OnUpdateEditor(Timestep ts, EditorCamera& camera)
@@ -349,6 +359,14 @@ namespace Uge
 
 		return {};
 	}
+
+	void Scene::Step(int frames)
+	{
+
+		m_stepFrames = frames;
+
+	}
+
 
 
 	template<typename T>

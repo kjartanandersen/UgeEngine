@@ -33,6 +33,7 @@ namespace Uge
 
 		void OnScenePlay();
 		void OnSceneStop();
+		void OnScenePause();
 
 		void SerializeScene(Ref<Scene> scene, const std::filesystem::path& path);
 
@@ -82,12 +83,13 @@ namespace Uge
 		// Editor Resources
 		enum class SceneState
 		{
-			Edit = 0, Play = 1
+			Edit = 0, 
+			Play = 1
 		};
 
 		SceneState m_sceneState = SceneState::Edit;
 
-		Ref<Texture2D> m_iconPlay, m_iconStop;
+		Ref<Texture2D> m_iconPlay, m_iconStop, m_iconPause, m_iconStep;
 
 
 

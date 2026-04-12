@@ -28,9 +28,8 @@ namespace Uge
 
 		void OnRuntimeStart();
 		void OnRuntimeStop();
+
 		void OnUpdateRuntime(Timestep ts);
-
-
 		
 		void OnUpdateEditor(Timestep ts, EditorCamera& camera);
 
@@ -39,10 +38,19 @@ namespace Uge
 		Entity GetPrimaryCameraEntity();
 
 		bool IsRunning() const { return m_isRunning; }
+		bool IsPaused() const { return m_isPaused; }
+
+		void SetPaused(bool paused) { m_isPaused = paused; }
+
+		void Step(int frames = 1);
 
 	private:
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);
+
+
+		void OnRenderUpdateRuntime(Timestep ts);
+
 
 
 	private:
@@ -53,6 +61,9 @@ namespace Uge
 		uint32_t m_viewportWidth = 0, m_viewportHeight = 0;
 
 		bool m_isRunning = false;
+		bool m_isPaused = false;
+
+		int m_stepFrames = 0;
 
 
 		friend class Entity;
