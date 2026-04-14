@@ -1,10 +1,6 @@
 #include <ugpch.h>
 #include "ScriptEngine.h"
 
-#include "ScriptGlue.h"
-#include "Uge/Core/Application.h"
-#include "Uge/Core/Timer.h"
-
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/object.h>
@@ -12,6 +8,12 @@
 
 #include <glm/glm.hpp>
 #include <FileWatch.hpp>
+
+#include "ScriptGlue.h"
+#include "Uge/Core/Application.h"
+#include "Uge/Core/Timer.h"
+#include "Uge/Core/Buffer.h"
+#include "Uge/Core/FileSystem.h"
 
 namespace Uge
 {
@@ -67,45 +69,14 @@ namespace Uge
 
 		}
 
-		// TODO: Move to a Utils or filesystem file, or class
-		static char* ReadBytes(const std::filesystem::path& filepath, uint32_t* outSize)
-		{
-
-			std::ifstream stream(filepath, std::ios::binary | std::ios::ate);
-
-			if (!stream)
-			{
-				// Failed to open the file
-				return nullptr;
-			}
-
-			std::streampos end = stream.tellg();
-			stream.seekg(0, std::ios::beg);
-			uint32_t size = end - stream.tellg();
-			if (size == 0)
-			{
-				// File is empty
-				return nullptr;
-			}
-
-			char* buffer = new char[size];
-			stream.read((char*)buffer, size);
-			stream.close();
-
-			*outSize = size;
-			return buffer;
-
-
-		}
 
 		static MonoAssembly* LoadMonoAssembly(const std::filesystem::path& assemblyPath)
 		{
 
-			uint32_t fileSize = 0;
-			char* fileData = ReadBytes(assemblyPath, &fileSize);
+			ScopedBuffer fileData = FileSystem::ReadFileBinary(assemblyPath);
 
 			MonoImageOpenStatus status;
-			MonoImage* image = mono_image_open_from_data_full(fileData, fileSize, 1, &status, 0);
+			MonoImage* image = mono_image_open_from_data_full(fileData.As<char>(), fileData.Size(), 1, &status, 0);
 
 
 			if (status != MONO_IMAGE_OK)
@@ -119,8 +90,6 @@ namespace Uge
 			std::string assemblyPathStr = assemblyPath.string();
 			MonoAssembly* assembly = mono_assembly_load_from_full(image, assemblyPathStr.c_str(), &status, 0);
 			mono_image_close(image);
-
-			delete[] fileData;
 
 			return assembly;
 
