@@ -190,74 +190,24 @@ namespace Uge
 		InitMono();
 		ScriptGlue::RegisterFunctions();
 
-		LoadAssembly("Resources/Scripts/Uge-ScriptCore.dll");
-		LoadAppAssembly("SandboxProject/Assets/Scripts/Binaries/Sandbox.dll");
+		bool status = LoadAssembly("Resources/Scripts/Uge-ScriptCore.dll");
+		if (!status)
+		{
+			UG_CORE_ERROR("ScriptEngine Could not load Uge-ScriptCore assembly!");
+			return;
+		}
+
+		status = LoadAppAssembly("SandboxProject/Assets/Scripts/Binaries/Sandbox.dll");
+		if (!status)
+		{
+			UG_CORE_ERROR("ScriptEngine Could not load app assembly!");
+			return;
+		}
 		LoadAssemblyClasses();
 
 		ScriptGlue::RegisterComponents();
 		
 		s_data->EntityMonoClass = ScriptClass("Uge", "Entity" ,true);
-
-
-#if 0
-		// Retrieve and instantiate class (w. constructor)
-		
-		MonoObject* instance = s_data->EntityMonoClass.Instantiate();
-		// Call function
-		{
-			MonoMethod* printMessageMethod = s_data->EntityMonoClass.GetMethod("PrintMessage", 0);
-			
-			s_data->EntityMonoClass.InvokeMethod(instance, printMessageMethod, nullptr);
-		}
-
-		// Call function with parameter
-		{
-			MonoMethod* printIntMethod = s_data->EntityMonoClass.GetMethod("PrintInt", 1);
-
-			int value = 5;
-			void* param = &value;
-
-			s_data->EntityMonoClass.InvokeMethod(instance, printIntMethod, &param);
-
-
-		}
-
-		// Call ints function with parameter
-		{
-			MonoMethod* printIntsMethod = s_data->EntityMonoClass.GetMethod("PrintInts", 2);
-
-			int value1 = 5;
-			int value2 = 6;
-			void* params[2] =
-			{
-				&value1,
-				&value2
-			};
-
-			s_data->EntityMonoClass.InvokeMethod(instance, printIntsMethod, params);
-
-
-		}
-
-
-		// Call string message method
-		{
-			MonoMethod* printCustomMessageMethod = s_data->EntityMonoClass.GetMethod("PrintCustomMessage", 1);
-
-			MonoString* str = mono_string_new(s_data->AppDomain, "Hello!!");
-			void* param[1] =
-			{
-				str
-			};
-
-			s_data->EntityMonoClass.InvokeMethod(instance, printCustomMessageMethod, param);
-
-
-
-		}
-
-		// UG_CORE_ASSERT(false);
-#endif
 
 	}
 
@@ -298,7 +248,7 @@ namespace Uge
 		
 	}
 
-	void ScriptEngine::LoadAssembly(const std::filesystem::path& filePath)
+	bool ScriptEngine::LoadAssembly(const std::filesystem::path& filePath)
 	{
 
 		// Create an App Domain
@@ -307,9 +257,18 @@ namespace Uge
 
 		s_data->CoreAssemblyFilePath = filePath;
 		s_data->CoreAssembly = Utils::LoadMonoAssembly(filePath);
+
+		if (s_data->CoreAssembly == nullptr)
+		{
+			return false;
+		}
+
 		s_data->CoreAssemblyImage = mono_assembly_get_image(s_data->CoreAssembly);
 
 		// Utils::PrintAssemblyTypes(s_data->CoreAssembly);
+
+		return true;
+
 
 	}
 
@@ -335,11 +294,17 @@ namespace Uge
 
 	}
 
-	void ScriptEngine::LoadAppAssembly(const std::filesystem::path& filePath)
+	bool ScriptEngine::LoadAppAssembly(const std::filesystem::path& filePath)
 	{
 
 		s_data->AppAssemblyFilePath = filePath;
 		s_data->AppAssembly = Utils::LoadMonoAssembly(filePath);
+
+		if (s_data->AppAssembly == nullptr)
+		{
+			return false;
+		}
+
 		s_data->AppAssemblyImage = mono_assembly_get_image(s_data->AppAssembly);
 
 		// Utils::PrintAssemblyTypes(s_data->CoreAssembly);
@@ -349,7 +314,8 @@ namespace Uge
 			filePath.string(), OnAppAssemblyFileSystemEvent
 		);
 		s_data->AppAssemblyReloadPending = false;
-
+		
+		return true;
 		
 	}
 
@@ -616,10 +582,17 @@ namespace Uge
 	{
 
 		UUID entityUUID = entity.GetUUID();
-		UG_CORE_ASSERT(s_data->EntityInstances.find(entityUUID) != s_data->EntityInstances.end());
+		if (s_data->EntityInstances.find(entityUUID) != s_data->EntityInstances.end())
+		{
+			Ref<ScriptInstance> instance = s_data->EntityInstances[entityUUID];
+			instance->InvokeOnUpdate((float)ts);
 
-		Ref<ScriptInstance> instance = s_data->EntityInstances[entityUUID];
-		instance->InvokeOnUpdate((float)ts);
+		}
+		else
+		{
+			UG_CORE_ERROR("Could not find ScriptInstance for entity {0}!", (uint64_t)entityUUID);
+		}
+
 
 	}
 
