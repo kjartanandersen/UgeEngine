@@ -25,8 +25,12 @@ namespace Uge
 		bool OnKeyPressed(KeyPressedEvent& e);
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
-		void SaveScene();
+		void SaveProject();
+		void NewProject();
+		void OpenProject(const std::filesystem::path& path);
+
 		void SaveSceneAs();
+		void SaveScene();
 		void NewScene();
 		void OpenScene();
 		void OpenScene(const std::filesystem::path& path);
@@ -70,7 +74,7 @@ namespace Uge
 
 		// Panels
 		SceneHierarchyPanel m_sceneHierarchyPanel;
-		ContentBrowserPanel m_contentBrowserPanel;
+		Scope<ContentBrowserPanel> m_contentBrowserPanel;
 
 		Entity m_hoveredEntity;
 

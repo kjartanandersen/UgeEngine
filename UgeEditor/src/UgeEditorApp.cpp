@@ -12,8 +12,8 @@ namespace Uge
 	class UgeEditor : public Uge::Application
 	{
 	public:
-		UgeEditor(Uge::ApplicationCommandLineArgs args)
-			: Application(false, "Uge Editor", args)
+		UgeEditor(const ApplicationSpecification& spec)
+			: Application(spec)
 		{
 
 			PushLayer(new Uge::EditorLayer());
@@ -29,7 +29,12 @@ namespace Uge
 
 	Uge::Application* Uge::CreateApplication(ApplicationCommandLineArgs args)
 	{
-		return new UgeEditor(args);
+		ApplicationSpecification spec;
+		spec.Name = "UgeEditor";
+		spec.CommandLineArgs = args;
+
+
+		return new UgeEditor(spec);
 	}
 
 

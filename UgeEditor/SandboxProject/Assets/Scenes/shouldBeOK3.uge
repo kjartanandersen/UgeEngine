@@ -1,0 +1,38 @@
+Scene: Untitled
+Entities:
+  - Entity: 8919955385825528501
+    TagComponent:
+      Tag: Sprite
+    TransformComponent:
+      Translation: [0, 0, -0.3433398]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+  - Entity: 17477235054796350406
+    TagComponent:
+      Tag: Chessboard
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Path: C:\Programming\c++\GameEngines\Uge\UgeEditor\assets\mesh\ABeautifulGame.glb
+  - Entity: 7269336051060756304
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Translation: [0, 0, 1.2765663]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 95
+        PerspectiveNear: 0.01
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false

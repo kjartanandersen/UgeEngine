@@ -16,7 +16,6 @@
 namespace Uge
 {
 
-	extern const std::filesystem::path g_assetPath = "assets";
 
 	EditorLayer::EditorLayer()
 		: Layer("Sandbox2D")
@@ -105,8 +104,7 @@ namespace Uge
 	void EditorLayer::OnAttach()
 	{
 		UG_PROFILE_FUNCTION();
-
-		m_texture = Texture2D::Create("assets/textures/Checkerboard.png");
+		
 
 		m_iconPlay = Texture2D::Create("Resources/Icons/PlayButton.png");
 		m_iconStop = Texture2D::Create("Resources/Icons/StopButton.png");
@@ -133,12 +131,24 @@ namespace Uge
 
 
 
-		auto commandLineArgs = Application::Get().GetCommandLineArgs();
-		if (commandLineArgs.Count > 1)
+		auto appSpec = Application::Get().GetSpecifications();
+
+
+		if (appSpec.CommandLineArgs.Count > 1)
 		{
-			auto sceneFilePath = commandLineArgs[1];
-			OpenScene(sceneFilePath);
+			auto projectFilePath = appSpec.CommandLineArgs[1];
+			OpenProject(projectFilePath);
 		}
+		else
+		{
+
+			// TODO: prompt the user to select a directory
+			NewProject();
+
+		}
+
+		std::filesystem::path checkPath = Project::GetAssetFileSystemPath("Textures/Checkerboard.png");
+		m_texture = Texture2D::Create(checkPath.string());
 
 
 		m_editorCamera = EditorCamera(60.0f, 16.0f/9.0f, 0.01f, 10000.0f);
@@ -289,7 +299,7 @@ namespace Uge
 			}
 
 			m_sceneHierarchyPanel.OnImGuiRender();
-			m_contentBrowserPanel.OnImGuiRender();
+			m_contentBrowserPanel->OnImGuiRender();
 
 
 			ImGui::Begin("Stats");
@@ -349,7 +359,7 @@ namespace Uge
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 					{
 						const wchar_t* path = (const wchar_t*)payload->Data;
-						OpenScene(std::filesystem::path(g_assetPath) / path);
+						OpenScene(path);
 
 					}
 					
@@ -637,6 +647,33 @@ namespace Uge
 		}
 
 		return false;
+	}
+
+	void EditorLayer::SaveProject()
+	{
+
+		// Project::SaveActive();
+	}
+
+	void EditorLayer::NewProject()
+	{
+		Project::New();
+
+	}
+
+	void EditorLayer::OpenProject(const std::filesystem::path& path)
+	{
+		if (Project::Load(path))
+		{
+
+			auto startScenePath = Project::GetAssetFileSystemPath(Project::GetActive()->GetConfig().StartScene);
+
+			OpenScene(startScenePath);
+
+			m_contentBrowserPanel = CreateScope<ContentBrowserPanel>();
+
+		}
+
 	}
 
 	void EditorLayer::SaveScene()

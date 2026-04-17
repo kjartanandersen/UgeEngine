@@ -16,8 +16,7 @@
 namespace Uge
 {
 
-	extern const std::filesystem::path g_assetPath;
-
+	
 	static bool DrawVec3Control(const std::string& label, glm::vec3& values,
 		float resetValue = 0.0f, float columnWidth = 100.0f)
 	{
@@ -582,7 +581,7 @@ namespace Uge
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 				{
 					const wchar_t* path = (const wchar_t*)payload->Data;
-					std::filesystem::path texturePath = std::filesystem::path(g_assetPath) / path;
+					std::filesystem::path texturePath(path);
 					component.Texture = Texture2D::Create(texturePath.string());
 					
 

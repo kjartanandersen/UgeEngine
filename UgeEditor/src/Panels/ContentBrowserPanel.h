@@ -18,6 +18,7 @@ namespace Uge
 
 	private:
 		std::filesystem::path m_currentDirectory;
+		std::filesystem::path m_baseDirectory;
 
 		Ref<Texture2D> m_directoryIcon;
 		Ref<Texture2D> m_fileIcon;

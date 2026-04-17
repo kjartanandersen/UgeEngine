@@ -1,20 +1,19 @@
 #include <ugpch.h>
 #include "ContentBrowserPanel.h"
 
+#include "Uge/Project/Project.h"
+
 #include <imgui.h>
 
 
 namespace Uge
 {
 
-	// TODO: To be changed later
-	const std::filesystem::path g_assetPath = "assets";
-
-
-
 	ContentBrowserPanel::ContentBrowserPanel()
-		: m_currentDirectory(g_assetPath)
+		//: m_baseDirectory(Project::GetAssetDirectory()), m_currentDirectory(m_baseDirectory)
 	{
+		m_baseDirectory = Project::GetAssetDirectory();
+		m_currentDirectory = m_baseDirectory;
 		m_directoryIcon = Texture2D::Create("Resources/Icons/ContentBrowser/DirectoryIcon.png");
 		m_fileIcon = Texture2D::Create("Resources/Icons/ContentBrowser/FileIcon.png");
 
@@ -25,7 +24,7 @@ namespace Uge
 
 		ImGui::Begin("Content Browser");
 		{
-			if (m_currentDirectory != std::filesystem::path(g_assetPath))
+			if (m_currentDirectory != std::filesystem::path(m_baseDirectory))
 			{
 
 				if (ImGui::Button("<-"))
@@ -50,7 +49,7 @@ namespace Uge
 			for (auto& directoryEntry : std::filesystem::directory_iterator(m_currentDirectory))
 			{
 				const auto& path = directoryEntry.path();
-				auto relativePath = std::filesystem::relative(path, g_assetPath);
+				std::filesystem::path relativePath(path);
 				std::string filenameString = relativePath.filename().string();
 				ImGui::PushID(filenameString.c_str());
 				{

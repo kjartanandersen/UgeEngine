@@ -1,0 +1,5 @@
+Project:
+  Name: Sandbox
+  StartScene: "Scenes/shouldBeOK2.uge"
+  AssetDirectory: "Assets"
+  ScriptModulePath: "Scripts/Binaries/Sandbox.dll"
