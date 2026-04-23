@@ -10,13 +10,10 @@
 class Sandbox : public Uge::Application
 {
 public:
-	Sandbox(Uge::ApplicationCommandLineArgs args)
-		: Uge::Application(false, "Sandbox App", args)
+	Sandbox(Uge::ApplicationSpecification spec)
+		: Uge::Application(spec)
 	{
-		if (m_is3D)
-			PushLayer( new Sandbox3D());
-		else
-			PushLayer( new Sandbox2D());
+		PushLayer( new Sandbox2D());
 	}
 	~Sandbox()
 	{
@@ -27,7 +24,11 @@ private:
 	
 };
 
-Uge::Application* Uge::CreateApplication(Uge::ApplicationCommandLineArgs args)
+Uge::Application* Uge::CreateApplication( Uge::ApplicationCommandLineArgs args)
 {
-	return new Sandbox(args);
+	ApplicationSpecification spec;
+	spec.Name = "Sandbox";
+	spec.CommandLineArgs = args;
+
+	return new Sandbox(spec);
 }

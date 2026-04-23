@@ -28,13 +28,19 @@ namespace Uge
 		}
 	};
 
+	struct ApplicationSpecification
+	{
+		std::string Name = "Uge Application";
+		std::string WorkingDirectory;
+		ApplicationCommandLineArgs CommandLineArgs;
+	};
+
 
 	class Application
 	{
 	public:
-		Application(bool is3D, const std::string& name = "Uge App");
-		Application(bool is3D, const std::string& name = "Uge App", 
-			ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
+		Application(const ApplicationSpecification& spec);
+		
 		
 		virtual ~Application();
 
@@ -52,12 +58,11 @@ namespace Uge
 		ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
 
 
-		ApplicationCommandLineArgs GetCommandLineArgs() const { return m_CommandLineArgs; }
+		const ApplicationSpecification& GetSpecifications() const { return m_specification; }
 
 		void SubmitToMainThreadQueue(const std::function<void()> func);
 
 	protected:
-		bool m_is3D;
 
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
@@ -66,7 +71,7 @@ namespace Uge
 		void ExecuteMainThreadQueue();
 
 	private:
-		ApplicationCommandLineArgs m_CommandLineArgs;
+		ApplicationSpecification m_specification;
 
 		Scope<Window> m_window;
 		ImGuiLayer* m_ImGuiLayer;
@@ -85,7 +90,6 @@ namespace Uge
 	};
 
 	// To be defined in a client
-	Application* CreateApplication();
 	Application* CreateApplication(ApplicationCommandLineArgs args);
 
 }

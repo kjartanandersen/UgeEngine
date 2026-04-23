@@ -1,6 +1,7 @@
 #include <ugpch.h>
 #include "Uge/Utils/PlatformUtils.h"
 #include "Uge/Core/Application.h"
+#include "Uge/Project/Project.h"
 
 #include <commdlg.h>
 #include <GLFW/glfw3.h>
@@ -61,12 +62,21 @@ namespace Uge
 			ofn.lpstrInitialDir = currentDir;
 		}
 
+		std::string initDir = (std::filesystem::absolute(Project::GetProjectDirectory())).string();
+		ofn.lpstrInitialDir = initDir.c_str();
 		ofn.lpstrFilter = filter;
 		ofn.nFilterIndex = 1;
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 		if (GetOpenFileNameA(&ofn) == TRUE)
 		{
-			return ofn.lpstrFile;
+			std::filesystem::path absPath(ofn.lpstrFile);
+			std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
+
+			std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
+
+
+
+			return Project::GetAssetFileSystemPath(relativePath).string();
 		}
 
 		return std::string();

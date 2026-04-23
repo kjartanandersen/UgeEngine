@@ -10,15 +10,13 @@ namespace Uge
 
 	Renderer::SceneData* Renderer::m_sceneData = new Renderer::SceneData;
 
-	void Renderer::Init(bool is3D)
+	void Renderer::Init()
 	{
 		UG_PROFILE_FUNCTION();
 		RenderCommand::Init();
 
-		if (is3D)
-			Renderer3D::Init();
-		else
-			Renderer2D::Init();
+
+		Renderer2D::Init();
 
 
 	}

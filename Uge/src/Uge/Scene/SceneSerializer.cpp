@@ -5,6 +5,8 @@
 #include "Uge/Scene/Components.h"
 #include "Uge/Scripting/ScriptEngine.h"
 
+#include "Uge/Project/Project.h"
+
 #include <fstream>
 
 #include <yaml-cpp/yaml.h>
@@ -274,6 +276,7 @@ namespace Uge
 
 			auto& spriteRendererComponent = entity.GetComponent<SpriteRendererComponent>();
 			out << YAML::Key << "Color" << YAML::Value << spriteRendererComponent.Color;
+			// TODO: Add texture support
 			
 
 			out << YAML::EndMap; // SpriteRendererComponent
@@ -318,7 +321,6 @@ namespace Uge
 
 			SerializeEntity(out, entity);
 		
-		
 		}
 
 		out << YAML::EndSeq;
@@ -326,11 +328,6 @@ namespace Uge
 
 		std::ofstream fout(filepath);
 		fout << out.c_str();
-
-
-
-
-
 
 	}
 	void SceneSerializer::SerializeRuntime(const std::string& filepath)
@@ -342,7 +339,7 @@ namespace Uge
 	}
 	bool SceneSerializer::DeSerialize(const std::string& filepath)
 	{
-
+		/*
 		std::ifstream stream(filepath);
 		std::stringstream strStream;
 		strStream << stream.rdbuf();
@@ -352,6 +349,23 @@ namespace Uge
 		{
 			return false;
 		}
+		*/
+
+		YAML::Node data;
+		try
+		{
+			data = YAML::LoadFile(filepath);
+		}
+		catch (YAML::ParserException e)
+		{
+			UG_CORE_ERROR("Failed to load .uge file {0}\n	{1}", filepath, e.what());
+			return false;
+		}
+		if (!data["Scene"])
+		{
+			return false;
+		}
+
 
 		std::string sceneName = data["Scene"].as<std::string>();
 		UG_CORE_TRACE("Deserializing scene '{0}'", sceneName);
@@ -482,8 +496,9 @@ namespace Uge
 				{
 					UG_CORE_TRACE("Deserializing Mesh Component");
 
-					std::string path = ymc["Path"] ? ymc["Path"].as<std::string>() : std::string();
-					deserializedEntity.AddComponent<MeshComponent>(path);
+					std::string meshPath = ymc["Path"] ? ymc["Path"].as<std::string>() : std::string();
+					std::filesystem::path path = Project::GetAssetFileSystemPath(meshPath);
+					deserializedEntity.AddComponent<MeshComponent>(path.string());
 				}
 
 			}

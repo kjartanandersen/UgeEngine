@@ -22,6 +22,8 @@
 #include "Uge/Scene/Components.h"
 #include "Uge/Scene/SceneSerializer.h"
 
+#include "Uge/Project/Project.h"
+
 // ************* Renderer *****************
 #include "Uge/Renderer/Renderer.h"
 #include "Uge/Renderer/Renderer2D.h"

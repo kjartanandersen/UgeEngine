@@ -5,7 +5,6 @@
 
 #ifdef UG_PLATFORM_WINDOWS
 
-extern Uge::Application* Uge::CreateApplication();
 extern Uge::Application* Uge::CreateApplication(ApplicationCommandLineArgs args);
 
 int main(int argc, char** argv)
