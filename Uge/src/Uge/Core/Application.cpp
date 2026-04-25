@@ -70,15 +70,13 @@ namespace Uge
 
 			if (!m_minimized)
 			{
+				
+				UG_PROFILE_SCOPE("LayerStack OnUpdate");
+				for (auto layer : m_layerStack)
 				{
-					UG_PROFILE_SCOPE("LayerStack OnUpdate");
-					for (auto layer : m_layerStack)
-						layer->OnUpdate(timestep);
-
+					layer->OnUpdate(timestep);
 
 				}
-
-				
 
 			}
 			m_ImGuiLayer->Begin();
@@ -86,7 +84,10 @@ namespace Uge
 				UG_PROFILE_SCOPE("LayerStack OnImGuiRender");
 
 				for (auto layer : m_layerStack)
+				{
 					layer->OnImGuiRender();
+
+				}
 
 			}
 

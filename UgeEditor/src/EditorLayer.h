@@ -27,6 +27,7 @@ namespace Uge
 
 		void SaveProject();
 		void NewProject();
+		bool OpenProject();
 		void OpenProject(const std::filesystem::path& path);
 
 		void SaveSceneAs();

@@ -30,15 +30,13 @@ Entities:
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Scale: [0.02000004, 0.02000004, 0.02000004]
     ScriptComponent:
       ClassName: Sandbox.Player
       ScriptFields:
-        - Name: Speed1
-          Type: Float
-          Data: 3.8
+        []
     MeshComponent:
-      Path: C:\Programming\c++\GameEngines\Uge\UgeEditor\assets\mesh\ABeautifulGame.glb
+      Path: C:\Programming\c++\GameEngines\Uge\UgeEditor\SandboxProject\Assets\Mesh\backpack\scene.gltf
   - Entity: 8919955385825528501
     TagComponent:
       Tag: Sprite
@@ -48,3 +46,10 @@ Entities:
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
+  - Entity: 6784313396278518765
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]

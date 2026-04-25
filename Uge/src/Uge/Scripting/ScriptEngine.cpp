@@ -349,10 +349,7 @@ namespace Uge
 			nullptr;
 		}
 
-		return it->second;
-
-
-		return Ref<ScriptClass>();
+		return s_data->EntityClasses.at(name);
 	}
 
 	std::unordered_map<std::string, Ref<ScriptClass>> ScriptEngine::GetEntityClasses()

@@ -143,12 +143,17 @@ namespace Uge
 		{
 
 			// TODO: prompt the user to select a directory
-			NewProject();
+
+			if (!OpenProject())
+			{
+				Application::Get().CloseProgram();
+			}
+			// NewProject();
 
 		}
 
-		std::filesystem::path checkPath = Project::GetAssetFileSystemPath("Textures/Checkerboard.png");
-		m_texture = Texture2D::Create(checkPath.string());
+		// std::filesystem::path checkPath = Project::GetAssetFileSystemPath("Textures/Checkerboard.png");
+		// m_texture = Texture2D::Create(checkPath.string());
 
 
 		m_editorCamera = EditorCamera(60.0f, 16.0f/9.0f, 0.01f, 10000.0f);
@@ -256,19 +261,31 @@ namespace Uge
 				if (ImGui::BeginMenu("File"))
 				{
 
-					if (ImGui::MenuItem("New", "Ctrl+N"))
+					if (ImGui::MenuItem("Open Project", "Ctrl+P"))
+					{
+						OpenProject();
+
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem("New Scene", "Ctrl+N"))
 					{
 						NewScene();
 
 					}
 
-					if (ImGui::MenuItem("Open...", "Ctrl+O"))
+					if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
 					{
 						OpenScene();
 
 					}
 
-					if (ImGui::MenuItem("Save As", "Ctrl+Shift+S"))
+					if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
+					{
+						SaveScene();
+
+					}
+
+					if (ImGui::MenuItem("Save Scene As", "Ctrl+Shift+S"))
 					{
 						SaveSceneAs();
 
@@ -555,6 +572,10 @@ namespace Uge
 					{
 						SaveSceneAs();
 					}
+					else if (ctrlPressed)
+					{
+						SaveScene();
+					}
 
 			
 					break;
@@ -578,6 +599,18 @@ namespace Uge
 					if (ctrlPressed)
 					{
 						OpenScene();
+					}
+
+
+					break;
+				}
+				case KeyCode::UG_KEY_P:
+				{
+
+
+					if (ctrlPressed)
+					{
+						OpenProject();
 					}
 
 
@@ -661,6 +694,25 @@ namespace Uge
 
 	}
 
+	bool EditorLayer::OpenProject()
+	{
+
+		std::string filepath = FileDialogs::OpenFile("Uge Project (*.ugproj)\0*.ugproj\0");
+
+
+
+		if (filepath.empty())
+		{
+			return false;
+		}
+		else
+		{
+			OpenProject(filepath);
+			return true;
+		}
+
+	}
+
 	void EditorLayer::OpenProject(const std::filesystem::path& path)
 	{
 		if (Project::Load(path))
@@ -694,10 +746,19 @@ namespace Uge
 	{
 		std::string filepath = FileDialogs::SaveFile("Uge Scene (*.uge)\0*.uge\0\0");
 
-		if (!filepath.empty())
+		std::filesystem::path absPath(filepath);
+		std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
+
+		std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
+
+
+
+		std::filesystem::path path = Project::GetAssetFileSystemPath(relativePath).string();
+
+		if (!path.empty())
 		{
-			SerializeScene(m_activeScene, filepath);
-			m_editorScenePath = filepath;
+			SerializeScene(m_activeScene, path);
+			m_editorScenePath = path;
 
 		}
 
@@ -716,10 +777,21 @@ namespace Uge
 	void EditorLayer::OpenScene()
 	{
 		std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*.uge\0");
-		if (!filepath.empty())
+		
+		std::filesystem::path absPath(filepath);
+		std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
+
+		std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
+
+
+
+		std::filesystem::path path = Project::GetAssetFileSystemPath(relativePath).string();
+		
+		
+		if (!path.empty())
 		{
 			
-			OpenScene(filepath);
+			OpenScene(path);
 
 		}
 

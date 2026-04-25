@@ -62,21 +62,16 @@ namespace Uge
 			ofn.lpstrInitialDir = currentDir;
 		}
 
-		std::string initDir = (std::filesystem::absolute(Project::GetProjectDirectory())).string();
-		ofn.lpstrInitialDir = initDir.c_str();
+		// std::string initDir = (std::filesystem::absolute(Project::GetProjectDirectory())).string();
+		// ofn.lpstrInitialDir = initDir.c_str();
 		ofn.lpstrFilter = filter;
 		ofn.nFilterIndex = 1;
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 		if (GetOpenFileNameA(&ofn) == TRUE)
 		{
-			std::filesystem::path absPath(ofn.lpstrFile);
-			std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
 
-			std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
-
-
-
-			return Project::GetAssetFileSystemPath(relativePath).string();
+			return ofn.lpstrFile;
+			
 		}
 
 		return std::string();
@@ -102,6 +97,8 @@ namespace Uge
 			ofn.lpstrInitialDir = currentDir;
 		}
 
+		// std::string initDir = (std::filesystem::absolute(Project::GetProjectDirectory())).string();
+		// ofn.lpstrInitialDir = initDir.c_str();
 		ofn.lpstrFilter = filter;
 		ofn.nFilterIndex = 1;
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
@@ -110,7 +107,16 @@ namespace Uge
 
 		if (GetSaveFileNameA(&ofn) == TRUE)
 		{
+
 			return ofn.lpstrFile;
+			std::filesystem::path absPath(ofn.lpstrFile);
+			std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
+
+			std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
+
+
+
+			return Project::GetAssetFileSystemPath(relativePath).string();
 		}
 
 		return std::string();

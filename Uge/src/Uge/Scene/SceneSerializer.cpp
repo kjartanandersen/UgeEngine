@@ -497,8 +497,8 @@ namespace Uge
 					UG_CORE_TRACE("Deserializing Mesh Component");
 
 					std::string meshPath = ymc["Path"] ? ymc["Path"].as<std::string>() : std::string();
-					std::filesystem::path path = Project::GetAssetFileSystemPath(meshPath);
-					deserializedEntity.AddComponent<MeshComponent>(path.string());
+					// std::filesystem::path path = Project::GetAssetFileSystemPath(meshPath);
+					deserializedEntity.AddComponent<MeshComponent>(meshPath);
 				}
 
 			}

@@ -2,13 +2,14 @@
 #include "SceneHierarchyPanel.h"
 
 #include "Uge/Scripting/ScriptEngine.h"
+#include "Uge/Utils/PlatformUtils.h"
+#include "Uge/UI/UI.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
 
 #include <glm/gtc/type_ptr.hpp>
 
-#include "Uge/Utils/PlatformUtils.h"
 #include <filesystem>
 
 
@@ -301,6 +302,9 @@ namespace Uge
 
 	void SceneHierarchyPanel::DrawComponents(Entity entity)
 	{
+
+#pragma region TagComponent
+
 		if (entity.HasComponent<TagComponent>())
 		{
 
@@ -322,6 +326,10 @@ namespace Uge
 		}
 
 
+#pragma endregion
+
+#pragma region Add Component
+
 		ImGui::SameLine();
 		ImGui::PushItemWidth(-1);
 		if (ImGui::Button("Add Component"))
@@ -335,13 +343,18 @@ namespace Uge
 			DisplayAddComponentEntry<ScriptComponent>("Script");
 			DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
 			DisplayAddComponentEntry<MeshComponent>("Mesh");
-			
+
 
 			ImGui::EndPopup();
 		}
 		ImGui::PopItemWidth();
 
 		const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap;
+
+
+#pragma endregion
+
+#pragma region TransformComponent
 
 		DrawComponent<TransformComponent>("Transform", entity, false, [](auto& component)
 			{
@@ -364,8 +377,13 @@ namespace Uge
 
 			});
 
-		DrawComponent<CameraComponent>("Camera Component", entity, true, [](auto& component) 
-		{
+
+#pragma endregion
+
+#pragma region CameraComponent
+
+		DrawComponent<CameraComponent>("Camera Component", entity, true, [](auto& component)
+			{
 
 				auto& camera = component.Cam;
 
@@ -448,180 +466,187 @@ namespace Uge
 
 
 				}
-			
-		});
+
+			});
+
+#pragma endregion
+
+#pragma region ScriptComponent
 
 		DrawComponent<ScriptComponent>("Script", entity, true, [entity, scene = m_context](auto& component) mutable
-		{
-
-			bool scriptClassExists = ScriptEngine::EntityClassExists(component.ClassName);
-
-			static char buffer[64];
-			strcpy_s(buffer, sizeof(buffer), component.ClassName.c_str());
-
-			if (!scriptClassExists)
 			{
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f));
 
-			}
+				bool scriptClassExists = ScriptEngine::EntityClassExists(component.ClassName);
 
-			if (ImGui::InputText("Class", buffer, sizeof(buffer)))
-			{
-				component.ClassName = buffer;
-				
+				static char buffer[64];
+				strcpy_s(buffer, sizeof(buffer), component.ClassName.c_str());
 
-			}
+				UI::ScopedStyleColor textColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f), !scriptClassExists);
 
-			// Fields
 
-			bool isSceneRunning = scene->IsRunning();
-			// If Scene Running
-			if (isSceneRunning)
-			{
-				Ref<ScriptInstance> scriptInstance = ScriptEngine::GetEntityScriptInstance(entity.GetUUID());
-				if (scriptInstance)
+				if (ImGui::InputText("Class", buffer, sizeof(buffer)))
 				{
-					const auto& fields = scriptInstance->GetScriptClass()->GetFields();
+					component.ClassName = buffer;
+				
+					return;
 
-					for (const auto& [name, field] : fields)
-					{
-
-						if (field.Type == ScriptFieldType::Float)
-						{
-
-							float data = scriptInstance->GetFieldValue<float>(name);
-							if (ImGui::DragFloat(name.c_str(), &data, 0.1f))
-							{
-
-								scriptInstance->SetFieldValue(name, data);
-
-							}
-
-						}
-
-					}
 				}
 
-				
-			}
-			else
-			{
 
-				if (scriptClassExists)
+				// Fields
+
+				bool isSceneRunning = scene->IsRunning();
+				// If Scene Running
+				if (isSceneRunning)
 				{
-					Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(component.ClassName);
-					const auto& fields = entityClass->GetFields();
-
-					auto& entityFields = ScriptEngine::GetScriptFieldMap(entity.GetUUID());
-
-
-					for (const auto& [name, field] : fields)
+					Ref<ScriptInstance> scriptInstance = ScriptEngine::GetEntityScriptInstance(entity.GetUUID());
+					if (scriptInstance)
 					{
-						// Field has been set in editor
-						if (entityFields.find(name) != entityFields.end())
-						{
-							ScriptFieldInstance& scriptField = entityFields[name];
-							if (field.Type == ScriptFieldType::Float)
-							{
+						const auto& fields = scriptInstance->GetScriptClass()->GetFields();
 
-								float data = scriptField.GetValue<float>();
-								if (ImGui::DragFloat(name.c_str(), &data, 0.1f))
-								{
-									scriptField.SetValue<float>(data);
-								}
-
-							}
-						}
-						else
+						for (const auto& [name, field] : fields)
 						{
 
 							if (field.Type == ScriptFieldType::Float)
 							{
 
-								float data = 0.0f;
+								float data = scriptInstance->GetFieldValue<float>(name);
 								if (ImGui::DragFloat(name.c_str(), &data, 0.1f))
 								{
-									ScriptFieldInstance& fieldInstance = entityFields[name];
-									fieldInstance.Field = field;
-									fieldInstance.SetValue<float>(data);
+
+									scriptInstance->SetFieldValue(name, data);
+
 								}
 
 							}
-						}
 
-						
+						}
+					}
+
+
+				}
+				else
+				{
+
+					if (scriptClassExists)
+					{
+						Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(component.ClassName);
+						const auto& fields = entityClass->GetFields();
+
+						auto& entityFields = ScriptEngine::GetScriptFieldMap(entity.GetUUID());
+
+
+						for (const auto& [name, field] : fields)
+						{
+							// Field has been set in editor
+							if (entityFields.find(name) != entityFields.end())
+							{
+								ScriptFieldInstance& scriptField = entityFields[name];
+								if (field.Type == ScriptFieldType::Float)
+								{
+
+									float data = scriptField.GetValue<float>();
+									if (ImGui::DragFloat(name.c_str(), &data, 0.1f))
+									{
+										scriptField.SetValue<float>(data);
+									}
+
+								}
+							}
+							else
+							{
+
+								if (field.Type == ScriptFieldType::Float)
+								{
+
+									float data = 0.0f;
+									if (ImGui::DragFloat(name.c_str(), &data, 0.1f))
+									{
+										ScriptFieldInstance& fieldInstance = entityFields[name];
+										fieldInstance.Field = field;
+										fieldInstance.SetValue<float>(data);
+									}
+
+								}
+							}
+
+
+
+						}
+					}
+
+				}
+
+			});
+
+#pragma endregion
+
+#pragma region SpriteRendererComponent
+
+			DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, true, [](auto& component)
+				{
+					// Color
+					if (ImGui::ColorEdit4("Color", glm::value_ptr(component.Color)))
+					{
 
 					}
-				}
 
-			}
-			if (!scriptClassExists)
-			{
-				ImGui::PopStyleColor();
+					// Texture
 
-			}
+					ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
 
-		});
 
-		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, true, [](auto& component) 
-		{
-			// Color
-			if (ImGui::ColorEdit4("Color", glm::value_ptr(component.Color)))
-			{
+					if (ImGui::BeginDragDropTarget())
+					{
+						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+						{
+							const wchar_t* path = (const wchar_t*)payload->Data;
+							std::filesystem::path texturePath(path);
+							component.Texture = Texture2D::Create(texturePath.string());
 
-			}
 
-			// Texture
-			
-			ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
-			
+						}
+						ImGui::EndDragDropTarget();
+					}
 
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+					// Tiling Factor
+					if (ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1, 0.0f, 100.0f))
+					{
+
+						component.Texture->SetTilingFactor(component.TilingFactor);
+					}
+				});
+
+#pragma endregion
+
+#pragma region MeshComponent
+
+			DrawComponent<MeshComponent>("Mesh", entity, true, [](auto& component)
 				{
-					const wchar_t* path = (const wchar_t*)payload->Data;
-					std::filesystem::path texturePath(path);
-					component.Texture = Texture2D::Create(texturePath.string());
-					
+					char buffer[512];
+					memset(buffer, 0, sizeof(buffer));
+					strcpy_s(buffer, sizeof(buffer), component.FilePath.c_str());
 
-				}
-				ImGui::EndDragDropTarget();
-			}
+					ImGui::InputText("Path", buffer, sizeof(buffer));
+					component.FilePath = buffer;
 
-			// Tiling Factor
-			if (ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1, 0.0f, 100.0f))
-			{
+					if (ImGui::Button("Load Mesh"))
+					{
+						std::string filePath = FileDialogs::OpenFile("");
+						strcpy_s(buffer, sizeof(buffer), filePath.c_str());
+						component.SetModel(std::string(buffer));
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Clear Mesh"))
+					{
+						component.SetModel(std::string());
+					}
 
-				component.Texture->SetTilingFactor(component.TilingFactor);
-			}
-		});
+					ImGui::Text("Status: %s", component.HasModel() ? "Loaded" : "No model");
+				});
 
-		DrawComponent<MeshComponent>("Mesh", entity, true, [](auto& component)
-		{
-			char buffer[512];
-			memset(buffer, 0, sizeof(buffer));
-			strcpy_s(buffer, sizeof(buffer), component.FilePath.c_str());
+#pragma endregion
 
-			ImGui::InputText("Path", buffer, sizeof(buffer));
-			component.FilePath = buffer;
-
-			if (ImGui::Button("Load Mesh"))
-			{
-				std::string filePath = FileDialogs::OpenFile("");
-				strcpy_s(buffer, sizeof(buffer), filePath.c_str());
-				component.SetModel(std::string(buffer));
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Clear Mesh"))
-			{
-				component.SetModel(std::string());
-			}
-
-			ImGui::Text("Status: %s", component.HasModel() ? "Loaded" : "No model");
-		});
-
-		
 
 	}
 
