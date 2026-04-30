@@ -22,3 +22,6 @@
 [submodule "Uge/thirdparty/JoltPhysics"]
 	path = Uge/thirdparty/JoltPhysics
 	url = git@github.com:jrouwe/JoltPhysics.git
+[submodule "Uge/thirdparty/ch-msdf-atlas-gen"]
+	path = Uge/thirdparty/ch-msdf-atlas-gen
+	url = git@github.com:TheCherno/msdf-atlas-gen.git

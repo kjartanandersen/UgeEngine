@@ -293,8 +293,6 @@ namespace Uge
 			out << YAML::EndMap; // MeshComponent
 		}
 
-
-
 		out << YAML::EndMap;	// Entity
 
 

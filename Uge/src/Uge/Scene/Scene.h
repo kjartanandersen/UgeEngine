@@ -44,6 +44,8 @@ namespace Uge
 
 		void Step(int frames = 1);
 
+		Entity DuplicateEntity(Entity entity);
+
 	private:
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);

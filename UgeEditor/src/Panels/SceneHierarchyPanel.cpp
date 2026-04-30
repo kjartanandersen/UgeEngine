@@ -11,6 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <filesystem>
+#include <string>
 
 
 
@@ -610,7 +611,7 @@ namespace Uge
 					}
 
 					// Tiling Factor
-					if (ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1, 0.0f, 100.0f))
+					if (ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1f, 0.0f, 100.0f))
 					{
 
 						component.Texture->SetTilingFactor(component.TilingFactor);
@@ -633,7 +634,19 @@ namespace Uge
 					if (ImGui::Button("Load Mesh"))
 					{
 						std::string filePath = FileDialogs::OpenFile("");
-						strcpy_s(buffer, sizeof(buffer), filePath.c_str());
+
+						std::filesystem::path absPath(filePath);
+						std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
+
+						std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
+
+
+
+						std::string path = relativePath.string();
+
+
+
+						strcpy_s(buffer, sizeof(buffer), path.c_str());
 						component.SetModel(std::string(buffer));
 					}
 					ImGui::SameLine();

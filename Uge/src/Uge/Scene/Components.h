@@ -5,6 +5,7 @@
 #include "Uge/Renderer/Model.h"
 #include "SceneCamera.h"
 #include "Uge/Renderer/Texture.h"
+#include "Uge/Project/Project.h"
 
 #include <string>
 #include <unordered_map>
@@ -46,6 +47,7 @@ namespace Uge
 		MeshComponent(const MeshComponent&) = default;
 		explicit MeshComponent(const std::string& filePath)
 		{
+			
 			SetModel(filePath);
 		}
 
@@ -59,7 +61,7 @@ namespace Uge
 				return;
 			}
 
-			ModelAsset = CreateRef<Model>(FilePath);
+			ModelAsset = CreateRef<Model>(Project::GetAssetAbsolutePathString(FilePath));
 		}
 
 		bool HasModel() const

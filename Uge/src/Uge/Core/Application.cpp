@@ -36,8 +36,6 @@ namespace Uge
 
 		Renderer::Init();
 
-		ScriptEngine::Init();
-
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 

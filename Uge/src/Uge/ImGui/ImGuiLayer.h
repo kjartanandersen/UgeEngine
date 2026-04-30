@@ -29,6 +29,8 @@ namespace Uge
 		void BlockEvents(bool block) { m_blockEvents = block; };
 
 		void SetDarkThemeColors();
+
+		uint32_t GetActiveWidgetID() const;
 	private:
 
 

@@ -6,7 +6,7 @@
 #include <commdlg.h>
 #include <GLFW/glfw3.h>
 
-#include <cstring>
+#include <string>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
@@ -69,7 +69,6 @@ namespace Uge
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 		if (GetOpenFileNameA(&ofn) == TRUE)
 		{
-
 			return ofn.lpstrFile;
 			
 		}
@@ -109,14 +108,6 @@ namespace Uge
 		{
 
 			return ofn.lpstrFile;
-			std::filesystem::path absPath(ofn.lpstrFile);
-			std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
-
-			std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
-
-
-
-			return Project::GetAssetFileSystemPath(relativePath).string();
 		}
 
 		return std::string();

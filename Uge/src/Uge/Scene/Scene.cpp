@@ -367,6 +367,16 @@ namespace Uge
 
 	}
 
+	Entity Scene::DuplicateEntity(Entity entity)
+	{
+
+		std::string name = entity.GetName();
+		Entity newEnt = CreateEntity(name);
+		CopyComponentIfExists(AllComponents{}, newEnt, entity);
+		return newEnt;
+
+	}
+
 
 
 	template<typename T>

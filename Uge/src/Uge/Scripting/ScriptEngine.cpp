@@ -14,6 +14,7 @@
 #include "Uge/Core/Timer.h"
 #include "Uge/Core/Buffer.h"
 #include "Uge/Core/FileSystem.h"
+#include "Uge/Project/Project.h"
 
 namespace Uge
 {
@@ -190,6 +191,8 @@ namespace Uge
 		InitMono();
 		ScriptGlue::RegisterFunctions();
 
+		auto scriptModulePath = Project::GetAssetDirectory() / Project::GetActive()->GetConfig().ScriptModulePath;
+
 		bool status = LoadAssembly("Resources/Scripts/Uge-ScriptCore.dll");
 		if (!status)
 		{
@@ -197,7 +200,7 @@ namespace Uge
 			return;
 		}
 
-		status = LoadAppAssembly("SandboxProject/Assets/Scripts/Binaries/Sandbox.dll");
+		status = LoadAppAssembly(scriptModulePath);
 		if (!status)
 		{
 			UG_CORE_ERROR("ScriptEngine Could not load app assembly!");
@@ -315,6 +318,7 @@ namespace Uge
 		);
 		s_data->AppAssemblyReloadPending = false;
 		
+		UG_CORE_WARN("Loaded App Assembly At: {0}", filePath.string());
 		return true;
 		
 	}

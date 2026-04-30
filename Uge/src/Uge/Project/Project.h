@@ -48,10 +48,17 @@ namespace Uge
 
 		}
 
-		static std::filesystem::path GetRelativePath(const std::filesystem::path& path)
+		static std::filesystem::path GetRelativePath(const std::string& path)
 		{
 
 			return std::filesystem::relative(path, GetAssetDirectory());
+
+		}
+
+		static std::string GetRelativePathString(const std::string& path)
+		{
+			std::string sPath = (std::filesystem::relative(path, GetAssetDirectory()).string());
+			return sPath;
 
 		}
 
@@ -60,9 +67,26 @@ namespace Uge
 
 			UG_CORE_ASSERT(s_activeProject);
 			std::cout << "Current path is " << std::filesystem::current_path() << '\n';
-			std::filesystem::path absPath(std::filesystem::absolute(GetAssetDirectory()));
 			return std::filesystem::absolute(GetAssetDirectory());
 			
+
+		}
+
+		static std::filesystem::path GetAssetAbsolutePath(const std::string& path)
+		{
+
+			UG_CORE_ASSERT(s_activeProject);
+			std::filesystem::path assetPath = GetAssetDirectory() / path;
+			return assetPath;
+
+		}
+
+		static std::string GetAssetAbsolutePathString(const std::string& path)
+		{
+
+			UG_CORE_ASSERT(s_activeProject);
+			std::filesystem::path assetPath = GetAssetDirectory() / path;
+			return assetPath.string();
 
 		}
 

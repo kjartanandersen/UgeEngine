@@ -45,6 +45,8 @@ namespace Uge
 		// UI panels
 		void UI_Toolbar();
 
+		void OnDuplicateEntry();
+
 	private:
 
 

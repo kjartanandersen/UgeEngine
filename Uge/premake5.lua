@@ -16,6 +16,7 @@ project "Uge"
 		"src/**.cpp",
 		"thirdparty/stb_image/**.h",
 		"thirdparty/stb_image/**.cpp",
+
 		"thirdparty/ImGuizmo/ImGuizmo.h",
 		"thirdparty/ImGuizmo/ImGuizmo.cpp"
 		

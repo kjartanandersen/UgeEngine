@@ -1,5 +1,34 @@
 Scene: Untitled
 Entities:
+  - Entity: 6784313396278518765
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: 8919955385825528501
+    TagComponent:
+      Tag: Sprite
+    TransformComponent:
+      Translation: [0, 0, -0.3433398]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+  - Entity: 17477235054796350406
+    TagComponent:
+      Tag: Player
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [0.02000004, 0.02000004, 0.02000004]
+    ScriptComponent:
+      ClassName: Sandbox.Player
+      ScriptFields:
+        []
+    MeshComponent:
+      Path: Mesh\backpack\scene.gltf
   - Entity: 7269336051060756304
     TagComponent:
       Tag: Camera
@@ -24,32 +53,3 @@ Entities:
         - Name: DistFromPlayer
           Type: Float
           Data: 3
-  - Entity: 17477235054796350406
-    TagComponent:
-      Tag: Player
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [0.02000004, 0.02000004, 0.02000004]
-    ScriptComponent:
-      ClassName: Sandbox.Player
-      ScriptFields:
-        []
-    MeshComponent:
-      Path: C:\Programming\c++\GameEngines\Uge\UgeEditor\SandboxProject\Assets\Mesh\backpack\scene.gltf
-  - Entity: 8919955385825528501
-    TagComponent:
-      Tag: Sprite
-    TransformComponent:
-      Translation: [0, 0, -0.3433398]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    SpriteRendererComponent:
-      Color: [1, 1, 1, 1]
-  - Entity: 6784313396278518765
-    TagComponent:
-      Tag: Empty Entity
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]

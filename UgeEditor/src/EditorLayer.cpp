@@ -537,6 +537,8 @@ namespace Uge
 
 	}
 
+	
+
 	void EditorLayer::OnEvent(Event& e)
 	{
 
@@ -656,6 +658,32 @@ namespace Uge
 					break;
 				}
 
+				case KeyCode::UG_KEY_DELETE:
+				{
+					if (Application::Get().GetImGuiLayer()->GetActiveWidgetID() == 0)
+					{
+						Entity selectedEnt = m_sceneHierarchyPanel.GetSelectedEntity();
+						if (selectedEnt)
+						{
+							m_sceneHierarchyPanel.SetSelectedEntity({});
+							m_activeScene->DestroyEntity(selectedEnt);
+						}
+
+
+					}
+					break;
+				}
+
+				case KeyCode::UG_KEY_D:
+				{
+					if (ctrlPressed)
+					{
+						OnDuplicateEntry();
+					}
+
+					break;
+				}
+
 				default:
 					break;
 			}
@@ -700,7 +728,6 @@ namespace Uge
 		std::string filepath = FileDialogs::OpenFile("Uge Project (*.ugproj)\0*.ugproj\0");
 
 
-
 		if (filepath.empty())
 		{
 			return false;
@@ -718,11 +745,13 @@ namespace Uge
 		if (Project::Load(path))
 		{
 
+			ScriptEngine::Init();
+
 			auto startScenePath = Project::GetAssetFileSystemPath(Project::GetActive()->GetConfig().StartScene);
-
 			OpenScene(startScenePath);
-
 			m_contentBrowserPanel = CreateScope<ContentBrowserPanel>();
+
+
 
 		}
 
@@ -878,6 +907,24 @@ namespace Uge
 
 		SceneSerializer serializer(scene);
 		serializer.Serialize(path.string());
+
+
+	}
+
+	void EditorLayer::OnDuplicateEntry()
+	{
+
+		if (m_sceneState != SceneState::Edit)
+		{
+			return;
+		}
+
+		Entity selectedEnt = m_sceneHierarchyPanel.GetSelectedEntity();
+		if (selectedEnt)
+		{
+			Entity newEnt = m_editorScene->DuplicateEntity(selectedEnt);
+			m_sceneHierarchyPanel.SetSelectedEntity(newEnt);
+		}
 
 
 	}
