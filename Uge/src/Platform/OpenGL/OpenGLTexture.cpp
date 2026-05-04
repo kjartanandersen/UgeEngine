@@ -8,6 +8,34 @@
 namespace Uge
 {
 
+	namespace Utils
+	{
+		static GLenum UgeImageFormatToGLDataFormat(ImageFormat format)
+		{
+			switch (format)
+			{
+			case ImageFormat::RGB8:  return GL_RGB;
+			case ImageFormat::RGBA8: return GL_RGBA;
+			}
+
+			UG_CORE_ASSERT(false);
+			return 0;
+		}
+
+		static GLenum UgeImageFormatToGLInternalFormat(ImageFormat format)
+		{
+			switch (format)
+			{
+			case ImageFormat::RGB8:  return GL_RGB8;
+			case ImageFormat::RGBA8: return GL_RGBA8;
+			}
+
+			UG_CORE_ASSERT(false);
+			return 0;
+		}
+	}
+	
+
 	OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height, const std::string& name)
 	{
 		m_width = width;
@@ -31,6 +59,24 @@ namespace Uge
 		glTextureParameteri(m_rendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 
+
+	}
+
+	OpenGLTexture2D::OpenGLTexture2D(const TextureSpecification& specification)
+		: m_specification(specification), m_width(m_specification.Width), m_height(m_specification.Height)
+	{
+
+		m_internalFormat = Utils::UgeImageFormatToGLInternalFormat(m_specification.Format);
+		m_dataFormat = Utils::UgeImageFormatToGLDataFormat(m_specification.Format);
+
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_rendererID);
+		glTextureStorage2D(m_rendererID, 1, m_internalFormat, m_width, m_height);
+
+		glTextureParameteri(m_rendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(m_rendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glTextureParameteri(m_rendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTextureParameteri(m_rendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	}
 

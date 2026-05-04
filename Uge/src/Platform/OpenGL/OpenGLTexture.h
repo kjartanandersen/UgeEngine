@@ -12,11 +12,15 @@ namespace Uge
 	{
 
 	public:
-		OpenGLTexture2D(uint32_t width, uint32_t height, const std::string& name);
+		OpenGLTexture2D(const TextureSpecification& specification);
+
+		OpenGLTexture2D(uint32_t width, uint32_t height, const std::string& name = "");
 		OpenGLTexture2D(const std::string& path, const std::string& name = "");
 		OpenGLTexture2D(const unsigned char* encodedData, uint32_t size, const std::string& name = "");
 
 		virtual ~OpenGLTexture2D();
+
+		virtual const TextureSpecification& GetSpecification() const override { return m_specification; }
 
 		virtual uint32_t GetWidth() const override { return m_width; };
 		virtual uint32_t GetHeight() const override { return m_height; };
@@ -36,6 +40,13 @@ namespace Uge
 		}
 
 	private:
+
+		TextureSpecification m_specification;
+
+		std::string m_path;
+		bool m_isLoaded = false;
+		uint32_t m_width, m_height;
+
 		uint32_t m_rendererID;
 		GLenum m_internalFormat, m_dataFormat;
 

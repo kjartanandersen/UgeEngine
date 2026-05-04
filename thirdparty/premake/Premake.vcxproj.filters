@@ -25,6 +25,12 @@
     <Filter Include="..\Uge\thirdparty\assimp">
       <UniqueIdentifier>{07538B35-F377-DAB5-1CC3-BF450847D9D3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="..\Uge\thirdparty\ch-msdf-atlas-gen">
+      <UniqueIdentifier>{455B27EC-B114-9296-3A74-AC70A62C4806}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\Uge\thirdparty\ch-msdf-atlas-gen\msdfgen">
+      <UniqueIdentifier>{B8480BFF-24AE-9E85-AD86-405E19EB93F4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="..\Uge\thirdparty\glm">
       <UniqueIdentifier>{1A820F02-86EE-CAFC-4FE2-625ABB0DED64}</UniqueIdentifier>
     </Filter>
@@ -71,6 +77,12 @@
     </None>
     <None Include="..\..\Uge\thirdparty\assimp\premake5.lua">
       <Filter>..\Uge\thirdparty\assimp</Filter>
+    </None>
+    <None Include="..\..\Uge\thirdparty\ch-msdf-atlas-gen\msdfgen\premake5.lua">
+      <Filter>..\Uge\thirdparty\ch-msdf-atlas-gen\msdfgen</Filter>
+    </None>
+    <None Include="..\..\Uge\thirdparty\ch-msdf-atlas-gen\premake5.lua">
+      <Filter>..\Uge\thirdparty\ch-msdf-atlas-gen</Filter>
     </None>
     <None Include="..\..\Uge\thirdparty\glm\premake5.lua">
       <Filter>..\Uge\thirdparty\glm</Filter>

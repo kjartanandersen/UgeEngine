@@ -84,6 +84,8 @@
     <None Include="..\..\Uge\thirdparty\GLFW\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\JoltPhysics\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\assimp\premake5.lua" />
+    <None Include="..\..\Uge\thirdparty\ch-msdf-atlas-gen\msdfgen\premake5.lua" />
+    <None Include="..\..\Uge\thirdparty\ch-msdf-atlas-gen\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\glm\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\imgui\premake5.lua" />
     <None Include="..\..\Uge\thirdparty\yaml-cpp\premake5.lua" />

@@ -19,6 +19,8 @@ IncludeDir["FILEWATCH"]    			= "%{wks.location}/Uge/thirdparty/filewatch"
 IncludeDir["SHADERC"]				= "%{wks.location}/Uge/thirdparty/shaderc/include"
 IncludeDir["SPIRVCROSS"]			= "%{wks.location}/Uge/thirdparty/SPIRV-Cross"
 IncludeDir["VULKANSDK"]				= "%{VULKAN_SDK}/Include"
+IncludeDir["MSDFGEN"]				= "%{wks.location}/Uge/thirdparty/ch-msdf-atlas-gen/msdfgen"
+IncludeDir["MSDF_ATLAS_GEN"]		= "%{wks.location}/Uge/thirdparty/ch-msdf-atlas-gen/msdf-atlas-gen"
 
 
 -- Library Directories
