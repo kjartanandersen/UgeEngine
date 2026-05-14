@@ -73,8 +73,8 @@ namespace Uge
 		{
 			switch (stage)
 			{
-				case GL_VERTEX_SHADER:    return ".cached_opengl.vert";
-				case GL_FRAGMENT_SHADER:  return ".cached_opengl.frag";
+				case GL_VERTEX_SHADER:    return ".v2.cached_opengl.vert";
+				case GL_FRAGMENT_SHADER:  return ".v2.cached_opengl.frag";
 			}
 			UG_CORE_ASSERT(false);
 			return "";
@@ -84,8 +84,8 @@ namespace Uge
 		{
 			switch (stage)
 			{
-				case GL_VERTEX_SHADER:    return ".cached_vulkan.vert";
-				case GL_FRAGMENT_SHADER:  return ".cached_vulkan.frag";
+				case GL_VERTEX_SHADER:    return ".v2.cached_vulkan.vert";
+				case GL_FRAGMENT_SHADER:  return ".v2.cached_vulkan.frag";
 			}
 			UG_CORE_ASSERT(false);
 			return "";
@@ -241,7 +241,10 @@ namespace Uge
 
 		shaderc::Compiler compiler;
 		shaderc::CompileOptions options;
-		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
+		// Keep the intermediate SPIR-V conservative so the bundled SPIRV-Cross can
+		// translate fragment control-flow such as discard/kill reliably.
+		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_0);
+		options.SetTargetSpirv(shaderc_spirv_version_1_0);
 		const bool optimize = true;
 		if (optimize)
 		{
@@ -333,8 +336,22 @@ namespace Uge
 			}
 			else
 			{
-				spirv_cross::CompilerGLSL glslCompiler(spirv);
-				m_openGLSourceCode[stage] = glslCompiler.compile();
+				try
+				{
+					spirv_cross::CompilerGLSL glslCompiler(spirv);
+					spirv_cross::CompilerGLSL::Options glslOptions = glslCompiler.get_common_options();
+					glslOptions.version = 450;
+					glslOptions.es = false;
+					glslCompiler.set_common_options(glslOptions);
+
+					m_openGLSourceCode[stage] = glslCompiler.compile();
+				}
+				catch (const spirv_cross::CompilerError& e)
+				{
+					UG_CORE_ERROR("SPIRV-Cross failed to compile {0} ({1}): {2}", m_filePath, Utils::GLShaderStageToString(stage), e.what());
+					UG_CORE_ASSERT(false, "SPIRV-Cross shader compilation failed");
+				}
+
 				auto& source = m_openGLSourceCode[stage];
 
 				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, Utils::GLShaderStageToShaderC(stage), m_filePath.c_str());

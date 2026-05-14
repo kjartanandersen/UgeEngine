@@ -15,12 +15,15 @@
 
 namespace Uge
 {
-	static Font* s_font;
+
+
+
+	static Ref<Font> s_font;
 
 	EditorLayer::EditorLayer()
 		: Layer("Sandbox2D")
 	{
-		s_font = new Font("assets/fonts/Roboto-Regular/static/Roboto-Regular.ttf");
+		s_font = Font::GetDefault();
 	}
 
 	void EditorLayer::OnUpdate(Timestep ts)
@@ -335,7 +338,7 @@ namespace Uge
 				ImGui::Text("X: %f", m_viewportSize.x);
 				ImGui::Text("Y: %f", m_viewportSize.y);
 
-				ImGui::Image((ImTextureID)s_font->GetAtlasTexture()->GetRendererID(), { 512, 512 }, { 0, 1 }, { 1, 0 });
+				ImGui::Image((ImTextureID)Font::GetDefault()->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
 			}
 			ImGui::End();
 

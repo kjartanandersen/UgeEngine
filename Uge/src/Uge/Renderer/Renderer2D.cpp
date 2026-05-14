@@ -1,11 +1,13 @@
 #include "ugpch.h"
 #include "Renderer2D.h"
 
-#include "VertexArray.h"
-#include "Shader.h"
-#include "RenderCommand.h"
-#include "UniformBuffer.h"
-#include "Mesh.h"
+#include "Uge/Renderer/VertexArray.h"
+#include "Uge/Renderer/Shader.h"
+#include "Uge/Renderer/RenderCommand.h"
+#include "Uge/Renderer/UniformBuffer.h"
+#include "Uge/Renderer/Mesh.h"
+
+#include "Uge/Renderer/MSDFData.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -15,6 +17,18 @@
 
 namespace Uge
 {
+
+	struct TextVertex
+	{
+		glm::vec3 Position;
+		glm::vec4 Color;
+		glm::vec2 TexCoord;
+
+		// TODO: bg color for outline/bg
+
+		// Editor Only
+		int EntityID;
+	};
 
 	struct Renderer2DData
 	{
@@ -28,12 +42,22 @@ namespace Uge
 		Ref<Shader> TextureShader;
 		Ref<Texture2D> WhiteTexture;
 
+		Ref<VertexArray> TextVA;
+		Ref<VertexBuffer> TextVB;
+		Ref<Shader> TextShader;
+
 		uint32_t QuadIndexCount = 0;
 		Vertex* VertexBufferBase = nullptr;
 		Vertex* VertexBufferPtr = nullptr;
 
+		uint32_t TextIndexCount = 0;
+		TextVertex* TextVertexBufferBase = nullptr;
+		TextVertex* TextVertexBufferPtr = nullptr;
+
 		std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots;
 		uint32_t TextureSlotIndex = 1; // 0 is white texture
+
+		Ref<Texture2D> FontAtlasTexture;
 
 		glm::vec4 VertexPositions[4];
 		
@@ -57,6 +81,8 @@ namespace Uge
 	void Renderer2D::Init()
 	{
 		UG_PROFILE_FUNCTION();
+		
+		// Quad
 		m_data.QuadVA = VertexArray::Create();
 
 		m_data.QuadVB = VertexBuffer::Create(m_data.MaxVertices * sizeof(Vertex));
@@ -73,6 +99,23 @@ namespace Uge
 		m_data.QuadVA->AddVertexBuffer(m_data.QuadVB);
 
 		m_data.VertexBufferBase = new Vertex[m_data.MaxVertices];
+
+		// Text
+		m_data.TextVA = VertexArray::Create();
+
+
+		m_data.TextVB = VertexBuffer::Create(m_data.MaxVertices * sizeof(Vertex));
+		BufferLayout textVBlayout =
+		{
+			{ ShaderDataType::Float3, "a_Position"     },
+			{ ShaderDataType::Float4, "a_Color"        },
+			{ ShaderDataType::Float2, "a_TextCoord"    },
+			{ ShaderDataType::Int,    "a_EntityID"     }
+		};
+		m_data.TextVB->SetLayout(textVBlayout);
+		m_data.TextVA->AddVertexBuffer(m_data.TextVB);
+
+		m_data.TextVertexBufferBase = new TextVertex[m_data.MaxVertices];
 
 
 		uint32_t* quadIndices = new uint32_t[m_data.MaxIndices];
@@ -93,6 +136,7 @@ namespace Uge
 		}
 		Ref<IndexBuffer> squareIB = IndexBuffer::Create(quadIndices, m_data.MaxIndices);
 		m_data.QuadVA->SetIndexBuffer(squareIB);
+		m_data.TextVA->SetIndexBuffer(squareIB);
 		delete[] quadIndices;
 
 		// m_data.WhiteTexture = Texture2D::Create(1, 1);
@@ -108,6 +152,7 @@ namespace Uge
 
 
 		m_data.TextureShader = Shader::Create("assets/shaders/Texture.glsl");
+		m_data.TextShader    = Shader::Create("assets/shaders/Text.glsl");
 
 
 		// Set all texture slots to zero
@@ -198,24 +243,44 @@ namespace Uge
 	void Renderer2D::Flush()
 	{
 
-		// Bind textures
-		for (uint32_t i = 0; i < m_data.TextureSlotIndex; i++)
-			m_data.TextureSlots[i]->Bind(i);
-
-		
-		m_data.TextureShader->Bind();
-		if (m_data.QuadIndexCount != 0)
+		if (m_data.QuadIndexCount)
 		{
+			uint32_t dataSize = (uint32_t)((uint8_t*)m_data.VertexBufferPtr - (uint8_t*)m_data.VertexBufferBase);
+			m_data.QuadVB->SetData(m_data.VertexBufferBase, dataSize);
+
+			// Bind textures
+			for (uint32_t i = 0; i < m_data.TextureSlotIndex; i++)
+			{
+				m_data.TextureSlots[i]->Bind(i);
+			}
+
+
+			m_data.TextureShader->Bind();
 			RenderCommand::DrawIndexed(m_data.QuadVA, m_data.QuadIndexCount);
+			
 		}
 
+		if (m_data.TextIndexCount)
+		{
+			uint32_t dataSize = (uint32_t)((uint8_t*)m_data.TextVertexBufferPtr - (uint8_t*)m_data.TextVertexBufferBase);
+			m_data.TextVB->SetData(m_data.TextVertexBufferBase, dataSize);
+
+			m_data.FontAtlasTexture->Bind(0);
+
+
+			m_data.TextShader->Bind();
+			RenderCommand::DrawIndexed(m_data.TextVA, m_data.TextIndexCount);
+
+		}
+
+		/*
 		m_data.TextureShader->Unbind();
 
 		m_data.VertexBufferPtr = m_data.VertexBufferBase;
 		m_data.QuadIndexCount = 0;
 
 		m_data.TextureSlotIndex = 1;
-
+		*/
 
 	}
 
@@ -694,6 +759,9 @@ namespace Uge
 		m_data.QuadIndexCount = 0;
 		m_data.VertexBufferPtr = m_data.VertexBufferBase;
 
+		m_data.TextIndexCount = 0;
+		m_data.TextVertexBufferPtr = m_data.TextVertexBufferBase;
+
 		m_data.TextureSlotIndex = 1;
 
 	}
@@ -717,5 +785,116 @@ namespace Uge
 
 
 	}
+
+	void Renderer2D::DrawString(const std::string& string, Ref<Font> font, const glm::mat4& transform, const glm::vec4& color)
+	{
+
+		const auto& fontGeometry = font->GetMSDFData()->Fonts;
+		const auto& metrics = fontGeometry.getMetrics();
+		Ref<Texture2D> fontAtlas = font->GetAtlasTexture();
+
+		m_data.FontAtlasTexture = fontAtlas;
+		
+		double x = 0.0;
+		double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
+		double y = 0.0;
+		float lineHeightOffset = 0.0f;
+
+		for (size_t i = 0; i < string.size(); i++)
+		{
+			if (string[i] == '\r')
+			{
+				continue;
+			}
+
+			if (string[i] == '\n')
+			{
+				x = 0;
+				y -= fsScale * metrics.lineHeight + lineHeightOffset;				
+				continue;
+			}
+
+			auto glyph = fontGeometry.getGlyph(string[i]);
+
+			if (!glyph)
+			{
+				glyph = fontGeometry.getGlyph('?');
+			}
+			if (!glyph)
+			{
+				return;
+			}
+
+			if (string[i] == '\t')
+			{
+				glyph = fontGeometry.getGlyph(' ');
+			}
+
+			double al, ab, ar, at;
+			glyph->getQuadAtlasBounds(al, ab, ar, at);
+			glm::vec2 texCoordMin((float)al, (float)ab);
+			glm::vec2 texCoordMax((float)ar, (float)at);
+
+			double pl, pb, pr, pt;
+			glyph->getQuadPlaneBounds(pl, pb, pr, pt);
+			glm::vec2 quadMin((float)pl, (float)pb);
+			glm::vec2 quadMax((float)pr, (float)pt);
+
+			quadMin *= fsScale, quadMax *= fsScale;
+			quadMin += glm::vec2(x, y);
+			quadMax += glm::vec2(x, y);
+
+			float texelWidth = 1.0f / fontAtlas->GetWidth();
+			float texelHeight = 1.0f / fontAtlas->GetHeight();
+			texCoordMin *= glm::vec2(texelWidth, texelHeight);
+			texCoordMax *= glm::vec2(texelWidth, texelHeight);
+
+			// render here
+			m_data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin, 0.0f, 1.0f);
+			m_data.TextVertexBufferPtr->Color = color;
+			m_data.TextVertexBufferPtr->TexCoord = texCoordMin;
+			m_data.TextVertexBufferPtr->EntityID = 0; // TODO
+			m_data.TextVertexBufferPtr++;
+
+			m_data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin.x, quadMax.y, 0.0f, 1.0f);
+			m_data.TextVertexBufferPtr->Color = color;
+			m_data.TextVertexBufferPtr->TexCoord = { texCoordMin.x, texCoordMax.y };
+			m_data.TextVertexBufferPtr->EntityID = 0; // TODO
+			m_data.TextVertexBufferPtr++;
+
+			m_data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax, 0.0f, 1.0f);
+			m_data.TextVertexBufferPtr->Color = color;
+			m_data.TextVertexBufferPtr->TexCoord = texCoordMax;
+			m_data.TextVertexBufferPtr->EntityID = 0; // TODO
+			m_data.TextVertexBufferPtr++;
+
+			m_data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax.x, quadMin.y, 0.0f, 1.0f);
+			m_data.TextVertexBufferPtr->Color = color;
+			m_data.TextVertexBufferPtr->TexCoord = { texCoordMax.x, texCoordMin.y };
+			m_data.TextVertexBufferPtr->EntityID = 0; // TODO
+			m_data.TextVertexBufferPtr++;
+
+			m_data.TextIndexCount += 6;
+
+			if (i < string.size() - 1)
+			{
+				double advance = glyph->getAdvance();
+				char nextCharacter = string[i + 1];
+				fontGeometry.getAdvance(advance, string[i], nextCharacter);
+
+				float kerningOffset = 0.0f;
+				x += fsScale * advance + kerningOffset;
+			}
+
+
+
+		}
+
+		
+
+
+
+	}
+
 
 }

@@ -8,17 +8,12 @@
 #include "GlyphGeometry.h"
 #include <FontGeometry.h>
 
+#include "Uge/Renderer/MSDFData.h"
+
 
 namespace Uge
 {
-	struct MSDFData
-	{
-
-		std::vector<msdf_atlas::GlyphGeometry> Glyphs;
-		msdf_atlas::FontGeometry Fonts;
-
-
-	};
+	
 
 	template<typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GenFunc>
 	static Ref<Texture2D> createAndCacheAtlas(const std::string& fontName, float fontSize, 
@@ -157,12 +152,11 @@ namespace Uge
 			msdfgen::savePng(msdf, "output.png");
 		}
 #endif
+
+
 		msdfgen::destroyFont(font);
 
-
 		msdfgen::deinitializeFreetype(ft);
-
-		
 
 
 	}
@@ -172,6 +166,19 @@ namespace Uge
 
 		delete m_data;
 
+	}
+
+	Ref<Font> Font::GetDefault()
+	{
+
+		static Ref<Font> defaultFont;
+		if (!defaultFont)
+		{
+			defaultFont = CreateRef<Font>("assets/fonts/Roboto-Regular/static/Roboto-Regular.ttf");
+		}
+
+		return defaultFont;
+		
 	}
 
 }

@@ -1,10 +1,13 @@
 #pragma once
 
-#include "OrthographicCamera.h"
-#include "Camera.h"
-#include "Texture.h"
-#include "SubTexture2D.h"
-#include "EditorCamera.h"	
+#include "Uge/Renderer/OrthographicCamera.h"
+#include "Uge/Renderer/Camera.h"
+#include "Uge/Renderer/Texture.h"
+#include "Uge/Renderer/SubTexture2D.h"
+#include "Uge/Renderer/EditorCamera.h"	
+#include "Uge/Renderer/Font.h"	
+
+
 #include "Uge/Scene/Components.h"
 
 namespace Uge
@@ -64,8 +67,7 @@ namespace Uge
 
 		static void DrawSprite(const glm::mat4& transform, const SpriteRendererComponent& src, int entityID = -1);
 
-		static void ResetStats();
-		static Statistics GetStats();
+		static void DrawString(const std::string& string, Ref<Font> font, const glm::mat4& transform, const glm::vec4& color);
 		
 
 	private:
