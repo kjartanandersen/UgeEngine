@@ -89,7 +89,6 @@ namespace Uge
 		return newScene;
 	}
 
-
 	Entity Scene::CreateEntity(const std::string& name)
 	{
 		return CreateEntityWithUUID(UUID(), name);
@@ -170,8 +169,6 @@ namespace Uge
 		}
 
 	}
-
-	
 
 	void Scene::OnRuntimeStop()
 	{
@@ -262,14 +259,29 @@ namespace Uge
 			Renderer2D::BeginScene(mainCam->GetProjection(), mainTransform);
 			{
 				UG_PROFILE_SCOPE("Scene Renderer Draw");
-				auto group = m_registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-				for (auto ent : group)
 				{
-					auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(ent);
+					auto group = m_registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+					for (auto ent : group)
+					{
+						auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(ent);
 
-					Renderer2D::DrawSprite(transform.GetTransform(), sprite);
+						Renderer2D::DrawSprite(transform.GetTransform(), sprite);
+
+					}
 
 				}
+
+				// Draw Text
+				{
+					auto textView = m_registry.view<TransformComponent, TextComponent>();
+					for (auto [entity, transform, text] : textView.each())
+					{
+						Renderer2D::DrawString(text.TextString, transform.GetTransform(), text);
+
+					}
+
+				}
+
 				Renderer2D::EndScene();
 
 			}
@@ -279,6 +291,8 @@ namespace Uge
 
 	void Scene::OnUpdateEditor(Timestep ts, EditorCamera& camera)
 	{
+
+		// Draw Meshes
 		Model::BeginScene(camera.GetViewProjection());
 		{
 			auto meshView = m_registry.view<TransformComponent, MeshComponent>();
@@ -297,97 +311,31 @@ namespace Uge
 		Renderer2D::BeginScene(camera);
 		{
 			UG_PROFILE_SCOPE("Scene Renderer Draw");
-			auto group = m_registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-			for (auto ent : group)
-			{
-				auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(ent);
 
-				Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)ent);
+			// Draw Sprites
+			{
+				auto group = m_registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+				for (auto ent : group)
+				{
+					auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(ent);
+
+					Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)ent);
+
+				}
+			}
+
+			// Draw Text
+			{
+				auto textView = m_registry.view<TransformComponent, TextComponent>();
+				for (auto [entity, transform, text] : textView.each())
+				{
+					Renderer2D::DrawString(text.TextString, transform.GetTransform(), text, (int)entity);
+
+				}
 
 			}
 			
-			Renderer2D::DrawString(R"(
-			// MSDF text shader
-
-			#type vertex
-			#version 450 core
-
-			layout(location = 0) in vec3 a_Position;
-			layout(location = 1) in vec4 a_Color;
-			layout(location = 2) in vec2 a_TexCoord;
-			layout(location = 3) in int a_EntityID;
-
-			layout(std140, binding = 0) uniform Camera
-			{
-				mat4 u_ViewProjection;
-			};
-
-			struct VertexOutput
-			{
-				vec4 Color;
-				vec2 TexCoord;
-			};
-
-			layout (location = 0) out VertexOutput Output;
-			layout (location = 2) out flat int v_EntityID;
-
-			void main()
-			{
-				Output.Color = a_Color;
-				Output.TexCoord = a_TexCoord;
-				v_EntityID = a_EntityID;
-
-				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
-			}
-
-			#type fragment
-			#version 450 core
-
-			layout(location = 0) out vec4 o_Color;
-			layout(location = 1) out int o_EntityID;
-
-			struct VertexOutput
-			{
-				vec4 Color;
-				vec2 TexCoord;
-			};
-
-			layout (location = 0) in VertexOutput Input;
-			layout (location = 2) in flat int v_EntityID;
-
-			layout (binding = 0) uniform sampler2D u_FontAtlas;
-
-			float screenPxRange() {
-				const float pxRange = 2.0; // set to distance field's pixel range
-				vec2 unitRange = vec2(pxRange)/vec2(textureSize(u_FontAtlas, 0));
-				vec2 screenTexSize = vec2(1.0)/fwidth(Input.TexCoord);
-				return max(0.5*dot(unitRange, screenTexSize), 1.0);
-			}
-
-			float median(float r, float g, float b) {
-				return max(min(r, g), min(max(r, g), b));
-			}
-
-			void main()
-			{
-				vec4 texColor = Input.Color * texture(u_FontAtlas, Input.TexCoord);
-
-				vec3 msd = texture(u_FontAtlas, Input.TexCoord).rgb;
-				float sd = median(msd.r, msd.g, msd.b);
-				float screenPxDistance = screenPxRange()*(sd - 0.5);
-				float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
-				if (opacity == 0.0)
-					discard;
-
-				vec4 bgColor = vec4(0.0);
-				o_Color = mix(bgColor, Input.Color, opacity);
-				if (o_Color.a == 0.0)
-					discard;
-	
-				o_EntityID = v_EntityID;
-			}
-			)"
-			, Font::GetDefault(), glm::mat4(1.0f), glm::vec4(1.0f));
+			
 		
 		}
 		Renderer2D::EndScene();
@@ -460,8 +408,6 @@ namespace Uge
 
 	}
 
-
-
 	template<typename T>
 	void Scene::OnComponentAdded(Entity entity, T& component)
 	{
@@ -513,6 +459,11 @@ namespace Uge
 
 	template<>
 	void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<TextComponent>(Entity entity, TextComponent& component)
 	{
 	}
 

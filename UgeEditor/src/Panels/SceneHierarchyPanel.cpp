@@ -7,6 +7,8 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <misc/cpp/imgui_stdlib.h>
+
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -344,6 +346,7 @@ namespace Uge
 			DisplayAddComponentEntry<ScriptComponent>("Script");
 			DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
 			DisplayAddComponentEntry<MeshComponent>("Mesh");
+			DisplayAddComponentEntry<TextComponent>("Text Component");
 
 
 			ImGui::EndPopup();
@@ -660,7 +663,20 @@ namespace Uge
 
 #pragma endregion
 
+#pragma region TextComponent
 
+			DrawComponent<TextComponent>("Text Renderer", entity, true, [](auto& component)
+				{
+					ImGui::InputTextMultiline("Text String", &component.TextString);
+					ImGui::DragFloat("Kerning", &component.Kerning, 0.025f, 0.0f, 100.0f);
+					ImGui::DragFloat("Line Spacing", &component.LineSpacing, 0.025f, 0.0f, 100.0f);
+					ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
+
+
+
+				});
+
+#pragma endregion
 	}
 
 	template<typename T>

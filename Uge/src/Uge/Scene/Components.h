@@ -3,9 +3,10 @@
 #include "Uge/Core/Core.h"
 #include "Uge/Core/UUID.h"
 #include "Uge/Renderer/Model.h"
-#include "SceneCamera.h"
+#include "Uge/Scene/SceneCamera.h"
 #include "Uge/Renderer/Texture.h"
 #include "Uge/Project/Project.h"
+#include "Uge/Renderer/Font.h"
 
 #include <string>
 #include <unordered_map>
@@ -162,6 +163,19 @@ namespace Uge
 
 	};
 
+
+	struct TextComponent
+	{
+		std::string TextString;
+		float Kerning = 0.0f;
+		float LineSpacing = 0.0f;
+		glm::vec4 Color{ 1.0f };
+
+		Ref<Font> Font = Font::GetDefault();
+		
+
+	};
+
 	template<typename... Component>
 	struct ComponentGroup
 	{
@@ -170,7 +184,7 @@ namespace Uge
 	using AllComponents =
 		ComponentGroup<TransformComponent, SpriteRendererComponent,
 		 CameraComponent, ScriptComponent, MeshComponent,
-		NativeScriptComponent>;
+		NativeScriptComponent, TextComponent>;
 
 
 }

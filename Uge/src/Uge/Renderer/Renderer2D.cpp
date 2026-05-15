@@ -59,7 +59,7 @@ namespace Uge
 
 		Ref<Texture2D> FontAtlasTexture;
 
-		glm::vec4 VertexPositions[4];
+		glm::vec4 VertexPositions[4] = { {} };
 		
 
 		struct CameraData
@@ -67,15 +67,13 @@ namespace Uge
 			glm::mat4 ViewProjection;
 		};
 
-		CameraData CameraBuffer;
+		CameraData CameraBuffer = { {} };
 		Ref<UniformBuffer> CameraUniformBuffer;
 
 
 	};
 
 	static Renderer2DData m_data;
-
-
 
 
 	void Renderer2D::Init()
@@ -295,8 +293,6 @@ namespace Uge
 
 	}
 
-
-
 	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
 	{
 
@@ -513,7 +509,6 @@ namespace Uge
 
 
 	}
-
 
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
 	{
@@ -752,7 +747,6 @@ namespace Uge
 
 	}
 
-
 	void Renderer2D::StartBatch()
 	{
 
@@ -765,7 +759,6 @@ namespace Uge
 		m_data.TextureSlotIndex = 1;
 
 	}
-
 
 	void Renderer2D::DrawSprite(const glm::mat4& transform, const SpriteRendererComponent& src, int entityID)
 	{
@@ -786,36 +779,43 @@ namespace Uge
 
 	}
 
-	void Renderer2D::DrawString(const std::string& string, Ref<Font> font, const glm::mat4& transform, const glm::vec4& color)
+	
+
+	void Renderer2D::DrawString(const std::string& string, Ref<Font> font, const glm::mat4& transform, const TextParams& textParams, int entityID)
 	{
 
 		const auto& fontGeometry = font->GetMSDFData()->Fonts;
 		const auto& metrics = fontGeometry.getMetrics();
 		Ref<Texture2D> fontAtlas = font->GetAtlasTexture();
+		
 
 		m_data.FontAtlasTexture = fontAtlas;
 		
 		double x = 0.0;
 		double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
-		double y = 0.0;
-		float lineHeightOffset = 0.0f;
+		double y = 0.0;		
+
+		const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
 
 		for (size_t i = 0; i < string.size(); i++)
 		{
-			if (string[i] == '\r')
+
+			char character = string[i];
+			if (character == '\r')
 			{
 				continue;
 			}
 
-			if (string[i] == '\n')
+			if (character == '\n')
 			{
 				x = 0;
-				y -= fsScale * metrics.lineHeight + lineHeightOffset;				
+				y -= fsScale * metrics.lineHeight + textParams.LineSpacing;
 				continue;
 			}
+			
 
-			auto glyph = fontGeometry.getGlyph(string[i]);
 
+			auto glyph = fontGeometry.getGlyph(character);
 			if (!glyph)
 			{
 				glyph = fontGeometry.getGlyph('?');
@@ -824,10 +824,30 @@ namespace Uge
 			{
 				return;
 			}
+			
 
-			if (string[i] == '\t')
+
+			if (character == ' ')
 			{
-				glyph = fontGeometry.getGlyph(' ');
+				float advance = spaceGlyphAdvance;
+				if (i < string.size() - 1)
+				{
+					char nextCharacter = string[i + 1];
+					double dAdvance;
+					fontGeometry.getAdvance(dAdvance, character, nextCharacter);
+					advance = (float)dAdvance;
+
+
+				}
+				x += fsScale * advance + textParams.Kerning;
+				continue;
+
+			}
+
+			if (character == '\t')
+			{
+				x += (fsScale * spaceGlyphAdvance + textParams.Kerning) * 4.0;
+				continue;
 			}
 
 			double al, ab, ar, at;
@@ -851,27 +871,27 @@ namespace Uge
 
 			// render here
 			m_data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin, 0.0f, 1.0f);
-			m_data.TextVertexBufferPtr->Color = color;
+			m_data.TextVertexBufferPtr->Color = textParams.Color;
 			m_data.TextVertexBufferPtr->TexCoord = texCoordMin;
-			m_data.TextVertexBufferPtr->EntityID = 0; // TODO
+			m_data.TextVertexBufferPtr->EntityID = entityID;
 			m_data.TextVertexBufferPtr++;
 
 			m_data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin.x, quadMax.y, 0.0f, 1.0f);
-			m_data.TextVertexBufferPtr->Color = color;
+			m_data.TextVertexBufferPtr->Color = textParams.Color;
 			m_data.TextVertexBufferPtr->TexCoord = { texCoordMin.x, texCoordMax.y };
-			m_data.TextVertexBufferPtr->EntityID = 0; // TODO
+			m_data.TextVertexBufferPtr->EntityID = entityID;
 			m_data.TextVertexBufferPtr++;
 
 			m_data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax, 0.0f, 1.0f);
-			m_data.TextVertexBufferPtr->Color = color;
+			m_data.TextVertexBufferPtr->Color = textParams.Color;
 			m_data.TextVertexBufferPtr->TexCoord = texCoordMax;
-			m_data.TextVertexBufferPtr->EntityID = 0; // TODO
+			m_data.TextVertexBufferPtr->EntityID = entityID;
 			m_data.TextVertexBufferPtr++;
 
 			m_data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax.x, quadMin.y, 0.0f, 1.0f);
-			m_data.TextVertexBufferPtr->Color = color;
+			m_data.TextVertexBufferPtr->Color = textParams.Color;
 			m_data.TextVertexBufferPtr->TexCoord = { texCoordMax.x, texCoordMin.y };
-			m_data.TextVertexBufferPtr->EntityID = 0; // TODO
+			m_data.TextVertexBufferPtr->EntityID = entityID;
 			m_data.TextVertexBufferPtr++;
 
 			m_data.TextIndexCount += 6;
@@ -879,20 +899,30 @@ namespace Uge
 			if (i < string.size() - 1)
 			{
 				double advance = glyph->getAdvance();
-				char nextCharacter = string[i + 1];
-				fontGeometry.getAdvance(advance, string[i], nextCharacter);
 
-				float kerningOffset = 0.0f;
-				x += fsScale * advance + kerningOffset;
+				char nextCharacter = string[i + 1];
+				fontGeometry.getAdvance(advance, character, nextCharacter);
+
+				x += fsScale * advance + textParams.Kerning;
 			}
 
 
 
 		}
 
-		
+
+	}
+
+	void Renderer2D::DrawString(const std::string& string, const glm::mat4& transform, const TextComponent& component, int entityID)
+	{
+		TextParams params;
+
+		params.Color = component.Color;
+		params.Kerning = component.Kerning;
+		params.LineSpacing = component.LineSpacing;
 
 
+		DrawString(string, component.Font, transform, params, entityID);
 
 	}
 

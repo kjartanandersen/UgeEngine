@@ -293,6 +293,21 @@ namespace Uge
 			out << YAML::EndMap; // MeshComponent
 		}
 
+		if (entity.HasComponent<TextComponent>())
+		{
+			out << YAML::Key << "TextComponent";
+			out << YAML::BeginMap; // TextComponent
+
+			auto& textComponent = entity.GetComponent<TextComponent>();
+			out << YAML::Key << "TextString" << YAML::Value << textComponent.TextString;
+			// TODO: Font
+			out << YAML::Key << "Kerning" << YAML::Value << textComponent.Kerning;
+			out << YAML::Key << "LineSpacing" << YAML::Value << textComponent.LineSpacing;
+			out << YAML::Key << "Color" << YAML::Value << textComponent.Color;
+
+			out << YAML::EndMap; // TextComponent
+		}
+
 		out << YAML::EndMap;	// Entity
 
 
@@ -497,6 +512,22 @@ namespace Uge
 					std::string meshPath = ymc["Path"] ? ymc["Path"].as<std::string>() : std::string();
 					// std::filesystem::path path = Project::GetAssetFileSystemPath(meshPath);
 					deserializedEntity.AddComponent<MeshComponent>(meshPath);
+				}
+
+				auto ytec = entity["TextComponent"];		// Text Component
+				if (ytec)
+				{
+					UG_CORE_TRACE("Deserializing Text Component");
+
+					auto& src = deserializedEntity.AddComponent<TextComponent>();
+					src.TextString = ytec["TextString"].as<std::string>();
+
+					src.Kerning = ytec["Kerning"].as<float>();
+					src.LineSpacing = ytec["LineSpacing"].as<float>();
+					
+					src.Color = ytec["Color"].as<glm::vec4>();
+					// src.Font = ; // TODO
+
 				}
 
 			}
