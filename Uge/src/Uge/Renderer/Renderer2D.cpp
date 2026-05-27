@@ -779,8 +779,6 @@ namespace Uge
 
 	}
 
-	
-
 	void Renderer2D::DrawString(const std::string& string, Ref<Font> font, const glm::mat4& transform, const TextParams& textParams, int entityID)
 	{
 

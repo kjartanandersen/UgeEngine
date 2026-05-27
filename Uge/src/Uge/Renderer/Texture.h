@@ -3,6 +3,9 @@
 #include <string>
 
 #include "Uge/Core/Core.h"
+#include "Uge/Asset/Asset.h"
+#include "Uge/Core/Buffer.h"
+
 
 namespace Uge
 {
@@ -25,7 +28,7 @@ namespace Uge
 	};
 
 
-	class Texture
+	class Texture: public Asset
 	{
 
 	public:
@@ -37,7 +40,7 @@ namespace Uge
 		virtual uint32_t GetHeight() const = 0;
 		virtual uint32_t GetRendererID() const = 0;
 
-		virtual void SetData(void* data, uint32_t size) = 0;
+		virtual void SetData(Buffer data) = 0;
 
 		virtual void Bind(uint32_t slot = 0) const = 0;
 		virtual void UnBind(uint32_t slot = 0) const = 0;
@@ -53,10 +56,11 @@ namespace Uge
 	{
 		
 	public:
-		static Ref<Texture2D> Create(uint32_t width, uint32_t height, const std::string& name = "");
-		static Ref<Texture2D> Create(const TextureSpecification& specification);
-		static Ref<Texture2D> Create(const std::string& path, const std::string& name = "");
-		static Ref<Texture2D> Create(const unsigned char* encodedData, uint32_t size, const std::string& name = "");
+
+		static Ref<Texture2D> Create(const TextureSpecification& specification, Buffer data = Buffer());
+
+		static AssetType GetStaticType() { return AssetType::Texture2D; }
+		virtual AssetType GetType() const override { return GetStaticType(); }
 
 	public:
 		std::string m_name;

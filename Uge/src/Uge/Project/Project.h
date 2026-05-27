@@ -5,6 +5,8 @@
 
 #include "Uge/Core/Core.h"
 #include "Uge/Core/Log.h"
+#include "Uge/Asset/RuntimeAssetManager.h"
+#include "Uge/Asset/EditorAssetManager.h"
 
 namespace Uge
 {
@@ -93,6 +95,9 @@ namespace Uge
 		ProjectConfig& GetConfig() { return m_config; }
 
 		static Ref<Project> GetActive() { return s_activeProject; }
+		Ref<AssetManagerBase> GetAssetManager() { return m_assetManager; }
+		Ref<RuntimeAssetManager> GetRuntimeAssetManager() { return std::static_pointer_cast<RuntimeAssetManager>(m_assetManager); }
+		Ref<EditorAssetManager> GetEditorAssetManager() { return std::static_pointer_cast<EditorAssetManager>(m_assetManager); }
 
 		static Ref<Project> New();
 		static Ref<Project> Load(const std::filesystem::path& path);
@@ -101,6 +106,8 @@ namespace Uge
 	private:
 		ProjectConfig m_config;
 		std::filesystem::path m_ProjectDirectory;
+
+		Ref<AssetManagerBase> m_assetManager;
 
 		inline static Ref<Project> s_activeProject;
 

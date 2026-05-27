@@ -44,6 +44,7 @@ namespace Uge
 
 	void Uge::Renderer3D::Init()
 	{
+		/*
 		UG_PROFILE_FUNCTION();
 
 		
@@ -128,6 +129,8 @@ namespace Uge
 		m_data.TextureShader = Shader::Create("assets/shaders/FlatTexture3D.glsl");
 		m_data.TextureShader->Bind();
 		//m_data.TextureShader->SetInt("u_Texture", 0);
+
+		*/
 
 
 	}
