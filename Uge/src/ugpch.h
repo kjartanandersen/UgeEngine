@@ -21,6 +21,8 @@
 
 
 #include "Uge/Core/Log.h"
+#include "Uge/Core/Core.h"
+#include "Uge/Core/Buffer.h"
 #include "Uge/Debug/Instrumentor.h"
 
 

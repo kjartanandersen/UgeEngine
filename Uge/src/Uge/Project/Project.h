@@ -18,6 +18,7 @@ namespace Uge
 		std::filesystem::path StartScene;
 
 		std::filesystem::path AssetDirectory;
+		std::filesystem::path AssetRegistryPath;
 		std::filesystem::path ScriptModulePath;
 
 	};
@@ -39,6 +40,14 @@ namespace Uge
 		{
 			UG_CORE_ASSERT(s_activeProject);
 			return s_activeProject->m_ProjectDirectory;
+
+		}
+
+		static std::filesystem::path GetAssetRegistryPath()
+		{
+
+			UG_CORE_ASSERT(s_activeProject);
+			return GetAssetDirectory() / s_activeProject->m_config.AssetRegistryPath;
 
 		}
 

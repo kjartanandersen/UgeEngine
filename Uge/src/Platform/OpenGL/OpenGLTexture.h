@@ -27,6 +27,8 @@ namespace Uge
 		virtual void Bind(uint32_t slot = 0) const override;
 		virtual void UnBind(uint32_t slot = 0) const override;
 
+		virtual bool IsLoaded() const override { return m_isLoaded; }
+
 		virtual void SetTilingFactor(float tilingFactor) override { m_tilingFactor = tilingFactor; }
 
 
@@ -39,7 +41,6 @@ namespace Uge
 
 		TextureSpecification m_specification;
 
-		std::string m_path;
 		bool m_isLoaded = false;
 		uint32_t m_width, m_height;
 

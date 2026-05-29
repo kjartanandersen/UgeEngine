@@ -604,9 +604,14 @@ namespace Uge
 					{
 						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 						{
+#if 0
 							const wchar_t* path = (const wchar_t*)payload->Data;
 							std::filesystem::path texturePath(path);
-							component.Texture = Texture2D::Create(texturePath.string());
+							Ref<Texture2D> texture = Texture2D::Create(texturePath.string());
+							if (texture->)
+							component.Texture = ;
+
+#endif
 
 
 						}
@@ -617,7 +622,7 @@ namespace Uge
 					if (ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1f, 0.0f, 100.0f))
 					{
 
-						component.Texture->SetTilingFactor(component.TilingFactor);
+						// component.Texture->SetTilingFactor(component.TilingFactor);
 					}
 				});
 

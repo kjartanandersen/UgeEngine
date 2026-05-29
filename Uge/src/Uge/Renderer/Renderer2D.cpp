@@ -7,6 +7,9 @@
 #include "Uge/Renderer/UniformBuffer.h"
 #include "Uge/Renderer/Mesh.h"
 
+#include "Uge/Asset/AssetManager.h"
+
+
 #include "Uge/Renderer/MSDFData.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -140,7 +143,7 @@ namespace Uge
 		// m_data.WhiteTexture = Texture2D::Create(1, 1);
 		m_data.WhiteTexture = Texture2D::Create(TextureSpecification());
 		uint32_t whiteTextureData = 0xffffffff;
-		m_data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
+		// m_data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 
 		int32_t samplers[m_data.MaxTextureSlots];
 		for (uint32_t i = 0; i < m_data.MaxTextureSlots; i++)
@@ -454,6 +457,7 @@ namespace Uge
 	{
 
 		UG_PROFILE_FUNCTION();
+		UG_CORE_VERIFY(texture);
 
 		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
 		{
@@ -767,7 +771,8 @@ namespace Uge
 
 		if (src.Texture)
 		{
-			DrawQuad(transform, src.Texture, src.Color, entityID);
+			Ref<Texture2D> texture = AssetManager::GetAsset<Texture2D>(src.Texture);
+			DrawQuad(transform, texture, src.Color, entityID);
 
 		}
 		else

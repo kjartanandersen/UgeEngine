@@ -278,6 +278,11 @@ namespace Uge
 			out << YAML::Key << "Color" << YAML::Value << spriteRendererComponent.Color;
 			// TODO: Add texture support
 			
+			out << YAML::Key << "TextureHandle" << YAML::Value << spriteRendererComponent.Texture;
+
+			
+			out << YAML::Key << "TilingFactor" << YAML::Value << spriteRendererComponent.TilingFactor;
+
 
 			out << YAML::EndMap; // SpriteRendererComponent
 		}
@@ -501,6 +506,16 @@ namespace Uge
 
 					auto& src = deserializedEntity.AddComponent<SpriteRendererComponent>();
 					src.Color = ysrc["Color"].as<glm::vec4>();
+
+					if (ysrc["TextureHandle"])
+					{
+						src.Texture = ysrc["TextureHandle"].as<AssetHandle>();
+					}
+					if (ysrc["TilingFactor"])
+					{
+						src.TilingFactor = ysrc["TilingFactor"].as<float>();
+
+					}
 
 				}
 

@@ -16,7 +16,7 @@ namespace Uge
 
 		if (s_assetImportFuncs.find(metadata.Type) == s_assetImportFuncs.end())
 		{
-			UG_CORE_ERROR("No importer available for asset type: {}", metadata.Type);
+			UG_CORE_ERROR("No importer available for asset type: {}", (uint16_t)metadata.Type);
 			return nullptr;
 		}
 

@@ -2,6 +2,7 @@
 
 #include "Uge/Scripting/ScriptEngine.h"
 #include "Uge/Renderer/Font.h"
+#include "Uge/Asset/TextureImporter.h"
 
 #include "imgui.h"
 #include <cstdint>
@@ -109,11 +110,10 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 		
-
-		m_iconPlay = Texture2D::Create("Resources/Icons/PlayButton.png");
-		m_iconStop = Texture2D::Create("Resources/Icons/StopButton.png");
-		m_iconPause = Texture2D::Create("Resources/Icons/PauseButton.png");
-		m_iconStep = Texture2D::Create("Resources/Icons/StepButton.png");
+		m_iconPlay = TextureImporter::LoadTexture2D("Resources/Icons/PlayButton.png");
+		m_iconStop = TextureImporter::LoadTexture2D("Resources/Icons/StopButton.png");
+		m_iconPause = TextureImporter::LoadTexture2D("Resources/Icons/PauseButton.png");
+		m_iconStep = TextureImporter::LoadTexture2D("Resources/Icons/StepButton.png");
 		
 
 		m_activeScene = CreateRef<Scene>();

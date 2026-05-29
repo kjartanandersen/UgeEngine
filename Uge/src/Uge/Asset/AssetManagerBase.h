@@ -1,6 +1,8 @@
 #pragma once
 #include "Asset.h"
 
+#include <map>
+
 namespace Uge
 {
 	using AssetMap = std::map<AssetHandle, Ref<Asset>>;

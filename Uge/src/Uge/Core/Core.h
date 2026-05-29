@@ -33,19 +33,22 @@
 	#error "Unknown platform!"
 #endif
 
+#if defined(UG_PLATFORM_WINDOWS)
+	#define UG_DEBUGBREAK() __debugbreak()
+#elif defined(UG_PLATFORM_LINUX)
+	#include <signal.h>
+	#define UG_DEBUGBREAK() raise(SIGTRAP)
+#else
+	#error "Platform does not support debugbreak yet!"
+#endif // UG_PLATFORM_WINDOWS
 
 #ifdef UG_DEBUG
-	#if defined(UG_PLATFORM_WINDOWS)
-		#define UG_DEBUGBREAK() __debugbreak()
-	#elif defined(UG_PLATFORM_LINUX)
-		#include <signal.h>
-		#define UG_DEBUGBREAK() raise(SIGTRAP)
-	#else
-		#error "Platform does not support debugbreak yet!"
-	#endif
 	#define UG_ENABLE_ASSERTS
 #endif // UG_DEBUG
 
+#ifndef UG_DIST
+	#define UG_ENABLE_VERIFYS
+#endif
 
 #ifdef UG_ENABLE_ASSERTS
 	#define UG_ASSERT(x) { if (!(x)) { UG_ERROR("Error!"); UG_DEBUGBREAK(); } }
@@ -58,6 +61,18 @@
 	#define UG_CORE_ASSERT(x, ...)
 	#define UG_CORE_ASSERT(x)
 #endif // UG_ENABLE_ASSERTS
+
+#ifdef UG_ENABLE_VERIFYS
+#define UG_VERIFY(x) { if (!(x)) { UG_ERROR("Error!"); UG_DEBUGBREAK(); } }
+#define UG_VERIFY(x, ...) { if (!(x)) { UG_ERROR("VERIFYion Failed: {0}", __VA_ARGS__); UG_DEBUGBREAK(); } }
+#define UG_CORE_VERIFY(x, ...) { if (!(x)) { UG_CORE_ERROR("VERIFYion Failed: {0}", __VA_ARGS__); UG_DEBUGBREAK(); } }
+#define UG_CORE_VERIFY(x) { if (!(x)) { UG_CORE_ERROR("Error!"); UG_DEBUGBREAK(); } }
+#else
+#define UG_VERIFY(x, ...)
+#define UG_VERIFY(x)
+#define UG_CORE_VERIFY(x, ...)
+#define UG_CORE_VERIFY(x)
+#endif // UG_ENABLE_VERIFYS
 
 
 #define BIT(x) (1 << x)

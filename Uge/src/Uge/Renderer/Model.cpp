@@ -263,7 +263,19 @@ namespace Uge
 
 				if (embeddedTexture->mHeight == 0)
 				{
-					meshTexture = Texture2D::Create(reinterpret_cast<const unsigned char*>(embeddedTexture->pcData), embeddedTexture->mWidth);
+
+					TextureSpecification spec;
+					spec.Format = ImageFormat::RGBA8;
+					spec.Height = 0;
+					spec.Width = embeddedTexture->mWidth;
+
+					Buffer data;
+					data.Data = reinterpret_cast<uint8_t*>(embeddedTexture->pcData);
+					data.Size = embeddedTexture->mWidth;
+					
+					
+					// meshTexture = Texture2D::Create(reinterpret_cast<const unsigned char*>(embeddedTexture->pcData), embeddedTexture->mWidth);
+					meshTexture = Texture2D::Create(spec, data);
 				}
 				else
 				{
@@ -282,8 +294,16 @@ namespace Uge
 						rgbaPixels[dstOffset + 3] = src.a;
 					}
 
-					meshTexture = Texture2D::Create(width, height, typeName);
-					meshTexture->SetData(rgbaPixels.data(), static_cast<uint32_t>(rgbaPixels.size()));
+					TextureSpecification spec;
+					spec.Height = height;
+					spec.Width = width;
+
+					Buffer data;
+					data.Data = reinterpret_cast<uint8_t*>(rgbaPixels.data());
+					data.Size = static_cast<uint64_t>(rgbaPixels.size());
+
+					meshTexture = Texture2D::Create(spec, data);
+					// meshTexture->SetData(rgbaPixels.data(), static_cast<uint32_t>(rgbaPixels.size()));
 				}
 			}
 			else
@@ -300,7 +320,7 @@ namespace Uge
 					continue;
 				}
 
-				meshTexture = Texture2D::Create(fullPath.string());
+				//meshTexture = Texture2D::Create(fullPath.string());
 			}
 
 			if (!meshTexture)
