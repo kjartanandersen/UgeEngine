@@ -4,13 +4,36 @@
 #include "EditorAssetManager.h"
 #include "AssetImporter.h"
 
+
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
 
 namespace Uge
 {
-    Ref<Asset> EditorAssetManager::GetAsset(AssetHandle handle) const
+
+    static std::map<std::filesystem::path, AssetType> s_assetExtentionMap = {
+        { ".png",  AssetType::Texture2D },
+        { ".jpg",  AssetType::Texture2D },
+        { ".jpeg", AssetType::Texture2D },
+        { ".uge",  AssetType::Scene     }
+    };
+
+    static AssetType GetAssetTypeFromFileExtention(const std::filesystem::path& extention)
+    {
+
+        if (s_assetExtentionMap.find(extention) == s_assetExtentionMap.end())
+        {
+            UG_CORE_WARN("Could not find AssetType for extention: {0}", extention.string());
+            return AssetType::None;
+
+        }
+
+        return s_assetExtentionMap.at(extention);
+
+    }
+
+    Ref<Asset> EditorAssetManager::GetAsset(AssetHandle handle) 
     {
 
         if (!IsAssetHandleValid(handle))
@@ -38,6 +61,7 @@ namespace Uge
                 UG_CORE_ERROR("EditorAssetManager::GetAsset - asset import failed!");
 
             }
+            m_loadedAssets[handle] = asset;
         }
 
         return asset;
@@ -57,17 +81,32 @@ namespace Uge
         
     }
 
+    AssetType EditorAssetManager::GetAssetType(AssetHandle handle) const
+    {
+
+        if (!IsAssetHandleValid(handle))
+        {
+            return AssetType::None;
+        }
+
+        return m_assetRegistry.at(handle).Type;
+
+    }
+
     void EditorAssetManager::ImportAsset(const std::filesystem::path& filepath)
     {
         AssetHandle handle; // TODO: Generate new handle
         AssetMetadata metadata;
         metadata.FilePath = filepath;
-        metadata.Type = AssetType::Texture2D; // TODO: Grab from file extension
+
+
+        metadata.Type = GetAssetTypeFromFileExtention(filepath.extension()); 
+        UG_CORE_ASSERT(metadata.Type != AssetType::None);
         Ref<Asset> asset = AssetImporter::ImportAsset(handle, metadata);    
-        asset->m_handle = handle;
 
         if (asset)
         {
+            asset->m_handle = handle;
             m_loadedAssets[handle] = asset;
             m_assetRegistry[handle] = metadata;
             SerializeAssetRegistry();
@@ -87,6 +126,13 @@ namespace Uge
         }
         return it->second;
 
+    }
+
+    const std::filesystem::path& EditorAssetManager::GetFilePath(AssetHandle handle) const
+    {
+
+        return GetMetadata(handle).FilePath;
+        
     }
 
     void EditorAssetManager::SerializeAssetRegistry()

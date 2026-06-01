@@ -3,6 +3,8 @@
 #include "Uge/Scripting/ScriptEngine.h"
 #include "Uge/Renderer/Font.h"
 #include "Uge/Asset/TextureImporter.h"
+#include "Uge/Asset/SceneImporter.h"
+#include "Uge/Asset/AssetManager.h"
 
 #include "imgui.h"
 #include <cstdint>
@@ -146,18 +148,12 @@ namespace Uge
 		else
 		{
 
-			// TODO: prompt the user to select a directory
-
 			if (!OpenProject())
 			{
 				Application::Get().CloseProgram();
 			}
-			// NewProject();
 
 		}
-
-		// std::filesystem::path checkPath = Project::GetAssetFileSystemPath("Textures/Checkerboard.png");
-		// m_texture = Texture2D::Create(checkPath.string());
 
 
 		m_editorCamera = EditorCamera(60.0f, 16.0f/9.0f, 0.01f, 10000.0f);
@@ -381,8 +377,8 @@ namespace Uge
 				{
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 					{
-						const wchar_t* path = (const wchar_t*)payload->Data;
-						OpenScene(path);
+						AssetHandle handle = *(AssetHandle*)payload->Data;
+						OpenScene(handle);
 
 					}
 					
@@ -542,8 +538,6 @@ namespace Uge
 		ImGui::End();
 
 	}
-
-	
 
 	void EditorLayer::OnEvent(Event& e)
 	{
@@ -753,8 +747,12 @@ namespace Uge
 
 			ScriptEngine::Init();
 
-			auto startScenePath = Project::GetAssetFileSystemPath(Project::GetActive()->GetConfig().StartScene);
-			OpenScene(startScenePath);
+			AssetHandle startScene = Project::GetActive()->GetConfig().StartScene;
+			if (startScene)
+			{
+
+				OpenScene(startScene);
+			}
 			m_contentBrowserPanel = CreateScope<ContentBrowserPanel>();
 
 
@@ -781,19 +779,11 @@ namespace Uge
 	{
 		std::string filepath = FileDialogs::SaveFile("Uge Scene (*.uge)\0*.uge\0\0");
 
-		std::filesystem::path absPath(filepath);
-		std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
 
-		std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
-
-
-
-		std::filesystem::path path = Project::GetAssetFileSystemPath(relativePath).string();
-
-		if (!path.empty())
+		if (!filepath.empty())
 		{
-			SerializeScene(m_activeScene, path);
-			m_editorScenePath = path;
+			SerializeScene(m_activeScene, filepath);
+			m_editorScenePath = filepath;
 
 		}
 
@@ -811,58 +801,52 @@ namespace Uge
 
 	void EditorLayer::OpenScene()
 	{
-		std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*.uge\0");
-		
-		std::filesystem::path absPath(filepath);
-		std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
-
-		std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
-
-
-
-		std::filesystem::path path = Project::GetAssetFileSystemPath(relativePath).string();
-		
-		
-		if (!path.empty())
-		{
-			
-			OpenScene(path);
-
-		}
+		// std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*.uge\0");
+		// 
+		// std::filesystem::path absPath(filepath);
+		// std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
+		// 
+		// std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
+		// 
+		// 
+		// 
+		// std::filesystem::path path = Project::GetAssetFileSystemPath(relativePath).string();
+		// 
+		// 
+		// if (!path.empty())
+		// {
+		// 	
+		// 	OpenScene(path);
+		// 
+		// }
 
 	}
 
-	void EditorLayer::OpenScene(const std::filesystem::path& path)
+	void EditorLayer::OpenScene(AssetHandle handle)
 	{
+		UG_CORE_ASSERT(handle, "Handle is invalid!");
 
 		if (m_sceneState != SceneState::Edit)
 		{
 			OnSceneStop();
 		}
 
-		if (path.extension().string() != ".uge")
-		{
-			UG_WARN("Could not load {0}: Not a scene file!", path.filename().string());
-			return;
-		}
+		Ref<Scene> scene = AssetManager::GetAsset<Scene>(handle);
+		Ref<Scene> newScene = Scene::Copy(scene);
 
-		Ref<Scene> newScene = CreateRef<Scene>();
-
-		m_activeScene = CreateRef<Scene>();
 		SceneSerializer serializer(newScene);
 		
-		if (serializer.DeSerialize(path.string()))
-		{
-			m_editorScene = newScene;
+		
+		m_editorScene = newScene;
 
-			m_editorScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
-			m_sceneHierarchyPanel.SetContext(m_editorScene);
+		m_editorScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+		m_sceneHierarchyPanel.SetContext(m_editorScene);
 
-			m_activeScene = m_editorScene;
-			m_editorScenePath = path;
+		m_activeScene = m_editorScene;
+		m_editorScenePath = Project::GetActive()->GetEditorAssetManager()->GetFilePath(handle);
 
 
-		}
+		
 
 
 	}
@@ -911,8 +895,7 @@ namespace Uge
 	void EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)
 	{
 
-		SceneSerializer serializer(scene);
-		serializer.Serialize(path.string());
+		SceneImporter::SaveScene(scene, path);
 
 
 	}
@@ -934,8 +917,6 @@ namespace Uge
 
 
 	}
-
-	
 
 }
 

@@ -4,6 +4,8 @@
 #include "Uge/Scripting/ScriptEngine.h"
 #include "Uge/Utils/PlatformUtils.h"
 #include "Uge/UI/UI.h"
+#include "Uge/Asset/AssetManager.h"
+#include "Uge/Project/Project.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -596,27 +598,68 @@ namespace Uge
 					}
 
 					// Texture
+					
+					std::string label = "None";
+					bool isTextureValid = false;
+					if (component.Texture != 0)
+					{
+						if (AssetManager::IsAssetHandleValid(component.Texture) && AssetManager::GetAssetType(component.Texture) == AssetType::Texture2D)
+						{
+							const auto& metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Texture);
+							label = metadata.FilePath.filename().string();
+							isTextureValid = true;
+						}
+						else
+						{
+							label = "Invalid";
+						}
+					}
 
-					ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
+					ImVec2 BtnLabelSize = ImGui::CalcTextSize(label.c_str());
+					BtnLabelSize.x += 20.0f;
+					float btnLabelWidth = glm::max<float>(100.0f, BtnLabelSize.x);
 
 
+					ImGui::Button(label.c_str(), BtnLabelSize);
 					if (ImGui::BeginDragDropTarget())
 					{
 						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 						{
-#if 0
-							const wchar_t* path = (const wchar_t*)payload->Data;
-							std::filesystem::path texturePath(path);
-							Ref<Texture2D> texture = Texture2D::Create(texturePath.string());
-							if (texture->)
-							component.Texture = ;
 
-#endif
+							AssetHandle handle = *(AssetHandle*)payload->Data;
 
+							// TODO: validate
+							if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
+							{
+								component.Texture = handle;
 
+							}
+							else
+							{
+								UG_CORE_WARN("Wrong Asset Type!");
+							}
+
+							
 						}
 						ImGui::EndDragDropTarget();
+
 					}
+					if (isTextureValid)
+					{
+
+						ImGui::SameLine();
+
+						ImVec2 xLabelSize = ImGui::CalcTextSize("X");
+						float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+						if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
+						{
+							component.Texture = 0;
+						}
+					}
+
+
+					ImGui::SameLine();
+					ImGui::Text("Texture");
 
 					// Tiling Factor
 					if (ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1f, 0.0f, 100.0f))

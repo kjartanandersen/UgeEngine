@@ -34,7 +34,7 @@ namespace Uge
 		void SaveScene();
 		void NewScene();
 		void OpenScene();
-		void OpenScene(const std::filesystem::path& path);
+		void OpenScene(AssetHandle handle);
 
 		void OnScenePlay();
 		void OnSceneStop();
@@ -56,7 +56,6 @@ namespace Uge
 
 		Ref<Texture2D> m_texture;
 		Ref<Texture2D> m_spriteSheet;
-		Ref<SubTexture2D> m_textureStairs, m_textureBarrel, m_textureDirt;
 
 		Ref<Framebuffer> m_frameBuffer;
 
@@ -68,9 +67,6 @@ namespace Uge
 
 		ImFont* m_mainFont;
 		ImFont* m_mainFontBold;
-
-		glm::vec4 m_square1Color = { 1.0f, 0.1f, 0.1f, 1.0f };
-		glm::vec4 m_square2Color = { 0.1f, 0.1f, 1.1f, 1.0f };
 
 		glm::vec2 m_viewportSize{0.0f, 0.0f};
 		glm::vec2 m_viewportBounds[2];

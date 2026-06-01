@@ -321,7 +321,7 @@ namespace Uge
 	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
 		: m_scene(scene) {}
 
-	void SceneSerializer::Serialize(const std::string& filepath)
+	void SceneSerializer::Serialize(const std::filesystem::path& filepath)
 	{
 
 		YAML::Emitter out;
@@ -348,14 +348,14 @@ namespace Uge
 		fout << out.c_str();
 
 	}
-	void SceneSerializer::SerializeRuntime(const std::string& filepath)
+	void SceneSerializer::SerializeRuntime(const std::filesystem::path& filepath)
 	{
 		
 		// Not implemented
 		UG_CORE_ASSERT(false);
 
 	}
-	bool SceneSerializer::DeSerialize(const std::string& filepath)
+	bool SceneSerializer::DeSerialize(const std::filesystem::path& filepath)
 	{
 		/*
 		std::ifstream stream(filepath);
@@ -372,11 +372,11 @@ namespace Uge
 		YAML::Node data;
 		try
 		{
-			data = YAML::LoadFile(filepath);
+			data = YAML::LoadFile(filepath.string());
 		}
 		catch (YAML::ParserException e)
 		{
-			UG_CORE_ERROR("Failed to load .uge file {0}\n	{1}", filepath, e.what());
+			UG_CORE_ERROR("Failed to load .uge file {0}\n	{1}", filepath.string(), e.what());
 			return false;
 		}
 		if (!data["Scene"])
@@ -551,7 +551,7 @@ namespace Uge
 
 		return true;
 	}
-	bool SceneSerializer::DeSerializeRuntime(const std::string& filepath)
+	bool SceneSerializer::DeSerializeRuntime(const std::filesystem::path& filepath)
 	{
 
 

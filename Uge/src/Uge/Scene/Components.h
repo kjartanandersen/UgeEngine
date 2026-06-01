@@ -97,7 +97,6 @@ namespace Uge
 		}
 
 	};
-
 	
 	struct SpriteRendererComponent
 	{
@@ -111,7 +110,6 @@ namespace Uge
 			: Color(color) {}
 
 	};
-
 	
 	struct CameraComponent
 	{
@@ -162,7 +160,6 @@ namespace Uge
 
 
 	};
-
 
 	struct TextComponent
 	{

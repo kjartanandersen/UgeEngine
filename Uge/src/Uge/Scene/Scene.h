@@ -3,6 +3,7 @@
 #include <entt.hpp>
 
 #include "Uge/Renderer/EditorCamera.h"
+#include "Uge/Asset/Asset.h"
 #include "Uge/Core/UUID.h"
 #include "Uge/Core/Timestep.h"
 
@@ -10,7 +11,7 @@ namespace Uge
 {
 	class Entity;
 
-	class Scene
+	class Scene : public Asset
 	{
 
 	public:
@@ -45,6 +46,9 @@ namespace Uge
 		void Step(int frames = 1);
 
 		Entity DuplicateEntity(Entity entity);
+
+		static AssetType GetStaticType() { return AssetType::Scene; }
+		virtual AssetType GetType() const override { return GetStaticType(); }
 
 	private:
 		template<typename T>

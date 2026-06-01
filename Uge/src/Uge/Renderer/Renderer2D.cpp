@@ -6,11 +6,9 @@
 #include "Uge/Renderer/RenderCommand.h"
 #include "Uge/Renderer/UniformBuffer.h"
 #include "Uge/Renderer/Mesh.h"
+#include "Uge/Renderer/MSDFData.h"
 
 #include "Uge/Asset/AssetManager.h"
-
-
-#include "Uge/Renderer/MSDFData.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -141,9 +139,9 @@ namespace Uge
 		delete[] quadIndices;
 
 		// m_data.WhiteTexture = Texture2D::Create(1, 1);
-		m_data.WhiteTexture = Texture2D::Create(TextureSpecification());
 		uint32_t whiteTextureData = 0xffffffff;
-		// m_data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
+		m_data.WhiteTexture = Texture2D::Create(TextureSpecification(), Buffer(&whiteTextureData, sizeof(uint32_t)));
+		// &whiteTextureData, sizeof(uint32_t)
 
 		int32_t samplers[m_data.MaxTextureSlots];
 		for (uint32_t i = 0; i < m_data.MaxTextureSlots; i++)

@@ -11,11 +11,11 @@ namespace Uge
 	public:
 		SceneSerializer(const Ref<Scene>& scene);
 
-		void Serialize(const std::string& filepath);
-		void SerializeRuntime(const std::string& filepath);
+		void Serialize(const std::filesystem::path& filepath);
+		void SerializeRuntime(const std::filesystem::path& filepath);
 
-		bool DeSerialize(const std::string& filepath);
-		bool DeSerializeRuntime(const std::string& filepath);
+		bool DeSerialize(const std::filesystem::path& filepath);
+		bool DeSerializeRuntime(const std::filesystem::path& filepath);
 	private:
 		Ref<Scene> m_scene;
 

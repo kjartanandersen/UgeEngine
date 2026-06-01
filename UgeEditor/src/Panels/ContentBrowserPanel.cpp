@@ -18,9 +18,9 @@ namespace Uge
 		m_currentDirectory = m_baseDirectory;
 		m_directoryIcon = TextureImporter::LoadTexture2D("Resources/Icons/ContentBrowser/DirectoryIcon.png");
 		m_fileIcon = TextureImporter::LoadTexture2D("Resources/Icons/ContentBrowser/FileIcon.png");
-		m_treeNodes.push_back(TreeNode("."));
+		m_treeNodes.push_back(TreeNode(".", 0));
 		RefreshAssetTree();
-		m_mode = Mode::Asset;
+		m_mode = Mode::FileSystem;
 
 	}
 
@@ -107,14 +107,20 @@ namespace Uge
 
 							if (ImGui::BeginPopupContextItem())
 							{
-								if (ImGui::MenuItem("Import"))
+								if (ImGui::MenuItem("Delete"))
 								{
-									auto relPath = std::filesystem::relative(itemStr, Project::GetAssetDirectory());
-
-									Project::GetActive()->GetEditorAssetManager()->ImportAsset(relPath);
+									UG_CORE_ASSERT(false, "Not Implemented!");
 								}
 
 								ImGui::EndPopup();
+							}
+
+							if (ImGui::BeginDragDropSource())
+							{
+								AssetHandle handle = m_treeNodes[treeNodeIndex].Handle;
+
+								ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", &handle, sizeof(AssetHandle));
+								ImGui::EndDragDropSource();
 							}
 
 						}
@@ -149,8 +155,7 @@ namespace Uge
 				for (auto& directoryEntry : std::filesystem::directory_iterator(m_currentDirectory))
 				{
 					const auto& path = directoryEntry.path();
-					std::filesystem::path relativePath(path);
-					std::string filenameString = relativePath.filename().string();
+					std::string filenameString = path.filename().string();
 					ImGui::PushID(filenameString.c_str());
 					{
 
@@ -167,19 +172,10 @@ namespace Uge
 									auto relPath = std::filesystem::relative(path, Project::GetAssetDirectory());
 
 									Project::GetActive()->GetEditorAssetManager()->ImportAsset(relPath);
+									RefreshAssetTree();
 								}
 
 								ImGui::EndPopup();
-							}
-
-							if (ImGui::BeginDragDropSource())
-							{
-								const wchar_t* itemPath = relativePath.c_str();
-
-								ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath,
-									(wcslen(itemPath) + 1) * sizeof(wchar_t), ImGuiCond_Once);
-
-								ImGui::EndDragDropSource();
 							}
 						}
 						ImGui::PopStyleColor();
@@ -235,7 +231,7 @@ namespace Uge
 				}
 				else
 				{
-					TreeNode newNode(p);
+					TreeNode newNode(p, handle);
 					newNode.Parent = currentNodeIdx;
 					m_treeNodes.push_back(newNode);
 
