@@ -293,7 +293,7 @@ namespace Uge
 			out << YAML::BeginMap; // MeshComponent
 
 			auto& meshComponent = entity.GetComponent<MeshComponent>();
-			out << YAML::Key << "Path" << YAML::Value << meshComponent.FilePath;
+			out << YAML::Key << "MeshHandle" << YAML::Value << meshComponent.Mesh;
 
 			out << YAML::EndMap; // MeshComponent
 		}
@@ -524,9 +524,9 @@ namespace Uge
 				{
 					UG_CORE_TRACE("Deserializing Mesh Component");
 
-					std::string meshPath = ymc["Path"] ? ymc["Path"].as<std::string>() : std::string();
+					AssetHandle meshAsset = ymc["MeshHandle"] ? ymc["MeshHandle"].as<AssetHandle>() : AssetHandle();
 					// std::filesystem::path path = Project::GetAssetFileSystemPath(meshPath);
-					deserializedEntity.AddComponent<MeshComponent>(meshPath);
+					deserializedEntity.AddComponent<MeshComponent>(meshAsset);
 				}
 
 				auto ytec = entity["TextComponent"];		// Text Component

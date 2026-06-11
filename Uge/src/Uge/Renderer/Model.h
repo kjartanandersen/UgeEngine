@@ -6,11 +6,13 @@
 #include <glm/glm.hpp>
 
 #include "Uge/Core/Core.h"
+
 #include "Uge/Renderer/Mesh.h"
 #include "Uge/Renderer/Shader.h"
 #include "Uge/Renderer/UniformBuffer.h"
 #include "Uge/Renderer/Texture.h"
 
+#include "Uge/Asset/Asset.h"
 
 
 struct aiNode;
@@ -23,7 +25,7 @@ class aiMatrix4x4t;
 namespace Uge
 {
 
-	class Model
+	class Model : public Asset
 	{
 	public:
 		explicit Model(const std::string& path);
@@ -32,6 +34,9 @@ namespace Uge
 
 		const std::string& GetPath() const { return m_path; }
 		bool IsLoaded() const { return !m_meshes.empty(); }
+
+		static AssetType GetStaticType() { return AssetType::Mesh; }
+		virtual AssetType GetType() const override { return GetStaticType(); }
 
 		static void BeginScene(const glm::mat4& viewProjection);
 		static void EndScene();
@@ -46,7 +51,7 @@ namespace Uge
 
 	private:
 		std::vector<Mesh> m_meshes;
-		std::vector<Ref<Texture2D>> m_loadedTextures;
+		std::vector<AssetHandle> m_loadedTextures;
 
 		std::string m_directory;
 		std::string m_path;

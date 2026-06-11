@@ -24,6 +24,11 @@ namespace Uge
 
                 return "AssetType::Texture2D";
             }
+            case Uge::AssetType::Mesh:
+            {
+
+                return "AssetType::Mesh";
+            }
 
         }
 
@@ -45,6 +50,10 @@ namespace Uge
         if (type == "AssetType::Texture2D")
         {
             return AssetType::Texture2D;
+        }
+        if (type == "AssetType::Mesh")
+        {
+            return AssetType::Mesh;
         }
 
         return AssetType::None;

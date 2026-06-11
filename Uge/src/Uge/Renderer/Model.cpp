@@ -1,6 +1,8 @@
 #include <ugpch.h>
 #include "Model.h"
 
+#include "Uge/Asset/AssetManager.h"
+
 #include <cstdlib>
 #include <filesystem>
 
@@ -226,9 +228,10 @@ namespace Uge
 			}
 
 			auto cachedIt = std::find_if(m_loadedTextures.begin(), m_loadedTextures.end(),
-				[&relativePath](const Ref<Texture2D>& texture)
+				[&relativePath](const AssetHandle& texture)
 				{
-					return texture->m_path == relativePath;
+					
+					return AssetManager::GetAsset<Texture2D>(texture)->m_path == relativePath;
 				});
 
 			if (cachedIt != m_loadedTextures.end())
@@ -266,12 +269,26 @@ namespace Uge
 
 					TextureSpecification spec;
 					spec.Format = ImageFormat::RGBA8;
-					spec.Height = 0;
+					spec.Height = 1;
 					spec.Width = embeddedTexture->mWidth;
+					std::vector<unsigned char> rgbaPixels;
+
+					rgbaPixels.resize(static_cast<size_t>(embeddedTexture->mWidth) * 4);
+
+					for (uint32_t texelIndex = 0; texelIndex < embeddedTexture->mWidth; texelIndex++)
+					{
+						const aiTexel& src = embeddedTexture->pcData[texelIndex];
+						const size_t dstOffset = static_cast<size_t>(texelIndex) * 4;
+						rgbaPixels[dstOffset + 0] = src.r;
+						rgbaPixels[dstOffset + 1] = src.g;
+						rgbaPixels[dstOffset + 2] = src.b;
+						rgbaPixels[dstOffset + 3] = src.a;
+					}
+
 
 					Buffer data;
-					data.Data = reinterpret_cast<uint8_t*>(embeddedTexture->pcData);
-					data.Size = embeddedTexture->mWidth;
+					data.Data = reinterpret_cast<uint8_t*>(rgbaPixels.data());
+					data.Size = static_cast<uint64_t>(rgbaPixels.size());
 					
 					
 					// meshTexture = Texture2D::Create(reinterpret_cast<const unsigned char*>(embeddedTexture->pcData), embeddedTexture->mWidth);

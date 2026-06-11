@@ -675,38 +675,35 @@ namespace Uge
 
 			DrawComponent<MeshComponent>("Mesh", entity, true, [](auto& component)
 				{
-					char buffer[512];
-					memset(buffer, 0, sizeof(buffer));
-					strcpy_s(buffer, sizeof(buffer), component.FilePath.c_str());
-
-					ImGui::InputText("Path", buffer, sizeof(buffer));
-					component.FilePath = buffer;
-
-					if (ImGui::Button("Load Mesh"))
+					bool isHandleValid = AssetManager::IsAssetHandleValid(component.Mesh);
+					if (isHandleValid)
 					{
-						std::string filePath = FileDialogs::OpenFile("");
+						char buffer[512];
+						memset(buffer, 0, sizeof(buffer));
 
-						std::filesystem::path absPath(filePath);
-						std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
+						const auto& metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Mesh);
 
-						std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
+						std::string filepathStr = metadata.FilePath.string();
+						strcpy_s(buffer, sizeof(buffer), filepathStr.c_str());
+
+						ImGui::Text(buffer);
+
+						
+						if (ImGui::Button("Clear Mesh"))
+						{
+							component.Mesh = 0;
+						}
 
 
-
-						std::string path = relativePath.string();
-
-
-
-						strcpy_s(buffer, sizeof(buffer), path.c_str());
-						component.SetModel(std::string(buffer));
 					}
-					ImGui::SameLine();
-					if (ImGui::Button("Clear Mesh"))
+					else
 					{
-						component.SetModel(std::string());
+						UG_CORE_ERROR("SceneHierarchyPanel::DrawComponents - Mesh component handle is not valid!");
 					}
 
-					ImGui::Text("Status: %s", component.HasModel() ? "Loaded" : "No model");
+					ImGui::Text("Status: %s", isHandleValid ? "Loaded" : "No model");
+
+
 				});
 
 #pragma endregion

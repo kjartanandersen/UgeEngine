@@ -3,8 +3,13 @@
 
 #include "Uge/Scene/Components.h"
 #include "Uge/Scene/ScriptableEntity.h"
+
 #include "Uge/Renderer/Renderer2D.h"
+
 #include "Uge/Scripting/ScriptEngine.h"
+
+#include "Uge/Asset/AssetManager.h"
+
 
 #include <type_traits>
 
@@ -246,12 +251,14 @@ namespace Uge
 				auto meshView = m_registry.view<TransformComponent, MeshComponent>();
 				for (auto [entity, transform, mesh] : meshView.each())
 				{
-					if (!mesh.ModelAsset)
+					if (mesh.Mesh)
 					{
-						continue;
+						Ref<Model> model = AssetManager::GetAsset<Model>(mesh.Mesh);
+						if (model)
+						{
+							model->Draw(transform.GetTransform(), (int)entity);
+						}
 					}
-
-					mesh.ModelAsset->Draw(transform.GetTransform(), (int)entity);
 				}
 			}
 			Model::EndScene();
@@ -298,12 +305,14 @@ namespace Uge
 			auto meshView = m_registry.view<TransformComponent, MeshComponent>();
 			for (auto [entity, transform, mesh] : meshView.each())
 			{
-				if (!mesh.ModelAsset)
+				if (mesh.Mesh)
 				{
-					continue;
+					Ref<Model> model = AssetManager::GetAsset<Model>(mesh.Mesh);
+					if (model)
+					{
+						model->Draw(transform.GetTransform(), (int)entity);
+					}
 				}
-
-				mesh.ModelAsset->Draw(transform.GetTransform(), (int)entity);
 			}
 		}
 		Model::EndScene();

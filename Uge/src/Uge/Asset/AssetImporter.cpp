@@ -3,14 +3,18 @@
 #include "AssetImporter.h"
 #include "TextureImporter.h"
 #include "SceneImporter.h"
+#include "MeshImporter.h"
 
 namespace Uge
 {
 	
 	using AssetImportFunction = std::function<Ref<Asset>(AssetHandle, const AssetMetadata&)>;
 	static std::map<AssetType, AssetImportFunction> s_assetImportFuncs = {
-		{AssetType::Texture2D, TextureImporter::ImportTexture2D },
-		{AssetType::Scene, SceneImporter::ImportScene		}
+
+		{AssetType::Texture2D,	TextureImporter::ImportTexture2D },
+		{AssetType::Scene,		SceneImporter::ImportScene		 },
+		{AssetType::Mesh,		MeshImporter::ImportMesh		 }
+	
 	};
 
 	Ref<Asset> AssetImporter::ImportAsset(AssetHandle handle, const AssetMetadata& metadata)

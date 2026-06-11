@@ -19,7 +19,7 @@ namespace Uge
 		virtual AssetType GetAssetType(AssetHandle handle) const override;
 
 
-		void ImportAsset(const std::filesystem::path& filepath);
+		AssetHandle ImportAsset(const std::filesystem::path& filepath);
 
 		const AssetMetadata& GetMetadata(AssetHandle handle) const;
 		const std::filesystem::path& GetFilePath(AssetHandle handle) const;

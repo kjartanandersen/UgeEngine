@@ -16,7 +16,13 @@ namespace Uge
         { ".png",  AssetType::Texture2D },
         { ".jpg",  AssetType::Texture2D },
         { ".jpeg", AssetType::Texture2D },
-        { ".uge",  AssetType::Scene     }
+
+        { ".uge",  AssetType::Scene     },
+        
+        { ".obj",  AssetType::Mesh      },
+        { ".fbx",  AssetType::Mesh      },
+        { ".gltf", AssetType::Mesh      },
+        { ".glb",  AssetType::Mesh      }
     };
 
     static AssetType GetAssetTypeFromFileExtention(const std::filesystem::path& extention)
@@ -93,7 +99,7 @@ namespace Uge
 
     }
 
-    void EditorAssetManager::ImportAsset(const std::filesystem::path& filepath)
+    AssetHandle EditorAssetManager::ImportAsset(const std::filesystem::path& filepath)
     {
         AssetHandle handle; // TODO: Generate new handle
         AssetMetadata metadata;
@@ -111,6 +117,8 @@ namespace Uge
             m_assetRegistry[handle] = metadata;
             SerializeAssetRegistry();
         }
+
+        return handle;
 
     }
 

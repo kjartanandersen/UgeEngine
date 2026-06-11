@@ -41,34 +41,8 @@ namespace Uge
 
 	struct MeshComponent
 	{
-		std::string FilePath;
-		Ref<Model> ModelAsset;
+		AssetHandle Mesh = 0;
 
-		MeshComponent() = default;
-		MeshComponent(const MeshComponent&) = default;
-		explicit MeshComponent(const std::string& filePath)
-		{
-			
-			SetModel(filePath);
-		}
-
-		void SetModel(const std::string& filePath)
-		{
-			FilePath = filePath;
-			if (FilePath.empty())
-			{
-				UG_CORE_WARN("MeshComponent::SetModel called with no filePath");
-				ModelAsset = nullptr;
-				return;
-			}
-
-			ModelAsset = CreateRef<Model>(Project::GetAssetAbsolutePathString(FilePath));
-		}
-
-		bool HasModel() const
-		{
-			return (bool)ModelAsset;
-		}
 
 	};
 
