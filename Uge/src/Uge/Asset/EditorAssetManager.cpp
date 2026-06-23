@@ -1,7 +1,7 @@
 #include <ugpch.h>
+#include "EditorAssetManager.h"
 
 #include "Uge/Project/Project.h"
-#include "EditorAssetManager.h"
 #include "AssetImporter.h"
 
 
@@ -76,8 +76,15 @@ namespace Uge
     bool EditorAssetManager::IsAssetHandleValid(AssetHandle handle) const
     {
 
-        return handle != 0 || m_assetRegistry.find(handle) != m_assetRegistry.end();
+        return handle != 0 && m_assetRegistry.find(handle) != m_assetRegistry.end();
     
+    }
+
+    bool EditorAssetManager::IsMeshAssetHandleValid(AssetHandle handle) const
+    {
+
+
+        return handle != 0 && m_meshAssetRegistry.find(handle) != m_meshAssetRegistry.end();
     }
 
     bool EditorAssetManager::IsAssetLoaded(AssetHandle handle) const
@@ -86,6 +93,7 @@ namespace Uge
         return m_loadedAssets.find(handle) != m_loadedAssets.end();
         
     }
+
 
     AssetType EditorAssetManager::GetAssetType(AssetHandle handle) const
     {
@@ -122,6 +130,17 @@ namespace Uge
 
     }
 
+    AssetHandle EditorAssetManager::GetOrImportAsset(const std::filesystem::path& filepath)
+    {
+        for (const auto& [handle, metadata] : m_assetRegistry)
+        {
+            if (metadata.FilePath == filepath)
+                return handle;
+        }
+
+        return ImportAsset(filepath);
+    }
+
     const AssetMetadata& EditorAssetManager::GetMetadata(AssetHandle handle) const
     {
         static AssetMetadata s_nullMetadata;
@@ -133,6 +152,28 @@ namespace Uge
 
         }
         return it->second;
+
+    }
+
+    const MeshAssetMetadata& EditorAssetManager::GetMeshMetadata(AssetHandle handle) const
+    {
+
+        static MeshAssetMetadata s_nullMetadata;
+        auto it = m_meshAssetRegistry.find(handle);
+
+        if (it == m_meshAssetRegistry.end())
+        {
+            return s_nullMetadata;
+
+        }
+        return it->second;
+
+    }
+
+    void EditorAssetManager::SetMeshMetadata(AssetHandle handle, const MeshAssetMetadata& metadata)
+    {
+
+
 
     }
 

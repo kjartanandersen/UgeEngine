@@ -29,6 +29,10 @@ namespace Uge
 
                 return "AssetType::Mesh";
             }
+            case Uge::AssetType::Material:
+            {
+                return "AssetType::Material";
+            }
 
         }
 
@@ -54,6 +58,10 @@ namespace Uge
         if (type == "AssetType::Mesh")
         {
             return AssetType::Mesh;
+        }
+        if (type == "AssetType::Material")
+        {
+            return AssetType::Material;
         }
 
         return AssetType::None;

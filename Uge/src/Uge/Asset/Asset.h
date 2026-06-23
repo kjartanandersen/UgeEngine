@@ -14,7 +14,8 @@ namespace Uge
 		None = 0,
 		Scene,
 		Texture2D,
-		Mesh
+		Mesh,
+		Material
 	};
 
 	std::string_view AssetTypeToString(AssetType type);

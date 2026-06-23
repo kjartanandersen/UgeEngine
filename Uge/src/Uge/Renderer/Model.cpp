@@ -236,7 +236,7 @@ namespace Uge
 
 			if (cachedIt != m_loadedTextures.end())
 			{
-				textures.emplace_back(*cachedIt);
+				// textures.emplace_back(*cachedIt);
 				continue;
 			}
 
@@ -350,7 +350,7 @@ namespace Uge
 			meshTexture->m_path = relativePath;
 
 			textures.emplace_back(meshTexture);
-			m_loadedTextures.emplace_back(meshTexture);
+			// m_loadedTextures.emplace_back(meshTexture);
 		}
 
 		return textures;

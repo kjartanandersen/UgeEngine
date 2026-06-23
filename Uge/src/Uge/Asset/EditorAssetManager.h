@@ -7,6 +7,7 @@
 namespace Uge
 {
 	using AssetRegistry = std::map<AssetHandle, AssetMetadata>;
+	using MeshAssetRegistry = std::map<AssetHandle, MeshAssetMetadata>;
 
 	class EditorAssetManager : public AssetManagerBase
 	{
@@ -15,22 +16,29 @@ namespace Uge
 		virtual Ref<Asset> GetAsset(AssetHandle handle) override;
 		
 		virtual bool IsAssetHandleValid(AssetHandle handle) const override;
+		virtual bool IsMeshAssetHandleValid(AssetHandle handle) const override;
 		virtual bool IsAssetLoaded(AssetHandle handle) const override;
 		virtual AssetType GetAssetType(AssetHandle handle) const override;
 
 
 		AssetHandle ImportAsset(const std::filesystem::path& filepath);
+		AssetHandle GetOrImportAsset(const std::filesystem::path& filepath);
+
 
 		const AssetMetadata& GetMetadata(AssetHandle handle) const;
 		const std::filesystem::path& GetFilePath(AssetHandle handle) const;
+		const MeshAssetMetadata& GetMeshMetadata(AssetHandle handle) const;
+		void SetMeshMetadata(AssetHandle handle, const MeshAssetMetadata& metadata);
 
 		const AssetRegistry& GetAssetRegistry() const { return m_assetRegistry; }
+
 
 		void SerializeAssetRegistry();
 		bool DeserializeAssetRegistry();
 
 	private:
 		AssetRegistry m_assetRegistry;
+		MeshAssetRegistry m_meshAssetRegistry;
 		AssetMap  m_loadedAssets;
 
 		// TODO: memory only assets
