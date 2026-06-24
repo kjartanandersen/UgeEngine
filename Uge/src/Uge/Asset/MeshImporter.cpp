@@ -10,6 +10,10 @@
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
 #include <assimp/scene.h>
+#include <assimp/texture.h>
+
+#include <cstdlib>
+#include <fstream>
 
 namespace Uge
 {
@@ -35,9 +39,11 @@ namespace Uge
 		}
 
 		MeshAssetMetadata meshMetadata = ImportMaterialData(modelPath, scene);
-		(void)meshMetadata;
 
-		auto model = CreateRef<Model>(modelPath.string());
+		auto assetManager = Project::GetActive()->GetEditorAssetManager();
+		assetManager->SetMeshMetadata(handle, meshMetadata);
+
+		auto model = CreateRef<Model>(modelPath.string(), meshMetadata);
 		model->m_handle = handle;
 		return model;
 	}
@@ -61,7 +67,14 @@ namespace Uge
 			{
 				for (const auto& textureRef : textureRefs)
 				{
-					materialData.Textures.emplace_back(textureRef);
+					switch (textureRef.Type)
+					{
+					case MeshTextureType::Albedo:    materialData.TextureMaps.Albedo = textureRef.Texture; break;
+					case MeshTextureType::Normal:    materialData.TextureMaps.Normal = textureRef.Texture; break;
+					case MeshTextureType::Roughness: materialData.TextureMaps.Roughness = textureRef.Texture; break;
+					case MeshTextureType::Metallic:  materialData.TextureMaps.Metallic = textureRef.Texture; break;
+					default: break;
+					}
 
 					if (std::find(meshMetadata.Dependencies.begin(), meshMetadata.Dependencies.end(), textureRef.Texture)
 						== meshMetadata.Dependencies.end())
@@ -71,10 +84,10 @@ namespace Uge
 				}
 			};
 
-			appendTextures(ImportMaterialTextures(modelDirectory, material, aiTextureType_DIFFUSE, MeshTextureType::Albedo));
-			appendTextures(ImportMaterialTextures(modelDirectory, material, aiTextureType_NORMALS, MeshTextureType::Normal));
-			appendTextures(ImportMaterialTextures(modelDirectory, material, aiTextureType_DIFFUSE_ROUGHNESS, MeshTextureType::Roughness));
-			appendTextures(ImportMaterialTextures(modelDirectory, material, aiTextureType_METALNESS, MeshTextureType::Metallic));
+			appendTextures(ImportMaterialTextures(modelDirectory, modelPath, scene, material, aiTextureType_DIFFUSE, MeshTextureType::Albedo));
+			appendTextures(ImportMaterialTextures(modelDirectory, modelPath, scene, material, aiTextureType_NORMALS, MeshTextureType::Normal));
+			appendTextures(ImportMaterialTextures(modelDirectory, modelPath, scene, material, aiTextureType_DIFFUSE_ROUGHNESS, MeshTextureType::Roughness));
+			appendTextures(ImportMaterialTextures(modelDirectory, modelPath, scene, material, aiTextureType_METALNESS, MeshTextureType::Metallic));
 
 			meshMetadata.Materials.emplace_back(materialData);
 		}
@@ -83,7 +96,8 @@ namespace Uge
 	}
 
 	std::vector<MeshMaterialTextureRef> MeshImporter::ImportMaterialTextures(
-		const std::filesystem::path& modelDirectory, aiMaterial* material, int assimpTextureType, MeshTextureType meshTextureType)
+		const std::filesystem::path& modelDirectory, const std::filesystem::path& modelPath,
+		const aiScene* scene, aiMaterial* material, int assimpTextureType, MeshTextureType meshTextureType)
 	{
 		std::vector<MeshMaterialTextureRef> textureRefs;
 		aiTextureType textureType = static_cast<aiTextureType>(assimpTextureType);
@@ -100,15 +114,20 @@ namespace Uge
 				continue;
 
 			std::string texturePathString = texturePath.string();
+
+			std::filesystem::path absoluteTexturePath;
 			if (!texturePathString.empty() && texturePathString[0] == '*')
 			{
-				UG_CORE_WARN("Embedded mesh texture '{0}' is not supported yet", texturePath.string());
-				continue;
+				absoluteTexturePath = ExtractEmbeddedTexture(modelDirectory, modelPath, scene, texturePathString);
+				if (absoluteTexturePath.empty())
+					continue;
 			}
-
-			std::filesystem::path absoluteTexturePath = texturePath.is_absolute()
-				? texturePath
-				: modelDirectory / texturePath;
+			else
+			{
+				absoluteTexturePath = texturePath.is_absolute()
+					? texturePath
+					: modelDirectory / texturePath;
+			}
 
 			absoluteTexturePath = absoluteTexturePath.lexically_normal();
 
@@ -137,7 +156,56 @@ namespace Uge
 		return textureRefs;
 	}
 
+	std::filesystem::path MeshImporter::ExtractEmbeddedTexture(
+		const std::filesystem::path& modelDirectory, const std::filesystem::path& modelPath,
+		const aiScene* scene, const std::string& reference)
+	{
+		if (!scene)
+			return {};
 
+		// reference is of the form "*N" where N is an index into scene->mTextures.
+		char* end = nullptr;
+		long index = std::strtol(reference.c_str() + 1, &end, 10);
+		if (end == reference.c_str() + 1 || *end != '\0' || index < 0 || index >= static_cast<long>(scene->mNumTextures))
+		{
+			UG_CORE_WARN("Invalid embedded texture reference '{0}'", reference);
+			return {};
+		}
 
-	
+		const aiTexture* embedded = scene->mTextures[index];
+		if (!embedded || !embedded->pcData)
+		{
+			UG_CORE_WARN("Embedded texture '{0}' has no data", reference);
+			return {};
+		}
+
+		if (embedded->mHeight != 0)
+		{
+			// Raw, uncompressed pixel data would need re-encoding before it can be written
+			// as a standalone image file. Not handled yet.
+			UG_CORE_WARN("Uncompressed embedded texture '{0}' is not supported yet", reference);
+			return {};
+		}
+
+		// Compressed: pcData holds the raw encoded file bytes (PNG/JPG/...), mWidth = byte count.
+		std::string extension = embedded->achFormatHint[0] != '\0' ? embedded->achFormatHint : "png";
+		std::string fileName = modelPath.stem().string() + "_embedded_" + std::to_string(index) + "." + extension;
+		std::filesystem::path outputPath = (modelDirectory / fileName).lexically_normal();
+
+		if (std::filesystem::exists(outputPath))
+			return outputPath;
+
+		std::ofstream out(outputPath, std::ios::binary);
+		if (!out)
+		{
+			UG_CORE_WARN("Failed to write embedded texture to '{0}'", outputPath.string());
+			return {};
+		}
+
+		out.write(reinterpret_cast<const char*>(embedded->pcData), embedded->mWidth);
+		out.close();
+
+		return outputPath;
+	}
+
 }

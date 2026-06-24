@@ -6,6 +6,8 @@
 
 #include <glm/glm.hpp>
 
+#include "Uge/Asset/Asset.h"
+
 #include "Uge/Core/Core.h"
 #include "Uge/Renderer/Shader.h"
 #include "Uge/Renderer/Texture.h"
@@ -53,9 +55,16 @@ namespace Uge
 	{
 	public:
 		Mesh() = default;
-		Mesh(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<Ref<Texture2D>>& textures, const std::string& name = "");
+		Mesh(const std::vector<MeshVertex>& vertices, 
+			 const std::vector<uint32_t>& indices, 
+			 const AssetHandle material,
+			 const std::string& name = ""
+		);
 
 		void Draw(const Ref<Shader>& shader, int entityID = -1) const;
+
+		AssetHandle GetMaterial() const { return m_material; }
+		void SetMaterial(AssetHandle material) { m_material = material; }
 
 	private:
 		void SetupMesh();
@@ -65,7 +74,7 @@ namespace Uge
 
 		std::vector<MeshVertex> m_vertices;
 		std::vector<uint32_t> m_indices;
-		std::vector<Ref<Texture2D>> m_textures;
+		AssetHandle m_material = 0;
 
 		Ref<UniformBuffer> m_diffuseMap;
 

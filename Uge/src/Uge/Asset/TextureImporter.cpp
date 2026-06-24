@@ -37,31 +37,17 @@ namespace Uge
 		if (data.Data == nullptr)
 		{
 			UG_CORE_ERROR("TextureImporter::LoadTexture2D - Could not load texture from filepath: {0} ", pathString);
+			return nullptr;
 		}
 
 		TextureSpecification spec;
 		spec.Width = width;
 		spec.Height = height;
 
-		// TODO: Not ideal for HDR
-		data.Size = static_cast<uint64_t>(width) * height * channels;
-
-		switch (channels)
-		{
-		case 3:
-		{
-			spec.Format = ImageFormat::RGB8;
-
-			break;
-		}
-		case 4:
-		{
-
-			spec.Format = ImageFormat::RGBA8;
-
-			break;
-		}
-		}
+		// We force STBI_rgb_alpha above, so stb always hands back 4-channel RGBA data
+		// regardless of the source image's channel count.
+		spec.Format = ImageFormat::RGBA8;
+		data.Size = static_cast<uint64_t>(width) * height * 4;
 
 		Ref<Texture2D> texture = Texture2D::Create(spec, data);
 

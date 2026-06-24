@@ -40,7 +40,8 @@ namespace Uge
 
 	Model::SceneData Model::s_sceneData;
 
-	Model::Model(const std::string& path)
+	Model::Model(const std::string& path, const MeshAssetMetadata& metadata)
+		: m_meshMetadata(metadata)
 	{
 		LoadModel(path);
 	}
@@ -141,27 +142,13 @@ namespace Uge
 	{
 		std::vector<MeshVertex> vertices;
 		std::vector<uint32_t> indices;
-		std::vector<Ref<Texture2D>> textures;
+
 		const glm::mat4 meshTransform = AssimpToGlm(transform);
 		const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(meshTransform)));
 
-		float diffuseTextureIndex = -1.0f;
-		if (mesh->mMaterialIndex >= 0)
-		{
-			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			auto diffuseMaps = LoadMaterialTextures(material, scene, (int)aiTextureType_DIFFUSE, "texture_diffuse");
-			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-
-			for (uint32_t i = 0; i < textures.size(); i++)
-			{
-				const auto& texture = textures[i];
-				if (texture && texture->m_name == "texture_diffuse")
-				{
-					diffuseTextureIndex = static_cast<float>(i);
-					break;
-				}
-			}
-		}
+		AssetHandle materialHandle = 0;
+		if (mesh->mMaterialIndex < m_meshMetadata.Materials.size())
+			materialHandle = m_meshMetadata.Materials[mesh->mMaterialIndex].TextureMaps.Albedo;
 
 		vertices.reserve(mesh->mNumVertices);
 		for (uint32_t i = 0; i < mesh->mNumVertices; i++)
@@ -185,8 +172,8 @@ namespace Uge
 			{
 				vertex.TexCoord.x = mesh->mTextureCoords[0][i].x;
 				vertex.TexCoord.y = mesh->mTextureCoords[0][i].y;
-				vertex.HasDiffuseMap = diffuseTextureIndex >= 0.0f ? 1 : 0;
-				vertex.TexIndex = diffuseTextureIndex;
+				vertex.HasDiffuseMap = materialHandle ? 1 : 0;
+				vertex.TexIndex = materialHandle ? 0.0f : -1.0f;
 			}
 			else
 			{
@@ -208,7 +195,7 @@ namespace Uge
 			}
 		}
 
-		return Mesh(vertices, indices, textures, scene->mName.C_Str());
+		return Mesh(vertices, indices, materialHandle, mesh->mName.C_Str());
 	}
 
 	std::vector<Ref<Texture2D>> Model::LoadMaterialTextures(aiMaterial* material, const aiScene* scene, int textureType, const std::string& typeName)

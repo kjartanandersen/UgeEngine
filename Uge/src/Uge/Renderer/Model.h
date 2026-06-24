@@ -13,6 +13,7 @@
 #include "Uge/Renderer/Texture.h"
 
 #include "Uge/Asset/Asset.h"
+#include "Uge/Asset/AssetMetadata.h"
 
 
 struct aiNode;
@@ -28,7 +29,7 @@ namespace Uge
 	class Model : public Asset
 	{
 	public:
-		explicit Model(const std::string& path);
+		explicit Model(const std::string& path, const MeshAssetMetadata& metadata = {});
 
 		void Draw(const glm::mat4& transform, int entityID = -1) const;
 
@@ -55,6 +56,8 @@ namespace Uge
 
 		std::string m_directory;
 		std::string m_path;
+
+		MeshAssetMetadata m_meshMetadata;
 
 		struct SceneData
 		{

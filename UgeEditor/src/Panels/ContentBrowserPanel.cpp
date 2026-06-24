@@ -93,7 +93,10 @@ namespace Uge
 				{
 
 					std::string itemStr = item.generic_string();
-					bool isDirectory = std::filesystem::is_directory(Project::GetAssetDirectory() / itemStr);
+					// 'item' is only the leaf component relative to the current directory, so
+					// resolve it against m_currentDirectory (not the asset root) when probing
+					// the filesystem — otherwise nested folders are misclassified as files.
+					bool isDirectory = std::filesystem::is_directory(m_currentDirectory / itemStr);
 
 
 					ImGui::PushID(itemStr.c_str());
@@ -115,7 +118,9 @@ namespace Uge
 								ImGui::EndPopup();
 							}
 
-							if (ImGui::BeginDragDropSource())
+							// Only real asset files are draggable. Directories carry no handle and
+							// are navigated into via double-click instead.
+							if (!isDirectory && ImGui::BeginDragDropSource())
 							{
 								AssetHandle handle = m_treeNodes[treeNodeIndex].Handle;
 
@@ -221,17 +226,27 @@ namespace Uge
 		{
 			uint32_t currentNodeIdx = 0;
 
+			// Only the final path component (the actual asset file) should carry the
+			// asset handle. Intermediate directory nodes must stay handle-less, otherwise
+			// a directory ends up holding the handle of whichever asset created it first
+			// (e.g. a mesh's extracted texture), and dragging it yields the wrong asset.
+			const std::filesystem::path leaf = metadata.FilePath.filename();
+
 			for (const auto& p : metadata.FilePath)
 			{
+				bool isLeaf = (p == leaf);
+
 				auto it = m_treeNodes[currentNodeIdx].Children.find(p.generic_string());
 				if (it != m_treeNodes[currentNodeIdx].Children.end())
 				{
 					currentNodeIdx = it->second;
 
+					if (isLeaf)
+						m_treeNodes[currentNodeIdx].Handle = handle;
 				}
 				else
 				{
-					TreeNode newNode(p, handle);
+					TreeNode newNode(p, isLeaf ? handle : AssetHandle(0));
 					newNode.Parent = currentNodeIdx;
 					m_treeNodes.push_back(newNode);
 

@@ -2,13 +2,15 @@
 #include "Mesh.h"
 
 #include "Uge/Renderer/RenderCommand.h"
+#include "Material.h"
+#include "Uge/Asset/AssetManager.h"
 
 namespace Uge
 {
 
 	Mesh::Mesh(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices,
-		const std::vector<Ref<Texture2D>>& textures, const std::string& name)
-		: m_vertices(vertices), m_indices(indices), m_textures(textures), m_name(name)
+		AssetHandle material, const std::string& name)
+		: m_vertices(vertices), m_indices(indices), m_material(material), m_name(name)
 	{
 	
 		SetupMesh();
@@ -50,18 +52,21 @@ namespace Uge
 		}
 		shader->Bind();
 
-		for (uint32_t i = 0; i < m_textures.size(); i++)
+		if (m_material && AssetManager::IsAssetHandleValid(m_material))
 		{
-			const auto& texture = m_textures[i];
-			if (!texture)
-			{
-				continue;
-			}
+			AssetType materialType = AssetManager::GetAssetType(m_material);
 
-			if (texture->m_name == "texture_diffuse")
+			if (materialType == AssetType::Material)
 			{
-				texture->Bind(0);
-				break;
+				if (Ref<Material> material = AssetManager::GetAsset<Material>(m_material))
+					material->Bind();
+			}
+			else if (materialType == AssetType::Texture2D)
+			{
+				// No Material asset yet (memory-only assets are not supported); bind the
+				// albedo texture directly to the diffuse slot the Model shader samples.
+				if (Ref<Texture2D> texture = AssetManager::GetAsset<Texture2D>(m_material))
+					texture->Bind(0);
 			}
 		}
 

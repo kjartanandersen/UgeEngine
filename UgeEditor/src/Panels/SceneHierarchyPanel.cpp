@@ -675,35 +675,60 @@ namespace Uge
 
 			DrawComponent<MeshComponent>("Mesh", entity, true, [](auto& component)
 				{
-					bool isHandleValid = AssetManager::IsAssetHandleValid(component.Mesh);
-					if (isHandleValid)
+					std::string label = "None";
+					bool isMeshValid = false;
+					if (component.Mesh != 0)
 					{
-						char buffer[512];
-						memset(buffer, 0, sizeof(buffer));
+						if (AssetManager::IsAssetHandleValid(component.Mesh) && AssetManager::GetAssetType(component.Mesh) == AssetType::Mesh)
+						{
+							const auto& metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Mesh);
+							label = metadata.FilePath.filename().string();
+							isMeshValid = true;
+						}
+						else
+						{
+							label = "Invalid";
+						}
+					}
 
-						const auto& metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Mesh);
+					ImVec2 BtnLabelSize = ImGui::CalcTextSize(label.c_str());
+					BtnLabelSize.x += 20.0f;
 
-						std::string filepathStr = metadata.FilePath.string();
-						strcpy_s(buffer, sizeof(buffer), filepathStr.c_str());
+					ImGui::Button(label.c_str(), BtnLabelSize);
+					if (ImGui::BeginDragDropTarget())
+					{
+						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+						{
+							AssetHandle handle = *(AssetHandle*)payload->Data;
 
-						ImGui::Text(buffer);
+							if (AssetManager::GetAssetType(handle) == AssetType::Mesh)
+							{
+								component.Mesh = handle;
+							}
+							else
+							{
+								UG_CORE_WARN("Wrong Asset Type!");
+							}
+						}
+						ImGui::EndDragDropTarget();
+					}
 
-						
-						if (ImGui::Button("Clear Mesh"))
+					if (isMeshValid)
+					{
+						ImGui::SameLine();
+
+						ImVec2 xLabelSize = ImGui::CalcTextSize("X");
+						float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+						if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
 						{
 							component.Mesh = 0;
 						}
-
-
-					}
-					else
-					{
-						UG_CORE_ERROR("SceneHierarchyPanel::DrawComponents - Mesh component handle is not valid!");
 					}
 
-					ImGui::Text("Status: %s", isHandleValid ? "Loaded" : "No model");
+					ImGui::SameLine();
+					ImGui::Text("Mesh");
 
-
+					ImGui::Text("Status: %s", isMeshValid ? "Loaded" : "No model");
 				});
 
 #pragma endregion
