@@ -111,6 +111,24 @@ namespace Uge
 	void EditorLayer::OnAttach()
 	{
 		UG_PROFILE_FUNCTION();
+
+		auto appSpec = Application::Get().GetSpecifications();
+
+
+		if (appSpec.CommandLineArgs.Count > 1)
+		{
+			auto projectFilePath = appSpec.CommandLineArgs[1];
+			OpenProject(projectFilePath);
+		}
+		else
+		{
+
+			if (!OpenProject())
+			{
+				Application::Get().CloseProgram();
+			}
+
+		}
 		
 		m_iconPlay = TextureImporter::LoadTexture2D("Resources/Icons/PlayButton.png");
 		m_iconStop = TextureImporter::LoadTexture2D("Resources/Icons/StopButton.png");
@@ -137,23 +155,7 @@ namespace Uge
 
 
 
-		auto appSpec = Application::Get().GetSpecifications();
-
-
-		if (appSpec.CommandLineArgs.Count > 1)
-		{
-			auto projectFilePath = appSpec.CommandLineArgs[1];
-			OpenProject(projectFilePath);
-		}
-		else
-		{
-
-			if (!OpenProject())
-			{
-				Application::Get().CloseProgram();
-			}
-
-		}
+		
 
 
 		m_editorCamera = EditorCamera(60.0f, 16.0f/9.0f, 0.01f, 10000.0f);
@@ -337,6 +339,20 @@ namespace Uge
 				ImGui::Image((ImTextureID)Font::GetDefault()->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
 			}
 			ImGui::End();
+
+			ImGui::Begin("Loaded Assets");
+			{
+
+				auto loadedAssetNames = Project::GetActive()->GetEditorAssetManager()->GetLoadedAssetsNames();
+
+				for (auto& asset : loadedAssetNames)
+				{
+					ImGui::Text(asset.c_str());
+				}
+
+			}
+			ImGui::End();
+
 
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
 

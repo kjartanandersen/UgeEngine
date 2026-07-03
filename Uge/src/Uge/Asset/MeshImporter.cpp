@@ -5,6 +5,7 @@
 
 #include "Uge/Project/Project.h"
 #include "Uge/Asset/EditorAssetManager.h"
+#include "Uge/Renderer/Material.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -12,6 +13,7 @@
 #include <assimp/scene.h>
 #include <assimp/texture.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <fstream>
 
@@ -53,26 +55,36 @@ namespace Uge
 		MeshAssetMetadata meshMetadata;
 		std::filesystem::path modelDirectory = modelPath.parent_path();
 
+		Ref<EditorAssetManager> assetManager = Project::GetActive()->GetEditorAssetManager();
+
 		for (uint32_t i = 0; i < scene->mNumMaterials; i++)
 		{
-			aiMaterial* material = scene->mMaterials[i];
+			aiMaterial* aiMat = scene->mMaterials[i];
 
-			MeshMaterialImportData materialData;
+			// Imported materials share the Model's shader (bound during Mesh::Draw), so
+			// they are created without one of their own.
+			Ref<Material> material = Material::Create(nullptr);
 
 			aiString materialName;
-			if (material->Get(AI_MATKEY_NAME, materialName) == AI_SUCCESS)
-				materialData.Name = materialName.C_Str();
-
-			auto appendTextures = [&materialData, &meshMetadata](std::vector<MeshMaterialTextureRef> textureRefs)
+			if (aiMat->Get(AI_MATKEY_NAME, materialName) == AI_SUCCESS)
 			{
+				material->SetName(materialName.C_Str());
+
+			}
+
+			auto assignTextures = [&](int assimpTextureType, MeshTextureType meshTextureType)
+			{
+				std::vector<MeshMaterialTextureRef> textureRefs =
+					ImportMaterialTextures(modelDirectory, modelPath, scene, aiMat, assimpTextureType, meshTextureType);
+
 				for (const auto& textureRef : textureRefs)
 				{
 					switch (textureRef.Type)
 					{
-					case MeshTextureType::Albedo:    materialData.TextureMaps.Albedo = textureRef.Texture; break;
-					case MeshTextureType::Normal:    materialData.TextureMaps.Normal = textureRef.Texture; break;
-					case MeshTextureType::Roughness: materialData.TextureMaps.Roughness = textureRef.Texture; break;
-					case MeshTextureType::Metallic:  materialData.TextureMaps.Metallic = textureRef.Texture; break;
+					case MeshTextureType::Albedo:    material->SetAlbedoMap(textureRef.Texture); break;
+					case MeshTextureType::Normal:    material->SetNormalMap(textureRef.Texture); break;
+					case MeshTextureType::Roughness: material->SetRoughnessMap(textureRef.Texture); break;
+					case MeshTextureType::Metallic:  material->SetMetallicMap(textureRef.Texture); break;
 					default: break;
 					}
 
@@ -84,12 +96,44 @@ namespace Uge
 				}
 			};
 
-			appendTextures(ImportMaterialTextures(modelDirectory, modelPath, scene, material, aiTextureType_DIFFUSE, MeshTextureType::Albedo));
-			appendTextures(ImportMaterialTextures(modelDirectory, modelPath, scene, material, aiTextureType_NORMALS, MeshTextureType::Normal));
-			appendTextures(ImportMaterialTextures(modelDirectory, modelPath, scene, material, aiTextureType_DIFFUSE_ROUGHNESS, MeshTextureType::Roughness));
-			appendTextures(ImportMaterialTextures(modelDirectory, modelPath, scene, material, aiTextureType_METALNESS, MeshTextureType::Metallic));
+			assignTextures(aiTextureType_DIFFUSE, MeshTextureType::Albedo);
+			assignTextures(aiTextureType_NORMALS, MeshTextureType::Normal);
+			assignTextures(aiTextureType_DIFFUSE_ROUGHNESS, MeshTextureType::Roughness);
+			assignTextures(aiTextureType_METALNESS, MeshTextureType::Metallic);
 
-			meshMetadata.Materials.emplace_back(materialData);
+			MaterialProperties properties;
+
+			aiColor4D albedoColor;
+			if (aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, albedoColor) == AI_SUCCESS)
+			{
+				properties.AlbedoColor = glm::vec4(albedoColor.r, albedoColor.g, albedoColor.b, albedoColor.a);
+
+			}
+
+			ai_real roughnessFactor;
+			if (aiMat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughnessFactor) == AI_SUCCESS)
+			{
+				properties.Roughness = roughnessFactor;
+
+			}
+
+			ai_real metallicFactor;
+			if (aiMat->Get(AI_MATKEY_METALLIC_FACTOR, metallicFactor) == AI_SUCCESS)
+			{
+				properties.Metallic = metallicFactor;
+
+			}
+
+			material->SetProperties(properties);
+
+			AssetHandle materialHandle = assetManager->AddMemoryOnlyAsset(material);
+			meshMetadata.MaterialHandles.emplace_back(materialHandle);
+
+			if (std::find(meshMetadata.Dependencies.begin(), meshMetadata.Dependencies.end(), materialHandle)
+				== meshMetadata.Dependencies.end())
+			{
+				meshMetadata.Dependencies.emplace_back(materialHandle);
+			}
 		}
 
 		return meshMetadata;
@@ -142,7 +186,7 @@ namespace Uge
 
 			Ref<EditorAssetManager> assetManager = Project::GetActive()->GetEditorAssetManager();
 
-			AssetHandle textureHandle = assetManager->GetOrImportAsset(relativeTexturePath);
+			AssetHandle textureHandle = assetManager->GetOrImportAsset(relativeTexturePath, (relativeTexturePath.string()));
 
 			if (!textureHandle)
 				continue;

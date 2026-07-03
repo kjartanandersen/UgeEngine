@@ -68,7 +68,7 @@ namespace Uge
 
 		static std::string GetRelativePathString(const std::string& path)
 		{
-			std::string sPath = (std::filesystem::relative(path, GetAssetDirectory()).string());
+			std::string sPath = (GetRelativePath(path).string());
 			return sPath;
 
 		}

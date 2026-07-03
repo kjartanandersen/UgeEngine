@@ -3,9 +3,11 @@
 
 #include "Uge/Project/Project.h"
 #include "AssetImporter.h"
+#include "Uge/Core/FileSystem.h"
 
 
 #include <fstream>
+#include <filesystem>
 #include <yaml-cpp/yaml.h>
 
 
@@ -46,14 +48,21 @@ namespace Uge
         {
 
             return nullptr;
-        
+
         }
+
+        auto memoryIt = m_loadedAssets.find(handle);
+        if (memoryIt != m_loadedAssets.end())
+        {
+            return memoryIt->second;
+        }
+
         Ref<Asset> asset;
         if (IsAssetLoaded(handle))
         {
 
             asset = m_loadedAssets.at(handle);
-        
+
         }
         else
         {
@@ -76,8 +85,10 @@ namespace Uge
     bool EditorAssetManager::IsAssetHandleValid(AssetHandle handle) const
     {
 
-        return handle != 0 && m_assetRegistry.find(handle) != m_assetRegistry.end();
-    
+        return handle != 0
+            && (m_assetRegistry.find(handle) != m_assetRegistry.end()
+                || m_loadedAssets.find(handle) != m_loadedAssets.end());
+
     }
 
     bool EditorAssetManager::IsMeshAssetHandleValid(AssetHandle handle) const
@@ -90,8 +101,9 @@ namespace Uge
     bool EditorAssetManager::IsAssetLoaded(AssetHandle handle) const
     {
 
-        return m_loadedAssets.find(handle) != m_loadedAssets.end();
-        
+        return m_loadedAssets.find(handle) != m_loadedAssets.end()
+            || m_loadedAssets.find(handle) != m_loadedAssets.end();
+
     }
 
 
@@ -103,11 +115,17 @@ namespace Uge
             return AssetType::None;
         }
 
+        auto memoryIt = m_loadedAssets.find(handle);
+        if (memoryIt != m_loadedAssets.end())
+        {
+            return memoryIt->second->GetType();
+        }
+
         return m_assetRegistry.at(handle).Type;
 
     }
 
-    AssetHandle EditorAssetManager::ImportAsset(const std::filesystem::path& filepath)
+    AssetHandle EditorAssetManager::ImportAsset(const std::filesystem::path& filepath, const std::string& name)
     {
         AssetHandle handle; // TODO: Generate new handle
         AssetMetadata metadata;
@@ -120,6 +138,7 @@ namespace Uge
 
         if (asset)
         {
+            asset->SetName(name);
             asset->m_handle = handle;
             m_loadedAssets[handle] = asset;
             m_assetRegistry[handle] = metadata;
@@ -130,7 +149,7 @@ namespace Uge
 
     }
 
-    AssetHandle EditorAssetManager::GetOrImportAsset(const std::filesystem::path& filepath)
+    AssetHandle EditorAssetManager::GetOrImportAsset(const std::filesystem::path& filepath, const std::string& name)
     {
         for (const auto& [handle, metadata] : m_assetRegistry)
         {
@@ -138,7 +157,7 @@ namespace Uge
                 return handle;
         }
 
-        return ImportAsset(filepath);
+        return ImportAsset(filepath, name);
     }
 
     const AssetMetadata& EditorAssetManager::GetMetadata(AssetHandle handle) const
@@ -172,9 +191,34 @@ namespace Uge
 
     void EditorAssetManager::SetMeshMetadata(AssetHandle handle, const MeshAssetMetadata& metadata)
     {
+        m_meshAssetRegistry[handle] = metadata;
+    }
 
+    AssetHandle EditorAssetManager::AddMemoryOnlyAsset(const Ref<Asset>& asset)
+    {
+        AssetHandle handle; // Generates a new random handle
 
+        if (asset)
+        {
+            asset->m_handle = handle;
+            m_loadedAssets[handle] = asset;
+        }
 
+        return handle;
+    }
+
+    std::vector<std::string> EditorAssetManager::GetLoadedAssetsNames()
+    {
+        std::vector<std::string> names;
+        names.resize(m_loadedAssets.size());
+        
+        uint32_t i = 0;
+        for (const auto& [k,v] : m_loadedAssets)
+        {
+            names[i++] = v->GetName();
+        }
+
+        return names;
     }
 
     const std::filesystem::path& EditorAssetManager::GetFilePath(AssetHandle handle) const
@@ -226,6 +270,13 @@ namespace Uge
 
         auto path = Project::GetAssetRegistryPath();
 
+        if (!std::filesystem::exists(path))
+        {
+            UG_CORE_WARN("EditorAssetManager::DeserializeAssetRegistry - Asset registry file does not exist, creating: {0}", path.string());
+            FileSystem::CreateEmptyFile(path);
+            return false;
+        }
+
         YAML::Node data;
         try
         {
@@ -233,7 +284,7 @@ namespace Uge
         }
         catch (YAML::ParserException e)
         {
-            UG_CORE_ERROR("Failed to load .ugproj file {0}\n	{1}", path.string(), e.what());
+            UG_CORE_ERROR("EditorAssetManager::DeserializeAssetRegistry - Failed to load asset registry {0}\n	{1}", path.string(), e.what());
             return false;
         }
 

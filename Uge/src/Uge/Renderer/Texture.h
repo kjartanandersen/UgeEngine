@@ -21,6 +21,7 @@ namespace Uge
 
 	struct TextureSpecification
 	{
+
 		uint32_t Width = 1;
 		uint32_t Height = 1;
 		ImageFormat Format = ImageFormat::RGBA8;
@@ -64,8 +65,8 @@ namespace Uge
 		static AssetType GetStaticType() { return AssetType::Texture2D; }
 		virtual AssetType GetType() const override { return GetStaticType(); }
 
+
 	public:
-		std::string m_name;
 		std::string m_path;
 		uint32_t m_width;
 		uint32_t m_height;

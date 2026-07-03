@@ -14,7 +14,10 @@ namespace Uge
 	}
 	void OpenGLMaterial::Bind()
 	{
-		m_shader->Bind();
+		// Imported materials share the Model's shader, which is bound by the caller
+		// (Mesh::Draw). A material only owns a shader when one is explicitly assigned.
+		if (m_shader)
+			m_shader->Bind();
 
 		BindTexture(m_textureMaps.Albedo, 0);
 		BindTexture(m_textureMaps.Normal, 1);

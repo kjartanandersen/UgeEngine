@@ -41,6 +41,8 @@ namespace Uge
 		}
 
 		TextureSpecification spec;
+
+
 		spec.Width = width;
 		spec.Height = height;
 
@@ -50,6 +52,7 @@ namespace Uge
 		data.Size = static_cast<uint64_t>(width) * height * 4;
 
 		Ref<Texture2D> texture = Texture2D::Create(spec, data);
+		texture->SetName(Project::GetActive()->GetRelativePathString(pathString));
 
 		data.Release();
 		return texture;

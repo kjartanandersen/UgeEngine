@@ -21,14 +21,20 @@ namespace Uge
 		virtual AssetType GetAssetType(AssetHandle handle) const override;
 
 
-		AssetHandle ImportAsset(const std::filesystem::path& filepath);
-		AssetHandle GetOrImportAsset(const std::filesystem::path& filepath);
+		AssetHandle ImportAsset(const std::filesystem::path& filepath, const std::string& name = "");
+		AssetHandle GetOrImportAsset(const std::filesystem::path& filepath, const std::string& name = "");
+
+		// Registers an asset that has no backing file (e.g. materials generated during
+		// mesh import). Assigns and returns a new handle. Memory-only assets are not
+		// serialized to the asset registry.
+		AssetHandle AddMemoryOnlyAsset(const Ref<Asset>& asset);
 
 
 		const AssetMetadata& GetMetadata(AssetHandle handle) const;
 		const std::filesystem::path& GetFilePath(AssetHandle handle) const;
 		const MeshAssetMetadata& GetMeshMetadata(AssetHandle handle) const;
 		void SetMeshMetadata(AssetHandle handle, const MeshAssetMetadata& metadata);
+		std::vector<std::string> GetLoadedAssetsNames();
 
 		const AssetRegistry& GetAssetRegistry() const { return m_assetRegistry; }
 
@@ -41,7 +47,7 @@ namespace Uge
 		MeshAssetRegistry m_meshAssetRegistry;
 		AssetMap  m_loadedAssets;
 
-		// TODO: memory only assets
+		// Assets with no backing file (e.g. materials generated during mesh import).
 
 	};
 

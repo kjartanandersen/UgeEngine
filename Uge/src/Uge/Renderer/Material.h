@@ -59,6 +59,12 @@ namespace Uge
 		AssetHandle GetEmissiveMap() const { return m_textureMaps.Emissive; }
 		void SetEmissiveMap(AssetHandle handle) { m_textureMaps.Emissive = handle; }
 
+		const MaterialTextureMap& GetTextureMaps() const { return m_textureMaps; }
+		void SetTextureMaps(const MaterialTextureMap& textureMaps) { m_textureMaps = textureMaps; }
+
+		const MaterialProperties& GetProperties() const { return m_properties; }
+		void SetProperties(const MaterialProperties& properties) { m_properties = properties; }
+
 		static AssetType GetStaticType() { return AssetType::Material; }
 		AssetType GetType() const override { return GetStaticType(); }
 
@@ -68,9 +74,6 @@ namespace Uge
 		MaterialProperties m_properties;
 
 		Ref<Shader> m_shader;
-
-	private:
-
 
 	};
 

@@ -2,6 +2,7 @@
 #include "Model.h"
 
 #include "Uge/Asset/AssetManager.h"
+#include "Uge/Renderer/Material.h"
 
 #include <cstdlib>
 #include <filesystem>
@@ -119,6 +120,8 @@ namespace Uge
 		std::filesystem::path modelPath(path);
 		m_directory = modelPath.has_parent_path() ? modelPath.parent_path().string() : std::string();
 
+		SetName(scene->mName.C_Str());
+
 		ProcessNode(scene->mRootNode, scene, aiMatrix4x4t<float>());
 	}
 
@@ -147,8 +150,18 @@ namespace Uge
 		const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(meshTransform)));
 
 		AssetHandle materialHandle = 0;
-		if (mesh->mMaterialIndex < m_meshMetadata.Materials.size())
-			materialHandle = m_meshMetadata.Materials[mesh->mMaterialIndex].TextureMaps.Albedo;
+		if (mesh->mMaterialIndex < m_meshMetadata.MaterialHandles.size())
+		{
+			materialHandle = m_meshMetadata.MaterialHandles[mesh->mMaterialIndex];
+
+		}
+
+		bool hasAlbedoMap = false;
+		if (materialHandle)
+		{
+			Ref<Material> material = AssetManager::GetAsset<Material>(materialHandle);
+			hasAlbedoMap = material && material->GetAlbedoMap() != 0;
+		}
 
 		vertices.reserve(mesh->mNumVertices);
 		for (uint32_t i = 0; i < mesh->mNumVertices; i++)
@@ -172,8 +185,8 @@ namespace Uge
 			{
 				vertex.TexCoord.x = mesh->mTextureCoords[0][i].x;
 				vertex.TexCoord.y = mesh->mTextureCoords[0][i].y;
-				vertex.HasDiffuseMap = materialHandle ? 1 : 0;
-				vertex.TexIndex = materialHandle ? 0.0f : -1.0f;
+				vertex.HasDiffuseMap = hasAlbedoMap ? 1 : 0;
+				vertex.TexIndex = hasAlbedoMap ? 0.0f : -1.0f;
 			}
 			else
 			{
@@ -255,6 +268,7 @@ namespace Uge
 				{
 
 					TextureSpecification spec;
+
 					spec.Format = ImageFormat::RGBA8;
 					spec.Height = 1;
 					spec.Width = embeddedTexture->mWidth;
@@ -280,6 +294,7 @@ namespace Uge
 					
 					// meshTexture = Texture2D::Create(reinterpret_cast<const unsigned char*>(embeddedTexture->pcData), embeddedTexture->mWidth);
 					meshTexture = Texture2D::Create(spec, data);
+					meshTexture->SetName(embeddedTexture->mFilename.C_Str());
 				}
 				else
 				{
@@ -299,6 +314,9 @@ namespace Uge
 					}
 
 					TextureSpecification spec;
+
+
+
 					spec.Height = height;
 					spec.Width = width;
 
@@ -307,6 +325,7 @@ namespace Uge
 					data.Size = static_cast<uint64_t>(rgbaPixels.size());
 
 					meshTexture = Texture2D::Create(spec, data);
+					meshTexture->SetName(embeddedTexture->mFilename.C_Str());
 					// meshTexture->SetData(rgbaPixels.data(), static_cast<uint32_t>(rgbaPixels.size()));
 				}
 			}
@@ -333,7 +352,7 @@ namespace Uge
 				continue;
 			}
 
-			meshTexture->m_name = typeName;
+			meshTexture->SetName(typeName);
 			meshTexture->m_path = relativePath;
 
 			textures.emplace_back(meshTexture);

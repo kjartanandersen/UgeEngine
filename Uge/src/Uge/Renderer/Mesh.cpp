@@ -52,22 +52,11 @@ namespace Uge
 		}
 		shader->Bind();
 
-		if (m_material && AssetManager::IsAssetHandleValid(m_material))
+		if (m_material && AssetManager::IsAssetHandleValid(m_material) &&
+			AssetManager::GetAssetType(m_material) == AssetType::Material)
 		{
-			AssetType materialType = AssetManager::GetAssetType(m_material);
-
-			if (materialType == AssetType::Material)
-			{
-				if (Ref<Material> material = AssetManager::GetAsset<Material>(m_material))
-					material->Bind();
-			}
-			else if (materialType == AssetType::Texture2D)
-			{
-				// No Material asset yet (memory-only assets are not supported); bind the
-				// albedo texture directly to the diffuse slot the Model shader samples.
-				if (Ref<Texture2D> texture = AssetManager::GetAsset<Texture2D>(m_material))
-					texture->Bind(0);
-			}
+			if (Ref<Material> material = AssetManager::GetAsset<Material>(m_material))
+				material->Bind();
 		}
 
 		m_VAO->Bind();

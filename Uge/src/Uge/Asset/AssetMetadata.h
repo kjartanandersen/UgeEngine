@@ -33,16 +33,12 @@ namespace Uge
 		AssetHandle Texture = 0;
 	};
 
-	struct MeshMaterialImportData
-	{
-		std::string Name;
-		MaterialTextureMap TextureMaps;
-		MaterialProperties Properties;
-	};
-
 	struct MeshAssetMetadata
 	{
-		std::vector<MeshMaterialImportData> Materials;
+		// One Material asset handle per assimp material index in the source model.
+		std::vector<AssetHandle> MaterialHandles;
+
+		// All assets (textures + materials) this mesh depends on.
 		std::vector<AssetHandle> Dependencies;
 
 	};

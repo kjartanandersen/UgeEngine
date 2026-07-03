@@ -176,7 +176,7 @@ namespace Uge
 								{
 									auto relPath = std::filesystem::relative(path, Project::GetAssetDirectory());
 
-									Project::GetActive()->GetEditorAssetManager()->ImportAsset(relPath);
+									Project::GetActive()->GetEditorAssetManager()->ImportAsset(relPath, filenameString.c_str());
 									RefreshAssetTree();
 								}
 

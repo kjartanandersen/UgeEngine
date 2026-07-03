@@ -73,6 +73,7 @@ namespace Uge
 
 		newScene->m_viewportWidth = other->m_viewportWidth;
 		newScene->m_viewportHeight = other->m_viewportHeight;
+		newScene->SetName(other->GetName());
 
 		auto& srcSceneRegistry = other->m_registry;
 		auto& dstSceneRegistry = newScene->m_registry;

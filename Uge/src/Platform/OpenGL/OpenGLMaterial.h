@@ -19,9 +19,7 @@ namespace Uge
 
 		void BindTexture(AssetHandle handle, uint32_t slot);
 
-	private:
-		std::string m_name;
-
+	
 	};
 
 }

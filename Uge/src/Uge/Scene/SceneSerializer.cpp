@@ -326,7 +326,7 @@ namespace Uge
 
 		YAML::Emitter out;
 		out << YAML::BeginMap;
-		out << YAML::Key << "Scene" << YAML::Value << "Untitled";
+		out << YAML::Key << "Scene" << YAML::Value << Project::GetRelativePath(filepath.string()).string();
 		out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
 		for (auto entityID : m_scene->m_registry.view<entt::entity>())
@@ -387,6 +387,8 @@ namespace Uge
 
 		std::string sceneName = data["Scene"].as<std::string>();
 		UG_CORE_TRACE("Deserializing scene '{0}'", sceneName);
+
+		m_scene->SetName(sceneName);
 
 		auto entities = data["Entities"];
 		if (entities)

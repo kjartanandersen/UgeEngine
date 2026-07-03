@@ -140,7 +140,11 @@ namespace Uge
 
 		// m_data.WhiteTexture = Texture2D::Create(1, 1);
 		uint32_t whiteTextureData = 0xffffffff;
-		m_data.WhiteTexture = Texture2D::Create(TextureSpecification(), Buffer(&whiteTextureData, sizeof(uint32_t)));
+		TextureSpecification spec = TextureSpecification();
+
+
+		m_data.WhiteTexture = Texture2D::Create(spec, Buffer(&whiteTextureData, sizeof(uint32_t)));
+		m_data.WhiteTexture->SetName("WhiteTexture");
 		// &whiteTextureData, sizeof(uint32_t)
 
 		int32_t samplers[m_data.MaxTextureSlots];

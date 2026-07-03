@@ -27,12 +27,23 @@ namespace Uge
 
 	public:
 
+
 		AssetHandle m_handle;
 
 	public:
 		virtual AssetType GetType() const = 0;
 
-	protected:
+		std::string GetName() const { return m_name; }
+		void SetName(const std::string& name) 
+		{ 
+			std::string_view sv = AssetTypeToString(GetType());
+			std::string at{sv};
+			m_name = at + " - " + name;
+		}
+
+	private:
+
+		std::string m_name;
 
 
 

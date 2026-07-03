@@ -66,6 +66,8 @@ namespace Uge
 		AssetHandle GetMaterial() const { return m_material; }
 		void SetMaterial(AssetHandle material) { m_material = material; }
 
+
+
 	private:
 		void SetupMesh();
 

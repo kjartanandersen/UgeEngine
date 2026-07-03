@@ -39,6 +39,8 @@ namespace Uge
 		static AssetType GetStaticType() { return AssetType::Mesh; }
 		virtual AssetType GetType() const override { return GetStaticType(); }
 
+
+
 		static void BeginScene(const glm::mat4& viewProjection);
 		static void EndScene();
 
@@ -51,6 +53,7 @@ namespace Uge
 		static void EnsureSceneResources();
 
 	private:
+
 		std::vector<Mesh> m_meshes;
 		std::vector<AssetHandle> m_loadedTextures;
 
