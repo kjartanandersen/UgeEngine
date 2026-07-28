@@ -446,6 +446,7 @@ shaders/*.spv
 
 # Assets
 Assets/*
+Uge/assets/*
 
 # Ignore folder
 ign/
@@ -474,3 +475,7 @@ Sandbox/UgeProfile*.json
 
 # Python .venv
 /.venv
+
+# LLMs
+/.claude
+CLAUDE.md

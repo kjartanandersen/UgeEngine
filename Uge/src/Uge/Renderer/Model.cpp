@@ -8,6 +8,7 @@
 #include <filesystem>
 
 #include <assimp/Importer.hpp>
+#include <assimp/config.h>
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
 #include <assimp/scene.h>
@@ -105,8 +106,13 @@ namespace Uge
 		}
 
 		Assimp::Importer importer;
+
+		// ProcessMesh below appends every face's indices into a triangle index buffer,
+		// so line/point primitives have to be discarded rather than just split out.
+		importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
+
+		// No aiProcess_CalcTangentSpace here either - see MeshImporter::ImportMesh.
 		const aiScene* scene = importer.ReadFile(path,
-			aiProcess_CalcTangentSpace |
 			aiProcess_Triangulate |
 			aiProcess_JoinIdenticalVertices |
 			aiProcess_SortByPType);

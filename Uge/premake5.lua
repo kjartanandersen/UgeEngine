@@ -45,6 +45,7 @@ project "Uge"
 		"../%{IncludeDir.MONO}",
 		"../%{IncludeDir.FILEWATCH}",
 		"../%{IncludeDir.ASSIMP}",
+		"../%{IncludeDir.RAPIDJSON}",
 		"../%{IncludeDir.YAMLCPP}",
 		"../%{IncludeDir.JOLT}",
 		"../%{IncludeDir.IMGUIZMO}",

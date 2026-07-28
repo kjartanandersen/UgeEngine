@@ -18,6 +18,7 @@ namespace Uge
         { ".png",  AssetType::Texture2D },
         { ".jpg",  AssetType::Texture2D },
         { ".jpeg", AssetType::Texture2D },
+        { ".JPEG", AssetType::Texture2D },
 
         { ".uge",  AssetType::Scene     },
         
