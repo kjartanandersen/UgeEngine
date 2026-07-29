@@ -136,7 +136,7 @@ namespace Uge
 		m_iconStep = TextureImporter::LoadTexture2D("Resources/Icons/StepButton.png");
 		
 
-		m_activeScene = CreateRef<Scene>();
+		//m_activeScene = CreateRef<Scene>();
 		
 		// Load ImGui Font
 		ImGuiIO& io = ImGui::GetIO();
