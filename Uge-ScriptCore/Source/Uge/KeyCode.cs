@@ -1,4 +1,9 @@
-﻿using System;
+﻿/**
+ * @file KeyCode.cs
+ * @brief Managed keyboard key identifiers.
+ * @ingroup group_scripting
+ */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,6 +12,13 @@ using System.Threading.Tasks;
 namespace Uge
 {
 
+    /**
+     * @brief Keyboard key identifiers, as seen from C#.
+     * @ingroup group_scripting
+     *
+     * Values mirror the GLFW key codes and the native Uge::KeyCode, so the two sides agree
+     * without translation.
+     */
     public enum KeyCode
     {
         // From glfw3.h

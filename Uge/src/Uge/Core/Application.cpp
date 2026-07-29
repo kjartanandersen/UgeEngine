@@ -21,7 +21,10 @@ namespace Uge
 		: m_specification(spec)
 	{
 		UG_PROFILE_FUNCTION();
+		// Make sure the application has not already loaded
 		UG_CORE_ASSERT(!s_instance, "Application Already Exists!");
+
+		// Set the singleton instance 
 		s_instance = this;
 
 		if (!m_specification.WorkingDirectory.empty())

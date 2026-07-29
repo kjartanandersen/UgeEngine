@@ -1,3 +1,9 @@
+/**
+ * @file PerspectiveCameraController.h
+ * @brief First-person style controller for a perspective camera.
+ * @ingroup group_renderer
+ */
+
 #pragma once
 
 #include "Uge/Renderer/PerspectiveCamera.h"
@@ -12,16 +18,48 @@
 namespace Uge
 {
 
+	/**
+	 * @brief Drives an Uge::PerspectiveCamera with mouse-look and keyboard movement.
+	 * @ingroup group_renderer
+	 *
+	 * Orientation is stored as a quaternion, which avoids the gimbal-lock problems of
+	 * accumulating Euler angles. For editing rather than in-game movement, use
+	 * Uge::EditorCamera, which orbits a focal point instead.
+	 */
 	class PerspectiveCameraController
 	{
 
 	public:
+		/**
+		 * @brief Constructs the controller and its camera.
+		 * @param fovYRadians Vertical field of view, in radians.
+		 * @param aspectRatio Viewport width divided by height.
+		 * @param rotation `true` to enable mouse-look.
+		 * @param nearClip Near plane distance.
+		 * @param farClip Far plane distance.
+		 */
 		PerspectiveCameraController(float fovYRadians, float aspectRatio, bool rotation, float nearClip = 0.1f, float farClip = 1000.0f);
 
+		/**
+		 * @brief Applies movement and mouse-look for this frame.
+		 * @param ts Frame delta time.
+		 */
 		void OnUpdate(Timestep ts);
+		/**
+		 * @brief Handles scroll-wheel and window resize events.
+		 * @param e Event to inspect.
+		 */
 		void OnEvent(Event& e);
 
+		/**
+		 * @brief The controlled camera.
+		 * @return Mutable reference to the camera.
+		 */
 		PerspectiveCamera& GetCamera() { return m_camera; }
+		/**
+		 * @brief The controlled camera.
+		 * @return Const reference to the camera.
+		 */
 		const PerspectiveCamera& GetCamera() const { return m_camera; }
 
 	private:

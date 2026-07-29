@@ -479,3 +479,9 @@ Sandbox/UgeProfile*.json
 # LLMs
 /.claude
 CLAUDE.md
+
+# Doxygen generated documentation
+/docs/html/
+/docs/latex/
+/docs/xml/
+/docs/doxygen-warnings.log

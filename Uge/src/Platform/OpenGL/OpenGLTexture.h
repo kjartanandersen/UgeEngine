@@ -1,3 +1,9 @@
+/**
+ * @file OpenGLTexture.h
+ * @brief OpenGL implementation of Uge::Texture2D.
+ * @ingroup group_platform
+ */
+
 #pragma once
 
 #include "Uge/Renderer/Texture.h"
@@ -8,12 +14,24 @@ namespace Uge
 {
 
 
+	/**
+	 * @brief An immutable-storage OpenGL 2D texture.
+	 * @ingroup group_platform
+	 *
+	 * Uses direct state access, so no binding is needed to upload or configure the texture.
+	 */
 	class OpenGLTexture2D : public Texture2D
 	{
 
 	public:
+		/**
+		 * @brief Allocates the texture and optionally uploads its pixels.
+		 * @param specification Size, format and mip settings.
+		 * @param data Initial pixel data; an empty buffer leaves the texture uninitialized.
+		 */
 		OpenGLTexture2D(const TextureSpecification& specification, Buffer data = Buffer());
 
+		/** @brief Deletes the GL texture. */
 		virtual ~OpenGLTexture2D();
 
 		virtual const TextureSpecification& GetSpecification() const override { return m_specification; }

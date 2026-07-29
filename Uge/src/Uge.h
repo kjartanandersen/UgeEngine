@@ -1,3 +1,19 @@
+/**
+ * @file Uge.h
+ * @brief Umbrella header for client applications; the only engine header they include.
+ *
+ * Editor and game code include this one header and get the whole public API. Engine
+ * code must **not** include it: internal translation units include the specific
+ * headers they need, which keeps compile times down and dependencies explicit.
+ *
+ * @code
+ * #include <Uge.h>
+ * #include <Uge/Core/EntryPoint.h>   // in exactly one translation unit
+ * @endcode
+ *
+ * @note This header does not declare `main`; include Uge/Core/EntryPoint.h for that.
+ */
+
 #pragma once
 
 // For use by Uge applications

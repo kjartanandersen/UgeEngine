@@ -1,0 +1,162 @@
+/**
+ * @file modules.dox
+ * @brief Doxygen module (group) definitions for the Uge engine.
+ *
+ * This file only declares the documentation groups and their descriptions. Types are
+ * attached to a group with @c \@ingroup in the corresponding header.
+ */
+
+/**
+ * @defgroup group_core Core
+ * @brief Application lifecycle, layers, windowing, logging and fundamental utilities.
+ *
+ * Uge::EntryPoint provides `main`, which constructs the client-supplied
+ * Uge::Application. The application owns a Uge::Window, an ImGui overlay and a
+ * Uge::LayerStack, and drives the frame loop: poll input, update every layer with a
+ * Uge::Timestep, render ImGui, swap buffers.
+ *
+ * This group also holds the pieces every other module depends on: Uge::Ref and
+ * Uge::Scope smart-pointer aliases, the Uge::Log logging facade and the `UG_ASSERT` /
+ * `UG_VERIFY` macro families, Uge::UUID identifiers, and the raw Uge::Buffer type.
+ */
+
+/**
+ * @defgroup group_events Events
+ * @brief Input and window events, and the dispatcher that routes them through layers.
+ *
+ * The platform window translates OS callbacks into Uge::Event subclasses. The
+ * application hands each event to the layer stack from top to bottom; a layer uses
+ * Uge::EventDispatcher to match the event type it cares about and sets
+ * Uge::Event::Handled to stop propagation.
+ *
+ * Events are grouped by Uge::EventCategory so a layer can filter broadly (for example,
+ * "all input events") without testing each concrete type.
+ */
+
+/**
+ * @defgroup group_renderer Renderer
+ * @brief The graphics-API abstraction and the engine's three independent draw paths.
+ *
+ * Every renderer resource is a platform-agnostic interface with a static `Create`
+ * factory that switches on Uge::RendererAPI::GetAPI() and returns the concrete backend
+ * implementation from @ref group_platform. Adding a rendering feature therefore means
+ * touching both the interface here and the OpenGL class that implements it.
+ *
+ * @warning The three draw paths do **not** share state. Each maintains its own shaders,
+ * uniform buffers and batching, and each needs its own begin/end pair:
+ * - Uge::Renderer2D — batched sprites, circles, lines and MSDF text; writes a per-vertex
+ *   entity ID used for mouse picking in the editor.
+ * - Uge::Renderer3D — standalone textured-cube primitives.
+ * - Uge::Model — the mesh path used for imported 3D models, with its own
+ *   Uge::Model::BeginScene and Uge::Model::EndScene.
+ */
+
+/**
+ * @defgroup group_scene Scene
+ * @brief The EnTT-backed scene graph, entities, components and scene serialization.
+ *
+ * Uge::Scene wraps an `entt::registry` and is itself an Uge::Asset. Uge::Entity is a thin
+ * handle over an `entt::entity` plus its owning scene, so entities are cheap to copy and
+ * pass by value.
+ *
+ * Every entity created through Uge::Scene::CreateEntity receives an Uge::IDComponent
+ * (a stable Uge::UUID), a Uge::TagComponent (its display name) and a
+ * Uge::TransformComponent.
+ *
+ * @par Adding a new component type
+ * A new component needs five coordinated changes:
+ * 1. the struct itself in `Components.h`,
+ * 2. an entry in Uge::ComponentGroup so copy/duplicate covers it,
+ * 3. a Uge::Scene::OnComponentAdded template specialization,
+ * 4. read and write support in Uge::SceneSerializer,
+ * 5. an editing UI in Uge::SceneHierarchyPanel.
+ */
+
+/**
+ * @defgroup group_asset Assets
+ * @brief Asset handles, the editor and runtime asset managers, and the importers.
+ *
+ * An Uge::AssetHandle is a Uge::UUID. Uge::Asset is the polymorphic base shared by
+ * Uge::Scene, Uge::Texture2D, Uge::Model and Uge::Material; each subclass supplies
+ * `GetStaticType()` and `GetType()`.
+ *
+ * Uge::AssetManager is a static facade that forwards to the manager owned by the active
+ * Uge::Project, so anything asset-related requires a loaded project. Two implementations
+ * of Uge::AssetManagerBase exist: Uge::EditorAssetManager, which is registry-backed and
+ * imports from disk on demand, and Uge::RuntimeAssetManager, which serves pre-packed
+ * assets.
+ *
+ * Uge::AssetImporter::ImportAsset dispatches on Uge::AssetMetadata::Type to
+ * Uge::TextureImporter, Uge::MeshImporter or Uge::SceneImporter.
+ *
+ * @note Assets with no backing file — notably the Uge::Material objects synthesized
+ * during mesh import — are registered with Uge::EditorAssetManager::AddMemoryOnlyAsset
+ * and are deliberately not written to the on-disk registry.
+ */
+
+/**
+ * @defgroup group_project Project
+ * @brief The active project, its configuration and its `.ugproj` serialization.
+ *
+ * Uge::Project is a global singleton backed by a YAML `.ugproj` file read and written by
+ * Uge::ProjectSerializer. It owns the asset manager and defines where content lives.
+ *
+ * All content paths are relative to Uge::Project::GetAssetDirectory(). Use the
+ * `Project::GetAsset*Path*` helpers rather than composing paths by hand, so that
+ * relative and absolute forms stay consistent.
+ */
+
+/**
+ * @defgroup group_scripting Scripting
+ * @brief The embedded Mono runtime and the C++/C# internal-call bridge.
+ *
+ * Uge::ScriptEngine embeds Mono, loads the assembly named by
+ * Uge::ProjectConfig::ScriptModulePath, and instantiates a managed object for every
+ * entity carrying a Uge::ScriptComponent. Uge::ScriptGlue registers the native functions
+ * that back the `InternalCalls` class in the `Uge-ScriptCore` C# library.
+ *
+ * @note Adding an internal call requires matching changes on both sides: the native
+ * registration in `ScriptGlue.cpp` and the `[MethodImplAttribute(InternalCall)]`
+ * declaration in `InternalCalls.cs`. A mismatch fails at runtime, not at compile time.
+ */
+
+/**
+ * @defgroup group_platform Platform
+ * @brief Backend implementations of the platform-agnostic interfaces.
+ *
+ * Everything here is selected at runtime by the `Create` factories in
+ * @ref group_renderer and @ref group_core. Client code should never name these classes
+ * directly.
+ *
+ * - `Platform/OpenGL` — the OpenGL 4.5 implementation of every renderer resource.
+ * - `Platform/Windows` — the GLFW-backed window, the Win32 input polling and the native
+ *   file dialogs.
+ */
+
+/**
+ * @defgroup group_editor Editor
+ * @brief The Uge-Editor application layer and its dockable panels.
+ *
+ * Uge::EditorLayer holds nearly all editor behaviour: the viewport and its framebuffer,
+ * play/simulate/stop state transitions, gizmo manipulation, mouse picking and the
+ * scene open/save commands. The panels under `UgeEditor/src/Panels` are owned by the
+ * layer and render inside its ImGui dockspace.
+ */
+
+/**
+ * @defgroup group_math Math
+ * @brief Small math helpers layered on top of GLM.
+ */
+
+/**
+ * @defgroup group_debug Debug
+ * @brief Instrumentation and profiling support.
+ *
+ * The `UG_PROFILE_*` macros write Chrome-tracing JSON sessions that can be loaded in
+ * `chrome://tracing` or https://ui.perfetto.dev.
+ */
+
+/**
+ * @defgroup group_ui UI
+ * @brief Reusable ImGui widget helpers shared by the editor panels.
+ */

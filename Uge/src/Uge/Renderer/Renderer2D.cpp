@@ -19,57 +19,65 @@
 namespace Uge
 {
 
+	/** @brief Vertex format for MSDF text quads. */
 	struct TextVertex
 	{
-		glm::vec3 Position;
-		glm::vec4 Color;
-		glm::vec2 TexCoord;
+		glm::vec3 Position; ///< Glyph corner position in world space.
+		glm::vec4 Color; ///< Text colour, RGBA.
+		glm::vec2 TexCoord; ///< Coordinates into the MSDF atlas.
 
 		// TODO: bg color for outline/bg
 
 		// Editor Only
-		int EntityID;
+		int EntityID; ///< Owning entity, written to the picking attachment. Editor only.
 	};
 
+	/**
+	 * @brief All batching state for Uge::Renderer2D: buffers, shaders and texture slots.
+	 *
+	 * A single file-static instance. The vertex buffers are CPU-side staging arrays that
+	 * are filled as primitives are submitted and uploaded once per flush.
+	 */
 	struct Renderer2DData
 	{
-		static const uint32_t MaxQuads = 10000;
-		static const uint32_t MaxVertices = MaxQuads * 4;
-		static const uint32_t MaxIndices = MaxQuads * 6;
-		static const uint32_t MaxTextureSlots = 32;
+		static const uint32_t MaxQuads = 10000; ///< Maximum quads per batch before an automatic flush.
+		static const uint32_t MaxVertices = MaxQuads * 4; ///< Vertex capacity implied by #MaxQuads.
+		static const uint32_t MaxIndices = MaxQuads * 6; ///< Index capacity implied by #MaxQuads.
+		static const uint32_t MaxTextureSlots = 32; ///< Texture units available; exceeding this forces a flush.
 
-		Ref<VertexArray> QuadVA;
-		Ref<VertexBuffer> QuadVB;
-		Ref<Shader> TextureShader;
-		Ref<Texture2D> WhiteTexture;
+		Ref<VertexArray> QuadVA; ///< Vertex array for the quad batch.
+		Ref<VertexBuffer> QuadVB; ///< Dynamic vertex buffer refilled each flush.
+		Ref<Shader> TextureShader; ///< Shader used for quads and sprites.
+		Ref<Texture2D> WhiteTexture; ///< 1x1 white texture, bound to slot 0 for untextured quads.
 
-		Ref<VertexArray> TextVA;
-		Ref<VertexBuffer> TextVB;
-		Ref<Shader> TextShader;
+		Ref<VertexArray> TextVA; ///< Vertex array for the text batch.
+		Ref<VertexBuffer> TextVB; ///< Dynamic vertex buffer for text geometry.
+		Ref<Shader> TextShader; ///< Shader that samples the MSDF atlas.
 
-		uint32_t QuadIndexCount = 0;
-		Vertex* VertexBufferBase = nullptr;
-		Vertex* VertexBufferPtr = nullptr;
+		uint32_t QuadIndexCount = 0; ///< Indices accumulated in the current quad batch.
+		Vertex* VertexBufferBase = nullptr; ///< Start of the CPU-side quad staging buffer.
+		Vertex* VertexBufferPtr = nullptr; ///< Write cursor into the quad staging buffer.
 
-		uint32_t TextIndexCount = 0;
-		TextVertex* TextVertexBufferBase = nullptr;
-		TextVertex* TextVertexBufferPtr = nullptr;
+		uint32_t TextIndexCount = 0; ///< Indices accumulated in the current text batch.
+		TextVertex* TextVertexBufferBase = nullptr; ///< Start of the CPU-side text staging buffer.
+		TextVertex* TextVertexBufferPtr = nullptr; ///< Write cursor into the text staging buffer.
 
-		std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots;
-		uint32_t TextureSlotIndex = 1; // 0 is white texture
+		std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots; ///< Textures bound for the current batch.
+		uint32_t TextureSlotIndex = 1; ///< Next free texture slot; slot 0 is #WhiteTexture.
 
-		Ref<Texture2D> FontAtlasTexture;
+		Ref<Texture2D> FontAtlasTexture; ///< Atlas of the font used by the current text batch.
 
-		glm::vec4 VertexPositions[4] = { {} };
+		glm::vec4 VertexPositions[4] = { {} }; ///< Unit-quad corners, transformed per draw.
 		
 
+		/** @brief Camera block uploaded to the shared uniform buffer once per scene. */
 		struct CameraData
 		{
-			glm::mat4 ViewProjection;
+			glm::mat4 ViewProjection; ///< Combined view-projection matrix.
 		};
 
-		CameraData CameraBuffer = { {} };
-		Ref<UniformBuffer> CameraUniformBuffer;
+		CameraData CameraBuffer = { {} }; ///< CPU-side copy of the camera block.
+		Ref<UniformBuffer> CameraUniformBuffer; ///< GPU uniform buffer holding #CameraBuffer.
 
 
 	};

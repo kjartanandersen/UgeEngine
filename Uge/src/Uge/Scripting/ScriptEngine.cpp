@@ -47,6 +47,10 @@ namespace Uge
 
 	namespace Utils
 	{
+		/**
+		 * @brief Logs every type defined in an assembly, for debugging assembly loading.
+		 * @param assembly Assembly to enumerate.
+		 */
 		void PrintAssemblyTypes(MonoAssembly* assembly)
 		{
 
@@ -96,6 +100,11 @@ namespace Uge
 
 		}
 
+		/**
+		 * @brief Maps a managed type onto the engine's field-type enumeration.
+		 * @param monoType Managed type to classify.
+		 * @return The matching Uge::ScriptFieldType, or `None` for an unsupported type.
+		 */
 		ScriptFieldType MonoTypeToScriptFieldType(MonoType* monoType)
 		{
 			std::string typeName = mono_type_get_name(monoType);
@@ -121,35 +130,41 @@ namespace Uge
 
 	}
 
+	/**
+	 * @brief All Mono state owned by Uge::ScriptEngine.
+	 *
+	 * Holds the domains, both assemblies, the reflected entity classes, the live script
+	 * instances and the per-entity field values that outlive them.
+	 */
 	struct ScriptEngineData
 	{
 
-		MonoDomain* RootDomain = nullptr;
-		MonoDomain* AppDomain = nullptr;
+		MonoDomain* RootDomain = nullptr; ///< The Mono root domain, created once at startup.
+		MonoDomain* AppDomain = nullptr; ///< Domain holding the loaded assemblies; recreated on reload.
 
-		MonoAssembly* CoreAssembly = nullptr;
-		MonoImage* CoreAssemblyImage = nullptr;
+		MonoAssembly* CoreAssembly = nullptr; ///< The engine's `Uge-ScriptCore` assembly.
+		MonoImage* CoreAssemblyImage = nullptr; ///< Metadata image of #CoreAssembly.
 
-		MonoAssembly* AppAssembly = nullptr;
-		MonoImage* AppAssemblyImage = nullptr;
+		MonoAssembly* AppAssembly = nullptr; ///< The project's script assembly.
+		MonoImage* AppAssemblyImage = nullptr; ///< Metadata image of #AppAssembly.
 
-		std::filesystem::path CoreAssemblyFilePath;
-		std::filesystem::path AppAssemblyFilePath;
+		std::filesystem::path CoreAssemblyFilePath; ///< Path #CoreAssembly was loaded from.
+		std::filesystem::path AppAssemblyFilePath; ///< Path #AppAssembly was loaded from; watched for changes.
 
-		ScriptClass EntityMonoClass;
+		ScriptClass EntityMonoClass; ///< The script core's `Entity` base class.
 
-		std::unordered_map<std::string, Ref<ScriptClass>> EntityClasses;
-		std::unordered_map<UUID, Ref<ScriptInstance>> EntityInstances;
-		std::unordered_map<UUID, ScriptFieldMap> EntityScriptFields;
+		std::unordered_map<std::string, Ref<ScriptClass>> EntityClasses; ///< Reflected script classes, by fully qualified name.
+		std::unordered_map<UUID, Ref<ScriptInstance>> EntityInstances; ///< Live script instances, by entity UUID.
+		std::unordered_map<UUID, ScriptFieldMap> EntityScriptFields; ///< Editor-set field values, kept across reloads.
 
-		Scope<filewatch::FileWatch<std::string>> AppAssemblyFileWatcher = nullptr;
-		bool AppAssemblyReloadPending = false;
+		Scope<filewatch::FileWatch<std::string>> AppAssemblyFileWatcher = nullptr; ///< Watches the script assembly so a rebuild triggers a reload.
+		bool AppAssemblyReloadPending = false; ///< Set by the watcher; the reload runs on the main thread.
 
-		Timer ReloadTimer;
+		Timer ReloadTimer; ///< Debounces the watcher, which fires several times per rebuild.
 
 
 		// Runtime
-		Scene* SceneContext = nullptr;
+		Scene* SceneContext = nullptr; ///< Scene currently running scripts; null outside play mode.
 	};
 
 	static ScriptEngineData* s_data = nullptr;

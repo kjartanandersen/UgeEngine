@@ -1,3 +1,9 @@
+/**
+ * @file OpenGLRendererAPI.h
+ * @brief OpenGL implementation of Uge::RendererAPI.
+ * @ingroup group_platform
+ */
+
 #pragma once
 
 #include "Uge/Renderer/RendererAPI.h"
@@ -5,6 +11,15 @@
 namespace Uge
 {
 
+	/**
+	 * @brief Issues OpenGL state changes and draw calls.
+	 * @ingroup group_platform
+	 *
+	 * Init() enables blending, depth testing and, in Debug builds, the OpenGL debug
+	 * message callback that routes driver diagnostics into the engine log.
+	 *
+	 * Reached through Uge::RenderCommand rather than directly.
+	 */
 	class OpenGLRendererAPI : public RendererAPI
 	{
 
