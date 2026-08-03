@@ -96,6 +96,22 @@ namespace Uge
 		void DestroyEntity(Entity entity);
 
 		/**
+		 * @brief Releases a mesh asset once nothing in the scene references it any more.
+		 * @param mesh Handle a Uge::MeshComponent used to hold; `0` is ignored.
+		 *
+		 * Call this **after** the reference is gone — after DestroyEntity(), after removing a
+		 * Uge::MeshComponent, or after clearing Uge::MeshComponent::Mesh. The scene is
+		 * rescanned, and the asset is dropped only if no entity still points at it.
+		 *
+		 * DestroyEntity() already does this for the entity it destroys; the other two cases
+		 * are the caller's job.
+		 *
+		 * @note Does nothing while the scene is running. A play-mode scene is a copy
+		 * (@see Copy), and the editor scene it came from still holds the same handles.
+		 */
+		void ReleaseMeshIfUnused(AssetHandle mesh);
+
+		/**
 		 * @brief Enters play mode: starts the script engine and instantiates entity scripts.
 		 */
 		void OnRuntimeStart();
@@ -159,6 +175,32 @@ namespace Uge
 		 * @return The new entity.
 		 */
 		Entity DuplicateEntity(Entity entity);
+
+		/**
+		 * @brief A view over every entity carrying all of the given components.
+		 * @tparam Components Component types an entity must have to be included.
+		 * @return An `entt::view`; iterate it for the entity IDs and call `view.get<T>(entity)`
+		 *         for the components.
+		 *
+		 * Defined inline because it is a template: the body must be visible wherever it is
+		 * instantiated.
+		 *
+		 * @code
+		 * auto view = scene->GetAllEntitiesWith<MeshComponent>();
+		 * for (auto entityID : view)
+		 *     UG_INFO(view.get<MeshComponent>(entityID).Mesh);
+		 * @endcode
+		 *
+		 * @warning Do not create or destroy entities while iterating the view.
+		 */
+		template <typename... Components>
+		auto GetAllEntitiesWith() { return m_registry.view<Components...>(); }
+
+		/**
+		 * @brief The underlying EnTT registry.
+		 * @return Const reference to the registry.
+		 */
+		const entt::registry& GetRegistry() const { return m_registry; }
 
 		/**
 		 * @brief The asset type this class represents.

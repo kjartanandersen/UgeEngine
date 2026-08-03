@@ -56,9 +56,19 @@ namespace Uge
 			m_rendererAPI->SetClearColor(color);
 		}
 		/** @brief Clears the bound render target's colour and depth buffers. */
-		inline static void Clear() 
+		inline static void Clear()
 		{
 			m_rendererAPI->Clear();
+		}
+
+		/**
+		 * @brief Enables or disables depth buffer writes.
+		 * @param enabled `true` to write depth, `false` to test against it only.
+		 * @see RendererAPI::SetDepthWrite
+		 */
+		inline static void SetDepthWrite(bool enabled)
+		{
+			m_rendererAPI->SetDepthWrite(enabled);
 		}
 
 

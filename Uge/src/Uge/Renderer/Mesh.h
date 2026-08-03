@@ -46,17 +46,16 @@ namespace Uge
 	/**
 	 * @brief Vertex format used by the 3D mesh path.
 	 * @ingroup group_renderer
+	 *
+	 * @note Carries geometry only. Material inputs come from the `MaterialData` uniform
+	 * block instead, so changing a material does not mean rebuilding the vertex buffer,
+	 * and the picked entity ID comes from the per-draw `ModelData` block.
 	 */
 	struct MeshVertex
 	{
 		glm::vec3	Position; ///< Position in model space.
 		glm::vec3	Normal; ///< Surface normal in model space.
 		glm::vec2	TexCoord; ///< Texture coordinates.
-		int			HasDiffuseMap; ///< Non-zero when a diffuse texture is bound.
-		float		TexIndex; ///< Index of the bound texture slot to sample.
-
-		// Editor Only
-		int EntityID; ///< Owning entity, written to the picking attachment. Editor only.
 	};
 
 	/*
@@ -114,6 +113,16 @@ namespace Uge
 		 */
 		void SetMaterial(AssetHandle material) { m_material = material; }
 
+		/**
+		 * @brief The average of the mesh's vertex positions, in model space.
+		 * @return The centroid; the origin for an empty mesh.
+		 *
+		 * Used as the sort key for blended submeshes. A centroid is a coarse
+		 * approximation — it breaks down for large or interpenetrating transparent
+		 * surfaces — but it is what makes car windows composite in a sensible order
+		 * without a per-fragment technique.
+		 */
+		const glm::vec3& GetCenter() const { return m_center; }
 
 
 	private:
@@ -125,6 +134,7 @@ namespace Uge
 		std::vector<MeshVertex> m_vertices;
 		std::vector<uint32_t> m_indices;
 		AssetHandle m_material = 0;
+		glm::vec3 m_center = glm::vec3(0.0f);
 
 		Ref<UniformBuffer> m_diffuseMap;
 

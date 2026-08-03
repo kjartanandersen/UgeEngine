@@ -83,11 +83,29 @@ namespace Uge
 		 * @param handle Handle to query.
 		 * @return The asset type, or Uge::AssetType::None if unknown.
 		 */
-		static AssetType GetAssetType(AssetHandle handle) 
+		static AssetType GetAssetType(AssetHandle handle)
 		{
 
 			return Project::GetActive()->GetAssetManager()->GetAssetType(handle);
 
+
+		}
+
+		/**
+		 * @brief Unloads an asset, along with anything only it depended on.
+		 * @param handle Asset to release.
+		 *
+		 * Unloading a model also releases the materials and textures it pulled in, except
+		 * those another model still lists as a dependency. The handle stays valid: the asset
+		 * is reimported on the next GetAsset().
+		 *
+		 * @warning Only drops the manager's own reference. Anything still holding a
+		 * `Ref<Asset>` to it keeps the asset — and its GPU resources — alive.
+		 */
+		static void DeleteAsset(AssetHandle handle)
+		{
+
+			Project::GetActive()->GetAssetManager()->DeleteAsset(handle);
 
 		}
 	};

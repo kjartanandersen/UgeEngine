@@ -10,6 +10,9 @@
 
 #include "Uge/Asset/Asset.h"
 #include "Shader.h"
+#include "UniformBuffer.h"
+
+#include <cstdint>
 
 #include <glm/glm.hpp>
 
@@ -35,6 +38,39 @@ namespace Uge
 	};
 
 	/**
+	 * @brief How a material's alpha channel is interpreted.
+	 * @ingroup group_renderer
+	 *
+	 * Mirrors glTF's `alphaMode`, which is where the values come from on import.
+	 * Uge::Model uses this to split its submeshes into an opaque pass and a
+	 * back-to-front blended pass.
+	 */
+	enum class AlphaMode : int32_t
+	{
+		Opaque = 0, ///< Alpha ignored; the surface is fully opaque.
+		Mask = 1,   ///< Fragments below Uge::MaterialProperties::AlphaCutoff are discarded.
+		Blend = 2   ///< Alpha-blended over what is already in the target.
+	};
+
+	/**
+	 * @brief Which texture maps a material actually has, as a bitfield.
+	 * @ingroup group_renderer
+	 *
+	 * Uploaded to the shader so it can pick between a map and the matching scalar in
+	 * Uge::MaterialProperties without a separate sampler test per surface.
+	 */
+	enum MaterialMapFlags : int32_t
+	{
+		MaterialMap_None = 0,                  ///< No maps.
+		MaterialMap_Albedo = 1 << 0,           ///< Base colour map present.
+		MaterialMap_Normal = 1 << 1,           ///< Normal map present.
+		MaterialMap_Roughness = 1 << 2,        ///< Roughness map present.
+		MaterialMap_Metallic = 1 << 3,         ///< Metallic map present.
+		MaterialMap_AmbientOcclusion = 1 << 4, ///< Ambient occlusion map present.
+		MaterialMap_Emissive = 1 << 5          ///< Emissive map present.
+	};
+
+	/**
 	 * @brief Scalar and colour factors applied alongside — or instead of — the texture maps.
 	 * @ingroup group_renderer
 	 */
@@ -44,6 +80,31 @@ namespace Uge
 		float Roughness = 1.0f; ///< Surface roughness in `[0, 1]`; `0` is mirror-smooth.
 		float Metallic = 0.0f; ///< Metalness in `[0, 1]`; `1` is fully metallic.
 		float EmissiveStrength = 0.0f; ///< Emission multiplier; `0` disables emission.
+		float AlphaCutoff = 0.5f; ///< Discard threshold, used only by Uge::AlphaMode::Mask.
+		AlphaMode BlendMode = AlphaMode::Opaque; ///< How the alpha channel is interpreted.
+	};
+
+	/**
+	 * @brief The material block uploaded to the GPU, laid out to match the shader.
+	 * @ingroup group_renderer
+	 *
+	 * Corresponds to `layout(std140, binding = 2) uniform MaterialData` in
+	 * `assets/shaders/Model.glsl`. Built by Uge::Material::BuildUniformData; the trailing
+	 * padding is what rounds the block up to the 16-byte multiple `std140` requires.
+	 *
+	 * @warning Changing a field here means changing the shader block to match. A mismatch
+	 * produces wrong values rather than an error.
+	 */
+	struct MaterialUniformData
+	{
+		glm::vec4 AlbedoColor;   ///< Base colour factor, including alpha.
+		float Roughness;         ///< Roughness factor.
+		float Metallic;          ///< Metallic factor.
+		float EmissiveStrength;  ///< Emission multiplier.
+		float AlphaCutoff;       ///< Mask threshold.
+		int32_t MapFlags;        ///< Bitwise OR of Uge::MaterialMapFlags.
+		int32_t BlendMode;       ///< Uge::AlphaMode as an integer.
+		int32_t Padding[2];      ///< Pads the block to a multiple of 16 bytes.
 	};
 
 	/**
@@ -142,6 +203,31 @@ namespace Uge
 		void SetProperties(const MaterialProperties& properties) { m_properties = properties; }
 
 		/**
+		 * @brief How this material's alpha channel is interpreted.
+		 * @return The blend mode, defaulting to Uge::AlphaMode::Opaque.
+		 */
+		AlphaMode GetBlendMode() const { return m_properties.BlendMode; }
+
+		/**
+		 * @brief Packs the properties and map flags into the GPU block.
+		 * @return The block, ready to upload to PropertiesUniformBuffer().
+		 *
+		 * The map flags are derived from which texture handles are non-zero, so the shader
+		 * never has to guess whether a bound sampler holds real data.
+		 */
+		MaterialUniformData BuildUniformData() const;
+
+		/**
+		 * @brief Uploads a neutral opaque white block, as if for a material with no maps.
+		 *
+		 * The uniform block persists between draws, so a mesh with no material would
+		 * otherwise be shaded with whatever material happened to bind last.
+		 *
+		 * @warning Requires a live graphics context.
+		 */
+		static void BindDefaultProperties();
+
+		/**
 		 * @brief The asset type this class represents.
 		 * @return Uge::AssetType::Material.
 		 */
@@ -152,6 +238,19 @@ namespace Uge
 		 */
 		AssetType GetType() const override { return GetStaticType(); }
 
+
+	protected:
+		/**
+		 * @brief The uniform buffer every material uploads its block into.
+		 * @return The shared buffer, created on first call.
+		 *
+		 * Deliberately one buffer rather than one per material: the backend binds a buffer
+		 * to binding point 2 when it is created, so per-material buffers would leave
+		 * whichever was constructed last permanently bound.
+		 *
+		 * @warning Requires a live graphics context, so call it only from Bind().
+		 */
+		static const Ref<UniformBuffer>& PropertiesUniformBuffer();
 
 	protected:
 		MaterialTextureMap m_textureMaps; ///< Texture maps bound when this material is used.

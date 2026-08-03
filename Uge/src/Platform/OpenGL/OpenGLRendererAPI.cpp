@@ -37,6 +37,13 @@ namespace Uge
 
 	}
 
+	void OpenGLRendererAPI::SetDepthWrite(bool enabled)
+	{
+
+		glDepthMask(enabled ? GL_TRUE : GL_FALSE);
+
+	}
+
 	void OpenGLRendererAPI::DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount)
 	{
 		vertexArray->Bind();

@@ -65,6 +65,19 @@ namespace Uge
 		 */
 		virtual AssetType GetAssetType(AssetHandle handle) const = 0;
 
+		/**
+		 * @brief Unloads an asset from memory, along with anything only it depended on.
+		 * @param handle Asset to release.
+		 *
+		 * Unloads, it does not unregister: the handle stays valid and GetAsset() reimports
+		 * the asset on the next call. Removing an asset from the project is a separate
+		 * operation.
+		 *
+		 * @warning Only drops the manager's own reference. Anything still holding a
+		 * `Ref<Asset>` keeps the asset — and its GPU resources — alive.
+		 */
+		virtual void DeleteAsset(AssetHandle handle) = 0;
+
 	};
 
 }

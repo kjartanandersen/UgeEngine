@@ -161,7 +161,47 @@ namespace Uge
 		 */
 		bool DeserializeAssetRegistry();
 
+		/**
+		 * @brief Unloads an asset, dispatching on its type.
+		 * @param handle Asset to release.
+		 *
+		 * Unloads, it does not unregister — the registry keeps the handle-to-file mapping so
+		 * the asset can be assigned again and is reimported on the next GetAsset().
+		 */
+		virtual void DeleteAsset(AssetHandle handle) override;
+
+
+		/**
+		 * @brief Unloads a model and the materials and textures only it used.
+		 * @param handle Model to release.
+		 *
+		 * Drops the model's mesh registry entry, then unloads each of its dependencies that
+		 * no other model still lists. A later reimport rebuilds the entry.
+		 */
+		void DeleteModel(AssetHandle handle);
+		/**
+		 * @brief Unloads a texture, leaving its registry entry in place.
+		 * @param handle Texture to release.
+		 */
+		void DeleteTexture(AssetHandle handle);
+		/**
+		 * @brief Unloads a material.
+		 * @param handle Material to release.
+		 * @note Materials from mesh import are memory-only, so this discards them for good;
+		 *       reimporting the model creates fresh ones. @see AddMemoryOnlyAsset
+		 */
+		void DeleteMaterial(AssetHandle handle);
+
 	private:
+		/**
+		 * @brief Whether any model in the mesh registry still lists an asset as a dependency.
+		 * @param dependency Material or texture handle to look for.
+		 * @return `true` if some model still needs it, so it must not be unloaded.
+		 */
+		bool IsDependencyOfAnyModel(AssetHandle dependency) const;
+
+	private:
+
 		AssetRegistry m_assetRegistry;
 		MeshAssetRegistry m_meshAssetRegistry;
 		AssetMap  m_loadedAssets;

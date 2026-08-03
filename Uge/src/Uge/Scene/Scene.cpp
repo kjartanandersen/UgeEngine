@@ -151,11 +151,41 @@ namespace Uge
 	void Scene::DestroyEntity(Entity entity)
 	{
 
+		// Read the handle before the entity goes away, release after — the scan in
+		// ReleaseMeshIfUnused would otherwise still see this entity holding it.
+		AssetHandle mesh = entity.HasComponent<MeshComponent>()
+			? entity.GetComponent<MeshComponent>().Mesh
+			: 0;
+
 		m_entityMap.erase(entity.GetUUID());
 		m_registry.destroy(entity);
 
+		ReleaseMeshIfUnused(mesh);
 
 	}
+
+	void Scene::ReleaseMeshIfUnused(AssetHandle mesh)
+	{
+
+		if (!mesh || m_isRunning)
+		{
+			return;
+		}
+
+		auto view = m_registry.view<MeshComponent>();
+		for (auto entity : view)
+		{
+			if (view.get<MeshComponent>(entity).Mesh == mesh)
+			{
+				return;
+			}
+		}
+
+		AssetManager::DeleteAsset(mesh);
+
+	}
+
+	
 
 	void Scene::OnRuntimeStart()
 	{
@@ -247,7 +277,7 @@ namespace Uge
 		{
 			const glm::mat4 viewProjection = mainCam->GetProjection() * glm::inverse(mainTransform);
 
-			Model::BeginScene(viewProjection);
+			Model::BeginScene(viewProjection, glm::vec3(mainTransform[3]));
 			{
 				auto meshView = m_registry.view<TransformComponent, MeshComponent>();
 				for (auto [entity, transform, mesh] : meshView.each())
@@ -301,7 +331,7 @@ namespace Uge
 	{
 
 		// Draw Meshes
-		Model::BeginScene(camera.GetViewProjection());
+		Model::BeginScene(camera.GetViewProjection(), camera.GetPosition());
 		{
 			auto meshView = m_registry.view<TransformComponent, MeshComponent>();
 			for (auto [entity, transform, mesh] : meshView.each())

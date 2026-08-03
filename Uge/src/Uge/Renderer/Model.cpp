@@ -3,7 +3,9 @@
 
 #include "Uge/Asset/AssetManager.h"
 #include "Uge/Renderer/Material.h"
+#include "Uge/Renderer/RenderCommand.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 
@@ -38,6 +40,21 @@ namespace Uge
 			result[0][3] = matrix.d1; result[1][3] = matrix.d2; result[2][3] = matrix.d3; result[3][3] = matrix.d4;
 			return result;
 		}
+
+		// Materials are referenced by handle and resolved per draw rather than cached on the
+		// Mesh, so editing a material's blend mode takes effect without a reimport.
+		static AlphaMode GetMaterialBlendMode(AssetHandle materialHandle)
+		{
+			if (!materialHandle
+				|| !AssetManager::IsAssetHandleValid(materialHandle)
+				|| AssetManager::GetAssetType(materialHandle) != AssetType::Material)
+			{
+				return AlphaMode::Opaque;
+			}
+
+			Ref<Material> material = AssetManager::GetAsset<Material>(materialHandle);
+			return material ? material->GetBlendMode() : AlphaMode::Opaque;
+		}
 	}
 
 	Model::SceneData Model::s_sceneData;
@@ -61,17 +78,53 @@ namespace Uge
 		s_sceneData.Initialized = true;
 	}
 
-	void Model::BeginScene(const glm::mat4& viewProjection)
+	void Model::BeginScene(const glm::mat4& viewProjection, const glm::vec3& cameraPosition)
 	{
 		EnsureSceneResources();
 
 		CameraData cameraData{};
 		cameraData.ViewProjection = viewProjection;
 		s_sceneData.CameraUniformBuffer->SetData(&cameraData, sizeof(CameraData));
+
+		s_sceneData.CameraPosition = cameraPosition;
+
+		// Entries point into model submesh vectors, so anything an unterminated pass left
+		// behind must go rather than be drawn a frame late.
+		s_sceneData.BlendedQueue.clear();
 	}
 
 	void Model::EndScene()
 	{
+		if (!s_sceneData.Initialized || s_sceneData.BlendedQueue.empty())
+		{
+			return;
+		}
+
+		// Farthest first, so nearer surfaces blend over what is already behind them.
+		std::sort(s_sceneData.BlendedQueue.begin(), s_sceneData.BlendedQueue.end(),
+			[](const BlendedDraw& lhs, const BlendedDraw& rhs)
+			{
+				return lhs.SortKey > rhs.SortKey;
+			});
+
+		// Depth testing stays on so opaque geometry still occludes; only the writes go, which
+		// is what lets one transparent surface show through another.
+		RenderCommand::SetDepthWrite(false);
+
+		s_sceneData.ModelShader->Bind();
+		for (const BlendedDraw& blendedDraw : s_sceneData.BlendedQueue)
+		{
+			ModelData modelData{};
+			modelData.ModelTransform = blendedDraw.Transform;
+			modelData.EntityData = blendedDraw.EntityID;
+			s_sceneData.ModelUniformBuffer->SetData(&modelData, sizeof(ModelData));
+
+			blendedDraw.SubMesh->Draw(s_sceneData.ModelShader, blendedDraw.EntityID);
+		}
+
+		RenderCommand::SetDepthWrite(true);
+
+		s_sceneData.BlendedQueue.clear();
 	}
 
 	void Model::Draw(const glm::mat4& transform, int entityID) const
@@ -89,6 +142,17 @@ namespace Uge
 
 		for (const auto& mesh : m_meshes)
 		{
+			if (GetMaterialBlendMode(mesh.GetMaterial()) == AlphaMode::Blend)
+			{
+				// Deferred to EndScene(): sorting has to span every model in the pass, not
+				// just the submeshes of this one.
+				const glm::vec3 worldCenter = glm::vec3(transform * glm::vec4(mesh.GetCenter(), 1.0f));
+				const glm::vec3 toCamera = worldCenter - s_sceneData.CameraPosition;
+
+				s_sceneData.BlendedQueue.push_back({ &mesh, transform, entityID, glm::dot(toCamera, toCamera) });
+				continue;
+			}
+
 			mesh.Draw(s_sceneData.ModelShader, entityID);
 		}
 	}
@@ -162,13 +226,6 @@ namespace Uge
 
 		}
 
-		bool hasAlbedoMap = false;
-		if (materialHandle)
-		{
-			Ref<Material> material = AssetManager::GetAsset<Material>(materialHandle);
-			hasAlbedoMap = material && material->GetAlbedoMap() != 0;
-		}
-
 		vertices.reserve(mesh->mNumVertices);
 		for (uint32_t i = 0; i < mesh->mNumVertices; i++)
 		{
@@ -191,16 +248,11 @@ namespace Uge
 			{
 				vertex.TexCoord.x = mesh->mTextureCoords[0][i].x;
 				vertex.TexCoord.y = mesh->mTextureCoords[0][i].y;
-				vertex.HasDiffuseMap = hasAlbedoMap ? 1 : 0;
-				vertex.TexIndex = hasAlbedoMap ? 0.0f : -1.0f;
 			}
 			else
 			{
 				vertex.TexCoord = { 0.0f, 0.0f };
-				vertex.HasDiffuseMap = 0;
-				vertex.TexIndex = -1.0f;
 			}
-			vertex.EntityID = -1;
 
 			vertices.emplace_back(vertex);
 		}

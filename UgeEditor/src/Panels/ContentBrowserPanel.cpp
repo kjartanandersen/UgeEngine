@@ -20,7 +20,7 @@ namespace Uge
 		m_fileIcon = TextureImporter::LoadTexture2D("Resources/Icons/ContentBrowser/FileIcon.png");
 		m_treeNodes.push_back(TreeNode(".", 0));
 		RefreshAssetTree();
-		m_mode = Mode::FileSystem;
+		m_mode = Mode::Asset;
 
 	}
 

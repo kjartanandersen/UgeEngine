@@ -23,6 +23,13 @@ namespace Uge
 			return;
 		}
 
+		glm::vec3 accumulated(0.0f);
+		for (const MeshVertex& vertex : m_vertices)
+		{
+			accumulated += vertex.Position;
+		}
+		m_center = accumulated / static_cast<float>(m_vertices.size());
+
 		m_VAO = VertexArray::Create();
 		m_VBO = VertexBuffer::Create(static_cast<uint32_t>(m_vertices.size() * sizeof(MeshVertex)));
 		m_VBO->SetData((void*)m_vertices.data(), static_cast<uint32_t>(m_vertices.size() * sizeof(MeshVertex)));
@@ -31,10 +38,7 @@ namespace Uge
 		{
 			{ ShaderDataType::Float3,	"a_Position" },
 			{ ShaderDataType::Float3,	"a_Normal" },
-			{ ShaderDataType::Float2,	"a_TexCoord" },
-			{ ShaderDataType::Int,		"a_HasDiffuseMap" },
-			{ ShaderDataType::Float,	"a_TexIndex" },
-			{ ShaderDataType::Int,		"a_EntityID" }
+			{ ShaderDataType::Float2,	"a_TexCoord" }
 		};
 
 		m_VBO->SetLayout(vbLayout);
@@ -52,11 +56,22 @@ namespace Uge
 		}
 		shader->Bind();
 
+		Ref<Material> material;
 		if (m_material && AssetManager::IsAssetHandleValid(m_material) &&
 			AssetManager::GetAssetType(m_material) == AssetType::Material)
 		{
-			if (Ref<Material> material = AssetManager::GetAsset<Material>(m_material))
-				material->Bind();
+			material = AssetManager::GetAsset<Material>(m_material);
+		}
+
+		if (material)
+		{
+			material->Bind();
+		}
+		else
+		{
+			// The material uniform block survives between draws, so an unmaterialed mesh
+			// would otherwise be shaded with whatever bound last.
+			Material::BindDefaultProperties();
 		}
 
 		m_VAO->Bind();

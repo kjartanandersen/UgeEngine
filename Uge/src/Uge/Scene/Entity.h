@@ -153,6 +153,12 @@ namespace Uge
 		operator entt::entity() const { return m_entityHandle; }
 
 		/**
+		 * @brief The scene this handle belongs to.
+		 * @return The owning scene, or null for a default-constructed handle.
+		 */
+		Scene* GetScene() const { return m_scene; }
+
+		/**
 		 * @brief The entity's persistent identifier.
 		 * @return The UUID from its Uge::IDComponent.
 		 */

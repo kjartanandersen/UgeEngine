@@ -62,6 +62,18 @@ namespace Uge
 		virtual void Clear() = 0;
 
 		/**
+		 * @brief Enables or disables writing to the depth buffer.
+		 * @param enabled `true` to write depth, `false` to test against it only.
+		 *
+		 * Turning writes off is what lets blended geometry be drawn back-to-front without
+		 * each transparent surface occluding the ones behind it.
+		 *
+		 * @warning While disabled, Clear() cannot clear the depth buffer either. Restore it
+		 * before the end of the pass.
+		 */
+		virtual void SetDepthWrite(bool enabled) = 0;
+
+		/**
 		 * @brief Issues an indexed draw call.
 		 * @param vertexArray Geometry to draw; must already have an index buffer set.
 		 * @param indexCount Number of indices to draw, or `0` to draw the whole index buffer.

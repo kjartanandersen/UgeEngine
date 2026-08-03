@@ -19,6 +19,11 @@ namespace Uge
 		if (m_shader)
 			m_shader->Bind();
 
+		// Uploaded per material rather than per frame: without it the shader has no way to
+		// tell a black plastic from a silver paint, since neither has a base colour map.
+		const MaterialUniformData uniformData = BuildUniformData();
+		PropertiesUniformBuffer()->SetData(&uniformData, sizeof(uniformData));
+
 		BindTexture(m_textureMaps.Albedo, 0);
 		BindTexture(m_textureMaps.Normal, 1);
 		BindTexture(m_textureMaps.Roughness, 2);

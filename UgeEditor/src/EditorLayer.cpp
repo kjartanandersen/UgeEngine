@@ -394,11 +394,37 @@ namespace Uge
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 					{
 						AssetHandle handle = *(AssetHandle*)payload->Data;
-						OpenScene(handle);
 
+						AssetType assetType = Project::GetActive()->GetEditorAssetManager()->GetAssetType(handle);
+
+						switch (assetType)
+						{
+						case Uge::AssetType::None:
+							break;
+						case Uge::AssetType::Scene:
+							OpenScene(handle);
+							break;
+						case Uge::AssetType::Texture2D:
+							break;
+						case Uge::AssetType::Mesh:
+							if (m_sceneState == SceneState::Edit)
+							{
+								AssetMetadata metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(handle);
+								
+								Entity ent = m_editorScene->CreateEntity(metadata.FilePath.filename().string());
+								MeshComponent& mcomp = ent.AddComponent<MeshComponent>();
+								mcomp.Mesh = handle;
+								
+
+							}
+
+							break;
+						case Uge::AssetType::Material:
+							break;
+						default:
+							break;
+						}
 					}
-					
-
 
 					ImGui::EndDragDropTarget();
 				}
@@ -682,6 +708,7 @@ namespace Uge
 						if (selectedEnt)
 						{
 							m_sceneHierarchyPanel.SetSelectedEntity({});
+
 							m_activeScene->DestroyEntity(selectedEnt);
 						}
 

@@ -172,7 +172,18 @@ namespace Uge
 			{
 				if (removeComponent)
 				{
-					entity.RemoveComponent<T>();
+					if constexpr (std::is_same_v<T, MeshComponent>)
+					{
+						// Copy the handle out first: `component` dangles once the
+						// component is gone.
+						AssetHandle mesh = component.Mesh;
+						entity.RemoveComponent<T>();
+						entity.GetScene()->ReleaseMeshIfUnused(mesh);
+					}
+					else
+					{
+						entity.RemoveComponent<T>();
+					}
 				}
 
 			}
@@ -673,7 +684,7 @@ namespace Uge
 
 #pragma region MeshComponent
 
-			DrawComponent<MeshComponent>("Mesh", entity, true, [](auto& component)
+			DrawComponent<MeshComponent>("Mesh", entity, true, [scene = m_context](auto& component)
 				{
 					std::string label = "None";
 					bool isMeshValid = false;
@@ -703,7 +714,14 @@ namespace Uge
 
 							if (AssetManager::GetAssetType(handle) == AssetType::Mesh)
 							{
+								// Dropping onto a slot that already held a model drops
+								// that model's last reference.
+								AssetHandle previous = component.Mesh;
 								component.Mesh = handle;
+								if (previous != handle)
+								{
+									scene->ReleaseMeshIfUnused(previous);
+								}
 							}
 							else
 							{
@@ -721,7 +739,9 @@ namespace Uge
 						float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
 						if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
 						{
+							AssetHandle mesh = component.Mesh;
 							component.Mesh = 0;
+							scene->ReleaseMeshIfUnused(mesh);
 						}
 					}
 

@@ -13,6 +13,7 @@
 #include <assimp/material.h>
 #include <assimp/scene.h>
 #include <assimp/texture.h>
+#include <assimp/GltfMaterial.h>
 
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
@@ -373,6 +374,8 @@ namespace Uge
 
 			}
 
+			ImportAlphaMode(aiMat, properties);
+
 			material->SetProperties(properties);
 
 			AssetHandle materialHandle = assetManager->AddMemoryOnlyAsset(material);
@@ -386,6 +389,39 @@ namespace Uge
 		}
 
 		return meshMetadata;
+	}
+
+	void MeshImporter::ImportAlphaMode(aiMaterial* material, MaterialProperties& properties)
+	{
+		aiString alphaMode;
+		if (material->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS)
+		{
+			const std::string mode = alphaMode.C_Str();
+
+			if (mode == "BLEND")
+				properties.BlendMode = AlphaMode::Blend;
+			else if (mode == "MASK")
+				properties.BlendMode = AlphaMode::Mask;
+			else
+				properties.BlendMode = AlphaMode::Opaque;
+		}
+		else
+		{
+			// Formats other than glTF have no alphaMode, so fall back to the opacity factor.
+			// FBX in particular expresses a transparent material only this way.
+			ai_real opacity;
+			if (material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS && opacity < 1.0f)
+			{
+				properties.BlendMode = AlphaMode::Blend;
+				properties.AlbedoColor.a = opacity;
+			}
+		}
+
+		ai_real alphaCutoff;
+		if (material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, alphaCutoff) == AI_SUCCESS)
+		{
+			properties.AlphaCutoff = alphaCutoff;
+		}
 	}
 
 	std::vector<MeshMaterialTextureRef> MeshImporter::ImportMaterialTextures(

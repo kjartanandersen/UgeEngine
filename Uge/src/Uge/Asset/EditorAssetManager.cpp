@@ -4,6 +4,7 @@
 #include "Uge/Project/Project.h"
 #include "AssetImporter.h"
 #include "Uge/Core/FileSystem.h"
+#include <Uge/Renderer/Model.h>
 
 
 #include <fstream>
@@ -307,6 +308,77 @@ namespace Uge
 
         return true;
 
+    }
+
+    void EditorAssetManager::DeleteAsset(AssetHandle handle)
+    {
+
+        switch (GetAssetType(handle))
+        {
+        case AssetType::Texture2D:
+            DeleteTexture(handle);
+            break;
+        case AssetType::Material:
+            DeleteMaterial(handle);
+            break;
+        case AssetType::Mesh:
+            DeleteModel(handle);
+            break;
+        case AssetType::Scene:
+            break;
+        case AssetType::None:
+            break;
+        default:
+            break;
+        }
+
+    }
+
+    void EditorAssetManager::DeleteModel(AssetHandle handle)
+    {
+        auto meshIt = m_meshAssetRegistry.find(handle);
+        if (meshIt != m_meshAssetRegistry.end())
+        {
+            // Copy before erasing; the entry goes first so the shared-use check below
+            // does not count the model that is being deleted.
+            std::vector<AssetHandle> dependencies = meshIt->second.Dependencies;
+            m_meshAssetRegistry.erase(meshIt);
+
+            for (AssetHandle dependency : dependencies)
+            {
+                if (IsDependencyOfAnyModel(dependency))
+                    continue;   // another model still needs it
+
+                DeleteAsset(dependency);
+            }
+        }
+
+        // Only unload. The registry entry is the file's identity: erasing it would
+        // invalidate the handle that scenes, the content browser and the registry file
+        // all still refer to, so the same file could never be assigned again.
+        m_loadedAssets.erase(handle);
+
+    }
+
+    void EditorAssetManager::DeleteTexture(AssetHandle handle)
+    {
+        m_loadedAssets.erase(handle);
+    }
+
+    void EditorAssetManager::DeleteMaterial(AssetHandle handle)
+    {
+        m_loadedAssets.erase(handle);
+    }
+
+    bool EditorAssetManager::IsDependencyOfAnyModel(AssetHandle dependency) const
+    {
+        for (const auto& [modelHandle, meshMetadata] : m_meshAssetRegistry)
+        {
+            if (std::find(meshMetadata.Dependencies.begin(), meshMetadata.Dependencies.end(), dependency)
+                != meshMetadata.Dependencies.end())
+                return true;
+        }
+        return false;
     }
 
     

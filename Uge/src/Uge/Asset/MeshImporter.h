@@ -9,6 +9,7 @@
 #include "Asset.h"
 #include "AssetMetadata.h"
 
+#include "Uge/Renderer/Material.h"
 #include "Uge/Renderer/Model.h"
 #include "Uge/Asset/AssetMetadata.h"
 
@@ -71,6 +72,11 @@ namespace Uge
 
 	private:
 		static MeshAssetMetadata ImportMaterialData(const std::filesystem::path& modelPath, const aiScene* scene);
+
+		// Reads the material's alpha mode and cutoff. glTF states them outright; other formats
+		// only have an opacity factor, which is treated as a request for blending.
+		static void ImportAlphaMode(aiMaterial* material, MaterialProperties& properties);
+
 		static std::vector<MeshMaterialTextureRef> ImportMaterialTextures(
 			const std::filesystem::path& modelDirectory, const std::filesystem::path& modelPath,
 			const aiScene* scene, aiMaterial* material, int assimpTextureType, MeshTextureType meshTextureType

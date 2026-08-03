@@ -139,6 +139,7 @@ namespace Uge
 		/** @brief Duplicates the selected entity and selects the copy. */
 		void OnDuplicateEntry();
 
+
 	private:
 
 

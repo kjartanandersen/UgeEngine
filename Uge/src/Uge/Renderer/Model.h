@@ -44,11 +44,15 @@ namespace Uge
 	 * BeginScene()/EndScene() pair:
 	 *
 	 * @code
-	 * Model::BeginScene(camera.GetViewProjection());
+	 * Model::BeginScene(camera.GetViewProjection(), camera.GetPosition());
 	 * for (auto entity : meshView)
 	 *     model->Draw(transform, (int)entity);
 	 * Model::EndScene();
 	 * @endcode
+	 *
+	 * Draw() only issues the opaque submeshes. Blended ones are queued and drawn by
+	 * EndScene(), back to front across every model in the pass — calling EndScene() is
+	 * therefore not optional if anything in the scene is transparent.
 	 *
 	 * @warning That state is shared by all instances and is separate from
 	 * Uge::Renderer2D's. Uge::Scene calls this pair separately from
@@ -72,10 +76,14 @@ namespace Uge
 		explicit Model(const std::string& path, const MeshAssetMetadata& metadata = {});
 
 		/**
-		 * @brief Draws every submesh at the given transform.
+		 * @brief Submits every submesh at the given transform.
 		 * @param transform World transform to render at.
 		 * @param entityID ID written to the picking attachment; `-1` for none.
 		 * @pre BeginScene() must have been called for this frame.
+		 *
+		 * Opaque and alpha-masked submeshes are drawn immediately. Submeshes whose material
+		 * is Uge::AlphaMode::Blend are queued for EndScene() instead, so they can be sorted
+		 * against the transparent geometry of every other model in the pass.
 		 */
 		void Draw(const glm::mat4& transform, int entityID = -1) const;
 
@@ -106,11 +114,18 @@ namespace Uge
 		/**
 		 * @brief Begins the mesh pass, uploading the camera matrix to the shared uniform buffer.
 		 * @param viewProjection Combined view-projection matrix.
+		 * @param cameraPosition Camera position in world space, used to sort blended submeshes.
 		 *
-		 * Creates the shared shader and uniform buffers on first use.
+		 * Creates the shared shader and uniform buffers on first use, and discards anything
+		 * left in the blended queue by a pass that was never ended.
 		 */
-		static void BeginScene(const glm::mat4& viewProjection);
-		/** @brief Ends the mesh pass opened by BeginScene(). */
+		static void BeginScene(const glm::mat4& viewProjection, const glm::vec3& cameraPosition);
+		/**
+		 * @brief Ends the mesh pass opened by BeginScene(), flushing the blended queue.
+		 *
+		 * Draws every queued transparent submesh back to front with depth writes disabled,
+		 * then restores them. Skipping this call leaves transparent geometry undrawn.
+		 */
 		static void EndScene();
 
 	private:
@@ -131,12 +146,28 @@ namespace Uge
 
 		MeshAssetMetadata m_meshMetadata;
 
-		/** @brief Shader and uniform buffers shared by every model draw. */
+		/**
+		 * @brief One blended submesh deferred to EndScene().
+		 *
+		 * @warning #SubMesh points into the owning model's submesh vector, so an entry is
+		 * only valid until the end of the pass that queued it.
+		 */
+		struct BlendedDraw
+		{
+			const Mesh* SubMesh; ///< Submesh to draw.
+			glm::mat4 Transform; ///< World transform it was submitted with.
+			int EntityID; ///< ID for the picking attachment.
+			float SortKey; ///< Squared distance from the camera to the world-space centroid.
+		};
+
+		/** @brief Shader, uniform buffers and blended queue shared by every model draw. */
 		struct SceneData
 		{
 			Ref<Shader> ModelShader; ///< Shader used for every mesh draw.
 			Ref<UniformBuffer> CameraUniformBuffer; ///< Per-frame camera matrices.
 			Ref<UniformBuffer> ModelUniformBuffer; ///< Per-draw model transform.
+			glm::vec3 CameraPosition = glm::vec3(0.0f); ///< Sort origin for the blended queue.
+			std::vector<BlendedDraw> BlendedQueue; ///< Transparent submeshes awaiting EndScene().
 			bool Initialized = false; ///< Whether the shared resources have been created.
 		};
 
