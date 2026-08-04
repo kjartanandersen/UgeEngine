@@ -335,6 +335,7 @@ namespace Uge
 					case MeshTextureType::Normal:    material->SetNormalMap(textureRef.Texture); break;
 					case MeshTextureType::Roughness: material->SetRoughnessMap(textureRef.Texture); break;
 					case MeshTextureType::Metallic:  material->SetMetallicMap(textureRef.Texture); break;
+					case MeshTextureType::Emissive:  material->SetEmissiveMap(textureRef.Texture); break;
 					default: break;
 					}
 
@@ -350,6 +351,7 @@ namespace Uge
 			assignTextures(aiTextureType_NORMALS, MeshTextureType::Normal);
 			assignTextures(aiTextureType_DIFFUSE_ROUGHNESS, MeshTextureType::Roughness);
 			assignTextures(aiTextureType_METALNESS, MeshTextureType::Metallic);
+			assignTextures(aiTextureType_EMISSIVE, MeshTextureType::Emissive);
 
 			MaterialProperties properties;
 
@@ -371,6 +373,27 @@ namespace Uge
 			if (aiMat->Get(AI_MATKEY_METALLIC_FACTOR, metallicFactor) == AI_SUCCESS)
 			{
 				properties.Metallic = metallicFactor;
+
+			}
+
+			aiColor4D emissiveColor;
+			if (aiMat->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor) == AI_SUCCESS)
+			{
+				properties.EmissiveColor = glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b);
+
+			}
+
+			// Where KHR_materials_emissive_strength lands. glTF's default is 1, so a material
+			// that emits at all but omits the extension must not be left at 0.
+			ai_real emissiveIntensity;
+			if (aiMat->Get(AI_MATKEY_EMISSIVE_INTENSITY, emissiveIntensity) == AI_SUCCESS)
+			{
+				properties.EmissiveStrength = emissiveIntensity;
+
+			}
+			else if (properties.EmissiveColor != glm::vec3(0.0f) || material->GetEmissiveMap())
+			{
+				properties.EmissiveStrength = 1.0f;
 
 			}
 

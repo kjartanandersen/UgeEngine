@@ -71,6 +71,36 @@ namespace Uge
 			m_rendererAPI->SetDepthWrite(enabled);
 		}
 
+		/**
+		 * @brief Enables or disables depth testing.
+		 * @param enabled `true` to test against the depth buffer, `false` to draw regardless.
+		 * @see RendererAPI::SetDepthTest
+		 */
+		inline static void SetDepthTest(bool enabled)
+		{
+			m_rendererAPI->SetDepthTest(enabled);
+		}
+
+		/**
+		 * @brief Sets the depth comparison function.
+		 * @param compare Comparison to use for subsequent draws.
+		 * @see RendererAPI::SetDepthFunc
+		 */
+		inline static void SetDepthFunc(DepthCompare compare)
+		{
+			m_rendererAPI->SetDepthFunc(compare);
+		}
+
+		/**
+		 * @brief Sets how subsequent draws blend with the render target.
+		 * @param mode Blend equation to use.
+		 * @see RendererAPI::SetBlendMode
+		 */
+		inline static void SetBlendMode(BlendMode mode)
+		{
+			m_rendererAPI->SetBlendMode(mode);
+		}
+
 
 		/**
 		 * @brief Issues an indexed draw call.

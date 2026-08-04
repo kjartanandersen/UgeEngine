@@ -23,6 +23,9 @@ namespace Uge
 		struct CameraData
 		{
 			glm::mat4 ViewProjection;
+			// vec4 rather than vec3: std140 pads a vec3 to 16 bytes anyway, and spelling it
+			// out keeps the C++ and GLSL declarations obviously identical.
+			glm::vec4 Position;
 		};
 
 		struct ModelData
@@ -30,6 +33,55 @@ namespace Uge
 			glm::mat4 ModelTransform;
 			int EntityData;
 		};
+
+		// Mirrors LightData in assets/shaders/Model.glsl. vec4 rather than vec3 because std140
+		// pads a vec3 to 16 bytes regardless; spelling it out keeps the two declarations
+		// obviously identical.
+		struct LightData
+		{
+			glm::vec4 Direction;
+			glm::vec4 Radiance;
+		};
+
+		// Mirrors SkyboxData in assets/shaders/Skybox.glsl.
+		struct SkyboxData
+		{
+			glm::mat4 ViewProjection;
+			float Intensity;
+			float Padding[3];
+		};
+
+		// Positions only; the skybox shader uses the vertex position as a sample direction.
+		static Ref<VertexArray> CreateSkyboxCube()
+		{
+			constexpr float vertices[] =
+			{
+				-1.0f, -1.0f, -1.0f,   1.0f, -1.0f, -1.0f,   1.0f,  1.0f, -1.0f,  -1.0f,  1.0f, -1.0f,
+				-1.0f, -1.0f,  1.0f,   1.0f, -1.0f,  1.0f,   1.0f,  1.0f,  1.0f,  -1.0f,  1.0f,  1.0f
+			};
+
+			constexpr uint32_t indices[] =
+			{
+				0, 2, 1,  0, 3, 2,
+				4, 5, 6,  4, 6, 7,
+				0, 7, 3,  0, 4, 7,
+				1, 2, 6,  1, 6, 5,
+				3, 6, 2,  3, 7, 6,
+				0, 1, 5,  0, 5, 4
+			};
+
+			Ref<VertexArray> vertexArray = VertexArray::Create();
+
+			Ref<VertexBuffer> vertexBuffer =
+				VertexBuffer::Create(const_cast<float*>(vertices), sizeof(vertices));
+			vertexBuffer->SetLayout({ { ShaderDataType::Float3, "a_Position" } });
+			vertexArray->AddVertexBuffer(vertexBuffer);
+
+			vertexArray->SetIndexBuffer(
+				IndexBuffer::Create(const_cast<uint32_t*>(indices), sizeof(indices) / sizeof(uint32_t)));
+
+			return vertexArray;
+		}
 
 		static glm::mat4 AssimpToGlm(const aiMatrix4x4t<float>& matrix)
 		{
@@ -73,9 +125,65 @@ namespace Uge
 		}
 
 		s_sceneData.ModelShader = Shader::Create("assets/shaders/Model.glsl");
-		s_sceneData.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 0);
+		// Binding 3, not 0: Renderer2D owns a camera block at binding 0 that is a bare mat4,
+		// while this one carries the camera position too. Sharing a binding point between two
+		// differently sized blocks lets a draw read past the end of whichever is bound.
+		s_sceneData.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 3);
 		s_sceneData.ModelUniformBuffer = UniformBuffer::Create(sizeof(ModelData), 1);
+
+		s_sceneData.LightUniformBuffer = UniformBuffer::Create(sizeof(LightData), 4);
+
+		s_sceneData.SkyboxShader = Shader::Create("assets/shaders/Skybox.glsl");
+		s_sceneData.SkyboxUniformBuffer = UniformBuffer::Create(sizeof(SkyboxData), 7);
+		s_sceneData.SkyboxCube = CreateSkyboxCube();
+
 		s_sceneData.Initialized = true;
+	}
+
+	void Model::SetEnvironment(const Ref<Environment>& environment, float intensity)
+	{
+		// Only a valid environment counts: a half-built one would leave the shader sampling
+		// cubemaps that were never filled.
+		s_sceneData.SceneEnvironment = (environment && environment->IsValid()) ? environment : nullptr;
+		s_sceneData.EnvironmentIntensity = intensity;
+	}
+
+	void Model::SetDirectionalLight(const glm::vec3& direction, const glm::vec3& radiance)
+	{
+		// A zero direction cannot be normalized, and would leave the shader with a NaN light
+		// vector that poisons every fragment it touches.
+		const float lengthSquared = glm::dot(direction, direction);
+
+		s_sceneData.LightDirection = lengthSquared > 0.0f
+			? direction * glm::inversesqrt(lengthSquared)
+			: glm::vec3(0.0f);
+
+		s_sceneData.LightRadiance = lengthSquared > 0.0f ? radiance : glm::vec3(0.0f);
+	}
+
+	void Model::DrawSkybox(const glm::mat4& viewProjection)
+	{
+		UG_PROFILE_FUNCTION();
+
+		if (!s_sceneData.Initialized || !s_sceneData.SceneEnvironment)
+		{
+			return;
+		}
+
+		SkyboxData skyboxData{};
+		skyboxData.ViewProjection = viewProjection;
+		skyboxData.Intensity = s_sceneData.EnvironmentIntensity;
+		s_sceneData.SkyboxUniformBuffer->SetData(&skyboxData, sizeof(SkyboxData));
+
+		s_sceneData.SkyboxShader->Bind();
+		s_sceneData.SceneEnvironment->Skybox->Bind(0);
+
+		// The vertex stage emits z == w, which lands exactly on the far plane; GL_LESS would
+		// reject all of it. Depth writes stay on so the sky still occludes nothing but is
+		// itself occluded correctly.
+		RenderCommand::SetDepthFunc(DepthCompare::LessEqual);
+		RenderCommand::DrawIndexed(s_sceneData.SkyboxCube);
+		RenderCommand::SetDepthFunc(DepthCompare::Less);
 	}
 
 	void Model::BeginScene(const glm::mat4& viewProjection, const glm::vec3& cameraPosition)
@@ -84,9 +192,30 @@ namespace Uge
 
 		CameraData cameraData{};
 		cameraData.ViewProjection = viewProjection;
+		cameraData.Position = glm::vec4(cameraPosition, 1.0f);
 		s_sceneData.CameraUniformBuffer->SetData(&cameraData, sizeof(CameraData));
 
 		s_sceneData.CameraPosition = cameraPosition;
+
+		// The shader wants the direction towards the light, which is the reverse of the
+		// direction the light travels in.
+		LightData lightData{};
+		lightData.Direction = glm::vec4(-s_sceneData.LightDirection, 0.0f);
+		lightData.Radiance = glm::vec4(s_sceneData.LightRadiance, 0.0f);
+		s_sceneData.LightUniformBuffer->SetData(&lightData, sizeof(LightData));
+
+		// Bound once for the whole pass rather than per material: the maps are scene state, and
+		// slots 6-8 are outside the range OpenGLMaterial::Bind touches.
+		if (s_sceneData.SceneEnvironment)
+		{
+			s_sceneData.SceneEnvironment->Irradiance->Bind(6);
+			s_sceneData.SceneEnvironment->Prefiltered->Bind(7);
+			s_sceneData.SceneEnvironment->BrdfLut->Bind(8);
+		}
+
+		Material::SetEnvironmentState(s_sceneData.SceneEnvironment != nullptr,
+			s_sceneData.SceneEnvironment ? s_sceneData.SceneEnvironment->GetPrefilteredMipCount() : 1,
+			s_sceneData.EnvironmentIntensity);
 
 		// Entries point into model submesh vectors, so anything an unterminated pass left
 		// behind must go rather than be drawn a frame late.

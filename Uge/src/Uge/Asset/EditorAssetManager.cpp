@@ -26,7 +26,9 @@ namespace Uge
         { ".obj",  AssetType::Mesh      },
         { ".fbx",  AssetType::Mesh      },
         { ".gltf", AssetType::Mesh      },
-        { ".glb",  AssetType::Mesh      }
+        { ".glb",  AssetType::Mesh      },
+
+        { ".hdr",  AssetType::Environment }
     };
 
     static AssetType GetAssetTypeFromFileExtention(const std::filesystem::path& extention)

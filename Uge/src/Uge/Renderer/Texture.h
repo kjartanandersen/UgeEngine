@@ -26,8 +26,18 @@ namespace Uge
 		R8, ///< Single 8-bit channel; used for font atlases and masks.
 		RGB8, ///< Three 8-bit channels, no alpha.
 		RGBA8, ///< Four 8-bit channels; the usual colour format.
-		RGBA32F ///< Four 32-bit float channels, for HDR data.
+		RG16F, ///< Two 16-bit float channels; used for the split-sum BRDF lookup table.
+		RGBA16F, ///< Four 16-bit float channels; the working format for environment maps.
+		RGBA32F ///< Four 32-bit float channels, for HDR source images.
 	};
+
+	/**
+	 * @brief Number of bytes one pixel of @p format occupies.
+	 * @param format Format to measure.
+	 * @return Size in bytes; `0` for an unrecognized format, which also asserts in Debug.
+	 * @ingroup group_renderer
+	 */
+	uint32_t ImageFormatBytesPerPixel(ImageFormat format);
 
 	/**
 	 * @brief Describes the texture to create.

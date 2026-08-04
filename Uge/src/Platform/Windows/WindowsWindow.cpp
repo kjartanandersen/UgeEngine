@@ -11,7 +11,10 @@
 
 namespace Uge
 {
-
+	extern "C" {
+		_declspec(dllexport) DWORD NvOptimusEnablement = 1;
+		_declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+	}
 
 	static bool s_glfwInitialized = false;
 

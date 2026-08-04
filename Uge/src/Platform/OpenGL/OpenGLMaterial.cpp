@@ -24,10 +24,15 @@ namespace Uge
 		const MaterialUniformData uniformData = BuildUniformData();
 		PropertiesUniformBuffer()->SetData(&uniformData, sizeof(uniformData));
 
+		// Slot order matches the sampler bindings in assets/shaders/Model.glsl. A slot whose
+		// handle is 0 keeps whatever the previous material left there, which is safe only
+		// because the shader gates every read on MaterialData::u_MapFlags.
 		BindTexture(m_textureMaps.Albedo, 0);
 		BindTexture(m_textureMaps.Normal, 1);
 		BindTexture(m_textureMaps.Roughness, 2);
 		BindTexture(m_textureMaps.Metallic, 3);
+		BindTexture(m_textureMaps.AmbientOcclusion, 4);
+		BindTexture(m_textureMaps.Emissive, 5);
 
 	}
 	Ref<Shader> OpenGLMaterial::GetShader() const

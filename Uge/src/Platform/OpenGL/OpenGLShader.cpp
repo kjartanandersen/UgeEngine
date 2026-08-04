@@ -69,12 +69,14 @@ namespace Uge
 			}
 		}
 
+		// v3 caches GLSL source rather than SPIR-V. The version bump matters: a leftover v2
+		// blob read back as text would be handed to the driver as garbage source.
 		static const char* GLShaderStageCachedOpenGLFileExtension(uint32_t stage)
 		{
 			switch (stage)
 			{
-				case GL_VERTEX_SHADER:    return ".v2.cached_opengl.vert";
-				case GL_FRAGMENT_SHADER:  return ".v2.cached_opengl.frag";
+				case GL_VERTEX_SHADER:    return ".v3.cached_opengl.vert";
+				case GL_FRAGMENT_SHADER:  return ".v3.cached_opengl.frag";
 			}
 			UG_CORE_ASSERT(false);
 			return "";
@@ -134,7 +136,7 @@ namespace Uge
 		{
 			Timer timer;
 			CompileOrGetVulkanBinaries(shaderSources);
-			CompileOrGetOpenGLBinaries();
+			CompileOrGetOpenGLSource();
 			CreateProgram();
 			UG_CORE_WARN("Shader creation took {0} ms", timer.ElapsedMillis());
 		}
@@ -160,7 +162,7 @@ namespace Uge
 		sources[GL_FRAGMENT_SHADER] = fragmentSource;
 		
 		CompileOrGetVulkanBinaries(sources);
-		CompileOrGetOpenGLBinaries();
+		CompileOrGetOpenGLSource();
 		CreateProgram();
 		
 
@@ -234,11 +236,6 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		// Now time to link them together into a program.
-		// Get a program object.
-		GLuint program = glCreateProgram();
-
-
 		shaderc::Compiler compiler;
 		shaderc::CompileOptions options;
 		// Keep the intermediate SPIR-V conservative so the bundled SPIRV-Cross can
@@ -301,22 +298,10 @@ namespace Uge
 
 	}
 
-	void OpenGLShader::CompileOrGetOpenGLBinaries()
+	void OpenGLShader::CompileOrGetOpenGLSource()
 	{
-		auto& shaderData = m_openGLSPIRV;
-
-		shaderc::Compiler compiler;
-		shaderc::CompileOptions options;
-		options.SetTargetEnvironment(shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
-		const bool optimize = true;
-		if (optimize)
-		{
-			options.SetOptimizationLevel(shaderc_optimization_level_performance);
-		}
-
 		std::filesystem::path cacheDirectory = Utils::GetCacheDirectory();
 
-		shaderData.clear();
 		m_openGLSourceCode.clear();
 		for (auto&& [stage, spirv] : m_vulkanSPIRV)
 		{
@@ -330,9 +315,9 @@ namespace Uge
 				auto size = in.tellg();
 				in.seekg(0, std::ios::beg);
 
-				auto& data = shaderData[stage];
-				data.resize(size / sizeof(uint32_t));
-				in.read((char*)data.data(), size);
+				std::string& source = m_openGLSourceCode[stage];
+				source.resize(static_cast<size_t>(size));
+				in.read(source.data(), size);
 			}
 			else
 			{
@@ -352,26 +337,50 @@ namespace Uge
 					UG_CORE_ASSERT(false, "SPIRV-Cross shader compilation failed");
 				}
 
-				auto& source = m_openGLSourceCode[stage];
-
-				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, Utils::GLShaderStageToShaderC(stage), m_filePath.c_str());
-				if (module.GetCompilationStatus() != shaderc_compilation_status_success)
-				{
-					UG_CORE_ERROR(module.GetErrorMessage());
-					UG_CORE_ASSERT(false);
-				}
-
-				shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
+				const std::string& source = m_openGLSourceCode[stage];
 
 				std::ofstream out(cachedPath, std::ios::out | std::ios::binary);
 				if (out.is_open())
 				{
-					auto& data = shaderData[stage];
-					out.write((char*)data.data(), data.size() * sizeof(uint32_t));
+					out.write(source.data(), static_cast<std::streamsize>(source.size()));
 					out.flush();
 					out.close();
 				}
 			}
+		}
+	}
+
+	namespace
+	{
+		// Drivers report an info log length of 0 when they have no message. Handing the
+		// resulting empty vector's data() to the logger passes a null pointer, which spdlog
+		// rejects with "string pointer is null" - swallowing the very error being reported.
+		static std::string GetProgramInfoLog(GLuint program)
+		{
+			GLint length = 0;
+			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+			if (length <= 0)
+			{
+				return "<no message from driver>";
+			}
+
+			std::vector<GLchar> infoLog(length);
+			glGetProgramInfoLog(program, length, &length, infoLog.data());
+			return std::string(infoLog.data(), length > 0 ? length : 0);
+		}
+
+		static std::string GetShaderInfoLog(GLuint shader)
+		{
+			GLint length = 0;
+			glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+			if (length <= 0)
+			{
+				return "<no message from driver>";
+			}
+
+			std::vector<GLchar> infoLog(length);
+			glGetShaderInfoLog(shader, length, &length, infoLog.data());
+			return std::string(infoLog.data(), length > 0 ? length : 0);
 		}
 	}
 
@@ -380,11 +389,28 @@ namespace Uge
 		GLuint program = glCreateProgram();
 
 		std::vector<GLuint> shaderIDs;
-		for (auto&& [stage, spirv] : m_openGLSPIRV)
+		for (auto&& [stage, source] : m_openGLSourceCode)
 		{
+			// Compiled from GLSL source rather than loaded as a SPIR-V binary. The driver's
+			// GLSL front end is far better exercised than its GL_ARB_gl_spirv path, which on
+			// Intel rejects valid SPIR-V - spirv-val passes the same modules - and reports an
+			// empty info log when it does. @see CompileOrGetOpenGLSource
 			GLuint shaderID = shaderIDs.emplace_back(glCreateShader(stage));
-			glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(), spirv.size() * sizeof(uint32_t));
-			glSpecializeShader(shaderID, "main", 0, nullptr, nullptr);
+
+			const char* sourceData = source.c_str();
+			glShaderSource(shaderID, 1, &sourceData, nullptr);
+			glCompileShader(shaderID);
+
+			// A stage that fails to compile produces a link error carrying no message of its
+			// own, so report it here where the cause is still known.
+			GLint isCompiled;
+			glGetShaderiv(shaderID, GL_COMPILE_STATUS, &isCompiled);
+			if (isCompiled == GL_FALSE)
+			{
+				UG_CORE_ERROR("Shader compilation failed ({0}, {1}):\n{2}",
+					m_filePath, Utils::GLShaderStageToString(stage), GetShaderInfoLog(shaderID));
+			}
+
 			glAttachShader(program, shaderID);
 		}
 
@@ -394,12 +420,7 @@ namespace Uge
 		glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
 		if (isLinked == GL_FALSE)
 		{
-			GLint maxLength;
-			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
-
-			std::vector<GLchar> infoLog(maxLength);
-			glGetProgramInfoLog(program, maxLength, &maxLength, infoLog.data());
-			UG_CORE_ERROR("Shader linking failed ({0}):\n{1}", m_filePath, infoLog.data());
+			UG_CORE_ERROR("Shader linking failed ({0}):\n{1}", m_filePath, GetProgramInfoLog(program));
 
 			glDeleteProgram(program);
 
@@ -407,6 +428,12 @@ namespace Uge
 			{
 				glDeleteShader(id);
 			}
+
+			// Deliberately not storing the deleted program. Doing so leaves every uniform
+			// block reading as zero, so geometry draws in raw clip space - looking like a
+			// transform bug rather than a shader that never linked.
+			m_rendererID = 0;
+			return;
 		}
 
 		for (auto id : shaderIDs)

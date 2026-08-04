@@ -360,6 +360,8 @@ namespace Uge
 			DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
 			DisplayAddComponentEntry<MeshComponent>("Mesh");
 			DisplayAddComponentEntry<TextComponent>("Text Component");
+			DisplayAddComponentEntry<SkyLightComponent>("Sky Light");
+			DisplayAddComponentEntry<DirectionalLightComponent>("Directional Light");
 
 
 			ImGui::EndPopup();
@@ -749,6 +751,89 @@ namespace Uge
 					ImGui::Text("Mesh");
 
 					ImGui::Text("Status: %s", isMeshValid ? "Loaded" : "No model");
+				});
+
+#pragma endregion
+
+#pragma region SkyLightComponent
+
+			DrawComponent<SkyLightComponent>("Sky Light", entity, true, [](auto& component)
+				{
+					std::string label = "None";
+					bool isEnvironmentValid = false;
+					if (component.Environment != 0)
+					{
+						if (AssetManager::IsAssetHandleValid(component.Environment)
+							&& AssetManager::GetAssetType(component.Environment) == AssetType::Environment)
+						{
+							const auto& metadata =
+								Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Environment);
+							label = metadata.FilePath.filename().string();
+							isEnvironmentValid = true;
+						}
+						else
+						{
+							label = "Invalid";
+						}
+					}
+
+					ImVec2 btnLabelSize = ImGui::CalcTextSize(label.c_str());
+					btnLabelSize.x += 20.0f;
+
+					ImGui::Button(label.c_str(), btnLabelSize);
+					if (ImGui::BeginDragDropTarget())
+					{
+						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+						{
+							AssetHandle handle = *(AssetHandle*)payload->Data;
+
+							if (AssetManager::GetAssetType(handle) == AssetType::Environment)
+							{
+								component.Environment = handle;
+							}
+							else
+							{
+								UG_CORE_WARN("Wrong Asset Type!");
+							}
+						}
+						ImGui::EndDragDropTarget();
+					}
+
+					if (isEnvironmentValid)
+					{
+						ImGui::SameLine();
+
+						ImVec2 xLabelSize = ImGui::CalcTextSize("X");
+						float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+						if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
+						{
+							component.Environment = 0;
+						}
+					}
+
+					ImGui::SameLine();
+					ImGui::Text("Environment");
+
+					ImGui::DragFloat("Intensity", &component.Intensity, 0.05f, 0.0f, 20.0f);
+
+					ImGui::Text("Status: %s", isEnvironmentValid ? "Loaded" : "No environment");
+				});
+
+#pragma endregion
+
+#pragma region DirectionalLightComponent
+
+			DrawComponent<DirectionalLightComponent>("Directional Light", entity, true, [](auto& component)
+				{
+					ImGui::ColorEdit3("Color", glm::value_ptr(component.Color));
+
+					// Uncapped at the top: this is radiance, and the diffuse term divides albedo
+					// by pi, so plausible sunlight sits well above 1.
+					ImGui::DragFloat("Intensity", &component.Intensity, 0.05f, 0.0f, 100.0f);
+
+					ImGui::TextWrapped(
+						"Shines along the entity's local -Z; rotate the entity to aim it. "
+						"Position is ignored.");
 				});
 
 #pragma endregion

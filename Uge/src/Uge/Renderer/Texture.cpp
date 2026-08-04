@@ -7,6 +7,22 @@
 namespace Uge
 {
 
+	uint32_t ImageFormatBytesPerPixel(ImageFormat format)
+	{
+		switch (format)
+		{
+			case ImageFormat::R8:		return 1;
+			case ImageFormat::RGB8:		return 3;
+			case ImageFormat::RGBA8:	return 4;
+			case ImageFormat::RG16F:	return 2 * 2;
+			case ImageFormat::RGBA16F:	return 4 * 2;
+			case ImageFormat::RGBA32F:	return 4 * 4;
+		}
+
+		UG_CORE_ASSERT(false, "Unknown ImageFormat!");
+		return 0;
+	}
+
 	Ref<Texture2D> Texture2D::Create(const TextureSpecification& specification, Buffer data)
 	{
 

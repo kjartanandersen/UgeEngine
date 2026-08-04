@@ -109,11 +109,29 @@ vec4 texColor = Input.Color;
 	return texColor;
 
 }
-			
+
+// The scene target is linear RGBA16F and the resolve pass sRGB-encodes it once for the whole
+// frame, so this shader has to hand it linear values. Sprite textures and the vertex colours
+// they are tinted by are both authored in sRGB; without this decode they would be encoded a
+// second time at resolve and the 2D layer would come out washed out.
+//
+// The decode is applied to the finished colour rather than to each factor. That is the exact
+// inverse of what the resolve does, which is what keeps the 2D path pixel-identical to how it
+// looked before the HDR target existed. @see Uge::PostProcess
+vec3 SrgbToLinear(vec3 color)
+{
+	vec3 low = color / 12.92;
+	vec3 high = pow((color + 0.055) / 1.055, vec3(2.4));
+	return mix(low, high, step(vec3(0.04045), color));
+}
+
 void main()
 {
-	
-	fragColor = getTexColor();
+
+	vec4 texColor = getTexColor();
+
+	// Alpha is never gamma encoded, so it passes through untouched.
+	fragColor = vec4(SrgbToLinear(texColor.rgb), texColor.a);
 	entityID = v_EntityID;
-	
+
 }

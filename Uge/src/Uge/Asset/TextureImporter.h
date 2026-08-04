@@ -40,6 +40,21 @@ namespace Uge
 		 */
 		static Ref<Texture2D> LoadTexture2D(const std::filesystem::path& path);
 
+		/**
+		 * @brief Loads a floating-point image, for HDR sources such as Radiance `.hdr` files.
+		 * @param path Filesystem path to the image.
+		 * @return The loaded texture in Uge::ImageFormat::RGBA32F, or null on failure.
+		 *
+		 * Distinct from LoadTexture2D() because the pixels are read with `stbi_loadf` and kept
+		 * as floats. An environment map's whole purpose is the range above `1.0` — a sun can
+		 * be thousands of times brighter than the sky around it — and loading one through the
+		 * 8-bit path would clamp exactly the values that make image-based lighting work.
+		 *
+		 * @note No mip chain is generated. The result is a one-shot source for
+		 * Uge::Environment's projection pass, not something sampled during rendering.
+		 */
+		static Ref<Texture2D> LoadTextureHDR(const std::filesystem::path& path);
+
 
 	};
 

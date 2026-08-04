@@ -110,6 +110,8 @@ namespace Uge
 			{
 				case Uge::FramebufferTextureFormat::RGBA8:
 					return GL_RGBA8;
+				case Uge::FramebufferTextureFormat::RGBA16F:
+					return GL_RGBA16F;
 				case Uge::FramebufferTextureFormat::RED_INTEGER:
 					return GL_RED_INTEGER;
 			}
@@ -190,6 +192,13 @@ namespace Uge
 						Utils::AttachColorTexture(m_colorAttachments[i], m_specification.Samples, 
 							GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, m_specification.Width, m_specification.Height, i);
 						
+						break;
+					}
+					case FramebufferTextureFormat::RGBA16F:
+					{
+						Utils::AttachColorTexture(m_colorAttachments[i], m_specification.Samples,
+							GL_RGBA16F, GL_RGBA, GL_FLOAT, m_specification.Width, m_specification.Height, i);
+
 						break;
 					}
 					case FramebufferTextureFormat::RED_INTEGER:
@@ -288,6 +297,15 @@ namespace Uge
 		return pixelData;
 
 
+
+	}
+
+	void OpenGLFramebuffer::BindColorAttachment(uint32_t index, uint32_t slot) const
+	{
+
+		UG_CORE_ASSERT(index < m_colorAttachments.size());
+
+		glBindTextureUnit(slot, m_colorAttachments[index]);
 
 	}
 

@@ -4,6 +4,7 @@
 #include "TextureImporter.h"
 #include "SceneImporter.h"
 #include "MeshImporter.h"
+#include "EnvironmentImporter.h"
 
 namespace Uge
 {
@@ -13,8 +14,9 @@ namespace Uge
 
 		{AssetType::Texture2D,	TextureImporter::ImportTexture2D },
 		{AssetType::Scene,		SceneImporter::ImportScene		 },
-		{AssetType::Mesh,		MeshImporter::ImportMesh		 }
-	
+		{AssetType::Mesh,		MeshImporter::ImportMesh		 },
+		{AssetType::Environment,EnvironmentImporter::ImportEnvironment }
+
 	};
 
 	Ref<Asset> AssetImporter::ImportAsset(AssetHandle handle, const AssetMetadata& metadata)

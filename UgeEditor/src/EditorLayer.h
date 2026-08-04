@@ -9,6 +9,7 @@
 #include "Uge.h"
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
+#include "Panels/RendererSettingsPanel.h"
 
 namespace Uge
 {
@@ -151,6 +152,7 @@ namespace Uge
 		Ref<Texture2D> m_spriteSheet;
 
 		Ref<Framebuffer> m_frameBuffer;
+		Ref<Framebuffer> m_displayFrameBuffer;
 
 		Ref<Scene> m_activeScene;
 		Ref<Scene> m_editorScene;
@@ -167,6 +169,7 @@ namespace Uge
 		// Panels
 		SceneHierarchyPanel m_sceneHierarchyPanel;
 		Scope<ContentBrowserPanel> m_contentBrowserPanel;
+		RendererSettingsPanel m_rendererSettingsPanel;
 
 		Entity m_hoveredEntity;
 

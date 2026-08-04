@@ -298,6 +298,30 @@ namespace Uge
 			out << YAML::EndMap; // MeshComponent
 		}
 
+		if (entity.HasComponent<SkyLightComponent>())
+		{
+			out << YAML::Key << "SkyLightComponent";
+			out << YAML::BeginMap; // SkyLightComponent
+
+			auto& skyLightComponent = entity.GetComponent<SkyLightComponent>();
+			out << YAML::Key << "EnvironmentHandle" << YAML::Value << skyLightComponent.Environment;
+			out << YAML::Key << "Intensity" << YAML::Value << skyLightComponent.Intensity;
+
+			out << YAML::EndMap; // SkyLightComponent
+		}
+
+		if (entity.HasComponent<DirectionalLightComponent>())
+		{
+			out << YAML::Key << "DirectionalLightComponent";
+			out << YAML::BeginMap; // DirectionalLightComponent
+
+			auto& directionalLightComponent = entity.GetComponent<DirectionalLightComponent>();
+			out << YAML::Key << "Color" << YAML::Value << directionalLightComponent.Color;
+			out << YAML::Key << "Intensity" << YAML::Value << directionalLightComponent.Intensity;
+
+			out << YAML::EndMap; // DirectionalLightComponent
+		}
+
 		if (entity.HasComponent<TextComponent>())
 		{
 			out << YAML::Key << "TextComponent";
@@ -529,6 +553,40 @@ namespace Uge
 					AssetHandle meshAsset = ymc["MeshHandle"] ? ymc["MeshHandle"].as<AssetHandle>() : AssetHandle();
 					// std::filesystem::path path = Project::GetAssetFileSystemPath(meshPath);
 					deserializedEntity.AddComponent<MeshComponent>(meshAsset);
+				}
+
+				auto yslc = entity["SkyLightComponent"];	// Sky Light Component
+				if (yslc)
+				{
+					UG_CORE_TRACE("Deserializing Sky Light Component");
+
+					auto& src = deserializedEntity.AddComponent<SkyLightComponent>();
+
+					if (yslc["EnvironmentHandle"])
+					{
+						src.Environment = yslc["EnvironmentHandle"].as<AssetHandle>();
+					}
+					if (yslc["Intensity"])
+					{
+						src.Intensity = yslc["Intensity"].as<float>();
+					}
+				}
+
+				auto ydlc = entity["DirectionalLightComponent"];	// Directional Light Component
+				if (ydlc)
+				{
+					UG_CORE_TRACE("Deserializing Directional Light Component");
+
+					auto& src = deserializedEntity.AddComponent<DirectionalLightComponent>();
+
+					if (ydlc["Color"])
+					{
+						src.Color = ydlc["Color"].as<glm::vec3>();
+					}
+					if (ydlc["Intensity"])
+					{
+						src.Intensity = ydlc["Intensity"].as<float>();
+					}
 				}
 
 				auto ytec = entity["TextComponent"];		// Text Component

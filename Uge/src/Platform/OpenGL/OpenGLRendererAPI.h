@@ -30,6 +30,9 @@ namespace Uge
 		virtual void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
 		virtual void Clear() override;
 		virtual void SetDepthWrite(bool enabled) override;
+		virtual void SetDepthTest(bool enabled) override;
+		virtual void SetDepthFunc(DepthCompare compare) override;
+		virtual void SetBlendMode(BlendMode mode) override;
 
 		virtual void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCound = 0) override;
 

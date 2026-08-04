@@ -274,6 +274,66 @@ namespace Uge
 	};
 
 	/**
+	 * @brief Lights the scene from a single direction, like a sun.
+	 * @ingroup group_scene
+	 *
+	 * The direction comes from the entity's Uge::TransformComponent: the light shines along
+	 * the entity's local -Z, the same convention Uge::CameraComponent looks along, so
+	 * rotating the entity aims the light. Position is ignored — the source is infinitely far
+	 * away, which is what makes the rays parallel.
+	 *
+	 * @note #Color is authored in sRGB, as picked in the property panel, and converted to
+	 * linear before it reaches the shader. @see Uge::SrgbToLinear
+	 *
+	 * @note Only one directional light is used; if several exist, the first found wins. A
+	 * scene with none has no direct lighting at all and is lit purely by its
+	 * Uge::SkyLightComponent, if it has one.
+	 */
+	struct DirectionalLightComponent
+	{
+		glm::vec3 Color{ 1.0f, 1.0f, 1.0f }; ///< Light colour in sRGB.
+
+		/**
+		 * @brief Radiance multiplier.
+		 *
+		 * Not a `[0, 1]` brightness: the shading model divides diffuse albedo by pi, so a
+		 * value of 1 leaves a white surface at roughly a third of full white. Sunlight
+		 * belongs well above 1.
+		 */
+		float Intensity = 3.0f;
+
+		/** @brief Constructs a white light at default intensity. */
+		DirectionalLightComponent() = default;
+		/** @brief Copy constructor. */
+		DirectionalLightComponent(const DirectionalLightComponent&) = default;
+	};
+
+	/**
+	 * @brief Lights the scene from an environment map, and draws it as the sky.
+	 * @ingroup group_scene
+	 *
+	 * Supplies the ambient half of the lighting model: diffuse irradiance and roughness-
+	 * dependent reflections from all directions, rather than from a single light. Without one,
+	 * meshes fall back to a flat ambient term and metals have nothing to reflect.
+	 *
+	 * @note The transform is ignored — the environment surrounds the scene, so the entity's
+	 * position and rotation mean nothing. Only one sky light is used; if several exist, the
+	 * first found wins.
+	 *
+	 * @see Uge::Environment
+	 */
+	struct SkyLightComponent
+	{
+		AssetHandle Environment = 0; ///< Handle of the Uge::Environment to light with; `0` disables.
+		float Intensity = 1.0f; ///< Multiplier applied to the environment's contribution.
+
+		/** @brief Constructs a sky light with no environment assigned. */
+		SkyLightComponent() = default;
+		/** @brief Copy constructor. */
+		SkyLightComponent(const SkyLightComponent&) = default;
+	};
+
+	/**
 	 * @brief A compile-time list of component types.
 	 * @tparam Component The types in the list.
 	 * @ingroup group_scene
@@ -300,7 +360,8 @@ namespace Uge
 	using AllComponents =
 		ComponentGroup<TransformComponent, SpriteRendererComponent,
 		 CameraComponent, ScriptComponent, MeshComponent,
-		NativeScriptComponent, TextComponent>;
+		NativeScriptComponent, TextComponent, SkyLightComponent,
+		DirectionalLightComponent>;
 
 
 }

@@ -16,6 +16,27 @@ namespace Uge
 {
 
 	/**
+	 * @brief How a fragment's depth is compared against the depth buffer.
+	 * @ingroup group_renderer
+	 */
+	enum class DepthCompare
+	{
+		Less = 0, ///< Passes when strictly nearer; the default.
+		LessEqual = 1 ///< Passes when nearer or equal; required to draw at the far plane.
+	};
+
+	/**
+	 * @brief How a fragment's colour is combined with what is already in the target.
+	 * @ingroup group_renderer
+	 */
+	enum class BlendMode
+	{
+		Alpha = 0, ///< Source alpha over destination; the default, used for transparency.
+		Additive = 1, ///< Source added to destination, ignoring alpha.
+		None = 2 ///< Source replaces destination.
+	};
+
+	/**
 	 * @brief Abstract interface over the underlying graphics API.
 	 * @ingroup group_renderer
 	 *
@@ -72,6 +93,43 @@ namespace Uge
 		 * before the end of the pass.
 		 */
 		virtual void SetDepthWrite(bool enabled) = 0;
+
+		/**
+		 * @brief Enables or disables depth testing.
+		 * @param enabled `true` to test fragments against the depth buffer, `false` to draw
+		 *        every fragment regardless of what is already there.
+		 *
+		 * Fullscreen passes disable it: they cover the whole target deliberately and have no
+		 * meaningful depth of their own.
+		 *
+		 * @note Independent of SetDepthWrite(). Disabling the test also stops depth being
+		 * written, whatever the write mask says.
+		 */
+		virtual void SetDepthTest(bool enabled) = 0;
+
+		/**
+		 * @brief Sets the depth comparison function.
+		 * @param compare Comparison to use for subsequent draws.
+		 *
+		 * The skybox needs Uge::DepthCompare::LessEqual: it is emitted at exactly the far
+		 * plane, so a strict comparison rejects every one of its fragments.
+		 *
+		 * @warning Global state. Restore Uge::DepthCompare::Less after the pass that needed
+		 * otherwise, or unrelated geometry will start z-fighting with itself.
+		 */
+		virtual void SetDepthFunc(DepthCompare compare) = 0;
+
+		/**
+		 * @brief Sets how subsequent draws blend with the render target.
+		 * @param mode Blend equation to use.
+		 *
+		 * The bloom upsample chain needs Uge::BlendMode::Additive: each level is accumulated
+		 * onto the one below it, and alpha blending would replace rather than add.
+		 *
+		 * @warning Global state. Restore Uge::BlendMode::Alpha afterwards, or transparent
+		 * geometry in the next pass stops compositing correctly.
+		 */
+		virtual void SetBlendMode(BlendMode mode) = 0;
 
 		/**
 		 * @brief Issues an indexed draw call.

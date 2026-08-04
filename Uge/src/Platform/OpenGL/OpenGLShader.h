@@ -133,7 +133,9 @@ namespace Uge
 		std::string ReadFile(const std::string& filePath);
 		std::unordered_map<GLenum, std::string> PreProcess(const std::string& source);
 		void CompileOrGetVulkanBinaries(const std::unordered_map<GLenum, std::string>& shaderSources);
-		void CompileOrGetOpenGLBinaries();
+		// Cross-compiles the Vulkan SPIR-V to GLSL 450 for the driver to compile directly,
+		// caching the source text. No OpenGL SPIR-V is produced: see CreateProgram.
+		void CompileOrGetOpenGLSource();
 		void CreateProgram();
 		void Reflect(GLenum stage, const std::vector<uint32_t>& shaderData);
 
@@ -143,8 +145,8 @@ namespace Uge
 		mutable std::unordered_map<std::string, GLint> m_uniformLocCache;
 
 		std::unordered_map<GLenum, std::vector<uint32_t>> m_vulkanSPIRV;
-		std::unordered_map<GLenum, std::vector<uint32_t>> m_openGLSPIRV;
 
+		// GLSL the driver actually compiles, cross-compiled from m_vulkanSPIRV.
 		std::unordered_map<GLenum, std::string> m_openGLSourceCode;
 		std::string m_name;
 

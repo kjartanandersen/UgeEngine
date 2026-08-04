@@ -33,6 +33,10 @@ namespace Uge
             {
                 return "AssetType::Material";
             }
+            case Uge::AssetType::Environment:
+            {
+                return "AssetType::Environment";
+            }
 
         }
 
@@ -62,6 +66,10 @@ namespace Uge
         if (type == "AssetType::Material")
         {
             return AssetType::Material;
+        }
+        if (type == "AssetType::Environment")
+        {
+            return AssetType::Environment;
         }
 
         return AssetType::None;

@@ -45,11 +45,13 @@ namespace Uge
 		virtual void ClearAttachment(uint32_t attachmentIndex, int value) override;
 
 
-		virtual uint32_t GetColorAttachment(uint32_t index = 0) const override 
-		{ 
-			UG_CORE_ASSERT(index < m_colorAttachments.size()); 
-			return m_colorAttachments[index]; 
+		virtual uint32_t GetColorAttachment(uint32_t index = 0) const override
+		{
+			UG_CORE_ASSERT(index < m_colorAttachments.size());
+			return m_colorAttachments[index];
 		};
+
+		virtual void BindColorAttachment(uint32_t index, uint32_t slot) const override;
 
 	private:
 		uint32_t m_rendererID = 0;

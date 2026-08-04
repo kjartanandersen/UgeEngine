@@ -65,6 +65,11 @@ namespace Uge
 		uint32_t m_rendererID;
 		GLenum m_internalFormat, m_dataFormat;
 
+		/** @brief Component type of the pixel data SetData() uploads. */
+		GLenum m_pixelType;
+		/** @brief Levels allocated by `glTextureStorage2D`; `1` when mips are disabled. */
+		uint32_t m_mipLevels = 1;
+
 
 
 	};

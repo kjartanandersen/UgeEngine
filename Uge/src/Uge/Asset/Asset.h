@@ -42,7 +42,8 @@ namespace Uge
 		Scene, ///< A Uge::Scene, stored as a `.uge` YAML file.
 		Texture2D, ///< A Uge::Texture2D loaded from an image file.
 		Mesh, ///< A Uge::Model imported through assimp.
-		Material ///< A Uge::Material; usually memory-only, created during mesh import.
+		Material, ///< A Uge::Material; usually memory-only, created during mesh import.
+		Environment ///< A Uge::Environment built from an equirectangular `.hdr` image.
 	};
 
 	/**

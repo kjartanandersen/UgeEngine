@@ -10,6 +10,9 @@
 
 #include "Uge/Asset/AssetManager.h"
 
+#include "Uge/Renderer/ColorSpace.h"
+
+#include <glm/gtc/quaternion.hpp>
 
 #include <type_traits>
 
@@ -20,6 +23,57 @@ namespace Uge
 	template<typename T>
 	struct DependentFalse : std::false_type {};
 
+	namespace
+	{
+		// Finds the scene's sky light and hands its environment to the mesh pass. Clears the
+		// environment when there is none, since Model holds it across frames and would
+		// otherwise keep lighting with a sky light that has since been deleted.
+		static void ApplySkyLight(entt::registry& registry)
+		{
+			auto skyLightView = registry.view<SkyLightComponent>();
+			for (auto entity : skyLightView)
+			{
+				const SkyLightComponent& skyLight = skyLightView.get<SkyLightComponent>(entity);
+
+				if (skyLight.Environment && AssetManager::IsAssetHandleValid(skyLight.Environment))
+				{
+					Model::SetEnvironment(
+						AssetManager::GetAsset<Environment>(skyLight.Environment), skyLight.Intensity);
+					return;
+				}
+			}
+
+			Model::SetEnvironment(nullptr);
+		}
+
+		// Finds the scene's directional light and hands it to the mesh pass. Clears it when
+		// there is none, for the same reason ApplySkyLight does.
+		static void ApplyDirectionalLight(entt::registry& registry)
+		{
+			auto lightView = registry.view<TransformComponent, DirectionalLightComponent>();
+			for (auto [entity, transform, light] : lightView.each())
+			{
+				// Shines along the entity's local -Z, matching the axis a camera looks down,
+				// so the same rotation gizmo aims both. Position is irrelevant: the source is
+				// infinitely distant, which is what makes the rays parallel.
+				const glm::vec3 direction =
+					glm::mat3(glm::toMat3(glm::quat(transform.Rotation))) * glm::vec3(0.0f, 0.0f, -1.0f);
+
+				// Picked by eye in the property panel, so sRGB; the renderer works in linear.
+				Model::SetDirectionalLight(direction, SrgbToLinear(light.Color) * light.Intensity);
+				return;
+			}
+
+			Model::SetDirectionalLight(glm::vec3(0.0f), glm::vec3(0.0f));
+		}
+
+		// The sky surrounds the camera rather than sitting somewhere in the world, so the view
+		// matrix keeps its rotation and loses its translation.
+		static glm::mat4 SkyboxViewProjection(const glm::mat4& projection, const glm::mat4& view)
+		{
+			return projection * glm::mat4(glm::mat3(view));
+		}
+	}
 
 	Scene::Scene()
 	{
@@ -275,8 +329,11 @@ namespace Uge
 
 		if (mainCam)
 		{
-			const glm::mat4 viewProjection = mainCam->GetProjection() * glm::inverse(mainTransform);
+			const glm::mat4 view = glm::inverse(mainTransform);
+			const glm::mat4 viewProjection = mainCam->GetProjection() * view;
 
+			ApplySkyLight(m_registry);
+			ApplyDirectionalLight(m_registry);
 			Model::BeginScene(viewProjection, glm::vec3(mainTransform[3]));
 			{
 				auto meshView = m_registry.view<TransformComponent, MeshComponent>();
@@ -292,6 +349,9 @@ namespace Uge
 					}
 				}
 			}
+
+			Model::DrawSkybox(SkyboxViewProjection(mainCam->GetProjection(), view));
+
 			Model::EndScene();
 
 			Renderer2D::BeginScene(mainCam->GetProjection(), mainTransform);
@@ -331,6 +391,8 @@ namespace Uge
 	{
 
 		// Draw Meshes
+		ApplySkyLight(m_registry);
+		ApplyDirectionalLight(m_registry);
 		Model::BeginScene(camera.GetViewProjection(), camera.GetPosition());
 		{
 			auto meshView = m_registry.view<TransformComponent, MeshComponent>();
@@ -346,6 +408,11 @@ namespace Uge
 				}
 			}
 		}
+
+		// After the opaque meshes so the depth buffer rejects sky the car already covers, and
+		// before EndScene so transparent surfaces blend over it.
+		Model::DrawSkybox(SkyboxViewProjection(camera.GetProjection(), camera.GetViewMatrix()));
+
 		Model::EndScene();
 
 		Renderer2D::BeginScene(camera);
@@ -505,6 +572,27 @@ namespace Uge
 	template<>
 	void Scene::OnComponentAdded<TextComponent>(Entity entity, TextComponent& component)
 	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<SkyLightComponent>(Entity entity, SkyLightComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<DirectionalLightComponent>(Entity entity, DirectionalLightComponent& component)
+	{
+		// A light shines along its entity's local -Z, so an untouched transform points it
+		// horizontally - which lights none of the upward-facing surfaces anyone is looking at,
+		// and reads as "the light does nothing". Aim it down and to one side instead, the angle
+		// a sun would actually come from.
+		//
+		// Only when the rotation is untouched, so this never overwrites a deliberate one.
+		TransformComponent& transform = entity.GetComponent<TransformComponent>();
+		if (transform.Rotation == glm::vec3(0.0f))
+		{
+			transform.Rotation = glm::vec3(glm::radians(-50.0f), glm::radians(-30.0f), 0.0f);
+		}
 	}
 
 

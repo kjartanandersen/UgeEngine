@@ -16,6 +16,10 @@ namespace Uge
 	 *
 	 * `RED_INTEGER` is what makes mouse picking work: the scene is drawn a second time with
 	 * each fragment writing its entity ID, and Uge::Framebuffer::ReadPixel reads it back.
+	 *
+	 * `RGBA16F` is what makes the scene target able to hold light: an `RGBA8` attachment
+	 * clamps at `1.0` on write, so a bright emissive surface is already clipped by the time
+	 * a tonemap or bloom pass could do anything with it.
 	 */
 	enum class FramebufferTextureFormat
 	{
@@ -24,6 +28,7 @@ namespace Uge
 
 		// Color
 		RGBA8, ///< Standard 8-bit-per-channel colour attachment.
+		RGBA16F, ///< Half-float colour attachment, for linear values above `1.0`.
 		RED_INTEGER, ///< Single integer channel; used for per-pixel entity IDs.
 
 		// Depth/Stencil
@@ -160,6 +165,21 @@ namespace Uge
 		 * @return The OpenGL texture name, suitable for `ImGui::Image`.
 		 */
 		virtual uint32_t GetColorAttachment(uint32_t index = 0) const = 0;
+
+		/**
+		 * @brief Binds a colour attachment to a sampler slot so a later pass can read it.
+		 * @param index Attachment index, in the order declared in the specification.
+		 * @param slot Texture unit to bind to.
+		 *
+		 * What lets a post-process pass sample the scene it is resolving. Exists so callers
+		 * do not have to take GetColorAttachment()'s native handle and bind it themselves,
+		 * which would put backend calls in platform-agnostic code.
+		 *
+		 * @warning The attachment must not also be the current render target. Reading and
+		 * writing the same texture in one draw is undefined; resolve into a second
+		 * framebuffer.
+		 */
+		virtual void BindColorAttachment(uint32_t index, uint32_t slot) const = 0;
 
 		/**
 		 * @brief Clears an integer attachment to a constant.

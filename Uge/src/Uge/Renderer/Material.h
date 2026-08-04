@@ -67,7 +67,25 @@ namespace Uge
 		MaterialMap_Roughness = 1 << 2,        ///< Roughness map present.
 		MaterialMap_Metallic = 1 << 3,         ///< Metallic map present.
 		MaterialMap_AmbientOcclusion = 1 << 4, ///< Ambient occlusion map present.
-		MaterialMap_Emissive = 1 << 5          ///< Emissive map present.
+		MaterialMap_Emissive = 1 << 5,         ///< Emissive map present.
+		/**
+		 * @brief Roughness and metalness share one texture, glTF style.
+		 *
+		 * glTF packs them into a single `metallicRoughnessTexture` with roughness in green
+		 * and metalness in blue, and assimp reports that one file under both texture types.
+		 * When this is set the shader reads those two channels of the roughness slot;
+		 * otherwise it treats the two maps as separate single-channel textures.
+		 */
+		MaterialMap_PackedMetallicRoughness = 1 << 6,
+		/**
+		 * @brief An environment is bound for image-based lighting.
+		 *
+		 * Unlike every other flag here this is not a property of the material. It is set per
+		 * frame by Uge::Model when the scene has a sky light, so that a material drawn
+		 * without one falls back to a flat ambient term instead of sampling three cubemap
+		 * slots that were never bound.
+		 */
+		MaterialMap_Environment = 1 << 7
 	};
 
 	/**
@@ -77,6 +95,7 @@ namespace Uge
 	struct MaterialProperties
 	{
 		glm::vec4 AlbedoColor = glm::vec4(1.0f); ///< Base colour, multiplied with the albedo map.
+		glm::vec3 EmissiveColor = glm::vec3(0.0f); ///< Emission colour, multiplied with the emissive map.
 		float Roughness = 1.0f; ///< Surface roughness in `[0, 1]`; `0` is mirror-smooth.
 		float Metallic = 0.0f; ///< Metalness in `[0, 1]`; `1` is fully metallic.
 		float EmissiveStrength = 0.0f; ///< Emission multiplier; `0` disables emission.
@@ -98,13 +117,15 @@ namespace Uge
 	struct MaterialUniformData
 	{
 		glm::vec4 AlbedoColor;   ///< Base colour factor, including alpha.
+		glm::vec4 EmissiveColor; ///< Emission colour factor; the `w` component is unused padding.
 		float Roughness;         ///< Roughness factor.
 		float Metallic;          ///< Metallic factor.
 		float EmissiveStrength;  ///< Emission multiplier.
 		float AlphaCutoff;       ///< Mask threshold.
 		int32_t MapFlags;        ///< Bitwise OR of Uge::MaterialMapFlags.
 		int32_t BlendMode;       ///< Uge::AlphaMode as an integer.
-		int32_t Padding[2];      ///< Pads the block to a multiple of 16 bytes.
+		int32_t EnvironmentMipCount; ///< Mip levels in the prefiltered map; scales the roughness lookup.
+		float EnvironmentIntensity;  ///< Multiplier on the environment's contribution.
 	};
 
 	/**
@@ -228,6 +249,23 @@ namespace Uge
 		static void BindDefaultProperties();
 
 		/**
+		 * @brief Records whether an environment is bound, for every material to include.
+		 * @param hasEnvironment `true` once the scene's environment maps are bound.
+		 * @param prefilteredMipCount Mip levels in the prefiltered map; ignored when
+		 *        @p hasEnvironment is `false`.
+		 * @param intensity Multiplier on the environment's contribution to lighting.
+		 *
+		 * Image-based lighting is a property of the scene, not of a material, but the shader
+		 * reads both facts out of the material block — that block is already uploaded once per
+		 * material, so folding them in costs nothing, where a separate per-frame block would
+		 * be another binding point and another upload.
+		 *
+		 * Called by Uge::Model::BeginScene. A material bound while this is `false` falls back
+		 * to a flat ambient term rather than sampling cubemap slots that hold nothing.
+		 */
+		static void SetEnvironmentState(bool hasEnvironment, uint32_t prefilteredMipCount, float intensity);
+
+		/**
 		 * @brief The asset type this class represents.
 		 * @return Uge::AssetType::Material.
 		 */
@@ -257,6 +295,11 @@ namespace Uge
 		MaterialProperties m_properties; ///< Scalar and colour factors.
 
 		Ref<Shader> m_shader; ///< Shader this material parameterizes.
+
+	private:
+		static bool s_hasEnvironment;
+		static uint32_t s_environmentMipCount;
+		static float s_environmentIntensity;
 
 	};
 

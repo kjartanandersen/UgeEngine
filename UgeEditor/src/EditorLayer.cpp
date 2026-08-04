@@ -5,6 +5,9 @@
 #include "Uge/Asset/TextureImporter.h"
 #include "Uge/Asset/SceneImporter.h"
 #include "Uge/Asset/AssetManager.h"
+#include "Uge/Renderer/PostProcess.h"
+#include "Uge/Renderer/Bloom.h"
+#include "Uge/Renderer/ColorSpace.h"
 
 #include "imgui.h"
 #include <cstdint>
@@ -38,6 +41,7 @@ namespace Uge
 		if (m_shouldResize)
 		{
 			m_frameBuffer->Resize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+			m_displayFrameBuffer->Resize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 
 
 			m_editorCamera.SetViewportSize(m_viewportSize.x, m_viewportSize.y);
@@ -56,7 +60,10 @@ namespace Uge
 		{
 			{
 				UG_PROFILE_SCOPE("Renderer Prep")
-				RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
+				// Decoded because the scene target is linear and the resolve pass encodes it.
+				// Written straight through, this grey would be encoded on the way out and the
+				// viewport background would come out at 0.345 rather than the 0.1 it reads as.
+				RenderCommand::SetClearColor(SrgbToLinear(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f)));
 				RenderCommand::Clear();
 			}
 			m_frameBuffer->ClearAttachment(1, -1);
@@ -106,6 +113,12 @@ namespace Uge
 		}
 		m_frameBuffer->Unbind();
 
+		// Both read m_frameBuffer, so both are kept out of the block above, which still has it
+		// bound. Bloom first: the resolve samples its result.
+		Bloom::Render(m_frameBuffer, PostProcess::GetSettings());
+		PostProcess::Resolve(m_frameBuffer, m_displayFrameBuffer);
+		m_displayFrameBuffer->Unbind();
+
 	}
 
 	void EditorLayer::OnAttach()
@@ -146,9 +159,18 @@ namespace Uge
 		IM_ASSERT(m_mainFont != NULL);
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		
+		// RGBA16F, not RGBA8: the scene pass writes linear radiance, which has no upper bound.
+		// An 8-bit target clamps on write, so a bright emissive surface would already be
+		// clipped before the resolve below could tonemap it. @see Uge::PostProcess
 		FramebufferSpecification fbSpec{ 1280, 720 };
-		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8,FramebufferTextureFormat::RED_INTEGER,  FramebufferTextureFormat::Depth };
+		fbSpec.Attachments = { FramebufferTextureFormat::RGBA16F,FramebufferTextureFormat::RED_INTEGER,  FramebufferTextureFormat::Depth };
 		m_frameBuffer = Framebuffer::Create(fbSpec);
+
+		// What the viewport actually displays: the tonemapped, sRGB-encoded result. Needs no
+		// depth or entity ID of its own - picking reads those back from m_frameBuffer.
+		FramebufferSpecification displaySpec{ 1280, 720 };
+		displaySpec.Attachments = { FramebufferTextureFormat::RGBA8 };
+		m_displayFrameBuffer = Framebuffer::Create(displaySpec);
 
 		m_editorScene = CreateRef<Scene>();
 		m_activeScene = m_editorScene;
@@ -319,6 +341,7 @@ namespace Uge
 
 			m_sceneHierarchyPanel.OnImGuiRender();
 			m_contentBrowserPanel->OnImGuiRender();
+			m_rendererSettingsPanel.OnImGuiRender();
 
 
 			ImGui::Begin("Stats");
@@ -386,7 +409,7 @@ namespace Uge
 				}
 
 
-				uint32_t textureID = m_frameBuffer->GetColorAttachment();
+				uint32_t textureID = m_displayFrameBuffer->GetColorAttachment();
 				ImGui::Image((void*)(uintptr_t)textureID, ImVec2{ m_viewportSize.x, m_viewportSize.y }, { 0, 1 }, { 1, 0 });
 
 				if (ImGui::BeginDragDropTarget())

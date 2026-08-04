@@ -13,10 +13,12 @@
 
 #include "Uge/Core/Core.h"
 
+#include "Uge/Renderer/Environment.h"
 #include "Uge/Renderer/Mesh.h"
 #include "Uge/Renderer/Shader.h"
 #include "Uge/Renderer/UniformBuffer.h"
 #include "Uge/Renderer/Texture.h"
+#include "Uge/Renderer/VertexArray.h"
 
 #include "Uge/Asset/Asset.h"
 #include "Uge/Asset/AssetMetadata.h"
@@ -120,6 +122,42 @@ namespace Uge
 		 * left in the blended queue by a pass that was never ended.
 		 */
 		static void BeginScene(const glm::mat4& viewProjection, const glm::vec3& cameraPosition);
+
+		/**
+		 * @brief Sets the environment every subsequent mesh draw is lit by.
+		 * @param environment Built environment maps, or null to light with the flat fallback.
+		 * @param intensity Multiplier applied to the skybox; `1.0f` leaves it as captured.
+		 *
+		 * Must be called before BeginScene(), which binds the maps and tells Uge::Material
+		 * whether they are available. Persists until changed, so a scene with no sky light
+		 * has to clear it explicitly rather than simply not setting it.
+		 */
+		static void SetEnvironment(const Ref<Environment>& environment, float intensity = 1.0f);
+
+		/**
+		 * @brief Sets the single directional light every subsequent mesh draw is lit by.
+		 * @param direction World-space direction the light travels **in**; normalized
+		 *        internally. A zero vector disables the light.
+		 * @param radiance Linear colour multiplied by intensity. Zero disables the light.
+		 *
+		 * Must be called before BeginScene(), which uploads it. Persists until changed, so a
+		 * scene with no light entity has to clear it rather than simply not setting it.
+		 *
+		 * @note Radiance, not a `[0, 1]` brightness — the diffuse term is divided by pi, so
+		 * plausible sunlight is well above 1.
+		 */
+		static void SetDirectionalLight(const glm::vec3& direction, const glm::vec3& radiance);
+
+		/**
+		 * @brief Draws the environment cubemap behind everything already rendered.
+		 * @param viewProjection Combined view-projection matrix; its translation is stripped
+		 *        internally so the sky never moves relative to the camera.
+		 *
+		 * Does nothing when no environment is set. Call after the opaque geometry so the
+		 * depth buffer rejects sky fragments the scene already covers, and before
+		 * EndScene(), so transparent surfaces can blend over it.
+		 */
+		static void DrawSkybox(const glm::mat4& viewProjection);
 		/**
 		 * @brief Ends the mesh pass opened by BeginScene(), flushing the blended queue.
 		 *
@@ -169,6 +207,17 @@ namespace Uge
 			glm::vec3 CameraPosition = glm::vec3(0.0f); ///< Sort origin for the blended queue.
 			std::vector<BlendedDraw> BlendedQueue; ///< Transparent submeshes awaiting EndScene().
 			bool Initialized = false; ///< Whether the shared resources have been created.
+
+			Ref<Environment> SceneEnvironment; ///< Environment lighting the pass; may be null.
+			float EnvironmentIntensity = 1.0f; ///< Skybox brightness multiplier.
+
+			glm::vec3 LightDirection = glm::vec3(0.0f); ///< Direction the light travels in.
+			glm::vec3 LightRadiance = glm::vec3(0.0f); ///< Linear radiance; zero means no light.
+			Ref<UniformBuffer> LightUniformBuffer; ///< Per-frame directional light block.
+
+			Ref<Shader> SkyboxShader; ///< Shader used to draw the environment cubemap.
+			Ref<VertexArray> SkyboxCube; ///< Unit cube the skybox is rendered on.
+			Ref<UniformBuffer> SkyboxUniformBuffer; ///< Per-frame skybox camera and intensity.
 		};
 
 		static SceneData s_sceneData;
