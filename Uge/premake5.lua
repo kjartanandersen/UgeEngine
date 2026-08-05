@@ -93,14 +93,17 @@ project "Uge"
 			"%{Library.WINSOCK}",
 			"%{Library.WINMM}",
 			"%{Library.WINVER}",
-			"%{Library.WINCRYPT}"
+			"%{Library.WINCRYPT}",
+			-- Stack walking and minidump writing for Uge::CrashHandler.
+			"dbghelp.lib"
 		}
-		
-		
+
+
 	filter "configurations:Debug"
-		defines 
+		defines
 		{
-			"UG_DEBUG"
+			"UG_DEBUG",
+			"UG_PROFILE=1"
 		}
 		runtime "Debug"
 		symbols "on"
@@ -113,10 +116,16 @@ project "Uge"
 		
 	
 	filter "configurations:Release"
-		defines "UG_RELEASE"
+		defines
+		{
+			"UG_RELEASE",
+			"UG_PROFILE=1"
+		}
 		runtime "Release"
 		optimize "on"
-		
+		-- Keep PDBs in Release so Uge::CrashHandler can symbolise its stack traces.
+		symbols "on"
+
 		links
 		{
 			"%{Library.ShaderC_Release}",

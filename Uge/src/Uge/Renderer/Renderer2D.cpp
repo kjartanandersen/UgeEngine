@@ -268,7 +268,8 @@ namespace Uge
 
 			m_data.TextureShader->Bind();
 			RenderCommand::DrawIndexed(m_data.QuadVA, m_data.QuadIndexCount);
-			
+
+			RenderStats::Get().Quad2DCount += m_data.QuadIndexCount / 6;
 		}
 
 		if (m_data.TextIndexCount)
@@ -282,6 +283,7 @@ namespace Uge
 			m_data.TextShader->Bind();
 			RenderCommand::DrawIndexed(m_data.TextVA, m_data.TextIndexCount);
 
+			RenderStats::Get().Text2DQuadCount += m_data.TextIndexCount / 6;
 		}
 
 		/*

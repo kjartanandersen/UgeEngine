@@ -67,6 +67,10 @@ namespace Uge
 			Timestep timestep = time - m_lastFrameTime;
 			m_lastFrameTime = time;
 
+			// Closes off the previous frame's scope timings and records its duration, so
+			// the editor's Debug panel has a stable, complete frame to display.
+			FrameProfiler::BeginFrame(timestep.GetMilliseconds());
+
 			ExecuteMainThreadQueue();
 
 			if (!m_minimized)

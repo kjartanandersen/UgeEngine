@@ -76,6 +76,7 @@ namespace Uge
 
 		m_VAO->Bind();
 		RenderCommand::DrawIndexed(m_VAO);
+		RenderStats::Get().MeshDrawCount++;
 		shader->Unbind();
 	}
 

@@ -76,6 +76,12 @@ namespace Uge
 
 		}
 
+#ifdef UG_DEBUG
+		// A debug context is what makes glDebugMessageCallback work; OpenGLContext::Init
+		// installs the callback once it sees the flag come back set.
+		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+#endif
+
 		{
 			UG_PROFILE_SCOPE("glfwCreateWindow - WindowsWindow::Init");
 			m_window = glfwCreateWindow((int)props.m_width, (int)props.m_height,

@@ -30,6 +30,13 @@ mono_crash.*
 [Dd]ebug/x64/
 [Dd]ebugPublic/x64/
 [Rr]elease/x64/
+
+# The engine's diagnostics sources live in Uge/src/Uge/Debug, which the [Dd]ebug/ rule
+# above - meant for Visual Studio build output - would otherwise swallow whole.
+!Uge/src/Uge/Debug/
+
+# Profiler traces, written next to the executable by UG_PROFILE_BEGIN_SESSION.
+UgeProfile-*.json
 [Rr]eleases/x64/
 bin/x64/
 obj/x64/

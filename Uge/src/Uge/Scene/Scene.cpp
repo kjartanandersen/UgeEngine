@@ -275,26 +275,32 @@ namespace Uge
 			// Update Scripts
 
 			// C# Entity OnUpdate
-			auto view = m_registry.view<ScriptComponent>();
-			for (auto e : view)
 			{
-				Entity entity = { e, this };
-				ScriptEngine::OnUpdateEntity(entity, ts);
+				UG_PROFILE_SCOPE("Scene Scripts (C#)");
+				auto view = m_registry.view<ScriptComponent>();
+				for (auto e : view)
+				{
+					Entity entity = { e, this };
+					ScriptEngine::OnUpdateEntity(entity, ts);
+				}
 			}
 
-			m_registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
-				{
-					// TODO: Move to Scene::OnScenePlay
-					if (!nsc.Instance)
+			{
+				UG_PROFILE_SCOPE("Scene Scripts (native)");
+				m_registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
 					{
-						nsc.Instance = nsc.InstantiateScript();
-						nsc.Instance->m_entity = Entity{ entity, this };
-						nsc.Instance->OnCreate();
-					}
+						// TODO: Move to Scene::OnScenePlay
+						if (!nsc.Instance)
+						{
+							nsc.Instance = nsc.InstantiateScript();
+							nsc.Instance->m_entity = Entity{ entity, this };
+							nsc.Instance->OnCreate();
+						}
 
-					nsc.Instance->OnUpdate(ts);
+						nsc.Instance->OnUpdate(ts);
 
-				});
+					});
+			}
 		}
 		
 

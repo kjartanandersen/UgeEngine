@@ -28,17 +28,35 @@ namespace Uge
 	 * @endcode
 	 *
 	 * Formatting uses the fmt syntax (`{0}`, `{1}`, ...), not printf specifiers.
+	 *
+	 * Both loggers share three sinks: the colour console, a truncated-per-run log file at
+	 * GetLogFilePath(), and the in-memory Uge::LogBuffer that backs the editor's console
+	 * panel.
 	 */
 	class Log
 	{
 
 	public:
 		/**
-		 * @brief Creates and configures both loggers.
+		 * @brief Creates and configures both loggers along with their three shared sinks.
 		 *
 		 * Must run before any logging macro; `main` in EntryPoint.h calls it first.
 		 */
 		static void Init();
+
+		/**
+		 * @brief Flushes both loggers so buffered records reach the log file.
+		 *
+		 * Called on normal shutdown and from the crash handler, where the process is about
+		 * to die and the file sink would otherwise lose its tail.
+		 */
+		static void Shutdown();
+
+		/**
+		 * @brief Returns the path of the on-disk log, relative to the working directory.
+		 * @return `logs/Uge.log`; the directory is created if missing.
+		 */
+		inline static const char* GetLogFilePath() { return s_logFilePath; }
 
 		/**
 		 * @brief Returns the engine-side logger.
@@ -52,6 +70,8 @@ namespace Uge
 		inline static std::shared_ptr<spdlog::logger>& GetClientLogger() { return s_ClientLogger; };
 	
 	private:
+		static constexpr const char* s_logFilePath = "logs/Uge.log";
+
 		static std::shared_ptr<spdlog::logger> s_CoreLogger;
 		static std::shared_ptr<spdlog::logger> s_ClientLogger;
 	};

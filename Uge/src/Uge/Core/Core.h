@@ -90,71 +90,178 @@
 #endif
 
 /**
+ * @def UG_EXPAND_MACRO
+ * @brief Forces an extra expansion pass over @p x.
+ * @param x Token sequence to expand.
+ * @ingroup group_core
+ *
+ * MSVC's traditional preprocessor treats `__VA_ARGS__` as a single token when it is
+ * forwarded to another macro, which breaks argument counting. Wrapping the forwarding
+ * call in this macro restores the standard behaviour without needing `/Zc:preprocessor`.
+ */
+#define UG_EXPAND_MACRO(x) x
+
+/**
+ * @def UG_STRINGIFY_MACRO
+ * @brief Turns @p x into a string literal.
+ * @param x Token sequence to stringify.
+ * @ingroup group_core
+ */
+#define UG_STRINGIFY_MACRO(x) #x
+
+/**
+ * @def UG_INTERNAL_CHECK_IMPL
+ * @brief Shared body of every assertion and verification macro.
+ * @param type Logger infix: `_` for the client logger, `_CORE_` for the engine logger.
+ * @param kind Human-readable label, either `Assertion` or `Verification`.
+ * @param check Condition that must hold.
+ * @param detail Extra text appended to the failure message; may be empty.
+ * @ingroup group_core
+ * @note Implementation detail — call #UG_ASSERT or #UG_VERIFY instead.
+ */
+#define UG_INTERNAL_CHECK_IMPL(type, kind, check, detail)                          \
+	{                                                                              \
+		if (!(check))                                                              \
+		{                                                                          \
+			UG##type##ERROR("{0} failed: {1}\n    at {2}:{3}{4}", kind,             \
+				UG_STRINGIFY_MACRO(check), __FILE__, __LINE__, detail);            \
+			UG_DEBUGBREAK();                                                       \
+		}                                                                          \
+	}
+
+/**
+ * @def UG_INTERNAL_CHECK_WITH_MSG
+ * @brief Failure path that formats the caller's message.
+ * @param type Logger infix.
+ * @param kind Human-readable label.
+ * @param check Condition that must hold.
+ * @param ... fmt format string and arguments describing the failure.
+ * @ingroup group_core
+ * @note Implementation detail — call #UG_ASSERT or #UG_VERIFY instead.
+ */
+#define UG_INTERNAL_CHECK_WITH_MSG(type, kind, check, ...) \
+	UG_INTERNAL_CHECK_IMPL(type, kind, check, "\n    " + ::spdlog::fmt_lib::format(__VA_ARGS__))
+
+/**
+ * @def UG_INTERNAL_CHECK_NO_MSG
+ * @brief Failure path used when the caller supplied no message.
+ * @param type Logger infix.
+ * @param kind Human-readable label.
+ * @param check Condition that must hold.
+ * @ingroup group_core
+ * @note Implementation detail — call #UG_ASSERT or #UG_VERIFY instead.
+ */
+#define UG_INTERNAL_CHECK_NO_MSG(type, kind, check) \
+	UG_INTERNAL_CHECK_IMPL(type, kind, check, "")
+
+/**
+ * @def UG_INTERNAL_CHECK_PICK
+ * @brief Yields its seventeenth argument, so a padding list can encode an argument count.
+ * @param _1 Placeholder for the caller's first argument.
+ * @param _2 Placeholder for the caller's second argument.
+ * @param _3 Placeholder for the caller's third argument.
+ * @param _4 Placeholder for the caller's fourth argument.
+ * @param _5 Placeholder for the caller's fifth argument.
+ * @param _6 Placeholder for the caller's sixth argument.
+ * @param _7 Placeholder for the caller's seventh argument.
+ * @param _8 Placeholder for the caller's eighth argument.
+ * @param _9 Placeholder for the caller's ninth argument.
+ * @param _10 Placeholder for the caller's tenth argument.
+ * @param _11 Placeholder for the caller's eleventh argument.
+ * @param _12 Placeholder for the caller's twelfth argument.
+ * @param _13 Placeholder for the caller's thirteenth argument.
+ * @param _14 Placeholder for the caller's fourteenth argument.
+ * @param _15 Placeholder for the caller's fifteenth argument.
+ * @param _16 Placeholder for the caller's sixteenth argument.
+ * @param N The selected overload.
+ * @param ... Remaining padding, discarded.
+ * @ingroup group_core
+ * @note Implementation detail.
+ */
+#define UG_INTERNAL_CHECK_PICK(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, N, ...) N
+
+/**
+ * @def UG_INTERNAL_CHECK_GET_MACRO
+ * @brief Resolves to the with-message or no-message overload based on argument count.
+ * @param ... The caller's arguments.
+ * @ingroup group_core
+ *
+ * The padding list is fifteen copies of the with-message overload followed by the
+ * no-message one, so only a lone condition lands on #UG_INTERNAL_CHECK_NO_MSG. Format
+ * arguments beyond sixteen are not supported.
+ *
+ * @note Implementation detail.
+ */
+#define UG_INTERNAL_CHECK_GET_MACRO(...)                                                             \
+	UG_EXPAND_MACRO(UG_INTERNAL_CHECK_PICK(__VA_ARGS__,                                              \
+		UG_INTERNAL_CHECK_WITH_MSG, UG_INTERNAL_CHECK_WITH_MSG, UG_INTERNAL_CHECK_WITH_MSG,          \
+		UG_INTERNAL_CHECK_WITH_MSG, UG_INTERNAL_CHECK_WITH_MSG, UG_INTERNAL_CHECK_WITH_MSG,          \
+		UG_INTERNAL_CHECK_WITH_MSG, UG_INTERNAL_CHECK_WITH_MSG, UG_INTERNAL_CHECK_WITH_MSG,          \
+		UG_INTERNAL_CHECK_WITH_MSG, UG_INTERNAL_CHECK_WITH_MSG, UG_INTERNAL_CHECK_WITH_MSG,          \
+		UG_INTERNAL_CHECK_WITH_MSG, UG_INTERNAL_CHECK_WITH_MSG, UG_INTERNAL_CHECK_WITH_MSG,          \
+		UG_INTERNAL_CHECK_NO_MSG, ))
+
+/**
  * @def UG_ASSERT
- * @brief Breaks into the debugger when @p x is false; client-side.
- * @param x Condition that must hold.
- * @param ... Message describing the failure, in fmt syntax.
+ * @brief Breaks into the debugger when the condition is false; client-side.
+ * @param ... The condition, optionally followed by an fmt format string and arguments.
  * @ingroup group_core
  *
  * Compiled out unless #UG_ENABLE_ASSERTS is defined, which happens only in Debug.
- * Use it for conditions that indicate a programming error; use `UG_VERIFY` for checks
+ * Use it for conditions that indicate a programming error; use #UG_VERIFY for checks
  * that must survive into Release.
  *
- * @warning The argument expression is **not** evaluated outside Debug, so it must not
- * have side effects.
+ * Both forms are supported, and the failure always reports the stringified expression
+ * along with the source file and line:
+ * @code
+ * UG_ASSERT(texture);
+ * UG_ASSERT(index < count, "index {0} out of range (count {1})", index, count);
+ * @endcode
+ *
+ * @warning The condition is **not** evaluated outside Debug, so it must not have side
+ * effects.
  */
 
 /**
  * @def UG_CORE_ASSERT
- * @brief Breaks into the debugger when @p x is false; engine-side.
- * @param x Condition that must hold.
- * @param ... Message describing the failure, in fmt syntax.
+ * @brief Breaks into the debugger when the condition is false; engine-side.
+ * @param ... The condition, optionally followed by an fmt format string and arguments.
  * @ingroup group_core
  *
  * Identical to #UG_ASSERT but logs through the core logger. Use this inside the engine.
  */
 
 #ifdef UG_ENABLE_ASSERTS
-	#define UG_ASSERT(x) { if (!(x)) { UG_ERROR("Error!"); UG_DEBUGBREAK(); } }
-	#define UG_ASSERT(x, ...) { if (!(x)) { UG_ERROR("Assertion Failed: {0}", __VA_ARGS__); UG_DEBUGBREAK(); } }
-	#define UG_CORE_ASSERT(x, ...) { if (!(x)) { UG_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); UG_DEBUGBREAK(); } }
-	#define UG_CORE_ASSERT(x) { if (!(x)) { UG_CORE_ERROR("Error!"); UG_DEBUGBREAK(); } }
+	#define UG_ASSERT(...)      UG_EXPAND_MACRO(UG_INTERNAL_CHECK_GET_MACRO(__VA_ARGS__)(_,      "Assertion", __VA_ARGS__))
+	#define UG_CORE_ASSERT(...) UG_EXPAND_MACRO(UG_INTERNAL_CHECK_GET_MACRO(__VA_ARGS__)(_CORE_, "Assertion", __VA_ARGS__))
 #else
-	#define UG_ASSERT(x, ...)
-	#define UG_ASSERT(x)
-	#define UG_CORE_ASSERT(x, ...)
-	#define UG_CORE_ASSERT(x)
+	#define UG_ASSERT(...)
+	#define UG_CORE_ASSERT(...)
 #endif // UG_ENABLE_ASSERTS
 
 /**
  * @def UG_VERIFY
- * @brief Breaks into the debugger when @p x is false; client-side, kept in Release.
- * @param x Condition that must hold.
- * @param ... Message describing the failure, in fmt syntax.
+ * @brief Breaks into the debugger when the condition is false; client-side, kept in Release.
+ * @param ... The condition, optionally followed by an fmt format string and arguments.
  * @ingroup group_core
  *
  * Survives into Release and is removed only in Dist, so it suits checks that are worth
- * paying for in a shipping-adjacent build.
+ * paying for in a shipping-adjacent build. Otherwise behaves exactly like #UG_ASSERT.
  */
 
 /**
  * @def UG_CORE_VERIFY
- * @brief Breaks into the debugger when @p x is false; engine-side, kept in Release.
- * @param x Condition that must hold.
- * @param ... Message describing the failure, in fmt syntax.
+ * @brief Breaks into the debugger when the condition is false; engine-side, kept in Release.
+ * @param ... The condition, optionally followed by an fmt format string and arguments.
  * @ingroup group_core
  */
 
 #ifdef UG_ENABLE_VERIFYS
-#define UG_VERIFY(x) { if (!(x)) { UG_ERROR("Error!"); UG_DEBUGBREAK(); } }
-#define UG_VERIFY(x, ...) { if (!(x)) { UG_ERROR("VERIFYion Failed: {0}", __VA_ARGS__); UG_DEBUGBREAK(); } }
-#define UG_CORE_VERIFY(x, ...) { if (!(x)) { UG_CORE_ERROR("VERIFYion Failed: {0}", __VA_ARGS__); UG_DEBUGBREAK(); } }
-#define UG_CORE_VERIFY(x) { if (!(x)) { UG_CORE_ERROR("Error!"); UG_DEBUGBREAK(); } }
+	#define UG_VERIFY(...)      UG_EXPAND_MACRO(UG_INTERNAL_CHECK_GET_MACRO(__VA_ARGS__)(_,      "Verification", __VA_ARGS__))
+	#define UG_CORE_VERIFY(...) UG_EXPAND_MACRO(UG_INTERNAL_CHECK_GET_MACRO(__VA_ARGS__)(_CORE_, "Verification", __VA_ARGS__))
 #else
-#define UG_VERIFY(x, ...)
-#define UG_VERIFY(x)
-#define UG_CORE_VERIFY(x, ...)
-#define UG_CORE_VERIFY(x)
+	#define UG_VERIFY(...)
+	#define UG_CORE_VERIFY(...)
 #endif // UG_ENABLE_VERIFYS
 
 

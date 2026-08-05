@@ -48,28 +48,7 @@ namespace Uge
 
 		
 	public:
-		/**
-		 * @brief Per-frame batching counters, shown in the editor's stats panel.
-		 *
-		 * Useful for spotting batch breaks: a quad count far below the draw call count means
-		 * something is forcing a flush, usually too many distinct textures.
-		 */
-		struct Statistics
-		{
-			uint32_t DrawCalls = 0; ///< Draw calls issued this frame.
-			uint32_t QuadCount = 0; ///< Quads submitted this frame.
-
-			/** @brief Vertices submitted this frame. @return Four per quad. */
-			uint32_t GetTotalVertexCount() const { return QuadCount * 4; }
-			/** @brief Indices submitted this frame. @return Six per quad. */
-			uint32_t GetTotalIndexCount() const { return QuadCount * 6; }
-
-
-		};
-
-		
-
-	public:
+		// Per-frame counters live in Uge::RenderStats, which every draw path shares.
 
 		/**
 		 * @brief Allocates the batch buffers, shaders and the default white texture.

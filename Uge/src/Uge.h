@@ -24,6 +24,12 @@
 
 #include "Uge/Core/Timestep.h"
 
+// ************* Diagnostics **************
+#include "Uge/Debug/CrashHandler.h"
+#include "Uge/Debug/FrameProfiler.h"
+#include "Uge/Debug/LogBuffer.h"
+// ****************************************
+
 #include "Uge/Core/Input.h"
 #include "Uge/Core/KeyCodes.h"
 #include "Uge/Core/MouseButtonCodes.h"

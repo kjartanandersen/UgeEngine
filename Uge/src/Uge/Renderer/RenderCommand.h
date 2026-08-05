@@ -7,6 +7,7 @@
 #pragma once
 
 #include "RendererAPI.h"
+#include "RenderStats.h"
 
 
 namespace Uge
@@ -106,9 +107,21 @@ namespace Uge
 		 * @brief Issues an indexed draw call.
 		 * @param vertexArray Geometry to draw, with its index buffer set.
 		 * @param indexCount Indices to draw, or `0` for the entire index buffer.
+		 *
+		 * Every draw path bottoms out here, which is why this is where Uge::RenderStats
+		 * accumulates the frame's totals.
 		 */
 		inline static void DrawIndexed(const Ref<VertexArray> vertexArray, uint32_t indexCount = 0)
 		{
+			const uint32_t drawn = indexCount != 0
+				? indexCount
+				: vertexArray->GetIndexBuffers()->GetCount();
+
+			RenderStats& stats = RenderStats::Get();
+			stats.DrawCalls++;
+			stats.IndexCount += drawn;
+			stats.TriangleCount += drawn / 3;
+
 			m_rendererAPI->DrawIndexed(vertexArray, indexCount);
 		}
 
