@@ -42,16 +42,18 @@ project "Uge-Editor"
 
 
 	filter "configurations:Debug"
-		defines "UG_DEBUG"
+		defines { "UG_DEBUG", "UG_PROFILE=1" }
 		runtime "Debug"
 		symbols "on"
-		
-	
+
+
 	filter "configurations:Release"
-		defines "UG_RELEASE"
+		defines { "UG_RELEASE", "UG_PROFILE=1" }
 		runtime "Release"
 		optimize "on"
-	
+		-- Keep PDBs in Release so Uge::CrashHandler can symbolise its stack traces.
+		symbols "on"
+
 	filter "configurations:Dist"
 		defines "UG_DIST"
 		runtime "Release"

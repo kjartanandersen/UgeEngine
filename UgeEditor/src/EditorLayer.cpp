@@ -37,6 +37,12 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
+		// Once per frame, before anything draws — see Uge::RenderStats.
+		RenderStats::Reset();
+
+		// Counts down an in-progress trace capture and closes the session when it ends.
+		m_debugPanel.OnUpdate();
+
 		m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 		if (m_shouldResize)
 		{
@@ -68,23 +74,30 @@ namespace Uge
 			}
 			m_frameBuffer->ClearAttachment(1, -1);
 
-			switch (m_sceneState)
 			{
-			case Uge::EditorLayer::SceneState::Edit:
-				m_editorCamera.OnUpdate(ts);
-				m_activeScene->OnUpdateEditor(ts, m_editorCamera);
-				
-				break;
-			case Uge::EditorLayer::SceneState::Play:
-				m_activeScene->OnUpdateRuntime(ts);
+				UG_PROFILE_SCOPE("Scene Update");
+				switch (m_sceneState)
+				{
+				case Uge::EditorLayer::SceneState::Edit:
+					m_editorCamera.OnUpdate(ts);
+					m_activeScene->OnUpdateEditor(ts, m_editorCamera);
 
-				break;
-			default:
-				
-				break;
+					break;
+				case Uge::EditorLayer::SceneState::Play:
+					m_activeScene->OnUpdateRuntime(ts);
+
+					break;
+				default:
+
+					break;
+				}
 			}
 
-		
+			// A synchronous readback, so it stalls until the GPU has caught up with the
+			// whole frame. Timed separately because that stall is easily mistaken for the
+			// scene being slow to draw.
+			UG_PROFILE_SCOPE("Entity Picking Readback");
+
 			auto [mx, my] = ImGui::GetMousePos();
 			mx -= m_viewportBounds[0].x;
 			my -= m_viewportBounds[0].y;
@@ -115,8 +128,14 @@ namespace Uge
 
 		// Both read m_frameBuffer, so both are kept out of the block above, which still has it
 		// bound. Bloom first: the resolve samples its result.
-		Bloom::Render(m_frameBuffer, PostProcess::GetSettings());
-		PostProcess::Resolve(m_frameBuffer, m_displayFrameBuffer);
+		{
+			UG_PROFILE_SCOPE("Bloom");
+			Bloom::Render(m_frameBuffer, PostProcess::GetSettings());
+		}
+		{
+			UG_PROFILE_SCOPE("Post Process Resolve");
+			PostProcess::Resolve(m_frameBuffer, m_displayFrameBuffer);
+		}
 		m_displayFrameBuffer->Unbind();
 
 	}
@@ -185,6 +204,7 @@ namespace Uge
 
 
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		m_debugPanel.SetContext(m_activeScene);
 
 		
 
@@ -336,45 +356,61 @@ namespace Uge
 
 					ImGui::EndMenu();
 				}
+
+				if (ImGui::BeginMenu("View"))
+				{
+					ImGui::MenuItem("Scene Hierarchy", nullptr, &m_showSceneHierarchy);
+					ImGui::MenuItem("Content Browser", nullptr, &m_showContentBrowser);
+					ImGui::MenuItem("Renderer Settings", nullptr, &m_showRendererSettings);
+					ImGui::Separator();
+					ImGui::MenuItem("Console", nullptr, &m_showConsole);
+					ImGui::MenuItem("Diagnostics", nullptr, &m_showDebug);
+					ImGui::MenuItem("Loaded Assets", nullptr, &m_showLoadedAssets);
+
+					ImGui::EndMenu();
+				}
 				ImGui::EndMenuBar();
 			}
 
-			m_sceneHierarchyPanel.OnImGuiRender();
-			m_contentBrowserPanel->OnImGuiRender();
-			m_rendererSettingsPanel.OnImGuiRender();
-
-
-			ImGui::Begin("Stats");
+			if (m_showSceneHierarchy)
 			{
-				std::string name = "None";
-				if (m_hoveredEntity)
-				{
-					name = m_hoveredEntity.GetComponent<TagComponent>().Tag;
-				}
-				ImGui::Text("Hovered Entity: %s", name.c_str());
-
-				//ImGui::Dummy({ 0.0f, 100.0f });
-				ImGui::Separator();
-				ImGui::Text("Viewport Panel Size");
-				ImGui::Text("X: %f", m_viewportSize.x);
-				ImGui::Text("Y: %f", m_viewportSize.y);
-
-				ImGui::Image((ImTextureID)Font::GetDefault()->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
+				m_sceneHierarchyPanel.OnImGuiRender();
 			}
-			ImGui::End();
-
-			ImGui::Begin("Loaded Assets");
+			if (m_showContentBrowser)
 			{
-
-				auto loadedAssetNames = Project::GetActive()->GetEditorAssetManager()->GetLoadedAssetsNames();
-
-				for (auto& asset : loadedAssetNames)
-				{
-					ImGui::Text(asset.c_str());
-				}
-
+				m_contentBrowserPanel->OnImGuiRender();
 			}
-			ImGui::End();
+			if (m_showRendererSettings)
+			{
+				m_rendererSettingsPanel.OnImGuiRender();
+			}
+			if (m_showConsole)
+			{
+				m_consolePanel.OnImGuiRender();
+			}
+			if (m_showDebug)
+			{
+				// Fed here rather than in OnUpdate so the panel always reports the same
+				// frame it is drawn in.
+				m_debugPanel.SetHoveredEntity(m_hoveredEntity);
+				m_debugPanel.OnImGuiRender();
+			}
+
+			if (m_showLoadedAssets)
+			{
+				ImGui::Begin("Loaded Assets", &m_showLoadedAssets);
+				{
+
+					auto loadedAssetNames = Project::GetActive()->GetEditorAssetManager()->GetLoadedAssetsNames();
+
+					for (auto& asset : loadedAssetNames)
+					{
+						ImGui::Text(asset.c_str());
+					}
+
+				}
+				ImGui::End();
+			}
 
 
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
@@ -860,6 +896,7 @@ namespace Uge
 		m_activeScene = CreateRef<Scene>();
 		// m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		m_debugPanel.SetContext(m_activeScene);
 
 		m_editorScenePath = std::filesystem::path();
 
@@ -907,6 +944,7 @@ namespace Uge
 
 		m_editorScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 		m_sceneHierarchyPanel.SetContext(m_editorScene);
+		m_debugPanel.SetContext(m_editorScene);
 
 		m_activeScene = m_editorScene;
 		m_editorScenePath = Project::GetActive()->GetEditorAssetManager()->GetFilePath(handle);
@@ -926,6 +964,7 @@ namespace Uge
 		m_activeScene->OnRuntimeStart();
 
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		m_debugPanel.SetContext(m_activeScene);
 
 	}
 
@@ -945,6 +984,7 @@ namespace Uge
 		m_activeScene = m_editorScene;
 
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		m_debugPanel.SetContext(m_activeScene);
 	
 	}
 

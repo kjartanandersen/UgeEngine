@@ -10,6 +10,8 @@
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/RendererSettingsPanel.h"
+#include "Panels/ConsolePanel.h"
+#include "Panels/DebugPanel.h"
 
 namespace Uge
 {
@@ -170,6 +172,16 @@ namespace Uge
 		SceneHierarchyPanel m_sceneHierarchyPanel;
 		Scope<ContentBrowserPanel> m_contentBrowserPanel;
 		RendererSettingsPanel m_rendererSettingsPanel;
+		ConsolePanel m_consolePanel;
+		DebugPanel m_debugPanel;
+
+		// Panel visibility, driven by the View menu.
+		bool m_showSceneHierarchy = true;
+		bool m_showContentBrowser = true;
+		bool m_showRendererSettings = true;
+		bool m_showConsole = true;
+		bool m_showDebug = true;
+		bool m_showLoadedAssets = false;
 
 		Entity m_hoveredEntity;
 
