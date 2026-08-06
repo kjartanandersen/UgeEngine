@@ -34,6 +34,9 @@
     <Filter Include="..\Uge\thirdparty\glm">
       <UniqueIdentifier>{1A820F02-86EE-CAFC-4FE2-625ABB0DED64}</UniqueIdentifier>
     </Filter>
+    <Filter Include="..\Uge\thirdparty\googletest">
+      <UniqueIdentifier>{F776F2D9-E331-E285-8CE9-5AD078832C16}</UniqueIdentifier>
+    </Filter>
     <Filter Include="..\Uge\thirdparty\imgui">
       <UniqueIdentifier>{F5231DC4-615B-655B-6A65-C97ED61B8C54}</UniqueIdentifier>
     </Filter>
@@ -42,6 +45,9 @@
     </Filter>
     <Filter Include="..\Uge-ScriptCore">
       <UniqueIdentifier>{BC970794-28AE-052A-7125-914BDD7AD6B1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\Uge-Tests">
+      <UniqueIdentifier>{3170A062-1DD3-2F07-C658-68BDB29AFB89}</UniqueIdentifier>
     </Filter>
     <Filter Include="..\UgeEditor">
       <UniqueIdentifier>{78FCBF9B-645F-4F40-0DE5-87F6F9261BC3}</UniqueIdentifier>
@@ -62,6 +68,9 @@
     </None>
     <None Include="..\..\Uge-ScriptCore\premake5.lua">
       <Filter>..\Uge-ScriptCore</Filter>
+    </None>
+    <None Include="..\..\Uge-Tests\premake5.lua">
+      <Filter>..\Uge-Tests</Filter>
     </None>
     <None Include="..\..\Uge\premake5.lua">
       <Filter>..\Uge</Filter>
@@ -86,6 +95,9 @@
     </None>
     <None Include="..\..\Uge\thirdparty\glm\premake5.lua">
       <Filter>..\Uge\thirdparty\glm</Filter>
+    </None>
+    <None Include="..\..\Uge\thirdparty\googletest\premake5.lua">
+      <Filter>..\Uge\thirdparty\googletest</Filter>
     </None>
     <None Include="..\..\Uge\thirdparty\imgui\premake5.lua">
       <Filter>..\Uge\thirdparty\imgui</Filter>

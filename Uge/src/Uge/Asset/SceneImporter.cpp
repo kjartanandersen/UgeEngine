@@ -25,7 +25,15 @@ namespace Uge
 
 		Ref<Scene> scene = CreateRef<Scene>();
 		SceneSerializer serializer(scene);
-		serializer.DeSerialize(path);
+
+		// Honour the result rather than handing back the half-built scene. A missing or
+		// malformed file would otherwise import as an empty scene that looks loaded — and
+		// saving over the original from there loses it for good.
+		if (!serializer.DeSerialize(path))
+		{
+			UG_CORE_ERROR("SceneImporter::LoadScene - Failed to load scene '{0}'", path.string());
+			return nullptr;
+		}
 
 		return scene;
 

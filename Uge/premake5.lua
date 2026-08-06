@@ -49,8 +49,10 @@ project "Uge"
 		"../%{IncludeDir.YAMLCPP}",
 		"../%{IncludeDir.JOLT}",
 		"../%{IncludeDir.IMGUIZMO}",
-		"../%{IncludeDir.VULKANSDK}"
-		
+		"../%{IncludeDir.VULKANSDK}",
+		"../%{IncludeDir.GOOGLETEST}",
+		"../%{IncludeDir.GOOGLEMOCK}"
+
 	}
 
 	links
@@ -62,6 +64,8 @@ project "Uge"
 		"msdf-atlas-gen",
 		"assimp",
 		"yaml-cpp",
+		"googletest",
+		"googlemock",
 		"opengl32.lib",
 
 		"%{Library.MONO}"

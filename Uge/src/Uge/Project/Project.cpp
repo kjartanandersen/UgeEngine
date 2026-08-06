@@ -36,6 +36,13 @@ namespace Uge
 
 	}
 
+	void Project::Unload()
+	{
+
+		s_activeProject = nullptr;
+
+	}
+
 	bool Project::SaveActive(const std::filesystem::path& path)
 	{
 		ProjectSerializer serializer(s_activeProject);

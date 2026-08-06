@@ -32,6 +32,7 @@ group "Dependencies"
 	include "Uge/thirdparty/assimp"
 	include "Uge/thirdparty/yaml-cpp"
 	include "Uge/thirdparty/JoltPhysics"
+	include "Uge/thirdparty/googletest"
 
 group ""
 
@@ -42,6 +43,10 @@ group ""
 
 group "Tools"
 	include "UgeEditor"
+group ""
+
+group "Tests"
+	include "Uge-Tests"
 group ""
 
 group "Misc"

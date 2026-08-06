@@ -51,7 +51,10 @@ namespace Uge
 		{
 			data = YAML::LoadFile(filepath.string());
 		}
-		catch (YAML::ParserException e)
+		// YAML::Exception, not just ParserException: a file that is missing or unreadable
+		// raises YAML::BadFile, which is a sibling rather than a subclass, and would
+		// otherwise escape Project::Load — whose signature promises a null return instead.
+		catch (const YAML::Exception& e)
 		{
 			UG_CORE_ERROR("Failed to load .ugproj file {0}\n	{1}", filepath.string(), e.what());
 			return false;

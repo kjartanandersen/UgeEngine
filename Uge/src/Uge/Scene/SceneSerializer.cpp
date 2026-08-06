@@ -398,7 +398,10 @@ namespace Uge
 		{
 			data = YAML::LoadFile(filepath.string());
 		}
-		catch (YAML::ParserException e)
+		// YAML::Exception rather than ParserException alone: a scene file that has been
+		// moved or deleted raises YAML::BadFile, which is not a ParserException and would
+		// otherwise be thrown all the way out through AssetManager::GetAsset.
+		catch (const YAML::Exception& e)
 		{
 			UG_CORE_ERROR("Failed to load .uge file {0}\n	{1}", filepath.string(), e.what());
 			return false;

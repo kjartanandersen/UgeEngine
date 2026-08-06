@@ -286,7 +286,9 @@ namespace Uge
         {
             data = YAML::LoadFile(path.string());
         }
-        catch (YAML::ParserException e)
+        // YAML::Exception covers YAML::BadFile too: the existence check above is not enough
+        // on its own, since the file can still be unreadable.
+        catch (const YAML::Exception& e)
         {
             UG_CORE_ERROR("EditorAssetManager::DeserializeAssetRegistry - Failed to load asset registry {0}\n	{1}", path.string(), e.what());
             return false;

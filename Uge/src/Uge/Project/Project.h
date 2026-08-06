@@ -220,6 +220,19 @@ namespace Uge
 		 */
 		static bool SaveActive(const std::filesystem::path& path);
 
+		/**
+		 * @brief Releases the active project, returning to the no-project state.
+		 *
+		 * Afterwards GetActive() is null and the static path helpers assert again, exactly as
+		 * before the first Load(). Nothing else clears the singleton, so this is the only way
+		 * back to the state the editor is in before a project is opened.
+		 *
+		 * @warning Anything still holding assets from the project — an open scene, the content
+		 * browser — is left pointing at a manager that is no longer reachable through the
+		 * facade. Drop those first.
+		 */
+		static void Unload();
+
 	private:
 		ProjectConfig m_config;
 		std::filesystem::path m_ProjectDirectory;
