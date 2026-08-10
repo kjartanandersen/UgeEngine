@@ -94,6 +94,13 @@ namespace Uge
 		 * @return Const reference to the source path.
 		 */
 		const std::string& GetPath() const { return m_path; }
+
+		/**
+			@brief  Returns the model's meshes
+			@retval Vector of meshes
+		**/
+		const std::vector<Mesh>& GetMeshes() { return m_meshes; }
+
 		/**
 		 * @brief Whether the import produced any geometry.
 		 * @return `true` if at least one submesh was loaded.

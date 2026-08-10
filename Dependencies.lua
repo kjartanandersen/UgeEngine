@@ -25,6 +25,14 @@ IncludeDir["MSDF_ATLAS_GEN"]		= "%{wks.location}/Uge/thirdparty/ch-msdf-atlas-ge
 IncludeDir["GOOGLETEST"]			= "%{wks.location}/Uge/thirdparty/googletest/googletest/include"
 IncludeDir["GOOGLEMOCK"]			= "%{wks.location}/Uge/thirdparty/googletest/googlemock/include"
 
+-- Jolt's compile defines change its ABI. Every project that compiles a TU including a
+-- Jolt header must use exactly the same set as the Jolt library itself, or the layouts
+-- silently disagree. Applied by Uge/thirdparty/JoltPhysics, Uge and Uge-Tests.
+JoltDefines = {}
+JoltDefines["Common"]  = { "JPH_USE_CPU_COMPUTE" }
+JoltDefines["Debug"]   = { "JPH_ENABLE_ASSERTS", "JPH_DEBUG_RENDERER", "JPH_PROFILE_ENABLED" }
+JoltDefines["Release"] = { "JPH_DEBUG_RENDERER", "JPH_PROFILE_ENABLED" }
+JoltDefines["Dist"]    = { }
 
 -- Library Directories
 LibraryDir = {}

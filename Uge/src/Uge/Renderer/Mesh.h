@@ -124,6 +124,9 @@ namespace Uge
 		 */
 		const glm::vec3& GetCenter() const { return m_center; }
 
+		const std::vector<MeshVertex>& GetVertices() { return m_vertices; }
+		const std::vector<uint32_t>& GetIndices() { return m_indices; }
+
 
 	private:
 		void SetupMesh();

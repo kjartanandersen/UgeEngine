@@ -64,6 +64,7 @@ project "Uge"
 		"msdf-atlas-gen",
 		"assimp",
 		"yaml-cpp",
+		"Jolt",
 		"googletest",
 		"googlemock",
 		"opengl32.lib",
@@ -78,6 +79,7 @@ project "Uge"
 	{
 		"YAML_CPP_STATIC_DEFINE"
 	}
+	defines(JoltDefines.Common)
 	
 	filter "files:thirdparty/ImGuizmo/**.cpp"
 		enablepch "off"
@@ -109,6 +111,7 @@ project "Uge"
 			"UG_DEBUG",
 			"UG_PROFILE=1"
 		}
+		defines(JoltDefines.Debug)
 		runtime "Debug"
 		symbols "on"
 		links
@@ -125,6 +128,7 @@ project "Uge"
 			"UG_RELEASE",
 			"UG_PROFILE=1"
 		}
+		defines(JoltDefines.Release)
 		runtime "Release"
 		optimize "on"
 		-- Keep PDBs in Release so Uge::CrashHandler can symbolise its stack traces.

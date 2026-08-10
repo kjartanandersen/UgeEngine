@@ -42,6 +42,7 @@ project "Uge-Tests"
 		"%{wks.location}/%{IncludeDir.ENTT}",
 		"%{wks.location}/%{IncludeDir.FILEWATCH}",
 		"%{wks.location}/%{IncludeDir.IMGUIZMO}",
+		"%{wks.location}/%{IncludeDir.JOLT}",
 		"%{wks.location}/%{IncludeDir.GOOGLETEST}",
 		"%{wks.location}/%{IncludeDir.GOOGLEMOCK}"
 	}
@@ -49,11 +50,14 @@ project "Uge-Tests"
 	links
 	{
 		"Uge",
+		"Jolt",
 		"googletest",
 		"googlemock"
 	}
 
 	buildoptions {"/utf-8"}
+
+	defines(JoltDefines.Common) 
 
 	filter "system:windows"
 		systemversion "latest"
@@ -62,14 +66,17 @@ project "Uge-Tests"
 		{
 			"UG_PLATFORM_WINDOWS"
 		}
+		defines(JoltDefines.Common) 
 
 	filter "configurations:Debug"
 		defines { "UG_DEBUG", "UG_PROFILE=1" }
+		defines(JoltDefines.Debug)
 		runtime "Debug"
 		symbols "on"
 
 	filter "configurations:Release"
 		defines { "UG_RELEASE", "UG_PROFILE=1" }
+		defines(JoltDefines.Release)
 		runtime "Release"
 		optimize "on"
 		symbols "on"
