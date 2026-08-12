@@ -5,6 +5,7 @@
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
+#include <Jolt/Renderer/DebugRendererSimple.h>
 
 namespace Uge::JoltLayers
 {
@@ -72,6 +73,26 @@ namespace Uge::JoltLayers
             if (layer == Static) return bpLayer == BroadPhase::Moving;
             return true;
         }
+    };
+
+    /**
+     * @brief Restricts a query to the layers named in a Uge::PhysicsLayerMask.
+     *
+     * Bit `N` of the mask enables Uge::PhysicsLayer `N`, so Uge::PhysicsLayerMaskAll
+     * (`~0u`) passes everything.
+     */
+    class MaskObjectLayerFilter : public JPH::ObjectLayerFilter
+    {
+    public:
+        explicit MaskObjectLayerFilter(PhysicsLayerMask mask) : m_mask(mask) {}
+
+        bool ShouldCollide(JPH::ObjectLayer layer) const override
+        {
+            return (m_mask & (1u << layer)) != 0;
+        }
+
+    private:
+        PhysicsLayerMask m_mask;
     };
 
 }

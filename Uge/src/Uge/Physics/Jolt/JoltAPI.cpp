@@ -2,6 +2,7 @@
 #include "JoltAPI.h"
 
 #include "Uge/Physics/Jolt/JoltScene.h"
+#include "Uge/Physics/Jolt/JoltData.h"
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Core/TempAllocator.h>
@@ -16,14 +17,6 @@
 
 namespace Uge
 {
-
-	struct JoltData
-	{
-		Scope<JPH::TempAllocatorImpl> TempAllocator;
-		Scope<JPH::JobSystemThreadPool> JobThreadPool;
-
-
-	};
 
 	// Callback for traces, connect this to your own trace function if you have one
 	static void TraceImpl(const char* inFMT, ...)
@@ -55,26 +48,14 @@ namespace Uge
 
 	static JoltData* s_joltData = nullptr;
 
-
+	
 	JoltAPI::JoltAPI()
 	{
 	}
 	JoltAPI::~JoltAPI()
 	{
-
-		if (!s_joltData)
-			return;
-
-		s_joltData->JobThreadPool.reset();
-		s_joltData->TempAllocator.reset();
-
-		delete s_joltData;
-		s_joltData = nullptr;
-
-		JPH::UnregisterTypes();
-
-		delete JPH::Factory::sInstance;
-		JPH::Factory::sInstance = nullptr;
+		Shutdown();
+		
 
 	}
 
@@ -121,14 +102,22 @@ namespace Uge
 
 	void JoltAPI::Shutdown()
 	{
+		if (!s_joltData)
+			return;
 
+		s_joltData->JobThreadPool.reset();
+		s_joltData->TempAllocator.reset();
+
+		delete s_joltData;
+		s_joltData = nullptr;
+
+		JPH::UnregisterTypes();
+
+		delete JPH::Factory::sInstance;
+		JPH::Factory::sInstance = nullptr;
 
 	}
 
-	const JoltData* JoltAPI::GetJoltData()
-	{
-		return s_joltData;
-	}
 
 	Scope<PhysicsScene> JoltAPI::CreateScene(const PhysicsSceneDesc& desc)
 	{
@@ -136,5 +125,10 @@ namespace Uge
 		return CreateScope<JoltScene>(desc);
 	}
 
+	JoltData& GetJoltData()
+	{
+		UG_CORE_VERIFY(s_joltData, "Physics::Init() has not been called!");
+		return *s_joltData;
+	}
 
 }

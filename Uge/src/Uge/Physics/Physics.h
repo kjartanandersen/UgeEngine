@@ -24,7 +24,7 @@ namespace Uge
 		static void Init();
 
 		/** @brief Tears the backend down. Call after every Uge::PhysicsScene is destroyed. */
-		static void ShutDown();
+		static void Shutdown();
 
 		/**
 		 * @brief Creates an independent physics world.

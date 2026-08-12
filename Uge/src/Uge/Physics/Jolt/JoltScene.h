@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Uge/Physics/PhysicsScene.h"
-#include "Uge/Physics/Jolt/JoltLayers.h"
+#include "JoltLayers.h"
+#include "JoltPhysicsDebugRenderer.h"
+
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/BodyID.h>
@@ -37,6 +39,7 @@ namespace Uge
 
     public:
         JoltScene(const PhysicsSceneDesc& desc);
+        ~JoltScene() override;
         /**
          * @brief Advances the simulation by a fixed interval.
          * @param fixedDeltaTime Seconds to advance; keep this constant across calls.
@@ -185,9 +188,7 @@ namespace Uge
         JPH::PhysicsSystem m_physicsSystem;
 
         Scope<class JoltContactListener> m_contactListener;
-
-        std::vector<ContactEvent> m_pendingContacts; // guarded by m_contactMutex
-        std::mutex m_contactMutex;
+        Scope<DebugRendererImpl> m_debugRenderer;
 
 
 	};

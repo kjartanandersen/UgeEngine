@@ -42,7 +42,7 @@ namespace Uge
 
 	}
 
-	void Physics::ShutDown()
+	void Physics::Shutdown()
 	{
 
 		if (!s_physicsAPI)

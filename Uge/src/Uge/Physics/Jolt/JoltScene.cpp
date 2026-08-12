@@ -1,8 +1,8 @@
 #include <ugpch.h>
 #include "JoltScene.h"
 
-#include "Uge/Physics/Jolt/JoltAPI.h"
 #include "Uge/Physics/Jolt/JoltUtils.h"
+#include "Uge/Physics/Jolt/JoltData.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyInterface.h>
@@ -12,6 +12,16 @@
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
+#include <Jolt/Physics/Body/Body.h>
+#include <Jolt/Physics/Collision/ContactListener.h>
+#include <Jolt/Physics/Body/BodyFilter.h>
+#include <Jolt/Physics/Body/BodyLock.h>
+#include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+
+#include <mutex>
+#include <unordered_set>
 
 namespace Uge
 {
@@ -57,6 +67,107 @@ namespace Uge
         return result.Get();
     }
 
+    namespace
+    {
+        /// Excludes sensors from queries: a trigger volume should not block a line-of-sight ray.
+        class IgnoreSensorsBodyFilter : public JPH::BodyFilter
+        {
+        public:
+            bool ShouldCollideLocked(const JPH::Body& body) const override
+            {
+                return !body.IsSensor();
+            }
+        };
+    }
+
+    /**
+     * @brief Buffers Jolt contact callbacks for the main thread to drain.
+     *
+     * @warning Every method except the sensor bookkeeping runs on Jolt's worker threads,
+     * concurrently, while PhysicsSystem::Update is in flight and all bodies are locked.
+     * Nothing here may touch entt::registry, resolve an asset, or call into Mono — buffer
+     * only, and dispatch after Step() returns.
+     */
+    class JoltContactListener : public JPH::ContactListener
+    {
+    public:
+        explicit JoltContactListener(JPH::PhysicsSystem& physicsSystem)
+            : m_physicsSystem(physicsSystem)
+        {
+        }
+
+        void OnContactAdded(const JPH::Body& body1, const JPH::Body& body2,
+            const JPH::ContactManifold& manifold,
+            JPH::ContactSettings& settings) override
+        {
+            // One callback per sub-shape pair: a compound body fires several for a single
+            // body pair. False here means this is the step the two bodies first touched.
+            if (m_physicsSystem.WereBodiesInContact(body1.GetID(), body2.GetID()))
+            {
+                return;
+
+            }
+
+            Push(ContactEvent{ FromJoltBodyID(body1.GetID()),
+                               FromJoltBodyID(body2.GetID()),
+                               ContactType::Begin,
+                               body1.IsSensor() || body2.IsSensor() });
+        }
+
+        void OnContactRemoved(const JPH::SubShapeIDPair& pair) override
+        {
+            // Symmetric: true means other sub-shape contacts survive, so the bodies have
+            // not actually separated yet.
+            if (m_physicsSystem.WereBodiesInContact(pair.GetBody1ID(), pair.GetBody2ID()))
+            {
+                return;
+
+            }
+
+            const PhysicsBodyID a = FromJoltBodyID(pair.GetBody1ID());
+            const PhysicsBodyID b = FromJoltBodyID(pair.GetBody2ID());
+
+            // The bodies cannot be read here — they may already be destroyed — so the
+            // sensor flag comes from the set instead.
+            Push(ContactEvent{ a, b, ContactType::End,
+                               IsSensorBody(a) || IsSensorBody(b) });
+        }
+
+        /** @brief Moves the buffered events into @p out, keeping the buffer's capacity. */
+        void Drain(std::vector<ContactEvent>& out)
+        {
+            std::scoped_lock lock(m_mutex);
+            out.swap(m_pending);
+            m_pending.clear();
+        }
+
+        /** @brief Records a sensor body. Main thread only; never during Step(). */
+        void MarkSensor(PhysicsBodyID body) { m_sensorBodies.insert(body.Value); }
+        /** @brief Drops a destroyed body. Main thread only; never during Step(). */
+        void ForgetBody(PhysicsBodyID body) { m_sensorBodies.erase(body.Value); }
+
+    private:
+        void Push(const ContactEvent& event)
+        {
+            std::scoped_lock lock(m_mutex);
+            m_pending.push_back(event);
+        }
+
+        bool IsSensorBody(PhysicsBodyID body) const
+        {
+            return m_sensorBodies.count(body.Value) != 0;
+        }
+
+        JPH::PhysicsSystem& m_physicsSystem;
+
+        std::mutex m_mutex;
+        std::vector<ContactEvent> m_pending;
+
+        // Written only by CreateBody/DestroyBody on the main thread and read lock-free from
+        // the callbacks. Sound because body creation never overlaps PhysicsSystem::Update.
+        std::unordered_set<uint32_t> m_sensorBodies;
+    };
+
 
 	JoltScene::JoltScene(const PhysicsSceneDesc& desc)
 	{
@@ -66,14 +177,41 @@ namespace Uge
 
 		SetGravity(desc.Gravity);
 
+        m_contactListener = CreateScope<JoltContactListener>(m_physicsSystem);
+        m_physicsSystem.SetContactListener(m_contactListener.get());
+
+        m_debugRenderer = CreateScope<DebugRendererImpl>();
+
 	}
+
+    JoltScene::~JoltScene()
+    {
+
+        // m_contactListener is declared after m_physicsSystem, so it is destroyed first.
+        // Detaching explicitly means the PhysicsSystem never holds a dangling listener.
+        m_physicsSystem.SetContactListener(nullptr);
+
+    }
 
     void JoltScene::Step(float fixedDeltaTime, int collisionSteps)
     {
 
-        const JoltData* joltData = JoltAPI::GetJoltData();
+        JoltData& joltData = GetJoltData();
 
-        m_physicsSystem.Update(fixedDeltaTime, collisionSteps);
+        const JPH::EPhysicsUpdateError error = 
+            m_physicsSystem.Update( fixedDeltaTime, 
+                                    collisionSteps,
+                                    joltData.TempAllocator.get(), 
+                                    joltData.JobThreadPool.get());
+
+        if (error != JPH::EPhysicsUpdateError::None)
+        {
+            UG_CORE_WARN(   "Physics: Jolt update reported error flags 0x{0:x} — raise "
+                            "MaxBodyPairs / MaxContactConstraints in PhysicsSceneDesc.",
+                            (uint32_t)error);
+
+
+        }
 
     }
 
@@ -222,8 +360,156 @@ namespace Uge
             return {};
         }
 
-        return FromJoltBodyID(bodyID);
+        const PhysicsBodyID handle = FromJoltBodyID(bodyID);
+
+        if (settings.mIsSensor)
+        {
+            m_contactListener->MarkSensor(handle);
+
+        }
+
+        return handle;
 
 	}
+
+    void JoltScene::DestroyBody(PhysicsBodyID body)
+    {
+
+        m_contactListener->ForgetBody(body);
+
+        JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
+
+        bodyInterface.RemoveBody(ToJoltBodyID(body));
+
+    }
+
+    uint64_t JoltScene::GetUserData(PhysicsBodyID body) const
+    {
+        return 0;
+    }
+
+    void JoltScene::SetTransform(PhysicsBodyID body, const glm::vec3& position, const glm::quat& rotation)
+    {
+    }
+
+    void JoltScene::GetTransform(PhysicsBodyID body, glm::vec3& outPosition, glm::quat& outRotation) const
+    {
+    }
+
+    void JoltScene::SetLinearVelocity(PhysicsBodyID body, const glm::vec3& velocity)
+    {
+    }
+
+    glm::vec3 JoltScene::GetLinearVelocity(PhysicsBodyID body) const
+    {
+        return glm::vec3();
+    }
+
+    void JoltScene::SetAngularVelocity(PhysicsBodyID body, const glm::vec3& velocity)
+    {
+    }
+
+    glm::vec3 JoltScene::GetAngularVelocity(PhysicsBodyID body) const
+    {
+        return glm::vec3();
+    }
+
+    void JoltScene::AddForce(PhysicsBodyID body, const glm::vec3& force)
+    {
+    }
+
+    void JoltScene::AddImpulse(PhysicsBodyID body, const glm::vec3& impulse)
+    {
+    }
+
+    void JoltScene::AddTorqueImpulse(PhysicsBodyID body, const glm::vec3& impulse)
+    {
+    }
+
+    bool JoltScene::CastRay(const glm::vec3& origin, const glm::vec3& direction, float maxDistance, 
+        PhysicsLayerMask mask, RayHit& outHit) const
+    {
+        const float directionLength = glm::length(direction);
+        if (directionLength <= 0.0f || maxDistance <= 0.0f)
+        {
+            return false;
+        }
+
+        // JPH::RRayCast stores direction and length in one vector: the ray ends at
+        // mOrigin + mDirection. Our contract keeps them separate, so combine here.
+
+        JPH::RRayCast ray(
+            ToJolt(origin),
+            ToJolt(direction * (maxDistance / directionLength))
+        );
+
+        // mFraction defaults to 1.0f + FLT_EPSILON, i.e. "consider the whole ray".
+
+        JPH::RayCastResult hit;
+
+        const JoltLayers::MaskObjectLayerFilter layerFilters(mask);
+        const IgnoreSensorsBodyFilter bodyFilter;
+
+        if (!m_physicsSystem.GetNarrowPhaseQuery().CastRay(ray, hit, {}, layerFilters, bodyFilter))
+        {
+            return false;
+        }
+        
+        // mFraction is along the scaled direction vector, so it is already normalized
+        // against maxDistance.
+
+        const JPH::RVec3 hitPosition = ray.GetPointOnRay(hit.mFraction);
+
+        outHit.Body = FromJoltBodyID(hit.mBodyID);
+        outHit.Position = FromJolt(hitPosition);
+        outHit.Distance = hit.mFraction * maxDistance;
+        outHit.Normal = glm::vec3(0.0f);
+
+        // RayCastResult has no normal; deriving it needs the body and the sub-shape it hit.
+        const JPH::BodyLockRead lock(m_physicsSystem.GetBodyLockInterface(), hit.mBodyID);
+        if (lock.Succeeded())
+        {
+            outHit.Normal =
+                FromJolt(lock.GetBody().GetWorldSpaceSurfaceNormal(hit.mSubShapeID2, hitPosition));
+        }
+
+        return true;
+    }
+
+    void JoltScene::OverlapSphere(const glm::vec3& center, float radius, PhysicsLayerMask mask, std::vector<PhysicsBodyID>& outBodies) const
+    {
+    }
+
+    void JoltScene::ConsumeContactEvents(std::vector<ContactEvent>& out)
+    {
+
+        m_contactListener->Drain(out);
+
+    }
+
+    void JoltScene::SetGravity(const glm::vec3& gravity)
+    {
+    }
+
+    glm::vec3 JoltScene::GetGravity() const
+    {
+        return glm::vec3();
+    }
+
+    void JoltScene::DebugDraw(PhysicsDebugRenderer& renderer)
+    {
+#ifdef JPH_DEBUG_RENDERER 
+
+        JPH::BodyManager::DrawSettings settings;
+
+        m_physicsSystem.DrawBodies(settings, m_debugRenderer.get());
+
+
+#endif
+    }
+
+    void JoltScene::OptimizeBroadPhase()
+    {
+    }
 
 }

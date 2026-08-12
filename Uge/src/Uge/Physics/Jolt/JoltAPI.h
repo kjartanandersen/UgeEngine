@@ -4,9 +4,6 @@
 
 namespace Uge
 {
-	struct JoltData;
-
-
 	/**
 	 * @brief Uge::PhysicsAPI implementation backed by Jolt Physics.
 	 * @ingroup group_physics
@@ -24,8 +21,6 @@ namespace Uge
 
 		virtual void Init() override;
 		virtual void Shutdown() override;
-
-		static const JoltData* GetJoltData();
 
 		Scope<PhysicsScene> CreateScene(const PhysicsSceneDesc& desc) override;
 
