@@ -3,22 +3,24 @@
 
 #include "Uge/Physics/Jolt/JoltUtils.h"
 #include "Uge/Physics/Jolt/JoltData.h"
+#include "Uge/Physics/Jolt/JoltPhysicsDebugRenderer.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyInterface.h>
+#include <Jolt/Physics/Body/Body.h>
+#include <Jolt/Physics/Body/BodyFilter.h>
+#include <Jolt/Physics/Body/BodyLock.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
-#include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
-#include <Jolt/Physics/Body/Body.h>
-#include <Jolt/Physics/Collision/ContactListener.h>
-#include <Jolt/Physics/Body/BodyFilter.h>
-#include <Jolt/Physics/Body/BodyLock.h>
 #include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Collision/ShapeCast.h>
+#include <Jolt/Physics/Collision/ContactListener.h>
+#include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
 
 #include <mutex>
 #include <unordered_set>
@@ -180,8 +182,7 @@ namespace Uge
         m_contactListener = CreateScope<JoltContactListener>(m_physicsSystem);
         m_physicsSystem.SetContactListener(m_contactListener.get());
 
-        m_debugRenderer = CreateScope<DebugRendererImpl>();
-
+        m_maxBodies = desc.MaxBodies;
 	}
 
     JoltScene::~JoltScene()
@@ -195,6 +196,10 @@ namespace Uge
 
     void JoltScene::Step(float fixedDeltaTime, int collisionSteps)
     {
+        if (fixedDeltaTime <= 0.0f || collisionSteps < 1)
+        {
+            return;
+        }
 
         JoltData& joltData = GetJoltData();
 
@@ -291,10 +296,8 @@ namespace Uge
         // Jolt bodies have no scale of their own; this is baked once, at creation.
         if (desc.Scale != glm::vec3(1.0f))
         {
-            JPH::Ref<JPH::ShapeSettings> scaled =
-                new JPH::ScaledShapeSettings(shape.GetPtr(), ToJolt(desc.Scale));
 
-            JPH::ShapeSettings::ShapeResult result = scaled->Create();
+            JPH::Shape::ShapeResult result = shape->ScaleShape(ToJolt(desc.Scale));
             if (result.HasError())
             {
                 UG_CORE_ERROR("Physics: failed to scale shape: {0}", result.GetError());
@@ -356,7 +359,7 @@ namespace Uge
         if (bodyID.IsInvalid())
         {
             UG_CORE_ERROR("Physics: CreateAndAddBody failed — MaxBodies ({0}) may be exhausted.",
-                desc.Colliders.size());
+                m_maxBodies);
             return {};
         }
 
@@ -378,52 +381,93 @@ namespace Uge
         m_contactListener->ForgetBody(body);
 
         JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
-
-        bodyInterface.RemoveBody(ToJoltBodyID(body));
+        
+        const JPH::BodyID joltBody = ToJoltBodyID(body);
+        bodyInterface.RemoveBody(joltBody);
+        bodyInterface.DestroyBody(joltBody);
 
     }
 
     uint64_t JoltScene::GetUserData(PhysicsBodyID body) const
     {
-        return 0;
+        const JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
+
+        return bodyInterface.GetUserData(ToJoltBodyID(body));
+
     }
 
     void JoltScene::SetTransform(PhysicsBodyID body, const glm::vec3& position, const glm::quat& rotation)
     {
+
+        JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
+        bodyInterface.SetPositionAndRotation(ToJoltBodyID(body), ToJolt(position), ToJolt(rotation), JPH::EActivation::Activate);
+
     }
 
     void JoltScene::GetTransform(PhysicsBodyID body, glm::vec3& outPosition, glm::quat& outRotation) const
     {
+
+        const JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
+
+        JPH::Vec3 pos;
+        JPH::Quat rot;
+        bodyInterface.GetPositionAndRotation(ToJoltBodyID(body), pos, rot);
+
+        outPosition = FromJolt(pos);
+        outRotation = FromJolt(rot);
+
     }
 
     void JoltScene::SetLinearVelocity(PhysicsBodyID body, const glm::vec3& velocity)
     {
+        JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
+
+        bodyInterface.SetLinearVelocity(ToJoltBodyID(body), ToJolt(velocity));
+
     }
 
     glm::vec3 JoltScene::GetLinearVelocity(PhysicsBodyID body) const
     {
-        return glm::vec3();
+        const JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
+
+        return FromJolt(bodyInterface.GetLinearVelocity(ToJoltBodyID(body)));
     }
 
     void JoltScene::SetAngularVelocity(PhysicsBodyID body, const glm::vec3& velocity)
     {
+
+        JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
+
+        bodyInterface.SetAngularVelocity(ToJoltBodyID(body), ToJolt(velocity));
     }
 
     glm::vec3 JoltScene::GetAngularVelocity(PhysicsBodyID body) const
     {
-        return glm::vec3();
+        const JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
+
+        return FromJolt(bodyInterface.GetAngularVelocity(ToJoltBodyID(body)));
     }
 
     void JoltScene::AddForce(PhysicsBodyID body, const glm::vec3& force)
     {
+
+        JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
+
+        bodyInterface.AddForce(ToJoltBodyID(body), ToJolt(force));
     }
 
     void JoltScene::AddImpulse(PhysicsBodyID body, const glm::vec3& impulse)
     {
+        JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
+
+        bodyInterface.AddImpulse(ToJoltBodyID(body), ToJolt(impulse));
     }
 
     void JoltScene::AddTorqueImpulse(PhysicsBodyID body, const glm::vec3& impulse)
     {
+        JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
+
+        bodyInterface.AddAngularImpulse(ToJoltBodyID(body), ToJolt(impulse));
     }
 
     bool JoltScene::CastRay(const glm::vec3& origin, const glm::vec3& direction, float maxDistance, 
@@ -476,8 +520,41 @@ namespace Uge
         return true;
     }
 
-    void JoltScene::OverlapSphere(const glm::vec3& center, float radius, PhysicsLayerMask mask, std::vector<PhysicsBodyID>& outBodies) const
+    void JoltScene::OverlapSphere(const glm::vec3& center, float radius, PhysicsLayerMask mask, 
+        std::vector<PhysicsBodyID>& outBodies) const
     {
+
+        outBodies.clear();
+
+        if (radius <= 0.0f)
+        {
+            return;
+        }
+
+        JPH::SphereShape shape(radius);
+        shape.SetEmbedded();
+
+
+        JPH::CollideShapeSettings settings;
+        const JoltLayers::MaskObjectLayerFilter layerFilters(mask);
+        JPH::AllHitCollisionCollector<JPH::CollideShapeCollector> collector;
+
+        m_physicsSystem.GetNarrowPhaseQuery().CollideShape(&shape, JPH::Vec3::sOne(), JPH::Mat44::sTranslation(ToJolt(center)), 
+                                                            settings, JPH::Vec3::sZero(), collector, {});
+
+        outBodies.reserve(collector.mHits.size());
+
+        for (const auto& hit : collector.mHits)
+        {
+            const PhysicsBodyID id = FromJoltBodyID(hit.mBodyID2);
+            if (std::find(outBodies.begin(), outBodies.end(), id) == outBodies.end())
+            {
+                outBodies.push_back(FromJoltBodyID(hit.mBodyID2));
+
+            }
+
+        }
+
     }
 
     void JoltScene::ConsumeContactEvents(std::vector<ContactEvent>& out)
@@ -489,27 +566,45 @@ namespace Uge
 
     void JoltScene::SetGravity(const glm::vec3& gravity)
     {
+
+        m_physicsSystem.SetGravity(ToJolt(gravity));
+
     }
 
     glm::vec3 JoltScene::GetGravity() const
     {
-        return glm::vec3();
+        
+        return FromJolt(m_physicsSystem.GetGravity());
+
     }
 
     void JoltScene::DebugDraw(PhysicsDebugRenderer& renderer)
     {
 #ifdef JPH_DEBUG_RENDERER 
 
+        JoltDebugRenderer* joltRenderer = GetJoltData().DebugRenderer.get();
+        if (!joltRenderer)
+        {
+            return;
+        }
+
         JPH::BodyManager::DrawSettings settings;
+        settings.mDrawShapeWireframe = true;
 
-        m_physicsSystem.DrawBodies(settings, m_debugRenderer.get());
+        joltRenderer->SetSink(&renderer);
+        m_physicsSystem.DrawBodies(settings, joltRenderer);
+        joltRenderer->SetSink(nullptr);
 
-
+#else
+        (void)renderer;
 #endif
     }
 
     void JoltScene::OptimizeBroadPhase()
     {
+
+        m_physicsSystem.OptimizeBroadPhase();
+
     }
 
 }

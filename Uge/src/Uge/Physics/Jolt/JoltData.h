@@ -5,6 +5,8 @@
 #include <Jolt/Jolt.h>
 #include <Jolt/Core/TempAllocator.h>
 #include <Jolt/Core/JobSystemThreadPool.h>
+#include "Uge/Physics/Jolt/JoltPhysicsDebugRenderer.h"
+
 
 namespace Uge
 {
@@ -22,6 +24,10 @@ namespace Uge
         Scope<JPH::TempAllocatorImpl> TempAllocator;
         /// Worker pool Jolt runs its simulation jobs on.
         Scope<JPH::JobSystemThreadPool> JobThreadPool;
+#ifdef JPH_DEBUG_RENDERER
+        /// Sole JPH::DebugRenderer for the process; JPH::DebugRenderer::sInstance is a singleton.
+        Scope<JoltDebugRenderer> DebugRenderer;
+#endif
     };
 
 

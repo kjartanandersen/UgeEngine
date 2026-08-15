@@ -96,7 +96,9 @@ namespace Uge
 		// of your own job scheduler. JobSystemThreadPool is an example implementation.
 		s_joltData->JobThreadPool = CreateScope<JPH::JobSystemThreadPool>(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, std::max(1u, std::thread::hardware_concurrency() - 1));
 
-
+#ifdef JPH_DEBUG_RENDERER
+		s_joltData->DebugRenderer = CreateScope<JoltDebugRenderer>();
+#endif
 
 	}
 
@@ -104,6 +106,10 @@ namespace Uge
 	{
 		if (!s_joltData)
 			return;
+
+#ifdef JPH_DEBUG_RENDERER
+		s_joltData->DebugRenderer.reset();
+#endif
 
 		s_joltData->JobThreadPool.reset();
 		s_joltData->TempAllocator.reset();

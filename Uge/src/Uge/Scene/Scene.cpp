@@ -245,6 +245,21 @@ namespace Uge
 	{
 		m_isRunning = true;
 
+		// Physics — must exist before scripts are instantiated.
+		{
+			PhysicsSceneDesc desc;
+			m_physicsScene = Physics::CreateScene(desc);
+
+			auto view = m_registry.view<TransformComponent, RigidbodyComponent>();
+			for (auto e : view)
+			{
+				Entity entity = { e, this };
+				CreatePhysicsBody(entity);   // new private helper, see below
+			}
+
+			m_physicsScene->OptimizeBroadPhase();
+		}
+
 		// Scripting
 		{
 			ScriptEngine::OnRuntimeStart(this);
@@ -390,6 +405,13 @@ namespace Uge
 
 			}
 		}
+
+	}
+
+	void Scene::CreatePhysicsBody(Entity entity)
+	{
+
+
 
 	}
 
@@ -600,6 +622,18 @@ namespace Uge
 			transform.Rotation = glm::vec3(glm::radians(-50.0f), glm::radians(-30.0f), 0.0f);
 		}
 	}
+
+	template<>
+	void Scene::OnComponentAdded<RigidbodyComponent>(Entity entity, RigidbodyComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<BoxColliderComponent>(Entity entity, BoxColliderComponent& component)
+	{
+	}
+
+
 
 
 

@@ -5,7 +5,7 @@
 namespace Uge
 {
 	class PhysicsScene;
-	class PhysicsSceneDesc;
+	struct PhysicsSceneDesc;
 
 	/**
      * @brief Static facade over the active Uge::PhysicsAPI.

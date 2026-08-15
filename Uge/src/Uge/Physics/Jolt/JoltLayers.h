@@ -5,7 +5,6 @@
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
-#include <Jolt/Renderer/DebugRendererSimple.h>
 
 namespace Uge::JoltLayers
 {

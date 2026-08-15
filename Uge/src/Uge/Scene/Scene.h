@@ -12,7 +12,7 @@
 #include "Uge/Asset/Asset.h"
 #include "Uge/Core/UUID.h"
 #include "Uge/Core/Timestep.h"
-
+#include "Uge/Physics/PhysicsScene.h"
 namespace Uge
 {
 	class Entity;
@@ -151,6 +151,13 @@ namespace Uge
 		 * @return `true` between OnRuntimeStart() and OnRuntimeStop().
 		 */
 		bool IsRunning() const { return m_isRunning; }
+
+		/**
+			@brief  Returns physics scene and is nullptr outside play mode
+			@retval  - 
+		**/
+		PhysicsScene* GetPhysicsScene() { return m_physicsScene.get(); }
+
 		/**
 		 * @brief Whether runtime updates are suspended.
 		 * @return `true` if paused.
@@ -229,6 +236,8 @@ namespace Uge
 
 		void OnRenderUpdateRuntime(Timestep ts);
 
+		void CreatePhysicsBody(Entity entity);
+
 
 
 	private:
@@ -242,6 +251,10 @@ namespace Uge
 		bool m_isPaused = false;
 
 		int m_stepFrames = 0;
+
+		Scope<PhysicsScene> m_physicsScene;
+		float m_physicsAccumulator = 0.0f;
+		std::vector<ContactEvent> m_contactEvents;
 
 
 		friend class Entity;

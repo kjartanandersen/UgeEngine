@@ -25,6 +25,7 @@
 #include "Uge/Renderer/Texture.h"
 #include "Uge/Project/Project.h"
 #include "Uge/Renderer/Font.h"
+#include "Uge/Physics/PhysicsTypes.h"
 
 #include <string>
 #include <unordered_map>
@@ -333,6 +334,58 @@ namespace Uge
 		SkyLightComponent(const SkyLightComponent&) = default;
 	};
 
+/**
+ * @brief Makes the entity a simulated rigid body.
+ * @ingroup group_scene
+ *
+ * Needs at least one collider component on the same entity to have any shape. Only
+ * takes effect in play mode; the editor scene is never simulated.
+ */
+	struct RigidbodyComponent
+	{
+		BodyType Type = BodyType::Dynamic;          ///< How the simulation moves the body.
+		PhysicsLayer Layer = PhysicsLayer::Moving;  ///< Collision category.
+		float Mass = 1.0f;                          ///< Mass in kg; `0` derives it from the colliders.
+		float LinearDamping = 0.05f;                ///< Velocity bleed-off per second.
+		float AngularDamping = 0.05f;               ///< Angular velocity bleed-off per second.
+		float GravityFactor = 1.0f;                 ///< Multiplier on scene gravity.
+		bool FixedRotation = false;                 ///< Locks rotation entirely.
+
+		PhysicsBodyID RuntimeBody;                  ///< Live body while playing. Not serialized.
+
+		/** @brief Constructs a default dynamic body. */
+		RigidbodyComponent() = default;
+
+		/**
+		 * @brief Copies the authored settings but **not** the live body handle.
+		 * @param other Component to copy.
+		 *
+		 * Uge::Scene::Copy is how play mode starts. A defaulted copy constructor would hand
+		 * the play-mode scene handles into a world it does not own, and the first
+		 * SetLinearVelocity would write through a dangling body index.
+		 */
+		RigidbodyComponent(const RigidbodyComponent& other)
+			: Type(other.Type), Layer(other.Layer), Mass(other.Mass),
+			LinearDamping(other.LinearDamping), AngularDamping(other.AngularDamping),
+			GravityFactor(other.GravityFactor), FixedRotation(other.FixedRotation)
+		{
+			// RuntimeBody deliberately left invalid.
+		}
+	};
+
+	/** @brief An axis-aligned box collider. @ingroup group_scene */
+	struct BoxColliderComponent
+	{
+		glm::vec3 Offset = { 0.0f, 0.0f, 0.0f };      ///< Local offset from the entity origin.
+		glm::vec3 HalfExtents = { 0.5f, 0.5f, 0.5f }; ///< Half-size on each local axis.
+		PhysicsMaterial Material;                     ///< Friction, restitution and density.
+		bool IsTrigger = false;                       ///< Reports overlaps without colliding.
+	};
+
+	// SphereColliderComponent  { Offset, float Radius = 0.5f,                Material, IsTrigger }
+	// CapsuleColliderComponent { Offset, float Radius, float HalfHeight,     Material, IsTrigger }
+	// MeshColliderComponent    { AssetHandle Mesh = 0, bool Convex = true,   Material, IsTrigger }
+
 	/**
 	 * @brief A compile-time list of component types.
 	 * @tparam Component The types in the list.
@@ -361,7 +414,7 @@ namespace Uge
 		ComponentGroup<TransformComponent, SpriteRendererComponent,
 		 CameraComponent, ScriptComponent, MeshComponent,
 		NativeScriptComponent, TextComponent, SkyLightComponent,
-		DirectionalLightComponent>;
+		DirectionalLightComponent, RigidbodyComponent, BoxColliderComponent>;
 
 
 }

@@ -2,7 +2,6 @@
 
 #include "Uge/Physics/PhysicsScene.h"
 #include "JoltLayers.h"
-#include "JoltPhysicsDebugRenderer.h"
 
 
 #include <Jolt/Jolt.h>
@@ -34,11 +33,27 @@ namespace Uge
         return JPH::BodyID(id.Value);
     }
 
+    /**
+     * @brief Jolt implementation of the physics world
+     * @ingroup group_physics
+     *
+     * 
+     *
+     */
 	class JoltScene : public PhysicsScene
 	{
 
     public:
+
+        /**
+            @brief JoltScene object constructor
+            @param desc - PhysicsSceneDesc
+        **/
         JoltScene(const PhysicsSceneDesc& desc);
+
+        /**
+            @brief JoltScene object destructor
+        **/
         ~JoltScene() override;
         /**
          * @brief Advances the simulation by a fixed interval.
@@ -181,14 +196,15 @@ namespace Uge
         // Declared before m_physicsSystem so they are destroyed after it:
         // JPH::PhysicsSystem holds references to all three for its whole lifetime.
 
-        JoltLayers::BroadPhaseLayerInterfaceImpl      m_broadPhaseLayerInterface;
+        uint32_t m_maxBodies = 0;  ///< Maximum amount of bodies for this scene
+
+        JoltLayers::BroadPhaseLayerInterfaceImpl      m_broadPhaseLayerInterface;  ///< 
         JoltLayers::ObjectVsBroadPhaseLayerFilterImpl m_objectVsBroadPhaseFilter;
         JoltLayers::ObjectLayerPairFilterImpl         m_objectLayerPairFilter;
 
         JPH::PhysicsSystem m_physicsSystem;
 
         Scope<class JoltContactListener> m_contactListener;
-        Scope<DebugRendererImpl> m_debugRenderer;
 
 
 	};

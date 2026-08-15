@@ -4,6 +4,7 @@
 
 #include "Uge/Core/Log.h"
 #include "Uge/Renderer/Renderer.h"
+#include "Uge/Physics/Physics.h"
 #include "Uge/Scripting/ScriptEngine.h"
 
 #include "Uge/Core/Input.h"
@@ -38,6 +39,7 @@ namespace Uge
 		m_window->SetVSync(true);
 
 		Renderer::Init();
+		Physics::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
@@ -52,6 +54,7 @@ namespace Uge
 
 		ScriptEngine::Shutdown();
 		Renderer::Shutdown();
+		Physics::Shutdown();
 
 	}
 
