@@ -343,13 +343,13 @@ namespace Uge
  */
 	struct RigidbodyComponent
 	{
-		BodyType Type = BodyType::Dynamic;          ///< How the simulation moves the body.
-		PhysicsLayer Layer = PhysicsLayer::Moving;  ///< Collision category.
-		float Mass = 1.0f;                          ///< Mass in kg; `0` derives it from the colliders.
-		float LinearDamping = 0.05f;                ///< Velocity bleed-off per second.
-		float AngularDamping = 0.05f;               ///< Angular velocity bleed-off per second.
-		float GravityFactor = 1.0f;                 ///< Multiplier on scene gravity.
-		bool FixedRotation = false;                 ///< Locks rotation entirely.
+		BodyType Type			= BodyType::Dynamic;    ///< How the simulation moves the body.
+		PhysicsLayer Layer		= PhysicsLayer::Moving; ///< Collision category.
+		float Mass				= 1.0f;					///< Mass in kg; `0` derives it from the colliders.
+		float LinearDamping		= 0.05f;                ///< Velocity bleed-off per second.
+		float AngularDamping	= 0.05f;				///< Angular velocity bleed-off per second.
+		float GravityFactor		= 1.0f;					///< Multiplier on scene gravity.
+		bool FixedRotation		= false;				///< Locks rotation entirely.
 
 		PhysicsBodyID RuntimeBody;                  ///< Live body while playing. Not serialized.
 
@@ -382,9 +382,33 @@ namespace Uge
 		bool IsTrigger = false;                       ///< Reports overlaps without colliding.
 	};
 
-	// SphereColliderComponent  { Offset, float Radius = 0.5f,                Material, IsTrigger }
-	// CapsuleColliderComponent { Offset, float Radius, float HalfHeight,     Material, IsTrigger }
-	// MeshColliderComponent    { AssetHandle Mesh = 0, bool Convex = true,   Material, IsTrigger }
+	/** @brief A sphere collider. @ingroup group_scene */
+	struct SphereColliderComponent
+	{
+		glm::vec3 Offset = { 0.0f, 0.0f, 0.0f };		///< Local offset from the entity origin.
+		float Radius = 0.5f;							///< 
+		PhysicsMaterial Material;						///< 
+		bool IsTrigger = false;							///< 
+	};
+	
+	/** @brief A capsule collider. @ingroup group_scene */
+	struct CapsuleColliderComponent
+	{
+		glm::vec3 Offset = { 0.0f, 0.0f, 0.0f };		///< Local offset from the entity origin.
+		float Radius;									///< 
+		float HalfHeight;								///< 
+		PhysicsMaterial Material;						///< 
+		bool IsTrigger = false;							///< 
+	};
+
+	/** @brief A mesh collider. @ingroup group_scene */
+	struct MeshColliderComponent
+	{
+		AssetHandle Mesh = 0;							///< 
+		bool Convex = true;								///< 
+		PhysicsMaterial Material;						///< 
+		bool IsTrigger = false;							///< 
+	};
 
 	/**
 	 * @brief A compile-time list of component types.
@@ -414,7 +438,9 @@ namespace Uge
 		ComponentGroup<TransformComponent, SpriteRendererComponent,
 		 CameraComponent, ScriptComponent, MeshComponent,
 		NativeScriptComponent, TextComponent, SkyLightComponent,
-		DirectionalLightComponent, RigidbodyComponent, BoxColliderComponent>;
+		DirectionalLightComponent, RigidbodyComponent, 
+		BoxColliderComponent, SphereColliderComponent, CapsuleColliderComponent, 
+		MeshColliderComponent>;
 
 
 }

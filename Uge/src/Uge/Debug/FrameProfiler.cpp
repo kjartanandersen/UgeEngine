@@ -8,17 +8,35 @@ namespace Uge
 
 	namespace
 	{
-		std::mutex s_mutex;
-
 		// Keyed by the scope label. `UG_PROFILE_SCOPE` always passes a literal, so the
 		// pointer would be stable, but hashing the text keeps identical labels from
 		// different translation units on one row — which is what a reader expects.
-		std::unordered_map<std::string, ProfileEntry> s_accumulating;
-		std::vector<ProfileEntry> s_lastFrame;
+		struct ProfilerState
+		{
+			std::mutex Mutex;
+			std::unordered_map<std::string, ProfileEntry> Accumulating;
+			std::vector<ProfileEntry> LastFrame;
 
-		std::vector<float> s_frameTimes;
-		size_t s_frameTimeHead = 0;
-		float s_lastFrameMs = 0.0f;
+			std::vector<float> FrameTimes;
+			size_t FrameTimeHead = 0;
+			float LastFrameMs = 0.0f;
+		};
+
+		/**
+		* @brief Returns the process-wide profiler state.
+		*
+		* Deliberately leaked. Scope timers still fire from destructors that run after
+		* `main` returns — a static `Ref<Font>` in the editor keeps an `OpenGLTexture2D`
+		* alive, and `~OpenGLTexture2D` is profiled. A namespace-scope object would
+		* already have been destroyed by then, so Submit() would touch freed memory.
+		*/
+		ProfilerState& State()
+		{
+
+			static ProfilerState* state = new ProfilerState();
+			return *state;
+
+		}
 
 		/**
 		 * @brief Reduces a `__FUNCSIG__` to a readable qualified name.
@@ -52,37 +70,52 @@ namespace Uge
 
 	void FrameProfiler::BeginFrame(float frameMs)
 	{
-		std::lock_guard<std::mutex> lock(s_mutex);
+		ProfilerState& state = State();
+		std::lock_guard<std::mutex> lock(state.Mutex);
 
-		s_lastFrame.clear();
-		s_lastFrame.reserve(s_accumulating.size());
-		for (auto& [name, entry] : s_accumulating)
+		state.LastFrame.clear();
+		state.LastFrame.reserve(state.Accumulating.size());
+		for (auto& [name, entry] : state.Accumulating)
 		{
-			s_lastFrame.push_back(entry);
+			state.LastFrame.push_back(entry);
 		}
-		s_accumulating.clear();
+		state.Accumulating.clear();
 
-		std::sort(s_lastFrame.begin(), s_lastFrame.end(),
+		std::sort(state.LastFrame.begin(), state.LastFrame.end(),
 			[](const ProfileEntry& lhs, const ProfileEntry& rhs) { return lhs.TotalMs > rhs.TotalMs; });
 
-		s_lastFrameMs = frameMs;
+		state.LastFrameMs = frameMs;
 
-		if (s_frameTimes.size() < s_historySize)
+		if (state.FrameTimes.size() < s_historySize)
 		{
-			s_frameTimes.push_back(frameMs);
+			state.FrameTimes.push_back(frameMs);
 		}
 		else
 		{
-			s_frameTimes[s_frameTimeHead] = frameMs;
-			s_frameTimeHead = (s_frameTimeHead + 1) % s_historySize;
+			state.FrameTimes[state.FrameTimeHead] = frameMs;
+			state.FrameTimeHead = (state.FrameTimeHead + 1) % s_historySize;
 		}
 	}
 
 	void FrameProfiler::Submit(const char* name, float milliseconds)
 	{
-		std::lock_guard<std::mutex> lock(s_mutex);
+		if (!name)
+		{
+			return;
+		}
 
-		ProfileEntry& entry = s_accumulating[name];
+#ifdef UG_DEBUG
+		if (strcmp(name, "__cdecl Uge::OpenGLTexture2D::~OpenGLTexture2D(void)") == 0)
+		{
+			int a = 0;
+		}
+
+#endif
+		ProfilerState& state = State();
+
+		std::lock_guard<std::mutex> lock(state.Mutex);
+
+		ProfileEntry& entry = state.Accumulating[name];
 		if (entry.Calls == 0)
 		{
 			// Only on the frame's first call for this scope, so the string work does not
@@ -95,20 +128,24 @@ namespace Uge
 
 	std::vector<ProfileEntry> FrameProfiler::GetLastFrame()
 	{
-		std::lock_guard<std::mutex> lock(s_mutex);
-		return s_lastFrame;
+		ProfilerState& state = State();
+
+		std::lock_guard<std::mutex> lock(state.Mutex);
+		return state.LastFrame;
 	}
 
 	std::vector<float> FrameProfiler::GetFrameTimeHistory()
 	{
-		std::lock_guard<std::mutex> lock(s_mutex);
+		ProfilerState& state = State();
+
+		std::lock_guard<std::mutex> lock(state.Mutex);
 
 		// Unroll the ring so the caller always gets oldest-first, ready to plot.
 		std::vector<float> history;
-		history.reserve(s_frameTimes.size());
-		for (size_t i = 0; i < s_frameTimes.size(); i++)
+		history.reserve(state.FrameTimes.size());
+		for (size_t i = 0; i < state.FrameTimes.size(); i++)
 		{
-			history.push_back(s_frameTimes[(s_frameTimeHead + i) % s_frameTimes.size()]);
+			history.push_back(state.FrameTimes[(state.FrameTimeHead + i) % state.FrameTimes.size()]);
 		}
 
 		return history;
@@ -116,37 +153,43 @@ namespace Uge
 
 	float FrameProfiler::GetAverageFrameMs()
 	{
-		std::lock_guard<std::mutex> lock(s_mutex);
+		ProfilerState& state = State();
 
-		if (s_frameTimes.empty())
+		std::lock_guard<std::mutex> lock(state.Mutex);
+
+		if (state.FrameTimes.empty())
 		{
 			return 0.0f;
 		}
 
 		float total = 0.0f;
-		for (float ms : s_frameTimes)
+		for (float ms : state.FrameTimes)
 		{
 			total += ms;
 		}
 
-		return total / static_cast<float>(s_frameTimes.size());
+		return total / static_cast<float>(state.FrameTimes.size());
 	}
 
 	float FrameProfiler::GetLastFrameMs()
 	{
-		std::lock_guard<std::mutex> lock(s_mutex);
-		return s_lastFrameMs;
+		ProfilerState& state = State();
+
+		std::lock_guard<std::mutex> lock(state.Mutex);
+		return state.LastFrameMs;
 	}
 
 	void FrameProfiler::Reset()
 	{
-		std::lock_guard<std::mutex> lock(s_mutex);
+		ProfilerState& state = State();
 
-		s_accumulating.clear();
-		s_lastFrame.clear();
-		s_frameTimes.clear();
-		s_frameTimeHead = 0;
-		s_lastFrameMs = 0.0f;
+		std::lock_guard<std::mutex> lock(state.Mutex);
+
+		state.Accumulating.clear();
+		state.LastFrame.clear();
+		state.FrameTimes.clear();
+		state.FrameTimeHead = 0;
+		state.LastFrameMs = 0.0f;
 	}
 
 }

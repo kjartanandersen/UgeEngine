@@ -1,22 +1,18 @@
 #include <ugpch.h>
 #include "Scene.h"
 
+#include "Entity.h"
 #include "Uge/Scene/Components.h"
 #include "Uge/Scene/ScriptableEntity.h"
-
 #include "Uge/Renderer/Renderer2D.h"
-
 #include "Uge/Scripting/ScriptEngine.h"
-
 #include "Uge/Asset/AssetManager.h"
-
 #include "Uge/Renderer/ColorSpace.h"
+#include "Uge/Physics/Physics.h"
 
 #include <glm/gtc/quaternion.hpp>
-
 #include <type_traits>
 
-#include "Entity.h"
 
 namespace Uge
 {
@@ -280,6 +276,9 @@ namespace Uge
 		m_isRunning = false;
 		ScriptEngine::OnRuntimeStop();
 
+		m_physicsScene.reset();
+		m_physicsAccumulator = 0.0f;
+
 	}
 
 	void Scene::OnUpdateRuntime(Timestep ts)
@@ -287,6 +286,71 @@ namespace Uge
 
 		if (!m_isPaused || m_stepFrames-- > 0)
 		{
+
+			// Physics
+			{
+				UG_PROFILE_SCOPE("Scene Physics");
+
+				constexpr float fixedTimeStep = 1.0f / 60.0f;
+				constexpr int   maxSubSteps = 4;
+
+				// Kinematic bodies are driven by their transform, not by the simulation.
+				{
+					auto view = m_registry.view<TransformComponent, RigidbodyComponent>();
+					for (auto [e, transform, rb] : view.each())
+					{
+						if (rb.Type == BodyType::Kinematic && rb.RuntimeBody.IsValid())
+						{
+							m_physicsScene->SetTransform(rb.RuntimeBody, transform.Translation,
+								glm::quat(transform.Rotation));
+
+						}
+					}
+				}
+
+				m_physicsAccumulator += ts.GetSeconds();
+
+				int steps = 0;
+				while (m_physicsAccumulator >= fixedTimeStep && steps < maxSubSteps)
+				{
+					m_physicsScene->Step(fixedTimeStep);
+					m_physicsAccumulator -= fixedTimeStep;
+					++steps;
+				}
+
+				// A hitch (breakpoint, asset load) must not leave a backlog that
+				// then runs at maxSubSteps forever and never catches up.
+				if (steps == maxSubSteps)
+				{
+					m_physicsAccumulator = 0.0f;
+
+				}
+
+				// Write simulated transforms back.
+				{
+					auto view = m_registry.view<TransformComponent, RigidbodyComponent>();
+					for (auto [e, transform, rb] : view.each())
+					{
+						if (rb.Type == BodyType::Static || !rb.RuntimeBody.IsValid())
+						{
+							continue;
+
+						}
+
+						glm::vec3 position;
+						glm::quat rotation;
+						m_physicsScene->GetTransform(rb.RuntimeBody, position, rotation);
+
+						transform.Translation = position;
+						transform.Rotation = glm::eulerAngles(rotation);
+					}
+				}
+
+				m_physicsScene->ConsumeContactEvents(m_contactEvents);
+				// TODO: dispatch m_contactEvents to scripts once Phase 4 lands.
+			}
+
+
 			// Update Scripts
 
 			// C# Entity OnUpdate
@@ -410,8 +474,103 @@ namespace Uge
 
 	void Scene::CreatePhysicsBody(Entity entity)
 	{
+		if (!entity.HasComponent<RigidbodyComponent>())
+		{
+			UG_CORE_ASSERT(false, "(Scene::CreatePhysicsBody) - Entity does not have rigid body component!");
+			return;
+		}
+
+		const TransformComponent& tc = entity.GetComponent<TransformComponent>();
+		RigidbodyComponent& rc = entity.GetComponent<RigidbodyComponent>();
+		BodyDesc bodyDesc;
+
+		std::vector<ColliderDesc> colliderDescs;
+		colliderDescs.reserve(4);
+
+		if (entity.HasComponent<BoxColliderComponent>())
+		{
+			BoxColliderComponent bc = entity.GetComponent<BoxColliderComponent>();
 
 
+			BoxShapeDesc boxShapeDesc;
+			boxShapeDesc.HalfExtents = bc.HalfExtents;
+
+			ColliderDesc colliderDesc;
+			colliderDesc.IsTrigger = bc.IsTrigger;
+			colliderDesc.Material = bc.Material;
+			colliderDesc.Offset = bc.Offset;
+			colliderDesc.Shape = boxShapeDesc;
+
+			colliderDescs.push_back(colliderDesc);
+
+		}
+
+		if (entity.HasComponent<SphereColliderComponent>())
+		{
+			SphereColliderComponent sc = entity.GetComponent<SphereColliderComponent>();
+
+			SphereShapeDesc sphereShapeDesc;
+			sphereShapeDesc.Radius = sc.Radius;
+
+			ColliderDesc colliderDesc;
+			colliderDesc.IsTrigger = sc.IsTrigger;
+			colliderDesc.Material = sc.Material;
+			colliderDesc.Offset = sc.Offset;
+			colliderDesc.Shape = sphereShapeDesc;
+
+			colliderDescs.push_back(colliderDesc);
+
+		}
+
+		if (entity.HasComponent<CapsuleColliderComponent>())
+		{
+			CapsuleColliderComponent cc = entity.GetComponent<CapsuleColliderComponent>();
+
+			CapsuleShapeDesc capsuleShapeDesc;
+			capsuleShapeDesc.HalfHeight = cc.HalfHeight;
+			capsuleShapeDesc.Radius = cc.Radius;
+
+			ColliderDesc colliderDesc;
+			colliderDesc.IsTrigger = cc.IsTrigger;
+			colliderDesc.Material = cc.Material;
+			colliderDesc.Offset = cc.Offset;
+			colliderDesc.Shape = capsuleShapeDesc;
+
+			colliderDescs.push_back(colliderDesc);
+
+		}
+
+		if (entity.HasComponent<MeshColliderComponent>())
+		{
+			MeshColliderComponent mc = entity.GetComponent<MeshColliderComponent>();
+
+			MeshShapeDesc meshShapeDesc;
+			meshShapeDesc.Convex = mc.Convex;
+			meshShapeDesc.Mesh = mc.Mesh;
+
+			ColliderDesc colliderDesc;
+			colliderDesc.IsTrigger = mc.IsTrigger;
+			colliderDesc.Material = mc.Material;
+			colliderDesc.Shape = meshShapeDesc;
+
+			colliderDescs.push_back(colliderDesc);
+
+		}
+
+		bodyDesc.AngularDamping = rc.AngularDamping;
+		bodyDesc.Colliders		= colliderDescs;
+		bodyDesc.FixedRotation	= rc.FixedRotation;
+		bodyDesc.GravityFactor	= rc.GravityFactor;
+		bodyDesc.Layer			= rc.Layer;
+		bodyDesc.LinearDamping	= rc.LinearDamping;
+		bodyDesc.Mass			= rc.Mass;
+		bodyDesc.Position		= tc.Translation;
+		bodyDesc.Rotation		= tc.Rotation;
+		bodyDesc.Scale			= tc.Scale;
+		bodyDesc.Type			= rc.Type;
+		bodyDesc.UserData		= entity.GetUUID();
+
+		rc.RuntimeBody =  m_physicsScene->CreateBody(bodyDesc);
 
 	}
 
@@ -630,6 +789,21 @@ namespace Uge
 
 	template<>
 	void Scene::OnComponentAdded<BoxColliderComponent>(Entity entity, BoxColliderComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<SphereColliderComponent>(Entity entity, SphereColliderComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<CapsuleColliderComponent>(Entity entity, CapsuleColliderComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<MeshColliderComponent>(Entity entity, MeshColliderComponent& component)
 	{
 	}
 

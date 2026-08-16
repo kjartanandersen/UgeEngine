@@ -190,8 +190,8 @@ namespace Uge
          */
         static Instrumentor& Get()
         {
-            static Instrumentor instance;
-            return instance;
+            static Instrumentor* instance = new Instrumentor();
+            return *instance;
         }
     };
 

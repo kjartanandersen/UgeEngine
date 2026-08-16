@@ -365,6 +365,11 @@ namespace Uge
 			DisplayAddComponentEntry<TextComponent>("Text Component");
 			DisplayAddComponentEntry<SkyLightComponent>("Sky Light");
 			DisplayAddComponentEntry<DirectionalLightComponent>("Directional Light");
+			DisplayAddComponentEntry<RigidbodyComponent>("Rigidbody");
+			DisplayAddComponentEntry<BoxColliderComponent>("Box Collider");
+			DisplayAddComponentEntry<SphereColliderComponent>("Sphere Collider");
+			DisplayAddComponentEntry<CapsuleColliderComponent>("Capsule Collider");
+			DisplayAddComponentEntry<MeshColliderComponent>("Mesh Collider");
 
 
 			ImGui::EndPopup();
@@ -855,6 +860,192 @@ namespace Uge
 				});
 
 #pragma endregion
+
+#pragma region RigidBodyComponent
+
+			DrawComponent<RigidbodyComponent>("Rigidbody", entity, true, [](auto& component)
+			{
+				const char* bodyTypeStrings[] = { "Static", "Kinematic", "Dynamic" };
+				const char* current = bodyTypeStrings[(int)component.Type];
+
+				if (ImGui::BeginCombo("Body Type", current))
+				{
+					for (int i = 0; i < 3; i++)
+					{
+						bool selected = current == bodyTypeStrings[i];
+						if (ImGui::Selectable(bodyTypeStrings[i], selected))
+							component.Type = (BodyType)i;
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+
+				ImGui::DragFloat("Mass", &component.Mass, 0.1f, 0.0f, 10000.0f);
+				ImGui::DragFloat("Linear Damping", &component.LinearDamping, 0.01f, 0.0f, 1.0f);
+				ImGui::DragFloat("Angular Damping", &component.AngularDamping, 0.01f, 0.0f, 1.0f);
+				ImGui::DragFloat("Gravity Factor", &component.GravityFactor, 0.05f, -2.0f, 2.0f);
+				ImGui::Checkbox("Fixed Rotation", &component.FixedRotation);
+			});
+#pragma endregion
+
+#pragma region BoxColliderComponent
+
+			DrawComponent<BoxColliderComponent>("Box Collider", entity, true, [](auto& component)
+			{
+
+				if (DrawVec3Control("Offset", component.Offset))
+				{
+
+				}
+
+				if (DrawVec3Control("HalfExtents", component.HalfExtents))
+				{
+
+				}
+
+				if (ImGui::CollapsingHeader("Physics Material"))
+				{
+					ImGui::DragFloat("Friction", &component.Material.Friction);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution);
+					ImGui::DragFloat("Density", &component.Material.Density);
+				}
+
+				ImGui::Checkbox("Is Trigger", &component.IsTrigger);
+
+
+			});
+#pragma endregion
+
+#pragma region SphereColliderComponent
+
+			DrawComponent<SphereColliderComponent>("Sphere Collider", entity, true, [](auto& component)
+			{
+
+				if (DrawVec3Control("Offset", component.Offset))
+				{
+
+				}
+
+				ImGui::DragFloat("Radius", &component.Radius);
+
+				if (ImGui::CollapsingHeader("Physics Material"))
+				{
+					ImGui::DragFloat("Friction", &component.Material.Friction);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution);
+					ImGui::DragFloat("Density", &component.Material.Density);
+				}
+
+				ImGui::Checkbox("Is Trigger", &component.IsTrigger);
+
+			});
+
+#pragma endregion
+
+#pragma region SphereColliderComponent
+
+			DrawComponent<CapsuleColliderComponent>("Capsule Collider", entity, true, [](auto& component)
+			{
+
+				if (DrawVec3Control("Offset", component.Offset))
+				{
+
+				}
+
+				ImGui::DragFloat("Radius", &component.Radius);
+				ImGui::DragFloat("Half Height", &component.HalfHeight);
+
+				if (ImGui::CollapsingHeader("Physics Material"))
+				{
+					ImGui::DragFloat("Friction", &component.Material.Friction);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution);
+					ImGui::DragFloat("Density", &component.Material.Density);
+				}
+
+				ImGui::Checkbox("Is Trigger", &component.IsTrigger);
+
+			});
+
+#pragma endregion
+
+#pragma region MeshColliderComponent
+
+			DrawComponent<MeshColliderComponent>("Mesh Collider", entity, true, [](auto& component)
+			{
+
+				std::string label = "None";
+				bool isMeshValid = false;
+				if (component.Mesh != 0)
+				{
+					if (AssetManager::IsAssetHandleValid(component.Mesh)
+						&& AssetManager::GetAssetType(component.Mesh) == AssetType::Mesh)
+					{
+						const auto& metadata =
+							Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Mesh);
+						label = metadata.FilePath.filename().string();
+						isMeshValid = true;
+					}
+					else
+					{
+						label = "Invalid";
+					}
+				}
+
+				ImVec2 btnLabelSize = ImGui::CalcTextSize(label.c_str());
+				btnLabelSize.x += 20.0f;
+
+				ImGui::Button(label.c_str(), btnLabelSize);
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+					{
+						AssetHandle handle = *(AssetHandle*)payload->Data;
+
+						if (AssetManager::GetAssetType(handle) == AssetType::Mesh)
+						{
+							component.Mesh = handle;
+						}
+						else
+						{
+							UG_CORE_WARN("Wrong Asset Type!");
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+
+				if (isMeshValid)
+				{
+					ImGui::SameLine();
+
+					ImVec2 xLabelSize = ImGui::CalcTextSize("X");
+					float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+					if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
+					{
+						component.Mesh = 0;
+					}
+				}
+
+				ImGui::SameLine();
+				ImGui::Text("Mesh Collider");
+
+				ImGui::Checkbox("Is Convex", &component.Convex);
+
+
+				if (ImGui::CollapsingHeader("Physics Material"))
+				{
+					ImGui::DragFloat("Friction", &component.Material.Friction);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution);
+					ImGui::DragFloat("Density", &component.Material.Density);
+				}
+
+				ImGui::Checkbox("Is Trigger", &component.IsTrigger);
+
+				
+
+			});
+
+#pragma endregion
+
 	}
 
 	template<typename T>

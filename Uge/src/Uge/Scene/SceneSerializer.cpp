@@ -322,6 +322,132 @@ namespace Uge
 			out << YAML::EndMap; // DirectionalLightComponent
 		}
 
+		if (entity.HasComponent<RigidbodyComponent>())
+		{
+			out << YAML::Key << "RigidbodyComponent";
+			out << YAML::BeginMap; // RigidbodyComponent
+
+			auto& rb = entity.GetComponent<RigidbodyComponent>();
+			out << YAML::Key << "BodyType" << YAML::Value << (int)rb.Type;
+			out << YAML::Key << "Layer" << YAML::Value << (int)rb.Layer;
+			out << YAML::Key << "Mass" << YAML::Value << rb.Mass;
+			out << YAML::Key << "LinearDamping" << YAML::Value << rb.LinearDamping;
+			out << YAML::Key << "AngularDamping" << YAML::Value << rb.AngularDamping;
+			out << YAML::Key << "GravityFactor" << YAML::Value << rb.GravityFactor;
+			out << YAML::Key << "FixedRotation" << YAML::Value << rb.FixedRotation;
+
+			out << YAML::EndMap; // RigidbodyComponent
+		}
+
+		if (entity.HasComponent<BoxColliderComponent>())
+		{
+
+			out << YAML::Key << "BoxColliderComponent";
+			out << YAML::BeginMap; // BoxColliderComponent
+
+			auto& bc = entity.GetComponent<BoxColliderComponent>();
+			out << YAML::Key << "HalfExtents" << YAML::Value << bc.HalfExtents;
+			out << YAML::Key << "IsTrigger" << YAML::Value << bc.IsTrigger;
+
+			out << YAML::Key << "Material" << YAML::Value;
+			out << YAML::BeginMap; // Material
+
+				out << YAML::Key << "Density" << YAML::Value << bc.Material.Density;
+				out << YAML::Key << "Friction" << YAML::Value << bc.Material.Friction;
+				out << YAML::Key << "Restitution" << YAML::Value << bc.Material.Restitution;
+
+
+			out << YAML::EndMap; // Material
+
+			out << YAML::Key << "Offset" << YAML::Value << bc.Offset;
+
+
+			out << YAML::EndMap; // RigidbodyComponent
+
+		}
+
+		if (entity.HasComponent<SphereColliderComponent>())
+		{
+
+			out << YAML::Key << "SphereColliderComponent";
+			out << YAML::BeginMap; // SphereColliderComponent
+
+			auto& scc = entity.GetComponent<SphereColliderComponent>();
+			out << YAML::Key << "IsTrigger" << YAML::Value << scc.IsTrigger;
+			
+			out << YAML::Key << "Material" << YAML::Value;
+			out << YAML::BeginMap; // Material
+
+				out << YAML::Key << "Density" << YAML::Value << scc.Material.Density;
+				out << YAML::Key << "Friction" << YAML::Value << scc.Material.Friction;
+				out << YAML::Key << "Restitution" << YAML::Value << scc.Material.Restitution;
+
+
+			out << YAML::EndMap; // Material
+			
+			out << YAML::Key << "Offset" << YAML::Value << scc.Offset;
+			out << YAML::Key << "Radius" << YAML::Value << scc.Radius;
+
+
+			out << YAML::EndMap; // SphereColliderComponent
+
+		}
+
+		if (entity.HasComponent<CapsuleColliderComponent>())
+		{
+
+			out << YAML::Key << "SphereColliderComponent";
+			out << YAML::BeginMap; // CapsuleColliderComponent
+
+			auto& ccc = entity.GetComponent<CapsuleColliderComponent>();
+			out << YAML::Key << "HalfHeight"	<< YAML::Value << (int)ccc.HalfHeight;
+			out << YAML::Key << "IsTrigger"		<< YAML::Value << ccc.IsTrigger;
+
+			out << YAML::Key << "Material" << YAML::Value;
+			out << YAML::BeginMap; // Material
+
+				out << YAML::Key << "Density"		<< YAML::Value << ccc.Material.Density;
+				out << YAML::Key << "Friction"		<< YAML::Value << ccc.Material.Friction;
+				out << YAML::Key << "Restitution"	<< YAML::Value << ccc.Material.Restitution;
+
+
+			out << YAML::EndMap; // Material
+
+			out << YAML::Key << "Offset"		<< YAML::Value << ccc.Offset;
+			out << YAML::Key << "Radius"		<< YAML::Value << ccc.Radius;
+				
+
+			out << YAML::EndMap; // CapsuleColliderComponent
+
+		}
+
+		if (entity.HasComponent<MeshColliderComponent>())
+		{
+
+			out << YAML::Key << "SphereColliderComponent";
+			out << YAML::BeginMap; // MeshColliderComponent
+
+			auto& ccc = entity.GetComponent<MeshColliderComponent>();
+			out << YAML::Key << "Convex"		<< YAML::Value << (int)ccc.Convex;
+			out << YAML::Key << "IsTrigger"		<< YAML::Value << ccc.IsTrigger;
+
+			out << YAML::Key << "Material" << YAML::Value;
+			out << YAML::BeginMap; // Material
+
+				out << YAML::Key << "Density"		<< YAML::Value << ccc.Material.Density;
+				out << YAML::Key << "Friction"		<< YAML::Value << ccc.Material.Friction;
+				out << YAML::Key << "Restitution"	<< YAML::Value << ccc.Material.Restitution;
+
+
+			out << YAML::EndMap; // Material
+
+			out << YAML::Key << "Mesh"		<< YAML::Value << ccc.Mesh;
+
+
+			out << YAML::EndMap; // MeshColliderComponent
+
+		}
+
 		if (entity.HasComponent<TextComponent>())
 		{
 			out << YAML::Key << "TextComponent";
@@ -592,6 +718,108 @@ namespace Uge
 					}
 				}
 
+
+				auto yrb = entity["RigidbodyComponent"];		// Rigid Body Component
+				if (yrb)
+				{
+					UG_CORE_TRACE("Deserializing Rigidbody Component");
+
+					auto& rb = deserializedEntity.AddComponent<RigidbodyComponent>();
+					if (yrb["BodyType"])			rb.Type = (BodyType)yrb["BodyType"].as<int>();
+					if (yrb["Layer"])				rb.Layer = (PhysicsLayer)yrb["Layer"].as<int>();
+					if (yrb["Mass"])				rb.Mass = yrb["Mass"].as<float>();
+					if (yrb["LinearDamping"])		rb.LinearDamping = yrb["LinearDamping"].as<float>();
+					if (yrb["AngularDamping"])		rb.AngularDamping = yrb["AngularDamping"].as<float>();
+					if (yrb["GravityFactor"])		rb.GravityFactor = yrb["GravityFactor"].as<float>();
+					if (yrb["FixedRotation"])		rb.FixedRotation = yrb["FixedRotation"].as<bool>();
+					
+				}
+
+				auto ybcc = entity["BoxColliderComponent"];		// Box Collider Component
+				if (ybcc)
+				{
+					auto& bc = deserializedEntity.AddComponent<BoxColliderComponent>();
+					if (ybcc["HalfExtents"])					bc.HalfExtents = ybcc["HalfExtents"].as<glm::vec3>();
+					if (ybcc["IsTrigger"])						bc.IsTrigger = ybcc["IsTrigger"].as<bool>();
+
+					if (ybcc["Material"])
+					{
+						PhysicsMaterial material;
+						auto& ybccm = ybcc["Material"];
+						if (ybccm["Density"])					material.Density = ybccm["Density"].as<float>();
+						if (ybccm["Friction"])					material.Friction = ybccm["Friction"].as<float>();
+						if (ybccm["Restitution"])				material.Restitution = ybccm["Restitution"].as<float>();
+
+						bc.Material = material;
+					}
+
+
+				}
+
+				auto yscc = entity["SphereColliderComponent"];		// Sphere Collider Component
+				if (yscc)
+				{
+					auto& scc = deserializedEntity.AddComponent<SphereColliderComponent>();
+					if (yscc["IsTrigger"])						scc.IsTrigger = yscc["IsTrigger"].as<bool>();
+					if (yscc["Material"])
+					{
+						PhysicsMaterial material;
+						auto& ysccm = ybcc["Material"];
+						if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
+						if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
+						if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
+
+						scc.Material = material;
+					}
+					if (yscc["Offset"])							scc.Offset = yscc["Offset"].as<glm::vec3>();
+					if (yscc["Radius"])							scc.Radius = yscc["Radius"].as<float>();
+
+
+				}
+
+				auto yccc = entity["CapsuleColliderComponent"];		// Capsule Collider Component
+				if (yccc)
+				{
+
+					auto& ccc = deserializedEntity.AddComponent<CapsuleColliderComponent>();
+					if (yccc["HalfHeight"])						ccc.HalfHeight = yccc["HalfHeight"].as<float>();
+					if (yccc["IsTrigger"])							ccc.IsTrigger = yccc["IsTrigger"].as<bool>();
+					if (yccc["Material"])
+					{
+						PhysicsMaterial material;
+						auto& ysccm = yccc["Material"];
+						if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
+						if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
+						if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
+
+						ccc.Material = material;
+					}
+					if (yccc["Offset"])							ccc.Offset = yccc["Offset"].as<glm::vec3>();
+					if (yccc["Radius"])							ccc.Radius = yccc["Radius"].as<float>();
+
+				}
+
+				auto ymcc = entity["MeshColliderComponent"];		// Mesh Collider Component
+				if (ymcc)
+				{
+
+					auto& mcc = deserializedEntity.AddComponent<MeshColliderComponent>();
+					if (ymcc["Convex"])							mcc.Convex = ymcc["Convex"].as<bool>();
+					if (ymcc["IsTrigger"])						mcc.IsTrigger = ymcc["IsTrigger"].as<bool>();
+					if (ymcc["Material"])
+					{
+						PhysicsMaterial material;
+						auto& ysccm = ymcc["Material"];
+						if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
+						if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
+						if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
+
+						mcc.Material = material;
+					}
+					if (ymcc["Mesh"])							mcc.Mesh = ymcc["Mesh"].as<AssetHandle>();
+
+				}
+				
 				auto ytec = entity["TextComponent"];		// Text Component
 				if (ytec)
 				{
