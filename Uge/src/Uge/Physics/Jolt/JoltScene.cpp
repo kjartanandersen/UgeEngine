@@ -93,11 +93,22 @@ namespace Uge
     class JoltContactListener : public JPH::ContactListener
     {
     public:
+        /**
+         * @brief Binds the listener to the system whose contacts it buffers.
+         * @param physicsSystem System queried for WereBodiesInContact during callbacks.
+         */
         explicit JoltContactListener(JPH::PhysicsSystem& physicsSystem)
             : m_physicsSystem(physicsSystem)
         {
         }
 
+        /**
+         * @brief Buffers a ContactType::Begin the first step two bodies touch.
+         * @param body1 First body of the pair, in Jolt's sorted order.
+         * @param body2 Second body of the pair, in Jolt's sorted order.
+         * @param manifold Contact manifold for this sub-shape pair; unused.
+         * @param settings Mutable contact response; deliberately left untouched.
+         */
         void OnContactAdded(const JPH::Body& body1, const JPH::Body& body2,
             const JPH::ContactManifold& manifold,
             JPH::ContactSettings& settings) override
@@ -116,6 +127,10 @@ namespace Uge
                                body1.IsSensor() || body2.IsSensor() });
         }
 
+        /**
+         * @brief Buffers a ContactType::End once the last sub-shape contact disappears.
+         * @param pair Sub-shape pair that stopped touching.
+         */
         void OnContactRemoved(const JPH::SubShapeIDPair& pair) override
         {
             // Symmetric: true means other sub-shape contacts survive, so the bodies have
@@ -135,7 +150,10 @@ namespace Uge
                                IsSensorBody(a) || IsSensorBody(b) });
         }
 
-        /** @brief Moves the buffered events into @p out, keeping the buffer's capacity. */
+        /**
+         * @brief Moves the buffered events into @p out, keeping the buffer's capacity.
+         * @param out Receives the pending events; its previous contents are discarded.
+         */
         void Drain(std::vector<ContactEvent>& out)
         {
             std::scoped_lock lock(m_mutex);
@@ -143,9 +161,9 @@ namespace Uge
             m_pending.clear();
         }
 
-        /** @brief Records a sensor body. Main thread only; never during Step(). */
+        /** @brief Records a sensor body. Main thread only; never during Step(). @param body Sensor body. */
         void MarkSensor(PhysicsBodyID body) { m_sensorBodies.insert(body.Value); }
-        /** @brief Drops a destroyed body. Main thread only; never during Step(). */
+        /** @brief Drops a destroyed body. Main thread only; never during Step(). @param body Body being destroyed. */
         void ForgetBody(PhysicsBodyID body) { m_sensorBodies.erase(body.Value); }
 
     private:

@@ -6,9 +6,9 @@
 namespace Uge
 {
 	/**
-		@enum  Uge::BodyType
-		@brief How the simulation moves a body.
-	**/
+	 * @brief How the simulation moves a body.
+	 * @ingroup group_physics
+	 */
 	enum class BodyType
 	{
 
@@ -23,7 +23,7 @@ namespace Uge
 	{
 		Static = 0, ///< Level geometry. Static-vs-Static pairs are never tested.
 		Moving = 1, ///< Anything that can move.
-		Count  = 2
+		Count  = 2  ///< Number of layers; not a layer itself.
 	};
 
 	/** @brief Bitmask over Uge::PhysicsLayer, for filtering queries. */
@@ -48,9 +48,11 @@ namespace Uge
 
 		uint32_t Value = Invalid; ///< Backend-defined body index.
 
-		/** @brief Whether the handle refers to a body. */
+		/** @brief Whether the handle refers to a body. @return `false` for #Invalid. */
 		bool IsValid() const { return Value != Invalid; }
+		/** @brief Equality. @param other Handle to compare with. @return `true` if both name the same body. */
 		bool operator==(const PhysicsBodyID& other) const { return Value == other.Value; }
+		/** @brief Inequality. @param other Handle to compare with. @return `true` if they name different bodies. */
 		bool operator!=(const PhysicsBodyID& other) const { return Value != other.Value; }
 
 	};

@@ -16,7 +16,9 @@ namespace Uge
 	{
 
 	public:
+		/** @brief Constructs the backend without booting it; Init() does that. */
 		JoltAPI();
+		/** @brief Shuts the backend down if Init() ran and Shutdown() did not. */
 		~JoltAPI() override;
 
 		virtual void Init() override;

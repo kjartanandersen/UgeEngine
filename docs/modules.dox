@@ -121,6 +121,31 @@
  */
 
 /**
+ * @defgroup group_physics Physics
+ * @brief Rigid-body simulation, its backend abstraction and the Jolt implementation.
+ *
+ * Physics is split into two layers, mirroring @ref group_renderer. Uge::Physics is a
+ * static facade over a Uge::PhysicsAPI, which owns the process-wide backend state --
+ * allocators, the job system and type registration -- and is booted once from
+ * Uge::Application. Individual worlds are Uge::PhysicsScene objects created through
+ * Uge::Physics::CreateScene, because a world is per-Uge::Scene rather than per-process:
+ * the editor scene and the play-mode copy can both exist at once.
+ *
+ * Bodies are addressed by Uge::PhysicsBodyID, a POD handle rather than a polymorphic
+ * object, and are described at creation by a Uge::BodyDesc carrying one or more
+ * Uge::ColliderDesc. Nothing outside `Physics/Jolt/` names a Jolt type, so the rest of
+ * the engine never needs Jolt's compile defines.
+ *
+ * @warning Uge::PhysicsScene::Step must be driven with a fixed timestep. Uge::Scene keeps
+ * an accumulator for exactly this reason; feeding it a raw frame delta makes contacts
+ * jitter and stacks explode.
+ *
+ * @note Contact events are produced on the backend's worker threads during the step and
+ * buffered. Drain them on the main thread with Uge::PhysicsScene::ConsumeContactEvents
+ * after Step() returns; never dispatch from inside the backend's own callback.
+ */
+
+/**
  * @defgroup group_platform Platform
  * @brief Backend implementations of the platform-agnostic interfaces.
  *

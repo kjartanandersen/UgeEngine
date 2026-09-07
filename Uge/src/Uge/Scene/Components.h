@@ -386,28 +386,28 @@ namespace Uge
 	struct SphereColliderComponent
 	{
 		glm::vec3 Offset = { 0.0f, 0.0f, 0.0f };		///< Local offset from the entity origin.
-		float Radius = 0.5f;							///< 
-		PhysicsMaterial Material;						///< 
-		bool IsTrigger = false;							///< 
+		float Radius = 0.5f;							///< Sphere radius, before the entity scale is baked in.
+		PhysicsMaterial Material;						///< Friction, restitution and density.
+		bool IsTrigger = false;							///< Reports overlaps without colliding.
 	};
 	
 	/** @brief A capsule collider. @ingroup group_scene */
 	struct CapsuleColliderComponent
 	{
 		glm::vec3 Offset = { 0.0f, 0.0f, 0.0f };		///< Local offset from the entity origin.
-		float Radius;									///< 
-		float HalfHeight;								///< 
-		PhysicsMaterial Material;						///< 
-		bool IsTrigger = false;							///< 
+		float Radius;									///< Radius of the hemispherical caps.
+		float HalfHeight;								///< Half the length of the cylindrical section only.
+		PhysicsMaterial Material;						///< Friction, restitution and density.
+		bool IsTrigger = false;							///< Reports overlaps without colliding.
 	};
 
 	/** @brief A mesh collider. @ingroup group_scene */
 	struct MeshColliderComponent
 	{
-		AssetHandle Mesh = 0;							///< 
-		bool Convex = true;								///< 
-		PhysicsMaterial Material;						///< 
-		bool IsTrigger = false;							///< 
+		AssetHandle Mesh = 0;							///< Uge::Model asset to build the shape from; 0 produces no shape.
+		bool Convex = true;								///< true builds a convex hull, false a triangle mesh.
+		PhysicsMaterial Material;						///< Friction, restitution and density.
+		bool IsTrigger = false;							///< Reports overlaps without colliding.
 	};
 
 	/**

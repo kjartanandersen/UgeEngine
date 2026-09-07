@@ -124,7 +124,19 @@ namespace Uge
 		 */
 		const glm::vec3& GetCenter() const { return m_center; }
 
+		/**
+		 * @brief The mesh's vertex data, as uploaded to the vertex buffer.
+		 * @return The vertices, in mesh-local space.
+		 *
+		 * Exposed for physics: a Uge::MeshColliderComponent builds its collision shape
+		 * from this and GetIndices(). @see Uge::MeshShapeDesc
+		 */
 		const std::vector<MeshVertex>& GetVertices() { return m_vertices; }
+
+		/**
+		 * @brief The mesh's triangle indices.
+		 * @return Indices into GetVertices(), three per triangle.
+		 */
 		const std::vector<uint32_t>& GetIndices() { return m_indices; }
 
 

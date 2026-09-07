@@ -45,13 +45,17 @@ namespace Uge
 		virtual void Shutdown() = 0;
 
 		/**
-			@brief  
-			@param  desc - 
-			@retval      - 
-		**/
+		 * @brief Creates one independent physics world.
+		 * @param desc Tuning limits and initial gravity for the world.
+		 * @return An owning handle to the new world.
+		 */
 		virtual Scope<PhysicsScene> CreateScene(const PhysicsSceneDesc& desc) = 0;
 
 
+		/**
+		 * @brief The physics backend this build targets.
+		 * @return The active Uge::PhysicsAPIType.
+		 */
 		static PhysicsAPIType Current() { return s_currentPhysicsAPI; }
 	private:
 		inline static PhysicsAPIType s_currentPhysicsAPI = PhysicsAPIType::Jolt;
