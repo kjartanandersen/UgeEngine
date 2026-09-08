@@ -395,8 +395,8 @@ namespace Uge
 	struct CapsuleColliderComponent
 	{
 		glm::vec3 Offset = { 0.0f, 0.0f, 0.0f };		///< Local offset from the entity origin.
-		float Radius;									///< Radius of the hemispherical caps.
-		float HalfHeight;								///< Half the length of the cylindrical section only.
+		float Radius = 0.5f;							///< Radius of the hemispherical caps.
+		float HalfHeight = 0.5f;						///< Half the length of the cylindrical section only.
 		PhysicsMaterial Material;						///< Friction, restitution and density.
 		bool IsTrigger = false;							///< Reports overlaps without colliding.
 	};

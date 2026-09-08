@@ -33,8 +33,10 @@ namespace Uge
 		virtual void SetDepthTest(bool enabled) override;
 		virtual void SetDepthFunc(DepthCompare compare) override;
 		virtual void SetBlendMode(BlendMode mode) override;
+		virtual void SetLineWidth(float width) override;
 
 		virtual void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCound = 0) override;
+		virtual void DrawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount) override;
 
 
 

@@ -8,6 +8,8 @@
 #include "Uge/Renderer/PostProcess.h"
 #include "Uge/Renderer/Bloom.h"
 #include "Uge/Renderer/ColorSpace.h"
+#include "Uge/Physics/PhysicsDebugRenderer.h"
+#include "Uge/Physics/ColliderWireframe.h"
 
 #include "imgui.h"
 #include <cstdint>
@@ -22,6 +24,22 @@
 namespace Uge
 {
 
+
+	/** @brief Forwards Uge::PhysicsDebugRenderer lines into the Uge::Renderer2D line batch. */
+	class Renderer2DLineSink : public PhysicsDebugRenderer
+	{
+	public:
+		/**
+		 * @brief Draws one world-space line segment through Uge::Renderer2D.
+		 * @param from Start point.
+		 * @param to End point.
+		 * @param color RGBA colour, components in `[0, 1]`.
+		 */
+		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) override
+		{
+			Renderer2D::DrawLine(from, to, color, -1);
+		}
+	};
 
 
 	static Ref<Font> s_font;
@@ -122,6 +140,8 @@ namespace Uge
 			{
 				m_hoveredEntity = Entity();
 			}
+
+			OnOverlayRender();
 
 		}
 		m_frameBuffer->Unbind();
@@ -366,6 +386,11 @@ namespace Uge
 					ImGui::MenuItem("Console", nullptr, &m_showConsole);
 					ImGui::MenuItem("Diagnostics", nullptr, &m_showDebug);
 					ImGui::MenuItem("Loaded Assets", nullptr, &m_showLoadedAssets);
+					ImGui::Separator();
+					ImGui::MenuItem("Physics Colliders", nullptr, &m_showPhysicsColliders);
+					ImGui::BeginDisabled(!m_showPhysicsColliders);
+					ImGui::MenuItem("   X-Ray", nullptr, &m_colliderXRay);
+					ImGui::EndDisabled();
 
 					ImGui::EndMenu();
 				}
@@ -1021,6 +1046,73 @@ namespace Uge
 			m_sceneHierarchyPanel.SetSelectedEntity(newEnt);
 		}
 
+
+	}
+
+	void EditorLayer::OnOverlayRender()
+	{
+
+		if (!m_showPhysicsColliders)
+		{
+			return;
+		}
+
+		if (m_sceneState == SceneState::Play)
+		{
+			Entity cam = m_activeScene->GetPrimaryCameraEntity();
+			if (!cam)
+			{
+				return;
+			}
+			Renderer2D::BeginScene(cam.GetComponent<CameraComponent>().Cam,
+				cam.GetComponent<TransformComponent>().GetTransform());
+		}
+		else
+		{
+			Renderer2D::BeginScene(m_editorCamera);
+		}
+
+		if (m_colliderXRay)
+		{
+			RenderCommand::SetDepthTest(false);
+		}
+
+		Renderer2DLineSink sink;
+
+		const glm::vec4 solidColor{ 0.35f, 0.90f, 0.35f, 1.0f };
+		const glm::vec4 triggerColor{ 0.95f, 0.80f, 0.25f, 1.0f };
+
+		auto boxes = m_activeScene->GetAllEntitiesWith<TransformComponent, BoxColliderComponent>();
+		for (auto [e, tc, bc] : boxes.each())
+		{
+			const glm::mat4 m = tc.GetTransform() * glm::translate(glm::mat4(1.0f), bc.Offset);
+			ColliderWireframe::DrawBox(sink, m, bc.HalfExtents,
+				bc.IsTrigger ? triggerColor : solidColor);
+		}
+
+		auto spheres = m_activeScene->GetAllEntitiesWith<TransformComponent, SphereColliderComponent>();
+		for (auto [e, tc, sc] : spheres.each())
+		{
+			const glm::mat4 m = tc.GetTransform() * glm::translate(glm::mat4(1.0f), sc.Offset);
+			ColliderWireframe::DrawSphere(sink, m, sc.Radius,
+				sc.IsTrigger ? triggerColor : solidColor);
+		}
+
+		auto capsules = m_activeScene->GetAllEntitiesWith<TransformComponent, CapsuleColliderComponent>();
+		for (auto [e, tc, cc] : capsules.each())
+		{
+			const glm::mat4 m = tc.GetTransform() * glm::translate(glm::mat4(1.0f), cc.Offset);
+			ColliderWireframe::DrawCapsule(sink, m, cc.Radius, cc.HalfHeight,
+				cc.IsTrigger ? triggerColor : solidColor);
+		}
+		
+
+		Renderer2D::EndScene();
+
+		if (m_colliderXRay)
+		{
+			RenderCommand::SetDepthTest(true);   // global state — must be restored
+		}
 
 	}
 

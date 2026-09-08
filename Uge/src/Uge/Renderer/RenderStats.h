@@ -37,14 +37,18 @@ namespace Uge
 	 */
 	struct RenderStats
 	{
-		uint32_t DrawCalls = 0;     ///< Indexed draw calls issued, across all paths.
-		uint32_t IndexCount = 0;    ///< Indices submitted, across all paths.
-		uint32_t TriangleCount = 0; ///< Triangles submitted, assuming triangle lists.
+		uint32_t DrawCalls = 0;			///< Indexed draw calls issued, across all paths.
+		uint32_t LinesDrawCalls = 0;		///< Lines submitted, across all paths.
+		
+		uint32_t IndexCount = 0;		///< Indices submitted, across all paths.
+		uint32_t TriangleCount = 0;		///< Triangles submitted, assuming triangle lists.
+		uint32_t LinesCount = 0;		///< Lines submitted, across all paths.
 
-		uint32_t Quad2DCount = 0;     ///< Sprite and quad batches submitted by Uge::Renderer2D.
-		uint32_t Text2DQuadCount = 0; ///< Glyph quads submitted by Uge::Renderer2D.
+		uint32_t Quad2DCount = 0;		///< Sprite and quad batches submitted by Uge::Renderer2D.
+		uint32_t Text2DQuadCount = 0;	///< Glyph quads submitted by Uge::Renderer2D.
 
-		uint32_t MeshDrawCount = 0; ///< Meshes drawn through the Uge::Model path.
+		uint32_t MeshDrawCount = 0;		///< Meshes drawn through the Uge::Model path.
+
 
 		/**
 		 * @brief Returns the counters for the frame currently being built.

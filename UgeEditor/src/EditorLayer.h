@@ -142,6 +142,8 @@ namespace Uge
 		/** @brief Duplicates the selected entity and selects the copy. */
 		void OnDuplicateEntry();
 
+		void OnOverlayRender();
+
 
 	private:
 
@@ -182,6 +184,8 @@ namespace Uge
 		bool m_showConsole = true;
 		bool m_showDebug = true;
 		bool m_showLoadedAssets = false;
+		bool m_showPhysicsColliders = false;
+		bool m_colliderXRay = true;
 
 		Entity m_hoveredEntity;
 

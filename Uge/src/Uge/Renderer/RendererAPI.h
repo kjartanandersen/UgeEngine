@@ -141,6 +141,21 @@ namespace Uge
 		virtual void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
 
 		/**
+		 * @brief Issues a draw call for lines.
+		 * @param vertexArray Lines to draw
+		 * @param vertexCount Number of vertices to draw
+		 *
+		 */
+		virtual void DrawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount) = 0;
+
+		/**
+		 * @brief Sets the width of a line to draw
+		 * @param width The width of the line
+		 *
+		 */
+		virtual void SetLineWidth(float width) = 0;
+
+		/**
 		 * @brief Returns the graphics API the engine was built against.
 		 * @return The active API.
 		 * @note Fixed at compile time; it cannot be switched at runtime.

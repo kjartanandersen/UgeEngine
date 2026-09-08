@@ -244,10 +244,16 @@ namespace Uge
 		 */
 		static void DrawString(const std::string& string, const glm::mat4& transform, const TextComponent& component, int entityID = -1);
 		
+		static void DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color, int entityID = -1);
+
+		static void SetLineWidth(float width);
+
+		static float GetLineWidth();
 
 	private:
 		static void FlushAndReset();
 		static void StartBatch();
+		static void NextBatch();
 
 
 	};

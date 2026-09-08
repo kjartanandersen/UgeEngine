@@ -32,6 +32,16 @@ namespace Uge
 		int EntityID; ///< Owning entity, written to the picking attachment. Editor only.
 	};
 
+	/** @brief Vertex format for lines in 3D space */
+	struct LineVertex
+	{
+		glm::vec3 Position; ///< Position of line in world space
+		glm::vec4 Color; ///< Line Color, RGBA
+
+		// Editor only
+		int EntityID; ///< Owning entity, written to the picking attachment. Editor only.
+	};
+
 	/**
 	 * @brief All batching state for Uge::Renderer2D: buffers, shaders and texture slots.
 	 *
@@ -40,10 +50,11 @@ namespace Uge
 	 */
 	struct Renderer2DData
 	{
-		static const uint32_t MaxQuads = 10000; ///< Maximum quads per batch before an automatic flush.
-		static const uint32_t MaxVertices = MaxQuads * 4; ///< Vertex capacity implied by #MaxQuads.
-		static const uint32_t MaxIndices = MaxQuads * 6; ///< Index capacity implied by #MaxQuads.
-		static const uint32_t MaxTextureSlots = 32; ///< Texture units available; exceeding this forces a flush.
+		static const uint32_t MaxQuads = 20000;				///< Maximum quads per batch before an automatic flush.
+		static const uint32_t MaxLineVertices = 20000;		///< Maximum lines per batch before an automatic flush.
+		static const uint32_t MaxVertices = MaxQuads * 4;	///< Vertex capacity implied by #MaxQuads.
+		static const uint32_t MaxIndices = MaxQuads * 6;	///< Index capacity implied by #MaxQuads.
+		static const uint32_t MaxTextureSlots = 32;			///< Texture units available; exceeding this forces a flush.
 
 		Ref<VertexArray> QuadVA; ///< Vertex array for the quad batch.
 		Ref<VertexBuffer> QuadVB; ///< Dynamic vertex buffer refilled each flush.
@@ -54,6 +65,10 @@ namespace Uge
 		Ref<VertexBuffer> TextVB; ///< Dynamic vertex buffer for text geometry.
 		Ref<Shader> TextShader; ///< Shader that samples the MSDF atlas.
 
+		Ref<VertexArray> LineVA;	///< Vertex array for the line batch.
+		Ref<VertexBuffer> LineVB;	///< Dynamic vertex buffer for the lines.
+		Ref<Shader> LineShader;		///< Shader used for the lines
+
 		uint32_t QuadIndexCount = 0; ///< Indices accumulated in the current quad batch.
 		Vertex* VertexBufferBase = nullptr; ///< Start of the CPU-side quad staging buffer.
 		Vertex* VertexBufferPtr = nullptr; ///< Write cursor into the quad staging buffer.
@@ -61,6 +76,11 @@ namespace Uge
 		uint32_t TextIndexCount = 0; ///< Indices accumulated in the current text batch.
 		TextVertex* TextVertexBufferBase = nullptr; ///< Start of the CPU-side text staging buffer.
 		TextVertex* TextVertexBufferPtr = nullptr; ///< Write cursor into the text staging buffer.
+
+		uint32_t LineVertexCount = 0;					///< Vertices accumulated in the current line batch.
+		LineVertex* LineVertexBufferBase = nullptr;		///< Start of the CPU-side line staging buffer.
+		LineVertex* LineVertexBufferPtr = nullptr;		///< Write cursor into the line staging buffer.
+		float LineWidth = 1;							///< The width of the line.
 
 		std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots; ///< Textures bound for the current batch.
 		uint32_t TextureSlotIndex = 1; ///< Next free texture slot; slot 0 is #WhiteTexture.
@@ -111,7 +131,7 @@ namespace Uge
 		m_data.TextVA = VertexArray::Create();
 
 
-		m_data.TextVB = VertexBuffer::Create(m_data.MaxVertices * sizeof(Vertex));
+		m_data.TextVB = VertexBuffer::Create(m_data.MaxVertices * sizeof(TextVertex));
 		BufferLayout textVBlayout =
 		{
 			{ ShaderDataType::Float3, "a_Position"     },
@@ -124,7 +144,22 @@ namespace Uge
 
 		m_data.TextVertexBufferBase = new TextVertex[m_data.MaxVertices];
 
+		// Lines
+		m_data.LineVA = VertexArray::Create();
+		m_data.LineVB = VertexBuffer::Create(m_data.MaxVertices * sizeof(LineVertex));
+		BufferLayout lineVBlayout =
+		{
+			{ ShaderDataType::Float3, "a_Position"     },
+			{ ShaderDataType::Float4, "a_Color"        },
+			{ ShaderDataType::Int,    "a_EntityID"     }
+		};
+		m_data.LineVB->SetLayout(lineVBlayout);
+		m_data.LineVA->AddVertexBuffer(m_data.LineVB);
 
+		m_data.LineVertexBufferBase = new LineVertex[m_data.MaxLineVertices];
+
+
+		// Indices
 		uint32_t* quadIndices = new uint32_t[m_data.MaxIndices];
 		uint32_t offset = 0;
 		for (int i = 0; i < m_data.MaxIndices; i += 6)
@@ -146,7 +181,7 @@ namespace Uge
 		m_data.TextVA->SetIndexBuffer(squareIB);
 		delete[] quadIndices;
 
-		// m_data.WhiteTexture = Texture2D::Create(1, 1);
+		// Textures
 		uint32_t whiteTextureData = 0xffffffff;
 		TextureSpecification spec = TextureSpecification();
 
@@ -161,9 +196,10 @@ namespace Uge
 			samplers[i] = i;
 		}
 
-
-		m_data.TextureShader = Shader::Create("assets/shaders/Texture.glsl");
-		m_data.TextShader    = Shader::Create("assets/shaders/Text.glsl");
+		// Shaders
+		m_data.TextureShader	= Shader::Create("assets/shaders/Texture.glsl");
+		m_data.TextShader		= Shader::Create("assets/shaders/Text.glsl");
+		m_data.LineShader		= Shader::Create("assets/shaders/Line.glsl");
 
 
 		// Set all texture slots to zero
@@ -286,6 +322,19 @@ namespace Uge
 			RenderStats::Get().Text2DQuadCount += m_data.TextIndexCount / 6;
 		}
 
+		if (m_data.LineVertexCount)
+		{
+
+			uint32_t dataSize = (uint32_t)((uint8_t*)m_data.LineVertexBufferPtr - (uint8_t*)m_data.LineVertexBufferBase);
+			m_data.LineVB->SetData(m_data.LineVertexBufferBase, dataSize);
+
+			m_data.LineShader->Bind();
+			
+			RenderCommand::SetLineWidth(m_data.LineWidth);
+			RenderCommand::DrawLines(m_data.LineVA, m_data.LineVertexCount);
+
+		}
+
 		/*
 		m_data.TextureShader->Unbind();
 
@@ -295,6 +344,11 @@ namespace Uge
 		m_data.TextureSlotIndex = 1;
 		*/
 
+	}
+
+	float Renderer2D::GetLineWidth()
+	{
+		return m_data.LineWidth;
 	}
 
 	void Uge::Renderer2D::FlushAndReset()
@@ -772,7 +826,18 @@ namespace Uge
 		m_data.TextIndexCount = 0;
 		m_data.TextVertexBufferPtr = m_data.TextVertexBufferBase;
 
+		m_data.LineVertexCount = 0;
+		m_data.LineVertexBufferPtr = m_data.LineVertexBufferBase;
+
 		m_data.TextureSlotIndex = 1;
+
+	}
+
+	void Renderer2D::NextBatch()
+	{
+
+		Flush();
+		StartBatch();
 
 	}
 
@@ -940,6 +1005,34 @@ namespace Uge
 		DrawString(string, component.Font, transform, params, entityID);
 
 	}
+
+	void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color, int entityID)
+	{
+
+		if (m_data.LineVertexCount >= Renderer2DData::MaxLineVertices)
+		{
+			NextBatch();
+		}
+
+		m_data.LineVertexBufferPtr->Position = p0;
+		m_data.LineVertexBufferPtr->Color = color;
+		m_data.LineVertexBufferPtr->EntityID = entityID;
+		m_data.LineVertexBufferPtr++;
+
+		m_data.LineVertexBufferPtr->Position = p1;
+		m_data.LineVertexBufferPtr->Color = color;
+		m_data.LineVertexBufferPtr->EntityID = entityID;
+		m_data.LineVertexBufferPtr++;
+
+		m_data.LineVertexCount += 2;
+
+	}
+
+	void Renderer2D::SetLineWidth(float width)
+	{
+		m_data.LineWidth = width;
+	}
+
 
 
 }

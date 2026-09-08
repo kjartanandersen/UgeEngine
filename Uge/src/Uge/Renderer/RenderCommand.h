@@ -102,6 +102,16 @@ namespace Uge
 			m_rendererAPI->SetBlendMode(mode);
 		}
 
+		/**
+		 * @brief Sets the width of a rendered line
+		 * @param width The width of the line
+		 * @see RendererAPI::SetLineWidth
+		 */
+		inline static void SetLineWidth(float width)
+		{
+			m_rendererAPI->SetLineWidth(width);
+		}
+
 
 		/**
 		 * @brief Issues an indexed draw call.
@@ -123,6 +133,27 @@ namespace Uge
 			stats.TriangleCount += drawn / 3;
 
 			m_rendererAPI->DrawIndexed(vertexArray, indexCount);
+		}
+
+		/**
+		 * @brief Issues a draw call for lines.
+		 * @param vertexArray Lines to draw
+		 * @param indexCount Vertices to draw
+		 *
+		 * Every draw path bottoms out here, which is why this is where Uge::RenderStats
+		 * accumulates the frame's totals.
+		 */
+		inline static void DrawLines(const Ref<VertexArray> vertexArray, uint32_t vertexCount = 0)
+		{
+			const uint32_t drawn = vertexCount != 0
+				? vertexCount
+				: vertexArray->GetVertexBuffers().size();
+
+			RenderStats& stats = RenderStats::Get();
+			stats.LinesDrawCalls++;
+			stats.LinesCount += drawn;
+
+			m_rendererAPI->DrawLines(vertexArray, vertexCount);
 		}
 
 
