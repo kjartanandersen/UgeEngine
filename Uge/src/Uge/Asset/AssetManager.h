@@ -50,6 +50,7 @@ namespace Uge
 		template<typename T>
 		static Ref<T> GetAsset(AssetHandle handle)
 		{
+			// TODO: Validate asset handle
 			Ref<Asset> asset = Project::GetActive()->GetAssetManager()->GetAsset(handle);
 			return std::static_pointer_cast<T>(asset);
 

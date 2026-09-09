@@ -136,12 +136,13 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Issues a draw call for lines.
-		 * @param vertexArray Lines to draw
-		 * @param indexCount Vertices to draw
+		 * @brief Issues a non-indexed draw call for line segments.
+		 * @param vertexArray Line geometry to draw; two vertices per segment.
+		 * @param vertexCount Number of vertices to draw.
 		 *
-		 * Every draw path bottoms out here, which is why this is where Uge::RenderStats
-		 * accumulates the frame's totals.
+		 * The line counterpart to DrawIndexed(), and like it the place where Uge::RenderStats
+		 * accumulates the frame's line totals. Lines are counted separately from triangles so
+		 * a debug overlay cannot be mistaken for scene geometry in the profiler.
 		 */
 		inline static void DrawLines(const Ref<VertexArray> vertexArray, uint32_t vertexCount = 0)
 		{

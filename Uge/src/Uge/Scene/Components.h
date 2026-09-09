@@ -406,6 +406,7 @@ namespace Uge
 	{
 		AssetHandle Mesh = 0;							///< Uge::Model asset to build the shape from; 0 produces no shape.
 		bool Convex = true;								///< true builds a convex hull, false a triangle mesh.
+		glm::vec3 Offset = { 0.0f, 0.0f, 0.0f };		///< Local offset from the entity origin.
 		PhysicsMaterial Material;						///< Friction, restitution and density.
 		bool IsTrigger = false;							///< Reports overlaps without colliding.
 	};

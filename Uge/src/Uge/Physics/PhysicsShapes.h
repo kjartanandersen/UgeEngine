@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Uge/Physics/PhysicsTypes.h"
-#include "Uge/Asset/Asset.h"
 
 #include <variant>
 #include <vector>
@@ -28,11 +27,12 @@ namespace Uge
         float HalfHeight = 0.5f; ///< Half the length of the cylindrical section only.
     };
 
-    /** @brief A shape built from a Uge::Model asset. */
+    /** @brief A shape built from triangle geometry. */
     struct MeshShapeDesc
     {
-        AssetHandle Mesh = 0; ///< Model to build from; `0` produces no shape.
-        bool Convex = true;   ///< `true` builds a convex hull, `false` a triangle mesh.
+        std::vector<glm::vec3> Vertices; ///< Positions in mesh-local space.
+        std::vector<uint32_t>  Indices;  ///< Three per triangle, counter-clockwise, indexing #Vertices.
+        bool Convex = true;              ///< `true` builds a convex hull, `false` a triangle mesh.
     };
 
     /** @brief Any shape a collider component can describe. */

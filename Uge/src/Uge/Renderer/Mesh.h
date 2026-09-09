@@ -131,13 +131,13 @@ namespace Uge
 		 * Exposed for physics: a Uge::MeshColliderComponent builds its collision shape
 		 * from this and GetIndices(). @see Uge::MeshShapeDesc
 		 */
-		const std::vector<MeshVertex>& GetVertices() { return m_vertices; }
+		const std::vector<MeshVertex>& GetVertices() const { return m_vertices; }
 
 		/**
 		 * @brief The mesh's triangle indices.
 		 * @return Indices into GetVertices(), three per triangle.
 		 */
-		const std::vector<uint32_t>& GetIndices() { return m_indices; }
+		const std::vector<uint32_t>& GetIndices() const { return m_indices; }
 
 
 	private:

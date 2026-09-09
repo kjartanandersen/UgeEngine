@@ -142,4 +142,54 @@ namespace Uge::ColliderWireframe
         }
 	}
 
+    bool BuildEdges(const std::vector<glm::vec3>& vertices, const std::vector<uint32_t>& indices, 
+        std::vector<glm::vec3>& outEdges, uint32_t maxEdges)
+    {
+        outEdges.clear();
+
+        if (vertices.empty())
+        {
+            return true;
+        }
+
+        std::unordered_set<uint64_t> seen;
+        seen.reserve(indices.size());
+        outEdges.reserve((size_t)maxEdges * 2);
+
+        uint32_t edgeCount = 0;
+        for (size_t i = 0; i + 2 < indices.size(); i += 3)
+        {
+            const uint32_t tri[3] = { indices[i], indices[i + 1], indices[i + 2] };
+            for (int e = 0; e < 3; e++)
+            {
+                const uint32_t a = tri[e], b = tri[(e + 1) % 3];
+                if (a == b || a >= vertices.size() || b >= vertices.size())
+                    continue;                                   // degenerate or out of range
+
+                const uint64_t key = ((uint64_t)std::min(a, b) << 32) | std::max(a, b);
+                if (!seen.insert(key).second)
+                    continue;                                   // already emitted
+
+                if (edgeCount >= maxEdges)
+                    return false;                               // budget exhausted
+
+                outEdges.push_back(vertices[a]);
+                outEdges.push_back(vertices[b]);
+                edgeCount++;
+            }
+        }
+
+        return true;
+    }
+
+    void DrawEdges(PhysicsDebugRenderer& out, const glm::mat4& transform, 
+        const std::vector<glm::vec3>& edges, const glm::vec4& color)
+    {
+        for (size_t i = 0; i + 1 < edges.size(); i += 2)
+        {
+            out.DrawLine(ToWorld(transform, edges[i]), ToWorld(transform, edges[i+1]), color);
+        }
+
+    }
+
 }

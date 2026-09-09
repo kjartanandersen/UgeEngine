@@ -15,6 +15,8 @@
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
+#include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/CastResult.h>
@@ -29,7 +31,7 @@ namespace Uge
 {
 
     /// Builds the primitive shape for one collider. Returns an empty ref on failure.
-    static JPH::ShapeRefC BuildColliderShape(const ColliderDesc& collider)
+    static JPH::ShapeRefC BuildColliderShape(const ColliderDesc& collider, BodyType bodyType)
     {
         JPH::Ref<JPH::ShapeSettings> settings;
 
@@ -52,10 +54,67 @@ namespace Uge
             s->SetDensity(collider.Material.Density);
             settings = s;
         }
+        else if (const auto* mesh = std::get_if<MeshShapeDesc>(&collider.Shape))
+        {
+            if (mesh->Vertices.empty() || mesh->Indices.size() < 3)
+            {
+                UG_CORE_WARN("Physics: mesh collider has no geometry; collider skipped.");
+                return {};
+            }
+
+            // JPH::MeshShape::MustBeStatic() is true, and both CompoundShape and DecoratedShape
+            // propagate it, so one triangle mesh makes the whole body static-only. A triangle
+            // soup also has no volume, so Jolt cannot derive mass from it. Downgrade rather than
+            // drop the collider: a moving body with a hull is far more useful than no body.
+            bool convex = mesh->Convex;
+            if (!convex && bodyType != BodyType::Static)
+            {
+                UG_CORE_WARN("Physics: a triangle-mesh collider can only back a static body; "
+                    "falling back to a convex hull.");
+                convex = true;
+            }
+
+            if (convex)
+            {
+                JPH::Array<JPH::Vec3> points;
+                points.reserve(mesh->Vertices.size());
+                for (const glm::vec3& v : mesh->Vertices)
+                    points.push_back(ToJolt(v));
+
+                auto* s = new JPH::ConvexHullShapeSettings(points);
+                s->SetDensity(collider.Material.Density);
+                JPH::ShapeSettings::ShapeResult hull = s->Create();
+                if (hull.HasError())
+                {
+                    // Almost always "too many points in hull". Interior points are already discarded,
+                    // so the only remaining knob is how far a point may sit outside the hull.
+                    s->mHullTolerance = 0.05f;
+                    hull = s->Create();
+                }
+                settings = s;
+            }
+            else
+            {
+                JPH::VertexList vertices;
+                vertices.reserve(mesh->Vertices.size());
+                for (const glm::vec3& v : mesh->Vertices)
+                    vertices.push_back(JPH::Float3(v.x, v.y, v.z));
+
+                JPH::IndexedTriangleList triangles;
+                triangles.reserve(mesh->Indices.size() / 3);
+                for (size_t i = 0; i + 2 < mesh->Indices.size(); i += 3)
+                    triangles.push_back(JPH::IndexedTriangle(
+                        mesh->Indices[i], mesh->Indices[i + 1], mesh->Indices[i + 2], 0));
+
+                // MeshShapeSettings derives from ShapeSettings, not ConvexShapeSettings: there is
+                // no SetDensity, because a triangle soup has no volume. Density is ignored here.
+                // The constructor calls Sanitize(), dropping duplicate and degenerate triangles.
+                settings = new JPH::MeshShapeSettings(std::move(vertices), std::move(triangles));
+            }
+        }
         else
         {
-            // MeshShapeDesc — not yet supported, see JoltScene.h.
-            UG_CORE_WARN("Physics: mesh colliders are not implemented yet; collider skipped.");
+            UG_CORE_ERROR("Physics: unhandled shape description; collider skipped.");
             return {};
         }
 
@@ -254,7 +313,7 @@ namespace Uge
         {
             const ColliderDesc& collider = desc.Colliders[0];
 
-            shape = BuildColliderShape(collider);
+            shape = BuildColliderShape(collider, desc.Type);
             if (shape == nullptr)
                 return {};
 
@@ -287,7 +346,7 @@ namespace Uge
             uint32_t added = 0;
             for (const ColliderDesc& collider : desc.Colliders)
             {
-                JPH::ShapeRefC sub = BuildColliderShape(collider);
+                JPH::ShapeRefC sub = BuildColliderShape(collider, desc.Type);
                 if (sub == nullptr)
                     continue;
 
@@ -308,6 +367,12 @@ namespace Uge
                 return {};
             }
             shape = result.Get();
+        }
+
+        if (shape->MustBeStatic() && desc.Type != BodyType::Static)
+        {
+            UG_CORE_ERROR("Physics: body has a static-only shape but is not static; body not created.");
+            return {};
         }
 
         // --- 2. Bake the entity's scale into the shape ------------------------------

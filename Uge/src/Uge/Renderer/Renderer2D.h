@@ -244,10 +244,34 @@ namespace Uge
 		 */
 		static void DrawString(const std::string& string, const glm::mat4& transform, const TextComponent& component, int entityID = -1);
 		
+		/**
+		 * @brief Draws a single line segment.
+		 * @param p0 Start point in world space.
+		 * @param p1 End point in world space.
+		 * @param color RGBA colour, components in `[0, 1]`.
+		 * @param entityID ID written to the picking attachment; `-1` for none.
+		 *
+		 * Lines are batched separately from quads and text and drawn with their own shader,
+		 * so they cost one extra draw call per flush rather than one per line. The batch is
+		 * flushed automatically when it fills up.
+		 *
+		 * This is the sink Uge::PhysicsDebugRenderer implementations forward into.
+		 */
 		static void DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color, int entityID = -1);
 
+		/**
+		 * @brief Sets the width used for subsequent line batches.
+		 * @param width Line width in pixels.
+		 *
+		 * @note Applied once per flush, so it affects a whole batch rather than individual
+		 * lines. Most core-profile drivers clamp anything above `1.0` back to `1.0`.
+		 */
 		static void SetLineWidth(float width);
 
+		/**
+		 * @brief Returns the width subsequent line batches are drawn with.
+		 * @return Line width in pixels.
+		 */
 		static float GetLineWidth();
 
 	private:

@@ -146,7 +146,7 @@ namespace Uge
 
 		// Lines
 		m_data.LineVA = VertexArray::Create();
-		m_data.LineVB = VertexBuffer::Create(m_data.MaxVertices * sizeof(LineVertex));
+		m_data.LineVB = VertexBuffer::Create(m_data.MaxLineVertices * sizeof(LineVertex));
 		BufferLayout lineVBlayout =
 		{
 			{ ShaderDataType::Float3, "a_Position"     },

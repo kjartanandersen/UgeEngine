@@ -142,6 +142,20 @@ namespace Uge
 		/** @brief Duplicates the selected entity and selects the copy. */
 		void OnDuplicateEntry();
 
+		/**
+		 * @brief Draws the physics collider wireframes over the rendered scene.
+		 *
+		 * Opens its own Uge::Renderer2D scene: the one Uge::Scene opened has already been
+		 * closed and flushed by the time this runs. It uses the editor camera in Edit and the
+		 * scene's primary camera in Play, so the wireframes always match the image behind
+		 * them.
+		 *
+		 * Geometry comes from the collider components through Uge::ColliderWireframe rather
+		 * than from the simulation, because no Uge::PhysicsScene exists outside play mode.
+		 *
+		 * @note Called after the entity-picking readback, so the `-1` entity IDs the line
+		 * shader writes cannot affect what the cursor resolves to.
+		 */
 		void OnOverlayRender();
 
 
@@ -184,8 +198,10 @@ namespace Uge
 		bool m_showConsole = true;
 		bool m_showDebug = true;
 		bool m_showLoadedAssets = false;
-		bool m_showPhysicsColliders = false;
-		bool m_colliderXRay = true;
+
+		// Physics collider overlay, driven by the View menu. @see OnOverlayRender
+		bool m_showPhysicsColliders = false; ///< Whether collider wireframes are drawn at all.
+		bool m_colliderXRay = true; ///< Draws them with depth testing off, so a collider buried in its own mesh stays visible.
 
 		Entity m_hoveredEntity;
 
@@ -207,7 +223,7 @@ namespace Uge
 
 		Ref<Texture2D> m_iconPlay, m_iconStop, m_iconPause, m_iconStep;
 
-
+		std::unordered_map<AssetHandle, std::vector<glm::vec3>> m_colliderEdgeCache;
 
 	};
 

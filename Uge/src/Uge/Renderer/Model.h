@@ -99,7 +99,7 @@ namespace Uge
 			@brief  Returns the model's meshes
 			@retval Vector of meshes
 		**/
-		const std::vector<Mesh>& GetMeshes() { return m_meshes; }
+		const std::vector<Mesh>& GetMeshes() const { return m_meshes; }
 
 		/**
 		 * @brief Whether the import produced any geometry.
@@ -172,6 +172,21 @@ namespace Uge
 		 * then restores them. Skipping this call leaves transparent geometry undrawn.
 		 */
 		static void EndScene();
+
+		/**
+		 * @brief Flattens every submesh of a model into one triangle soup for collision.
+		 * @param mesh Handle of the Uge::Model to read; `0` or a non-mesh handle fails.
+		 * @param outVertices Receives the positions, in model space. Cleared first.
+		 * @param outIndices Receives the triangle indices. Cleared first.
+		 * @return `true` if the model yielded at least one triangle.
+		 *
+		 * Submesh positions already share the model's root space — Uge::Model::ProcessMesh bakes
+		 * the assimp node transform into every vertex — so the submeshes concatenate directly,
+		 * needing only a running index offset.
+		 */
+		static bool BuildCollisionGeometry(AssetHandle mesh,
+			std::vector<glm::vec3>& outVertices,
+			std::vector<uint32_t>& outIndices);
 
 	private:
 		void LoadModel(const std::string& path);

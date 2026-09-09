@@ -207,10 +207,19 @@ namespace Uge
 			? entity.GetComponent<MeshComponent>().Mesh
 			: 0;
 
+
+		// Same but for mesh collider
+		AssetHandle meshCollider = entity.HasComponent<MeshColliderComponent>()
+			? entity.GetComponent<MeshColliderComponent>().Mesh
+			: 0;
+
+		
+
 		m_entityMap.erase(entity.GetUUID());
 		m_registry.destroy(entity);
 
 		ReleaseMeshIfUnused(mesh);
+		ReleaseMeshIfUnused(meshCollider);
 
 	}
 
@@ -229,6 +238,13 @@ namespace Uge
 			{
 				return;
 			}
+		}
+
+		auto colliderView = m_registry.view<MeshColliderComponent>();
+		for (auto entity : colliderView)
+		{
+			if (colliderView.get<MeshColliderComponent>(entity).Mesh == mesh)
+				return;
 		}
 
 		AssetManager::DeleteAsset(mesh);
@@ -489,7 +505,7 @@ namespace Uge
 
 		if (entity.HasComponent<BoxColliderComponent>())
 		{
-			BoxColliderComponent bc = entity.GetComponent<BoxColliderComponent>();
+			const BoxColliderComponent& bc = entity.GetComponent<BoxColliderComponent>();
 
 
 			BoxShapeDesc boxShapeDesc;
@@ -507,7 +523,7 @@ namespace Uge
 
 		if (entity.HasComponent<SphereColliderComponent>())
 		{
-			SphereColliderComponent sc = entity.GetComponent<SphereColliderComponent>();
+			const SphereColliderComponent& sc = entity.GetComponent<SphereColliderComponent>();
 
 			SphereShapeDesc sphereShapeDesc;
 			sphereShapeDesc.Radius = sc.Radius;
@@ -524,7 +540,7 @@ namespace Uge
 
 		if (entity.HasComponent<CapsuleColliderComponent>())
 		{
-			CapsuleColliderComponent cc = entity.GetComponent<CapsuleColliderComponent>();
+			const CapsuleColliderComponent& cc = entity.GetComponent<CapsuleColliderComponent>();
 
 			CapsuleShapeDesc capsuleShapeDesc;
 			capsuleShapeDesc.HalfHeight = cc.HalfHeight;
@@ -542,23 +558,30 @@ namespace Uge
 
 		if (entity.HasComponent<MeshColliderComponent>())
 		{
-			MeshColliderComponent mc = entity.GetComponent<MeshColliderComponent>();
+			const MeshColliderComponent& mc = entity.GetComponent<MeshColliderComponent>();
 
 			MeshShapeDesc meshShapeDesc;
 			meshShapeDesc.Convex = mc.Convex;
-			meshShapeDesc.Mesh = mc.Mesh;
 
-			ColliderDesc colliderDesc;
-			colliderDesc.IsTrigger = mc.IsTrigger;
-			colliderDesc.Material = mc.Material;
-			colliderDesc.Shape = meshShapeDesc;
+			if (!Model::BuildCollisionGeometry(mc.Mesh, meshShapeDesc.Vertices, meshShapeDesc.Indices))
+			{
+				UG_CORE_WARN("Scene: entity '{0}' has a mesh collider with no usable geometry; skipped.",
+					entity.GetComponent<TagComponent>().Tag);
+			}
+			else
+			{
+				ColliderDesc colliderDesc;
+				colliderDesc.IsTrigger = mc.IsTrigger;
+				colliderDesc.Material = mc.Material;
+				colliderDesc.Offset = mc.Offset;
+				colliderDesc.Shape = std::move(meshShapeDesc);
 
-			colliderDescs.push_back(colliderDesc);
-
+				colliderDescs.push_back(std::move(colliderDesc));
+			}
 		}
 
 		bodyDesc.AngularDamping = rc.AngularDamping;
-		bodyDesc.Colliders		= colliderDescs;
+		bodyDesc.Colliders		= std::move(colliderDescs);
 		bodyDesc.FixedRotation	= rc.FixedRotation;
 		bodyDesc.GravityFactor	= rc.GravityFactor;
 		bodyDesc.Layer			= rc.Layer;

@@ -21,7 +21,7 @@
 
 namespace Uge
 {
-
+	constexpr float dragSpeed = 0.1f;
 	
 	static bool DrawVec3Control(const std::string& label, glm::vec3& values,
 		float resetValue = 0.0f, float columnWidth = 100.0f)
@@ -58,7 +58,7 @@ namespace Uge
 		ImGui::PopFont();
 
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f"))
+		if (ImGui::DragFloat("##X", &values.x, dragSpeed, 0.0f, 0.0f, "%.2f"))
 		{
 			hasChanged = true;
 		}
@@ -79,7 +79,7 @@ namespace Uge
 		ImGui::PopFont();
 
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f"))
+		if (ImGui::DragFloat("##Y", &values.y, dragSpeed, 0.0f, 0.0f, "%.2f"))
 		{
 			hasChanged = true;
 		}
@@ -100,7 +100,7 @@ namespace Uge
 		ImGui::PopFont();
 
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f"))
+		if (ImGui::DragFloat("##Z", &values.z, dragSpeed, 0.0f, 0.0f, "%.2f"))
 		{
 			hasChanged = true;
 		}
@@ -173,6 +173,14 @@ namespace Uge
 				if (removeComponent)
 				{
 					if constexpr (std::is_same_v<T, MeshComponent>)
+					{
+						// Copy the handle out first: `component` dangles once the
+						// component is gone.
+						AssetHandle mesh = component.Mesh;
+						entity.RemoveComponent<T>();
+						entity.GetScene()->ReleaseMeshIfUnused(mesh);
+					}
+					else if constexpr (std::is_same_v<T, MeshColliderComponent>)
 					{
 						// Copy the handle out first: `component` dangles once the
 						// component is gone.
@@ -881,6 +889,22 @@ namespace Uge
 					ImGui::EndCombo();
 				}
 
+				const char* layerStrings[] = { "Static", "Moving" };
+				const char* currentLayer = layerStrings[(int)component.Layer];
+
+				if (ImGui::BeginCombo("Layer", currentLayer))
+				{
+					for (int i = 0; i < (int)PhysicsLayer::Count; i++)
+					{
+						bool selected = currentLayer == layerStrings[i];
+						if (ImGui::Selectable(layerStrings[i], selected))
+							component.Layer = (PhysicsLayer)i;
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+
 				ImGui::DragFloat("Mass", &component.Mass, 0.1f, 0.0f, 10000.0f);
 				ImGui::DragFloat("Linear Damping", &component.LinearDamping, 0.01f, 0.0f, 1.0f);
 				ImGui::DragFloat("Angular Damping", &component.AngularDamping, 0.01f, 0.0f, 1.0f);
@@ -906,9 +930,9 @@ namespace Uge
 
 				if (ImGui::CollapsingHeader("Physics Material"))
 				{
-					ImGui::DragFloat("Friction", &component.Material.Friction);
-					ImGui::DragFloat("Restitution", &component.Material.Restitution);
-					ImGui::DragFloat("Density", &component.Material.Density);
+					ImGui::DragFloat("Friction", &component.Material.Friction, dragSpeed);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution, dragSpeed);
+					ImGui::DragFloat("Density", &component.Material.Density, dragSpeed);
 				}
 
 				ImGui::Checkbox("Is Trigger", &component.IsTrigger);
@@ -927,13 +951,13 @@ namespace Uge
 
 				}
 
-				ImGui::DragFloat("Radius", &component.Radius);
+				ImGui::DragFloat("Radius", &component.Radius, dragSpeed, dragSpeed);
 
 				if (ImGui::CollapsingHeader("Physics Material"))
 				{
-					ImGui::DragFloat("Friction", &component.Material.Friction);
-					ImGui::DragFloat("Restitution", &component.Material.Restitution);
-					ImGui::DragFloat("Density", &component.Material.Density);
+					ImGui::DragFloat("Friction", &component.Material.Friction, dragSpeed);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution, dragSpeed);
+					ImGui::DragFloat("Density", &component.Material.Density, dragSpeed);
 				}
 
 				ImGui::Checkbox("Is Trigger", &component.IsTrigger);
@@ -942,7 +966,7 @@ namespace Uge
 
 #pragma endregion
 
-#pragma region SphereColliderComponent
+#pragma region CapsuleColliderComponent
 
 			DrawComponent<CapsuleColliderComponent>("Capsule Collider", entity, true, [](auto& component)
 			{
@@ -952,14 +976,14 @@ namespace Uge
 
 				}
 
-				ImGui::DragFloat("Radius", &component.Radius);
-				ImGui::DragFloat("Half Height", &component.HalfHeight);
+				ImGui::DragFloat("Radius", &component.Radius, dragSpeed);
+				ImGui::DragFloat("Half Height", &component.HalfHeight, dragSpeed);
 
 				if (ImGui::CollapsingHeader("Physics Material"))
 				{
-					ImGui::DragFloat("Friction", &component.Material.Friction);
-					ImGui::DragFloat("Restitution", &component.Material.Restitution);
-					ImGui::DragFloat("Density", &component.Material.Density);
+					ImGui::DragFloat("Friction", &component.Material.Friction, dragSpeed);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution, dragSpeed);
+					ImGui::DragFloat("Density", &component.Material.Density, dragSpeed);
 				}
 
 				ImGui::Checkbox("Is Trigger", &component.IsTrigger);
@@ -1028,14 +1052,16 @@ namespace Uge
 				ImGui::SameLine();
 				ImGui::Text("Mesh Collider");
 
+				DrawVec3Control("Offset", component.Offset);
+
 				ImGui::Checkbox("Is Convex", &component.Convex);
 
 
 				if (ImGui::CollapsingHeader("Physics Material"))
 				{
-					ImGui::DragFloat("Friction", &component.Material.Friction);
-					ImGui::DragFloat("Restitution", &component.Material.Restitution);
-					ImGui::DragFloat("Density", &component.Material.Density);
+					ImGui::DragFloat("Friction", &component.Material.Friction, dragSpeed);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution, dragSpeed);
+					ImGui::DragFloat("Density", &component.Material.Density, dragSpeed);
 				}
 
 				ImGui::Checkbox("Is Trigger", &component.IsTrigger);

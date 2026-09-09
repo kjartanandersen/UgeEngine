@@ -925,6 +925,8 @@ namespace Uge
 
 		m_editorScenePath = std::filesystem::path();
 
+		m_colliderEdgeCache.clear();
+
 	}
 
 	void EditorLayer::OpenScene()
@@ -974,9 +976,7 @@ namespace Uge
 		m_activeScene = m_editorScene;
 		m_editorScenePath = Project::GetActive()->GetEditorAssetManager()->GetFilePath(handle);
 
-
-		
-
+		m_colliderEdgeCache.clear();
 
 	}
 
@@ -1104,6 +1104,30 @@ namespace Uge
 			const glm::mat4 m = tc.GetTransform() * glm::translate(glm::mat4(1.0f), cc.Offset);
 			ColliderWireframe::DrawCapsule(sink, m, cc.Radius, cc.HalfHeight,
 				cc.IsTrigger ? triggerColor : solidColor);
+		}
+
+		auto meshes = m_activeScene->GetAllEntitiesWith<TransformComponent, MeshColliderComponent>();
+		for (auto [e, tc, mc] : meshes.each())
+		{
+			if (!mc.Mesh)
+				continue;
+
+			auto it = m_colliderEdgeCache.find(mc.Mesh);
+			if (it == m_colliderEdgeCache.end())
+			{
+				std::vector<glm::vec3> vertices, edges;
+				std::vector<uint32_t> indices;
+
+				if (Model::BuildCollisionGeometry(mc.Mesh, vertices, indices)
+					&& !ColliderWireframe::BuildEdges(vertices, indices, edges))
+				{
+					UG_WARN("Collider overlay: mesh is too dense to wireframe in full; truncated.");
+				}
+				it = m_colliderEdgeCache.emplace(mc.Mesh, std::move(edges)).first;
+			}
+
+			const glm::mat4 m = tc.GetTransform() * glm::translate(glm::mat4(1.0f), mc.Offset);
+			ColliderWireframe::DrawEdges(sink, m, it->second, mc.IsTrigger ? triggerColor : solidColor);
 		}
 		
 

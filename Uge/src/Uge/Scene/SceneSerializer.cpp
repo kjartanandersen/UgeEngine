@@ -106,8 +106,6 @@ namespace YAML {
 		}
 	};
 
-	
-
 }
 
 namespace Uge
@@ -156,6 +154,7 @@ namespace Uge
 		out << YAML::BeginMap;	// Entity
 		out << YAML::Key << "Entity" << YAML::Value << entity.GetUUID();
 
+#pragma region TagComponent
 		// Get tag component
 		if (entity.HasComponent<TagComponent>())
 		{
@@ -167,7 +166,9 @@ namespace Uge
 
 			out << YAML::EndMap; // TagComponent
 		}
+#pragma endregion
 
+#pragma region TransformComponent
 		if (entity.HasComponent<TransformComponent>())
 		{
 			out << YAML::Key << "TransformComponent";
@@ -180,7 +181,9 @@ namespace Uge
 
 			out << YAML::EndMap; // TransformComponent
 		}
+#pragma endregion
 
+#pragma region CameraComponent
 		if (entity.HasComponent<CameraComponent>())
 		{
 			out << YAML::Key << "CameraComponent";
@@ -205,7 +208,9 @@ namespace Uge
 
 			out << YAML::EndMap; // CameraComponent
 		}
+#pragma endregion
 
+#pragma region ScriptComponent
 		if (entity.HasComponent<ScriptComponent>())
 		{
 			out << YAML::Key << "ScriptComponent";
@@ -268,7 +273,9 @@ namespace Uge
 
 			out << YAML::EndMap; // ScriptComponent
 		}
+#pragma endregion
 
+#pragma region SpriteRendererComponent
 		if (entity.HasComponent<SpriteRendererComponent>())
 		{
 			out << YAML::Key << "SpriteRendererComponent";
@@ -286,7 +293,9 @@ namespace Uge
 
 			out << YAML::EndMap; // SpriteRendererComponent
 		}
+#pragma endregion
 
+#pragma region MeshComponent
 		if (entity.HasComponent<MeshComponent>())
 		{
 			out << YAML::Key << "MeshComponent";
@@ -297,7 +306,9 @@ namespace Uge
 
 			out << YAML::EndMap; // MeshComponent
 		}
+#pragma endregion
 
+#pragma region SkyLightComponent
 		if (entity.HasComponent<SkyLightComponent>())
 		{
 			out << YAML::Key << "SkyLightComponent";
@@ -309,7 +320,9 @@ namespace Uge
 
 			out << YAML::EndMap; // SkyLightComponent
 		}
+#pragma endregion
 
+#pragma region DirectionalLightComponent
 		if (entity.HasComponent<DirectionalLightComponent>())
 		{
 			out << YAML::Key << "DirectionalLightComponent";
@@ -321,7 +334,9 @@ namespace Uge
 
 			out << YAML::EndMap; // DirectionalLightComponent
 		}
+#pragma endregion
 
+#pragma region RigidbodyComponent
 		if (entity.HasComponent<RigidbodyComponent>())
 		{
 			out << YAML::Key << "RigidbodyComponent";
@@ -338,7 +353,9 @@ namespace Uge
 
 			out << YAML::EndMap; // RigidbodyComponent
 		}
+#pragma endregion
 
+#pragma region BoxColliderComponent
 		if (entity.HasComponent<BoxColliderComponent>())
 		{
 
@@ -365,7 +382,9 @@ namespace Uge
 			out << YAML::EndMap; // RigidbodyComponent
 
 		}
+#pragma endregion
 
+#pragma region SphereColliderComponent
 		if (entity.HasComponent<SphereColliderComponent>())
 		{
 
@@ -392,15 +411,17 @@ namespace Uge
 			out << YAML::EndMap; // SphereColliderComponent
 
 		}
+#pragma endregion
 
+#pragma region CapsuleColliderComponent
 		if (entity.HasComponent<CapsuleColliderComponent>())
 		{
 
-			out << YAML::Key << "SphereColliderComponent";
+			out << YAML::Key << "CapsuleColliderComponent";
 			out << YAML::BeginMap; // CapsuleColliderComponent
 
 			auto& ccc = entity.GetComponent<CapsuleColliderComponent>();
-			out << YAML::Key << "HalfHeight"	<< YAML::Value << (int)ccc.HalfHeight;
+			out << YAML::Key << "HalfHeight"	<< YAML::Value << ccc.HalfHeight;
 			out << YAML::Key << "IsTrigger"		<< YAML::Value << ccc.IsTrigger;
 
 			out << YAML::Key << "Material" << YAML::Value;
@@ -420,16 +441,18 @@ namespace Uge
 			out << YAML::EndMap; // CapsuleColliderComponent
 
 		}
+#pragma endregion
 
+#pragma region MeshColliderComponent
 		if (entity.HasComponent<MeshColliderComponent>())
 		{
 
-			out << YAML::Key << "SphereColliderComponent";
+			out << YAML::Key << "MeshColliderComponent";
 			out << YAML::BeginMap; // MeshColliderComponent
 
 			auto& ccc = entity.GetComponent<MeshColliderComponent>();
-			out << YAML::Key << "Convex"		<< YAML::Value << (int)ccc.Convex;
-			out << YAML::Key << "IsTrigger"		<< YAML::Value << ccc.IsTrigger;
+			out << YAML::Key << "Convex"			<< YAML::Value << (int)ccc.Convex;
+			out << YAML::Key << "IsTrigger"			<< YAML::Value << (int)ccc.IsTrigger;
 
 			out << YAML::Key << "Material" << YAML::Value;
 			out << YAML::BeginMap; // Material
@@ -441,13 +464,15 @@ namespace Uge
 
 			out << YAML::EndMap; // Material
 
-			out << YAML::Key << "Mesh"		<< YAML::Value << ccc.Mesh;
+			out << YAML::Key << "Offset"			<< YAML::Value << ccc.Offset;
 
 
 			out << YAML::EndMap; // MeshColliderComponent
 
 		}
+#pragma endregion
 
+#pragma region TextComponent
 		if (entity.HasComponent<TextComponent>())
 		{
 			out << YAML::Key << "TextComponent";
@@ -462,6 +487,7 @@ namespace Uge
 
 			out << YAML::EndMap; // TextComponent
 		}
+#pragma endregion
 
 		out << YAML::EndMap;	// Entity
 
@@ -498,6 +524,7 @@ namespace Uge
 		fout << out.c_str();
 
 	}
+
 	void SceneSerializer::SerializeRuntime(const std::filesystem::path& filepath)
 	{
 		
@@ -505,19 +532,9 @@ namespace Uge
 		UG_CORE_ASSERT(false);
 
 	}
+
 	bool SceneSerializer::DeSerialize(const std::filesystem::path& filepath)
 	{
-		/*
-		std::ifstream stream(filepath);
-		std::stringstream strStream;
-		strStream << stream.rdbuf();
-
-		YAML::Node data = YAML::Load(strStream.str());
-		if (!data["Scene"])
-		{
-			return false;
-		}
-		*/
 
 		YAML::Node data;
 		try
@@ -552,16 +569,19 @@ namespace Uge
 				uint64_t uuid = entity["Entity"].as<uint64_t>();
 
 				std::string name;
+#pragma region TagComponent
 				auto ytgc = entity["TagComponent"];		// Tag Component
 				if (ytgc)
 				{
 					name = ytgc["Tag"].as<std::string>();
 				}
+#pragma endregion
 
 				UG_CORE_TRACE("Deserialized entity with ID {0} and name {1}", uuid, name);
 
 				Entity deserializedEntity = m_scene->CreateEntityWithUUID(uuid, name);
 
+#pragma region TransformComponent
 				auto ytc = entity["TransformComponent"];	// Tranform Component
 				if (ytc)
 				{
@@ -572,7 +592,9 @@ namespace Uge
 					tc.Scale = ytc["Scale"].as<glm::vec3>();
 
 				}
+#pragma endregion
 
+#pragma region CameraComponent
 				auto ycc = entity["CameraComponent"];	// Camera Component
 				if (ycc)
 				{
@@ -593,7 +615,9 @@ namespace Uge
 					cc.Primary = ycc["Primary"].as<bool>();
 					cc.FixedAspectRatio = ycc["FixedAspectRatio"].as<bool>();
 				}
+#pragma endregion
 
+#pragma region ScriptComponent
 				auto ysc = entity["ScriptComponent"];
 				if (ysc)
 				{
@@ -653,7 +677,9 @@ namespace Uge
 					}
 
 				}
+#pragma endregion
 
+#pragma region SpriteRendererComponent
 				auto ysrc = entity["SpriteRendererComponent"];		// Sprite Renderer Component
 				if (ysrc)
 				{
@@ -673,7 +699,9 @@ namespace Uge
 					}
 
 				}
+#pragma endregion
 
+#pragma region MeshComponent
 				auto ymc = entity["MeshComponent"];		// Mesh Component
 				if (ymc)
 				{
@@ -683,7 +711,9 @@ namespace Uge
 					// std::filesystem::path path = Project::GetAssetFileSystemPath(meshPath);
 					deserializedEntity.AddComponent<MeshComponent>(meshAsset);
 				}
+#pragma endregion
 
+#pragma region SkyLightComponent
 				auto yslc = entity["SkyLightComponent"];	// Sky Light Component
 				if (yslc)
 				{
@@ -700,7 +730,9 @@ namespace Uge
 						src.Intensity = yslc["Intensity"].as<float>();
 					}
 				}
+#pragma endregion
 
+#pragma region DirectionalLightComponent
 				auto ydlc = entity["DirectionalLightComponent"];	// Directional Light Component
 				if (ydlc)
 				{
@@ -717,8 +749,10 @@ namespace Uge
 						src.Intensity = ydlc["Intensity"].as<float>();
 					}
 				}
+#pragma endregion
 
 
+#pragma region RigidbodyComponent
 				auto yrb = entity["RigidbodyComponent"];		// Rigid Body Component
 				if (yrb)
 				{
@@ -734,13 +768,16 @@ namespace Uge
 					if (yrb["FixedRotation"])		rb.FixedRotation = yrb["FixedRotation"].as<bool>();
 					
 				}
+#pragma endregion
 
+#pragma region BoxColliderComponent
 				auto ybcc = entity["BoxColliderComponent"];		// Box Collider Component
 				if (ybcc)
 				{
 					auto& bc = deserializedEntity.AddComponent<BoxColliderComponent>();
-					if (ybcc["HalfExtents"])					bc.HalfExtents = ybcc["HalfExtents"].as<glm::vec3>();
-					if (ybcc["IsTrigger"])						bc.IsTrigger = ybcc["IsTrigger"].as<bool>();
+					if (ybcc["HalfExtents"])					bc.HalfExtents	= ybcc["HalfExtents"].as<glm::vec3>();
+					if (ybcc["IsTrigger"])						bc.IsTrigger	= ybcc["IsTrigger"].as<bool>();
+					if (ybcc["Offset"])							bc.Offset		= ybcc["Offset"].as<glm::vec3>();
 
 					if (ybcc["Material"])
 					{
@@ -755,35 +792,43 @@ namespace Uge
 
 
 				}
+#pragma endregion
 
+#pragma region SphereColliderComponent
 				auto yscc = entity["SphereColliderComponent"];		// Sphere Collider Component
 				if (yscc)
 				{
 					auto& scc = deserializedEntity.AddComponent<SphereColliderComponent>();
 					if (yscc["IsTrigger"])						scc.IsTrigger = yscc["IsTrigger"].as<bool>();
+					if (yscc["Offset"])							scc.Offset = yscc["Offset"].as<glm::vec3>();
+					if (yscc["Radius"])							scc.Radius = yscc["Radius"].as<float>();
+
+
 					if (yscc["Material"])
 					{
 						PhysicsMaterial material;
-						auto& ysccm = ybcc["Material"];
+						auto& ysccm = yscc["Material"];
 						if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
 						if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
 						if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
 
 						scc.Material = material;
 					}
-					if (yscc["Offset"])							scc.Offset = yscc["Offset"].as<glm::vec3>();
-					if (yscc["Radius"])							scc.Radius = yscc["Radius"].as<float>();
-
 
 				}
+#pragma endregion
 
+#pragma region CapsuleColliderComponent
 				auto yccc = entity["CapsuleColliderComponent"];		// Capsule Collider Component
 				if (yccc)
 				{
 
 					auto& ccc = deserializedEntity.AddComponent<CapsuleColliderComponent>();
 					if (yccc["HalfHeight"])						ccc.HalfHeight = yccc["HalfHeight"].as<float>();
-					if (yccc["IsTrigger"])							ccc.IsTrigger = yccc["IsTrigger"].as<bool>();
+					if (yccc["IsTrigger"])						ccc.IsTrigger = yccc["IsTrigger"].as<bool>();
+					if (yccc["Offset"])							ccc.Offset = yccc["Offset"].as<glm::vec3>();
+					if (yccc["Radius"])							ccc.Radius = yccc["Radius"].as<float>();
+
 					if (yccc["Material"])
 					{
 						PhysicsMaterial material;
@@ -794,11 +839,11 @@ namespace Uge
 
 						ccc.Material = material;
 					}
-					if (yccc["Offset"])							ccc.Offset = yccc["Offset"].as<glm::vec3>();
-					if (yccc["Radius"])							ccc.Radius = yccc["Radius"].as<float>();
 
 				}
+#pragma endregion
 
+#pragma region MeshColliderComponent
 				auto ymcc = entity["MeshColliderComponent"];		// Mesh Collider Component
 				if (ymcc)
 				{
@@ -806,6 +851,8 @@ namespace Uge
 					auto& mcc = deserializedEntity.AddComponent<MeshColliderComponent>();
 					if (ymcc["Convex"])							mcc.Convex = ymcc["Convex"].as<bool>();
 					if (ymcc["IsTrigger"])						mcc.IsTrigger = ymcc["IsTrigger"].as<bool>();
+					if (ymcc["Mesh"])							mcc.Mesh = ymcc["Mesh"].as<AssetHandle>();
+
 					if (ymcc["Material"])
 					{
 						PhysicsMaterial material;
@@ -816,10 +863,11 @@ namespace Uge
 
 						mcc.Material = material;
 					}
-					if (ymcc["Mesh"])							mcc.Mesh = ymcc["Mesh"].as<AssetHandle>();
 
 				}
+#pragma endregion
 				
+#pragma region TextComponent
 				auto ytec = entity["TextComponent"];		// Text Component
 				if (ytec)
 				{
@@ -835,6 +883,7 @@ namespace Uge
 					// src.Font = ; // TODO
 
 				}
+#pragma endregion
 
 			}
 
@@ -842,6 +891,7 @@ namespace Uge
 
 		return true;
 	}
+
 	bool SceneSerializer::DeSerializeRuntime(const std::filesystem::path& filepath)
 	{
 
@@ -850,4 +900,5 @@ namespace Uge
 		UG_CORE_ASSERT(false);
 		return false;
 	}
+
 }

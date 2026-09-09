@@ -286,6 +286,62 @@ namespace Uge
 		}
 	}
 
+	bool Model::BuildCollisionGeometry(AssetHandle mesh, std::vector<glm::vec3>& outVertices, std::vector<uint32_t>& outIndices)
+	{
+		// Clear outgoing vertex and index vectors
+		outVertices.clear();
+		outIndices.clear();
+
+		// Validate handle
+		if (!mesh || !AssetManager::IsAssetHandleValid(mesh)
+			|| AssetManager::GetAssetType(mesh) != AssetType::Mesh)
+		{
+			return false;
+
+		}
+
+		// Get asset and check if loaded
+		Ref<Model> model = AssetManager::GetAsset<Model>(mesh);
+		if (!model || !model->IsLoaded())
+		{
+			return false;
+
+		}
+
+		// Get total vertex and index count from the submeshes and reserve outgoing vector accordingly
+		size_t vertexCount = 0, indexCount = 0;
+		for (const Mesh& sub : model->GetMeshes())
+		{
+			vertexCount += sub.GetVertices().size();
+			indexCount += sub.GetIndices().size();
+		}
+		outVertices.reserve(vertexCount);
+		outIndices.reserve(indexCount);
+
+		// Add the verices and indices from the submeshes to the outgoing vectors
+		// Iterate over submeshes
+		for (const Mesh& sub : model->GetMeshes())
+		{
+			const uint32_t base = (uint32_t)outVertices.size();
+
+			// Iterate over each vertex and index in a submesh
+			for (const MeshVertex& v : sub.GetVertices())
+			{
+				outVertices.push_back(v.Position);
+
+			}
+			for (uint32_t i : sub.GetIndices())
+			{
+				outIndices.push_back(base + i);
+
+			}
+		}
+
+		// Return true if the vertex vector is not empty and if the index vector is greater or 
+		// equal to 3, that is it has at least one triangle
+		return !outVertices.empty() && outIndices.size() >= 3;
+	}
+
 	void Model::LoadModel(const std::string& path)
 	{
 		m_path = path;
