@@ -450,21 +450,23 @@ namespace Uge
 			out << YAML::Key << "MeshColliderComponent";
 			out << YAML::BeginMap; // MeshColliderComponent
 
-			auto& ccc = entity.GetComponent<MeshColliderComponent>();
-			out << YAML::Key << "Convex"			<< YAML::Value << ccc.Convex;
-			out << YAML::Key << "IsTrigger"			<< YAML::Value << ccc.IsTrigger;
+			auto& mcc = entity.GetComponent<MeshColliderComponent>();
+			out << YAML::Key << "MeshHandle"		<< YAML::Value << mcc.Mesh;
+
+			out << YAML::Key << "Convex"			<< YAML::Value << mcc.Convex;
+			out << YAML::Key << "IsTrigger"			<< YAML::Value << mcc.IsTrigger;
 
 			out << YAML::Key << "Material" << YAML::Value;
 			out << YAML::BeginMap; // Material
 
-				out << YAML::Key << "Density"		<< YAML::Value << ccc.Material.Density;
-				out << YAML::Key << "Friction"		<< YAML::Value << ccc.Material.Friction;
-				out << YAML::Key << "Restitution"	<< YAML::Value << ccc.Material.Restitution;
+				out << YAML::Key << "Density"		<< YAML::Value << mcc.Material.Density;
+				out << YAML::Key << "Friction"		<< YAML::Value << mcc.Material.Friction;
+				out << YAML::Key << "Restitution"	<< YAML::Value << mcc.Material.Restitution;
 
 
 			out << YAML::EndMap; // Material
 
-			out << YAML::Key << "Offset"			<< YAML::Value << ccc.Offset;
+			out << YAML::Key << "Offset"			<< YAML::Value << mcc.Offset;
 
 
 			out << YAML::EndMap; // MeshColliderComponent
@@ -851,7 +853,7 @@ namespace Uge
 					auto& mcc = deserializedEntity.AddComponent<MeshColliderComponent>();
 					if (ymcc["Convex"])							mcc.Convex = ymcc["Convex"].as<bool>();
 					if (ymcc["IsTrigger"])						mcc.IsTrigger = ymcc["IsTrigger"].as<bool>();
-					if (ymcc["Mesh"])							mcc.Mesh = ymcc["Mesh"].as<AssetHandle>();
+					if (ymcc["MeshHandle"])						mcc.Mesh = ymcc["MeshHandle"].as<AssetHandle>();
 
 					if (ymcc["Material"])
 					{
@@ -863,6 +865,7 @@ namespace Uge
 
 						mcc.Material = material;
 					}
+					if (ymcc["Offset"])							mcc.Offset = ymcc["Offset"].as<glm::vec3>();
 
 				}
 #pragma endregion
