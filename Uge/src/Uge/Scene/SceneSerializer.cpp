@@ -451,8 +451,8 @@ namespace Uge
 			out << YAML::BeginMap; // MeshColliderComponent
 
 			auto& ccc = entity.GetComponent<MeshColliderComponent>();
-			out << YAML::Key << "Convex"			<< YAML::Value << (int)ccc.Convex;
-			out << YAML::Key << "IsTrigger"			<< YAML::Value << (int)ccc.IsTrigger;
+			out << YAML::Key << "Convex"			<< YAML::Value << ccc.Convex;
+			out << YAML::Key << "IsTrigger"			<< YAML::Value << ccc.IsTrigger;
 
 			out << YAML::Key << "Material" << YAML::Value;
 			out << YAML::BeginMap; // Material
