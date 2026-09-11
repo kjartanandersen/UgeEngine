@@ -101,6 +101,7 @@ namespace Uge
 		float EmissiveStrength = 0.0f; ///< Emission multiplier; `0` disables emission.
 		float AlphaCutoff = 0.5f; ///< Discard threshold, used only by Uge::AlphaMode::Mask.
 		AlphaMode BlendMode = AlphaMode::Opaque; ///< How the alpha channel is interpreted.
+		bool DoubleSided = false; ///< Does the material have two sides
 	};
 
 	/**
@@ -275,6 +276,8 @@ namespace Uge
 		 * @return Uge::AssetType::Material.
 		 */
 		AssetType GetType() const override { return GetStaticType(); }
+
+		bool IsDoubleSided() const { return m_properties.DoubleSided; }
 
 
 	protected:

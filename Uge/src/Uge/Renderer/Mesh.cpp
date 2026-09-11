@@ -27,6 +27,7 @@ namespace Uge
 		for (const MeshVertex& vertex : m_vertices)
 		{
 			accumulated += vertex.Position;
+			m_bounds.Grow(vertex.Position);
 		}
 		m_center = accumulated / static_cast<float>(m_vertices.size());
 

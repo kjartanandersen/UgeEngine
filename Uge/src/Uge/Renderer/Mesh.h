@@ -20,6 +20,8 @@
 #include "Uge/Renderer/VertexArray.h"
 #include "Uge/Renderer/UniformBuffer.h"
 
+#include "Uge/Math/AABB.h"
+
 namespace Uge
 {
 
@@ -139,6 +141,8 @@ namespace Uge
 		 */
 		const std::vector<uint32_t>& GetIndices() const { return m_indices; }
 
+		const Math::AABB& GetBounds() const { return m_bounds; }
+
 
 	private:
 		void SetupMesh();
@@ -150,6 +154,7 @@ namespace Uge
 		std::vector<uint32_t> m_indices;
 		AssetHandle m_material = 0;
 		glm::vec3 m_center = glm::vec3(0.0f);
+		Math::AABB m_bounds;
 
 		Ref<UniformBuffer> m_diffuseMap;
 

@@ -86,6 +86,18 @@ namespace Uge
 
 	}
 
+	void OpenGLRendererAPI::SetCullMode(CullMode mode)
+	{
+
+		switch (mode)
+		{
+		case CullMode::None:  glDisable(GL_CULL_FACE); break;
+		case CullMode::Back:  glEnable(GL_CULL_FACE); glCullFace(GL_BACK); break;
+		case CullMode::Front: glEnable(GL_CULL_FACE); glCullFace(GL_FRONT); break;
+		}
+
+	}
+
 	void OpenGLRendererAPI::SetLineWidth(float width)
 	{
 		glLineWidth(width);

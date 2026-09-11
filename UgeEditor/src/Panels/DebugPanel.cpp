@@ -138,12 +138,13 @@ namespace Uge
 
 		if (ImGui::BeginTable("##renderStats", 2, ImGuiTableFlags_SizingStretchProp))
 		{
-			StatRow("Draw calls", stats.DrawCalls);
-			StatRow("Indices", stats.IndexCount);
-			StatRow("Triangles", stats.TriangleCount);
-			StatRow("2D quads", stats.Quad2DCount);
-			StatRow("Text quads", stats.Text2DQuadCount);
-			StatRow("Mesh draws", stats.MeshDrawCount);
+			StatRow("Draw calls",	 stats.DrawCalls);
+			StatRow("Indices",		 stats.IndexCount);
+			StatRow("Triangles",	 stats.TriangleCount);
+			StatRow("2D quads",		 stats.Quad2DCount);
+			StatRow("Text quads",	 stats.Text2DQuadCount);
+			StatRow("Mesh draws",	 stats.MeshDrawCount);
+			StatRow("Meshes culled", stats.MeshCulledCount);
 			ImGui::EndTable();
 		}
 

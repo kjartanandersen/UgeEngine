@@ -49,6 +49,8 @@ namespace Uge
 
 		uint32_t MeshDrawCount = 0;		///< Meshes drawn through the Uge::Model path.
 
+		uint32_t MeshCulledCount = 0;	///< Meshes culled
+
 
 		/**
 		 * @brief Returns the counters for the frame currently being built.

@@ -399,6 +399,12 @@ namespace Uge
 
 			ImportAlphaMode(aiMat, properties);
 
+			int twoSided = 0;
+			if (aiMat->Get(AI_MATKEY_TWOSIDED, twoSided) == AI_SUCCESS)
+			{
+				properties.DoubleSided = twoSided != 0;
+			}
+
 			material->SetProperties(properties);
 
 			AssetHandle materialHandle = assetManager->AddMemoryOnlyAsset(material);

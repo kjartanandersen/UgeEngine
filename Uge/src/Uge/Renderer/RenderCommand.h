@@ -102,6 +102,11 @@ namespace Uge
 			m_rendererAPI->SetBlendMode(mode);
 		}
 
+		inline static void SetCullMode(CullMode mode)
+		{
+			m_rendererAPI->SetCullMode(mode);
+		}
+
 		/**
 		 * @brief Sets the width of a rendered line
 		 * @param width The width of the line

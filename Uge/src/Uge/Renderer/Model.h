@@ -13,6 +13,7 @@
 
 #include "Uge/Core/Core.h"
 
+#include "Uge/Renderer/RenderCommand.h"
 #include "Uge/Renderer/Environment.h"
 #include "Uge/Renderer/Mesh.h"
 #include "Uge/Renderer/Shader.h"
@@ -22,6 +23,9 @@
 
 #include "Uge/Asset/Asset.h"
 #include "Uge/Asset/AssetMetadata.h"
+
+#include "Uge/Math/AABB.h"
+#include "Uge/Math/Frustum.h"
 
 
 struct aiNode;
@@ -196,9 +200,12 @@ namespace Uge
 
 		static void EnsureSceneResources();
 
+		static void ApplyCullMode(CullMode mode);
+
 	private:
 
 		std::vector<Mesh> m_meshes;
+		Math::AABB m_bounds;
 		std::vector<AssetHandle> m_loadedTextures;
 
 		std::string m_directory;
@@ -240,6 +247,11 @@ namespace Uge
 			Ref<Shader> SkyboxShader; ///< Shader used to draw the environment cubemap.
 			Ref<VertexArray> SkyboxCube; ///< Unit cube the skybox is rendered on.
 			Ref<UniformBuffer> SkyboxUniformBuffer; ///< Per-frame skybox camera and intensity.
+
+			// Cull Data
+			Math::Frustum ViewFrustum;                      ///< accepts everything until BeginScene()
+			bool FrustumCullingEnabled = true;				///< Is frustum culling enabled
+			CullMode CurrentCullMode = CullMode::None;		///< last state pushed to the API
 		};
 
 		static SceneData s_sceneData;

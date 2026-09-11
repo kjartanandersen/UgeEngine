@@ -36,6 +36,18 @@ namespace Uge
 		None = 2 ///< Source replaces destination.
 	};
 
+ /**
+     @enum  Uge::CullMode
+     @brief The Cull mode 
+	 @ingroup group_renderer
+ **/
+	enum class CullMode
+	{
+		None	= 0,	///< No culling
+ 		Front	= 1,	///< Front face culling
+		Back	= 2		///< back face culling
+	};
+
 	/**
 	 * @brief Abstract interface over the underlying graphics API.
 	 * @ingroup group_renderer
@@ -130,6 +142,8 @@ namespace Uge
 		 * geometry in the next pass stops compositing correctly.
 		 */
 		virtual void SetBlendMode(BlendMode mode) = 0;
+
+		virtual void SetCullMode(CullMode mode) = 0;
 
 		/**
 		 * @brief Issues an indexed draw call.

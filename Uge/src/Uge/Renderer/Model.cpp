@@ -140,6 +140,19 @@ namespace Uge
 		s_sceneData.Initialized = true;
 	}
 
+	void Model::ApplyCullMode(CullMode mode)
+	{
+		// Function should be idempotent
+		if (s_sceneData.CurrentCullMode == mode)
+		{
+			return;
+		}
+
+		RenderCommand::SetCullMode(mode);
+		s_sceneData.CurrentCullMode = mode;
+
+	}
+
 	void Model::SetEnvironment(const Ref<Environment>& environment, float intensity)
 	{
 		// Only a valid environment counts: a half-built one would leave the shader sampling
@@ -178,6 +191,8 @@ namespace Uge
 		s_sceneData.SkyboxShader->Bind();
 		s_sceneData.SceneEnvironment->Skybox->Bind(0);
 
+		RenderCommand::SetCullMode(CullMode::None);
+
 		// The vertex stage emits z == w, which lands exactly on the far plane; GL_LESS would
 		// reject all of it. Depth writes stay on so the sky still occludes nothing but is
 		// itself occluded correctly.
@@ -196,6 +211,10 @@ namespace Uge
 		s_sceneData.CameraUniformBuffer->SetData(&cameraData, sizeof(CameraData));
 
 		s_sceneData.CameraPosition = cameraPosition;
+
+		// Culling
+		s_sceneData.ViewFrustum = Math::Frustum::FromViewProjection(viewProjection);
+		ApplyCullMode(CullMode::Back);
 
 		// The shader wants the direction towards the light, which is the reverse of the
 		// direction the light travels in.
@@ -263,6 +282,14 @@ namespace Uge
 			return;
 		}
 
+		const bool cull = s_sceneData.FrustumCullingEnabled;
+
+		if (cull && !s_sceneData.ViewFrustum.Intersects(m_bounds.Transform(transform)))
+		{
+			RenderStats::Get().MeshCulledCount += (uint32_t)m_meshes.size();
+			return;
+		}
+
 		s_sceneData.ModelShader->Bind();
 		ModelData modelData{};
 		modelData.ModelTransform = transform;
@@ -271,6 +298,13 @@ namespace Uge
 
 		for (const auto& mesh : m_meshes)
 		{
+
+			if (cull && !s_sceneData.ViewFrustum.Intersects(mesh.GetBounds().Transform(transform)))
+			{
+				RenderStats::Get().MeshCulledCount++;
+				continue;
+			}
+
 			if (GetMaterialBlendMode(mesh.GetMaterial()) == AlphaMode::Blend)
 			{
 				// Deferred to EndScene(): sorting has to span every model in the pass, not
@@ -377,6 +411,7 @@ namespace Uge
 
 		SetName(scene->mName.C_Str());
 
+		m_bounds = Math::AABB{};
 		ProcessNode(scene->mRootNode, scene, aiMatrix4x4t<float>());
 	}
 
@@ -451,7 +486,11 @@ namespace Uge
 			}
 		}
 
-		return Mesh(vertices, indices, materialHandle, mesh->mName.C_Str());
+		Mesh retMesh = Mesh(vertices, indices, materialHandle, mesh->mName.C_Str());
+
+		m_bounds.Grow(retMesh.GetBounds());
+
+		return retMesh;
 	}
 
 	std::vector<Ref<Texture2D>> Model::LoadMaterialTextures(aiMaterial* material, const aiScene* scene, int textureType, const std::string& typeName)
