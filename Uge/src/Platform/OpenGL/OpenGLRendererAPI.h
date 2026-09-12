@@ -1,3 +1,9 @@
+/**
+ * @file OpenGLRendererAPI.h
+ * @brief OpenGL implementation of Uge::RendererAPI.
+ * @ingroup group_platform
+ */
+
 #pragma once
 
 #include "Uge/Renderer/RendererAPI.h"
@@ -5,6 +11,15 @@
 namespace Uge
 {
 
+	/**
+	 * @brief Issues OpenGL state changes and draw calls.
+	 * @ingroup group_platform
+	 *
+	 * Init() enables blending, depth testing and, in Debug builds, the OpenGL debug
+	 * message callback that routes driver diagnostics into the engine log.
+	 *
+	 * Reached through Uge::RenderCommand rather than directly.
+	 */
 	class OpenGLRendererAPI : public RendererAPI
 	{
 
@@ -14,8 +29,15 @@ namespace Uge
 		virtual void SetClearColor(const glm::vec4& color) override;
 		virtual void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
 		virtual void Clear() override;
+		virtual void SetDepthWrite(bool enabled) override;
+		virtual void SetDepthTest(bool enabled) override;
+		virtual void SetDepthFunc(DepthCompare compare) override;
+		virtual void SetBlendMode(BlendMode mode) override;
+		virtual void SetCullMode(CullMode mode) override;
+		virtual void SetLineWidth(float width) override;
 
 		virtual void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCound = 0) override;
+		virtual void DrawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount) override;
 
 
 

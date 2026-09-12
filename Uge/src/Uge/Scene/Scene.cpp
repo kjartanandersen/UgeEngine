@@ -1,20 +1,75 @@
 #include <ugpch.h>
 #include "Scene.h"
 
+#include "Entity.h"
 #include "Uge/Scene/Components.h"
 #include "Uge/Scene/ScriptableEntity.h"
 #include "Uge/Renderer/Renderer2D.h"
 #include "Uge/Scripting/ScriptEngine.h"
+#include "Uge/Asset/AssetManager.h"
+#include "Uge/Renderer/ColorSpace.h"
+#include "Uge/Physics/Physics.h"
 
+#include <glm/gtc/quaternion.hpp>
 #include <type_traits>
 
-#include "Entity.h"
 
 namespace Uge
 {
 	template<typename T>
 	struct DependentFalse : std::false_type {};
 
+	namespace
+	{
+		// Finds the scene's sky light and hands its environment to the mesh pass. Clears the
+		// environment when there is none, since Model holds it across frames and would
+		// otherwise keep lighting with a sky light that has since been deleted.
+		static void ApplySkyLight(entt::registry& registry)
+		{
+			auto skyLightView = registry.view<SkyLightComponent>();
+			for (auto entity : skyLightView)
+			{
+				const SkyLightComponent& skyLight = skyLightView.get<SkyLightComponent>(entity);
+
+				if (skyLight.Environment && AssetManager::IsAssetHandleValid(skyLight.Environment))
+				{
+					Model::SetEnvironment(
+						AssetManager::GetAsset<Environment>(skyLight.Environment), skyLight.Intensity);
+					return;
+				}
+			}
+
+			Model::SetEnvironment(nullptr);
+		}
+
+		// Finds the scene's directional light and hands it to the mesh pass. Clears it when
+		// there is none, for the same reason ApplySkyLight does.
+		static void ApplyDirectionalLight(entt::registry& registry)
+		{
+			auto lightView = registry.view<TransformComponent, DirectionalLightComponent>();
+			for (auto [entity, transform, light] : lightView.each())
+			{
+				// Shines along the entity's local -Z, matching the axis a camera looks down,
+				// so the same rotation gizmo aims both. Position is irrelevant: the source is
+				// infinitely distant, which is what makes the rays parallel.
+				const glm::vec3 direction =
+					glm::mat3(glm::toMat3(glm::quat(transform.Rotation))) * glm::vec3(0.0f, 0.0f, -1.0f);
+
+				// Picked by eye in the property panel, so sRGB; the renderer works in linear.
+				Model::SetDirectionalLight(direction, SrgbToLinear(light.Color) * light.Intensity);
+				return;
+			}
+
+			Model::SetDirectionalLight(glm::vec3(0.0f), glm::vec3(0.0f));
+		}
+
+		// The sky surrounds the camera rather than sitting somewhere in the world, so the view
+		// matrix keeps its rotation and loses its translation.
+		static glm::mat4 SkyboxViewProjection(const glm::mat4& projection, const glm::mat4& view)
+		{
+			return projection * glm::mat4(glm::mat3(view));
+		}
+	}
 
 	Scene::Scene()
 	{
@@ -68,6 +123,7 @@ namespace Uge
 
 		newScene->m_viewportWidth = other->m_viewportWidth;
 		newScene->m_viewportHeight = other->m_viewportHeight;
+		newScene->SetName(other->GetName());
 
 		auto& srcSceneRegistry = other->m_registry;
 		auto& dstSceneRegistry = newScene->m_registry;
@@ -145,15 +201,76 @@ namespace Uge
 	void Scene::DestroyEntity(Entity entity)
 	{
 
+		// Read the handle before the entity goes away, release after — the scan in
+		// ReleaseMeshIfUnused would otherwise still see this entity holding it.
+		AssetHandle mesh = entity.HasComponent<MeshComponent>()
+			? entity.GetComponent<MeshComponent>().Mesh
+			: 0;
+
+
+		// Same but for mesh collider
+		AssetHandle meshCollider = entity.HasComponent<MeshColliderComponent>()
+			? entity.GetComponent<MeshColliderComponent>().Mesh
+			: 0;
+
+		
+
 		m_entityMap.erase(entity.GetUUID());
 		m_registry.destroy(entity);
 
+		ReleaseMeshIfUnused(mesh);
+		ReleaseMeshIfUnused(meshCollider);
 
 	}
+
+	void Scene::ReleaseMeshIfUnused(AssetHandle mesh)
+	{
+
+		if (!mesh || m_isRunning)
+		{
+			return;
+		}
+
+		auto view = m_registry.view<MeshComponent>();
+		for (auto entity : view)
+		{
+			if (view.get<MeshComponent>(entity).Mesh == mesh)
+			{
+				return;
+			}
+		}
+
+		auto colliderView = m_registry.view<MeshColliderComponent>();
+		for (auto entity : colliderView)
+		{
+			if (colliderView.get<MeshColliderComponent>(entity).Mesh == mesh)
+				return;
+		}
+
+		AssetManager::DeleteAsset(mesh);
+
+	}
+
+	
 
 	void Scene::OnRuntimeStart()
 	{
 		m_isRunning = true;
+
+		// Physics — must exist before scripts are instantiated.
+		{
+			PhysicsSceneDesc desc;
+			m_physicsScene = Physics::CreateScene(desc);
+
+			auto view = m_registry.view<TransformComponent, RigidbodyComponent>();
+			for (auto e : view)
+			{
+				Entity entity = { e, this };
+				CreatePhysicsBody(entity);   // new private helper, see below
+			}
+
+			m_physicsScene->OptimizeBroadPhase();
+		}
 
 		// Scripting
 		{
@@ -175,6 +292,9 @@ namespace Uge
 		m_isRunning = false;
 		ScriptEngine::OnRuntimeStop();
 
+		m_physicsScene.reset();
+		m_physicsAccumulator = 0.0f;
+
 	}
 
 	void Scene::OnUpdateRuntime(Timestep ts)
@@ -182,29 +302,100 @@ namespace Uge
 
 		if (!m_isPaused || m_stepFrames-- > 0)
 		{
+
+			// Physics
+			{
+				UG_PROFILE_SCOPE("Scene Physics");
+
+				constexpr float fixedTimeStep = 1.0f / 60.0f;
+				constexpr int   maxSubSteps = 4;
+
+				// Kinematic bodies are driven by their transform, not by the simulation.
+				{
+					auto view = m_registry.view<TransformComponent, RigidbodyComponent>();
+					for (auto [e, transform, rb] : view.each())
+					{
+						if (rb.Type == BodyType::Kinematic && rb.RuntimeBody.IsValid())
+						{
+							m_physicsScene->SetTransform(rb.RuntimeBody, transform.Translation,
+								glm::quat(transform.Rotation));
+
+						}
+					}
+				}
+
+				m_physicsAccumulator += ts.GetSeconds();
+
+				int steps = 0;
+				while (m_physicsAccumulator >= fixedTimeStep && steps < maxSubSteps)
+				{
+					m_physicsScene->Step(fixedTimeStep);
+					m_physicsAccumulator -= fixedTimeStep;
+					++steps;
+				}
+
+				// A hitch (breakpoint, asset load) must not leave a backlog that
+				// then runs at maxSubSteps forever and never catches up.
+				if (steps == maxSubSteps)
+				{
+					m_physicsAccumulator = 0.0f;
+
+				}
+
+				// Write simulated transforms back.
+				{
+					auto view = m_registry.view<TransformComponent, RigidbodyComponent>();
+					for (auto [e, transform, rb] : view.each())
+					{
+						if (rb.Type == BodyType::Static || !rb.RuntimeBody.IsValid())
+						{
+							continue;
+
+						}
+
+						glm::vec3 position;
+						glm::quat rotation;
+						m_physicsScene->GetTransform(rb.RuntimeBody, position, rotation);
+
+						transform.Translation = position;
+						transform.Rotation = glm::eulerAngles(rotation);
+					}
+				}
+
+				m_physicsScene->ConsumeContactEvents(m_contactEvents);
+				// TODO: dispatch m_contactEvents to scripts once Phase 4 lands.
+			}
+
+
 			// Update Scripts
 
 			// C# Entity OnUpdate
-			auto view = m_registry.view<ScriptComponent>();
-			for (auto e : view)
 			{
-				Entity entity = { e, this };
-				ScriptEngine::OnUpdateEntity(entity, ts);
+				UG_PROFILE_SCOPE("Scene Scripts (C#)");
+				auto view = m_registry.view<ScriptComponent>();
+				for (auto e : view)
+				{
+					Entity entity = { e, this };
+					ScriptEngine::OnUpdateEntity(entity, ts);
+				}
 			}
 
-			m_registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
-				{
-					// TODO: Move to Scene::OnScenePlay
-					if (!nsc.Instance)
+			{
+				UG_PROFILE_SCOPE("Scene Scripts (native)");
+				m_registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
 					{
-						nsc.Instance = nsc.InstantiateScript();
-						nsc.Instance->m_entity = Entity{ entity, this };
-						nsc.Instance->OnCreate();
-					}
+						// TODO: Move to Scene::OnScenePlay
+						if (!nsc.Instance)
+						{
+							nsc.Instance = nsc.InstantiateScript();
+							nsc.Instance->m_entity = Entity{ entity, this };
+							nsc.Instance->OnCreate();
+						}
 
-					nsc.Instance->OnUpdate(ts);
+						nsc.Instance->OnUpdate(ts);
 
-				});
+					});
+			}
 		}
 		
 
@@ -239,21 +430,29 @@ namespace Uge
 
 		if (mainCam)
 		{
-			const glm::mat4 viewProjection = mainCam->GetProjection() * glm::inverse(mainTransform);
+			const glm::mat4 view = glm::inverse(mainTransform);
+			const glm::mat4 viewProjection = mainCam->GetProjection() * view;
 
-			Model::BeginScene(viewProjection);
+			ApplySkyLight(m_registry);
+			ApplyDirectionalLight(m_registry);
+			Model::BeginScene(viewProjection, glm::vec3(mainTransform[3]));
 			{
 				auto meshView = m_registry.view<TransformComponent, MeshComponent>();
 				for (auto [entity, transform, mesh] : meshView.each())
 				{
-					if (!mesh.ModelAsset)
+					if (mesh.Mesh)
 					{
-						continue;
+						Ref<Model> model = AssetManager::GetAsset<Model>(mesh.Mesh);
+						if (model)
+						{
+							model->Draw(transform.GetTransform(), (int)entity);
+						}
 					}
-
-					mesh.ModelAsset->Draw(transform.GetTransform(), (int)entity);
 				}
 			}
+
+			Model::DrawSkybox(SkyboxViewProjection(mainCam->GetProjection(), view));
+
 			Model::EndScene();
 
 			Renderer2D::BeginScene(mainCam->GetProjection(), mainTransform);
@@ -289,23 +488,141 @@ namespace Uge
 
 	}
 
+	void Scene::CreatePhysicsBody(Entity entity)
+	{
+		if (!entity.HasComponent<RigidbodyComponent>())
+		{
+			UG_CORE_ASSERT(false, "(Scene::CreatePhysicsBody) - Entity does not have rigid body component!");
+			return;
+		}
+
+		const TransformComponent& tc = entity.GetComponent<TransformComponent>();
+		RigidbodyComponent& rc = entity.GetComponent<RigidbodyComponent>();
+		BodyDesc bodyDesc;
+
+		std::vector<ColliderDesc> colliderDescs;
+		colliderDescs.reserve(4);
+
+		if (entity.HasComponent<BoxColliderComponent>())
+		{
+			const BoxColliderComponent& bc = entity.GetComponent<BoxColliderComponent>();
+
+
+			BoxShapeDesc boxShapeDesc;
+			boxShapeDesc.HalfExtents = bc.HalfExtents;
+
+			ColliderDesc colliderDesc;
+			colliderDesc.IsTrigger = bc.IsTrigger;
+			colliderDesc.Material = bc.Material;
+			colliderDesc.Offset = bc.Offset;
+			colliderDesc.Shape = boxShapeDesc;
+
+			colliderDescs.push_back(colliderDesc);
+
+		}
+
+		if (entity.HasComponent<SphereColliderComponent>())
+		{
+			const SphereColliderComponent& sc = entity.GetComponent<SphereColliderComponent>();
+
+			SphereShapeDesc sphereShapeDesc;
+			sphereShapeDesc.Radius = sc.Radius;
+
+			ColliderDesc colliderDesc;
+			colliderDesc.IsTrigger = sc.IsTrigger;
+			colliderDesc.Material = sc.Material;
+			colliderDesc.Offset = sc.Offset;
+			colliderDesc.Shape = sphereShapeDesc;
+
+			colliderDescs.push_back(colliderDesc);
+
+		}
+
+		if (entity.HasComponent<CapsuleColliderComponent>())
+		{
+			const CapsuleColliderComponent& cc = entity.GetComponent<CapsuleColliderComponent>();
+
+			CapsuleShapeDesc capsuleShapeDesc;
+			capsuleShapeDesc.HalfHeight = cc.HalfHeight;
+			capsuleShapeDesc.Radius = cc.Radius;
+
+			ColliderDesc colliderDesc;
+			colliderDesc.IsTrigger = cc.IsTrigger;
+			colliderDesc.Material = cc.Material;
+			colliderDesc.Offset = cc.Offset;
+			colliderDesc.Shape = capsuleShapeDesc;
+
+			colliderDescs.push_back(colliderDesc);
+
+		}
+
+		if (entity.HasComponent<MeshColliderComponent>())
+		{
+			const MeshColliderComponent& mc = entity.GetComponent<MeshColliderComponent>();
+
+			MeshShapeDesc meshShapeDesc;
+			meshShapeDesc.Convex = mc.Convex;
+
+			if (!Model::BuildCollisionGeometry(mc.Mesh, meshShapeDesc.Vertices, meshShapeDesc.Indices))
+			{
+				UG_CORE_WARN("Scene: entity '{0}' has a mesh collider with no usable geometry; skipped.",
+					entity.GetComponent<TagComponent>().Tag);
+			}
+			else
+			{
+				ColliderDesc colliderDesc;
+				colliderDesc.IsTrigger = mc.IsTrigger;
+				colliderDesc.Material = mc.Material;
+				colliderDesc.Offset = mc.Offset;
+				colliderDesc.Shape = std::move(meshShapeDesc);
+
+				colliderDescs.push_back(std::move(colliderDesc));
+			}
+		}
+
+		bodyDesc.AngularDamping = rc.AngularDamping;
+		bodyDesc.Colliders		= std::move(colliderDescs);
+		bodyDesc.FixedRotation	= rc.FixedRotation;
+		bodyDesc.GravityFactor	= rc.GravityFactor;
+		bodyDesc.Layer			= rc.Layer;
+		bodyDesc.LinearDamping	= rc.LinearDamping;
+		bodyDesc.Mass			= rc.Mass;
+		bodyDesc.Position		= tc.Translation;
+		bodyDesc.Rotation		= tc.Rotation;
+		bodyDesc.Scale			= tc.Scale;
+		bodyDesc.Type			= rc.Type;
+		bodyDesc.UserData		= entity.GetUUID();
+
+		rc.RuntimeBody =  m_physicsScene->CreateBody(bodyDesc);
+
+	}
+
 	void Scene::OnUpdateEditor(Timestep ts, EditorCamera& camera)
 	{
 
 		// Draw Meshes
-		Model::BeginScene(camera.GetViewProjection());
+		ApplySkyLight(m_registry);
+		ApplyDirectionalLight(m_registry);
+		Model::BeginScene(camera.GetViewProjection(), camera.GetPosition());
 		{
 			auto meshView = m_registry.view<TransformComponent, MeshComponent>();
 			for (auto [entity, transform, mesh] : meshView.each())
 			{
-				if (!mesh.ModelAsset)
+				if (mesh.Mesh)
 				{
-					continue;
+					Ref<Model> model = AssetManager::GetAsset<Model>(mesh.Mesh);
+					if (model)
+					{
+						model->Draw(transform.GetTransform(), (int)entity);
+					}
 				}
-
-				mesh.ModelAsset->Draw(transform.GetTransform(), (int)entity);
 			}
 		}
+
+		// After the opaque meshes so the depth buffer rejects sky the car already covers, and
+		// before EndScene so transparent surfaces blend over it.
+		Model::DrawSkybox(SkyboxViewProjection(camera.GetProjection(), camera.GetViewMatrix()));
+
 		Model::EndScene();
 
 		Renderer2D::BeginScene(camera);
@@ -466,6 +783,54 @@ namespace Uge
 	void Scene::OnComponentAdded<TextComponent>(Entity entity, TextComponent& component)
 	{
 	}
+
+	template<>
+	void Scene::OnComponentAdded<SkyLightComponent>(Entity entity, SkyLightComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<DirectionalLightComponent>(Entity entity, DirectionalLightComponent& component)
+	{
+		// A light shines along its entity's local -Z, so an untouched transform points it
+		// horizontally - which lights none of the upward-facing surfaces anyone is looking at,
+		// and reads as "the light does nothing". Aim it down and to one side instead, the angle
+		// a sun would actually come from.
+		//
+		// Only when the rotation is untouched, so this never overwrites a deliberate one.
+		TransformComponent& transform = entity.GetComponent<TransformComponent>();
+		if (transform.Rotation == glm::vec3(0.0f))
+		{
+			transform.Rotation = glm::vec3(glm::radians(-50.0f), glm::radians(-30.0f), 0.0f);
+		}
+	}
+
+	template<>
+	void Scene::OnComponentAdded<RigidbodyComponent>(Entity entity, RigidbodyComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<BoxColliderComponent>(Entity entity, BoxColliderComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<SphereColliderComponent>(Entity entity, SphereColliderComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<CapsuleColliderComponent>(Entity entity, CapsuleColliderComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<MeshColliderComponent>(Entity entity, MeshColliderComponent& component)
+	{
+	}
+
+
 
 
 

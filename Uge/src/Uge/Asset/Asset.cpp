@@ -1,0 +1,78 @@
+#include <ugpch.h>
+
+#include "Asset.h"
+
+namespace Uge
+{
+    std::string_view AssetTypeToString(AssetType type)
+    {
+
+        switch (type)
+        {
+            case Uge::AssetType::None:
+            {
+                return "AssetType::None";
+                
+            }
+            case Uge::AssetType::Scene:
+            {
+
+                return "AssetType::Scene";
+            }
+            case Uge::AssetType::Texture2D:
+            {
+
+                return "AssetType::Texture2D";
+            }
+            case Uge::AssetType::Mesh:
+            {
+
+                return "AssetType::Mesh";
+            }
+            case Uge::AssetType::Material:
+            {
+                return "AssetType::Material";
+            }
+            case Uge::AssetType::Environment:
+            {
+                return "AssetType::Environment";
+            }
+
+        }
+
+        return "AssetType::<Invalid>";
+
+    }
+
+    AssetType AssetTypeFromString(std::string_view type)
+    {
+
+        if (type == "AssetType::None")
+        {
+            return AssetType::None;
+        }
+        if (type == "AssetType::Scene")
+        {
+            return AssetType::Scene;
+        }
+        if (type == "AssetType::Texture2D")
+        {
+            return AssetType::Texture2D;
+        }
+        if (type == "AssetType::Mesh")
+        {
+            return AssetType::Mesh;
+        }
+        if (type == "AssetType::Material")
+        {
+            return AssetType::Material;
+        }
+        if (type == "AssetType::Environment")
+        {
+            return AssetType::Environment;
+        }
+
+        return AssetType::None;
+        
+    }
+}

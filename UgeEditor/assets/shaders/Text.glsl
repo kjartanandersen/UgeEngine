@@ -82,7 +82,17 @@ float screenPxRange() {
 float median(float r, float g, float b) {
     return max(min(r, g), min(max(r, g), b));
 }
-			
+
+// The scene target is linear RGBA16F and the resolve pass sRGB-encodes it once for the whole
+// frame, so text colours have to be decoded here or they are encoded twice and come out
+// washed out. @see Uge::PostProcess
+vec3 SrgbToLinear(vec3 color)
+{
+	vec3 low = color / 12.92;
+	vec3 high = pow((color + 0.055) / 1.055, vec3(2.4));
+	return mix(low, high, step(vec3(0.04045), color));
+}
+
 void main()
 {
 	
@@ -99,6 +109,9 @@ void main()
     fragColor = mix(bgColor, Input.Color, opacity);
 	if (fragColor.a == 0.0)
 		discard;
+
+	// Alpha carries the glyph coverage and is not gamma encoded, so only rgb is decoded.
+	fragColor.rgb = SrgbToLinear(fragColor.rgb);
 	
 	entityID = v_EntityID;
 

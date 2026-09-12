@@ -25,3 +25,6 @@
 [submodule "Uge/thirdparty/ch-msdf-atlas-gen"]
 	path = Uge/thirdparty/ch-msdf-atlas-gen
 	url = git@github.com:TheCherno/msdf-atlas-gen.git
+[submodule "Uge/thirdparty/googletest"]
+	path = Uge/thirdparty/googletest
+	url = git@github.com:google/googletest.git

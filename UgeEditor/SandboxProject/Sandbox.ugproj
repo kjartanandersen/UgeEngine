@@ -2,4 +2,5 @@ Project:
   Name: Sandbox
   StartScene: "Scenes/shouldBeOK2.uge"
   AssetDirectory: "Assets"
+  AssetRegistryPath: "AssetRegistry.ugreg"
   ScriptModulePath: "Scripts/Binaries/Sandbox.dll"

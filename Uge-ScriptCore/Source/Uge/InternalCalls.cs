@@ -1,9 +1,27 @@
-﻿using System;
+﻿/**
+ * @file InternalCalls.cs
+ * @brief Declarations of the native engine functions callable from C#.
+ * @ingroup group_scripting
+ */
+using System;
 using System.Runtime.CompilerServices;
 
 
 namespace Uge
 {
+    /**
+     * @brief The managed half of the script bridge: `extern` declarations bound by the engine.
+     * @ingroup group_scripting
+     *
+     * Each method is marked `InternalCall` and has no managed body — Mono dispatches it to
+     * the native function registered by Uge::ScriptGlue::RegisterFunctions.
+     *
+     * @warning Names and signatures must match the native registrations exactly. A mismatch
+     * surfaces at runtime as a missing-method exception, not as a compile error.
+     *
+     * @note Internal to the script core. Scripts use the wrappers — Uge.Entity,
+     * Uge.Component, Source.Uge.Input — rather than calling these directly.
+     */
     public static class InternalCalls
     {
 

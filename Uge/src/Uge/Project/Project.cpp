@@ -26,10 +26,20 @@ namespace Uge
 		{
 			project->m_ProjectDirectory = path.parent_path();
 			s_activeProject = project;
+			std::shared_ptr<EditorAssetManager> editorAssetManager = std::make_shared<EditorAssetManager>();
+			s_activeProject->m_assetManager = editorAssetManager;
+			editorAssetManager->DeserializeAssetRegistry();
 			return s_activeProject;
 		}
 
 		return nullptr;
+
+	}
+
+	void Project::Unload()
+	{
+
+		s_activeProject = nullptr;
 
 	}
 

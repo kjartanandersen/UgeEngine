@@ -4,6 +4,8 @@
 #include "Uge/Scripting/ScriptEngine.h"
 #include "Uge/Utils/PlatformUtils.h"
 #include "Uge/UI/UI.h"
+#include "Uge/Asset/AssetManager.h"
+#include "Uge/Project/Project.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -19,7 +21,7 @@
 
 namespace Uge
 {
-
+	constexpr float dragSpeed = 0.1f;
 	
 	static bool DrawVec3Control(const std::string& label, glm::vec3& values,
 		float resetValue = 0.0f, float columnWidth = 100.0f)
@@ -33,7 +35,7 @@ namespace Uge
 		ImGui::PushID(label.c_str());
 		ImGui::Columns(2);
 		ImGui::SetColumnWidth(0, columnWidth);
-		ImGui::Text(label.c_str());
+		ImGui::Text("%s", label.c_str());
 		ImGui::NextColumn();
 
 
@@ -56,7 +58,7 @@ namespace Uge
 		ImGui::PopFont();
 
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f"))
+		if (ImGui::DragFloat("##X", &values.x, dragSpeed, 0.0f, 0.0f, "%.2f"))
 		{
 			hasChanged = true;
 		}
@@ -77,7 +79,7 @@ namespace Uge
 		ImGui::PopFont();
 
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f"))
+		if (ImGui::DragFloat("##Y", &values.y, dragSpeed, 0.0f, 0.0f, "%.2f"))
 		{
 			hasChanged = true;
 		}
@@ -98,7 +100,7 @@ namespace Uge
 		ImGui::PopFont();
 
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f"))
+		if (ImGui::DragFloat("##Z", &values.z, dragSpeed, 0.0f, 0.0f, "%.2f"))
 		{
 			hasChanged = true;
 		}
@@ -132,7 +134,7 @@ namespace Uge
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
 			float lineHeight = GImGui->Font->LegacySize + GImGui->Style.FramePadding.y * 2.0f;
 			ImGui::Separator();
-			bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, name.c_str());
+			bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, "%s", name.c_str());
 			ImGui::PopStyleVar();
 			ImGui::SameLine(contentRegAvail.x - lineHeight * 0.5f);
 			if (ImGui::Button("+", ImVec2{ lineHeight, lineHeight }))
@@ -170,7 +172,26 @@ namespace Uge
 			{
 				if (removeComponent)
 				{
-					entity.RemoveComponent<T>();
+					if constexpr (std::is_same_v<T, MeshComponent>)
+					{
+						// Copy the handle out first: `component` dangles once the
+						// component is gone.
+						AssetHandle mesh = component.Mesh;
+						entity.RemoveComponent<T>();
+						entity.GetScene()->ReleaseMeshIfUnused(mesh);
+					}
+					else if constexpr (std::is_same_v<T, MeshColliderComponent>)
+					{
+						// Copy the handle out first: `component` dangles once the
+						// component is gone.
+						AssetHandle mesh = component.Mesh;
+						entity.RemoveComponent<T>();
+						entity.GetScene()->ReleaseMeshIfUnused(mesh);
+					}
+					else
+					{
+						entity.RemoveComponent<T>();
+					}
 				}
 
 			}
@@ -266,7 +287,10 @@ namespace Uge
 		ImGuiTreeNodeFlags flags = ((m_selectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
 		flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
-		bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, tag.c_str());
+		// "%s", not the tag directly: the tag is user text, and TreeNodeEx treats its last
+		// argument as a format string — an entity renamed to something containing a "%s"
+		// otherwise reads a vararg that was never passed.
+		bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, "%s", tag.c_str());
 
 		if (ImGui::IsItemClicked())
 		{
@@ -347,6 +371,13 @@ namespace Uge
 			DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
 			DisplayAddComponentEntry<MeshComponent>("Mesh");
 			DisplayAddComponentEntry<TextComponent>("Text Component");
+			DisplayAddComponentEntry<SkyLightComponent>("Sky Light");
+			DisplayAddComponentEntry<DirectionalLightComponent>("Directional Light");
+			DisplayAddComponentEntry<RigidbodyComponent>("Rigidbody");
+			DisplayAddComponentEntry<BoxColliderComponent>("Box Collider");
+			DisplayAddComponentEntry<SphereColliderComponent>("Sphere Collider");
+			DisplayAddComponentEntry<CapsuleColliderComponent>("Capsule Collider");
+			DisplayAddComponentEntry<MeshColliderComponent>("Mesh Collider");
 
 
 			ImGui::EndPopup();
@@ -596,28 +627,74 @@ namespace Uge
 					}
 
 					// Texture
+					
+					std::string label = "None";
+					bool isTextureValid = false;
+					if (component.Texture != 0)
+					{
+						if (AssetManager::IsAssetHandleValid(component.Texture) && AssetManager::GetAssetType(component.Texture) == AssetType::Texture2D)
+						{
+							const auto& metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Texture);
+							label = metadata.FilePath.filename().string();
+							isTextureValid = true;
+						}
+						else
+						{
+							label = "Invalid";
+						}
+					}
 
-					ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
+					ImVec2 BtnLabelSize = ImGui::CalcTextSize(label.c_str());
+					BtnLabelSize.x += 20.0f;
+					float btnLabelWidth = glm::max<float>(100.0f, BtnLabelSize.x);
 
 
+					ImGui::Button(label.c_str(), BtnLabelSize);
 					if (ImGui::BeginDragDropTarget())
 					{
 						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 						{
-							const wchar_t* path = (const wchar_t*)payload->Data;
-							std::filesystem::path texturePath(path);
-							component.Texture = Texture2D::Create(texturePath.string());
 
+							AssetHandle handle = *(AssetHandle*)payload->Data;
 
+							// TODO: validate
+							if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
+							{
+								component.Texture = handle;
+
+							}
+							else
+							{
+								UG_CORE_WARN("Wrong Asset Type!");
+							}
+
+							
 						}
 						ImGui::EndDragDropTarget();
+
 					}
+					if (isTextureValid)
+					{
+
+						ImGui::SameLine();
+
+						ImVec2 xLabelSize = ImGui::CalcTextSize("X");
+						float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+						if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
+						{
+							component.Texture = 0;
+						}
+					}
+
+
+					ImGui::SameLine();
+					ImGui::Text("Texture");
 
 					// Tiling Factor
 					if (ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1f, 0.0f, 100.0f))
 					{
 
-						component.Texture->SetTilingFactor(component.TilingFactor);
+						// component.Texture->SetTilingFactor(component.TilingFactor);
 					}
 				});
 
@@ -625,40 +702,154 @@ namespace Uge
 
 #pragma region MeshComponent
 
-			DrawComponent<MeshComponent>("Mesh", entity, true, [](auto& component)
+			DrawComponent<MeshComponent>("Mesh", entity, true, [scene = m_context](auto& component)
 				{
-					char buffer[512];
-					memset(buffer, 0, sizeof(buffer));
-					strcpy_s(buffer, sizeof(buffer), component.FilePath.c_str());
-
-					ImGui::InputText("Path", buffer, sizeof(buffer));
-					component.FilePath = buffer;
-
-					if (ImGui::Button("Load Mesh"))
+					std::string label = "None";
+					bool isMeshValid = false;
+					if (component.Mesh != 0)
 					{
-						std::string filePath = FileDialogs::OpenFile("");
-
-						std::filesystem::path absPath(filePath);
-						std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
-
-						std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
-
-
-
-						std::string path = relativePath.string();
-
-
-
-						strcpy_s(buffer, sizeof(buffer), path.c_str());
-						component.SetModel(std::string(buffer));
+						if (AssetManager::IsAssetHandleValid(component.Mesh) && AssetManager::GetAssetType(component.Mesh) == AssetType::Mesh)
+						{
+							const auto& metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Mesh);
+							label = metadata.FilePath.filename().string();
+							isMeshValid = true;
+						}
+						else
+						{
+							label = "Invalid";
+						}
 					}
+
+					ImVec2 BtnLabelSize = ImGui::CalcTextSize(label.c_str());
+					BtnLabelSize.x += 20.0f;
+
+					ImGui::Button(label.c_str(), BtnLabelSize);
+					if (ImGui::BeginDragDropTarget())
+					{
+						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+						{
+							AssetHandle handle = *(AssetHandle*)payload->Data;
+
+							if (AssetManager::GetAssetType(handle) == AssetType::Mesh)
+							{
+								// Dropping onto a slot that already held a model drops
+								// that model's last reference.
+								AssetHandle previous = component.Mesh;
+								component.Mesh = handle;
+								if (previous != handle)
+								{
+									scene->ReleaseMeshIfUnused(previous);
+								}
+							}
+							else
+							{
+								UG_CORE_WARN("Wrong Asset Type!");
+							}
+						}
+						ImGui::EndDragDropTarget();
+					}
+
+					if (isMeshValid)
+					{
+						ImGui::SameLine();
+
+						ImVec2 xLabelSize = ImGui::CalcTextSize("X");
+						float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+						if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
+						{
+							AssetHandle mesh = component.Mesh;
+							component.Mesh = 0;
+							scene->ReleaseMeshIfUnused(mesh);
+						}
+					}
+
 					ImGui::SameLine();
-					if (ImGui::Button("Clear Mesh"))
+					ImGui::Text("Mesh");
+
+					ImGui::Text("Status: %s", isMeshValid ? "Loaded" : "No model");
+				});
+
+#pragma endregion
+
+#pragma region SkyLightComponent
+
+			DrawComponent<SkyLightComponent>("Sky Light", entity, true, [](auto& component)
+				{
+					std::string label = "None";
+					bool isEnvironmentValid = false;
+					if (component.Environment != 0)
 					{
-						component.SetModel(std::string());
+						if (AssetManager::IsAssetHandleValid(component.Environment)
+							&& AssetManager::GetAssetType(component.Environment) == AssetType::Environment)
+						{
+							const auto& metadata =
+								Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Environment);
+							label = metadata.FilePath.filename().string();
+							isEnvironmentValid = true;
+						}
+						else
+						{
+							label = "Invalid";
+						}
 					}
 
-					ImGui::Text("Status: %s", component.HasModel() ? "Loaded" : "No model");
+					ImVec2 btnLabelSize = ImGui::CalcTextSize(label.c_str());
+					btnLabelSize.x += 20.0f;
+
+					ImGui::Button(label.c_str(), btnLabelSize);
+					if (ImGui::BeginDragDropTarget())
+					{
+						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+						{
+							AssetHandle handle = *(AssetHandle*)payload->Data;
+
+							if (AssetManager::GetAssetType(handle) == AssetType::Environment)
+							{
+								component.Environment = handle;
+							}
+							else
+							{
+								UG_CORE_WARN("Wrong Asset Type!");
+							}
+						}
+						ImGui::EndDragDropTarget();
+					}
+
+					if (isEnvironmentValid)
+					{
+						ImGui::SameLine();
+
+						ImVec2 xLabelSize = ImGui::CalcTextSize("X");
+						float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+						if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
+						{
+							component.Environment = 0;
+						}
+					}
+
+					ImGui::SameLine();
+					ImGui::Text("Environment");
+
+					ImGui::DragFloat("Intensity", &component.Intensity, 0.05f, 0.0f, 20.0f);
+
+					ImGui::Text("Status: %s", isEnvironmentValid ? "Loaded" : "No environment");
+				});
+
+#pragma endregion
+
+#pragma region DirectionalLightComponent
+
+			DrawComponent<DirectionalLightComponent>("Directional Light", entity, true, [](auto& component)
+				{
+					ImGui::ColorEdit3("Color", glm::value_ptr(component.Color));
+
+					// Uncapped at the top: this is radiance, and the diffuse term divides albedo
+					// by pi, so plausible sunlight sits well above 1.
+					ImGui::DragFloat("Intensity", &component.Intensity, 0.05f, 0.0f, 100.0f);
+
+					ImGui::TextWrapped(
+						"Shines along the entity's local -Z; rotate the entity to aim it. "
+						"Position is ignored.");
 				});
 
 #pragma endregion
@@ -677,6 +868,210 @@ namespace Uge
 				});
 
 #pragma endregion
+
+#pragma region RigidBodyComponent
+
+			DrawComponent<RigidbodyComponent>("Rigidbody", entity, true, [](auto& component)
+			{
+				const char* bodyTypeStrings[] = { "Static", "Kinematic", "Dynamic" };
+				const char* current = bodyTypeStrings[(int)component.Type];
+
+				if (ImGui::BeginCombo("Body Type", current))
+				{
+					for (int i = 0; i < 3; i++)
+					{
+						bool selected = current == bodyTypeStrings[i];
+						if (ImGui::Selectable(bodyTypeStrings[i], selected))
+							component.Type = (BodyType)i;
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+
+				const char* layerStrings[] = { "Static", "Moving" };
+				const char* currentLayer = layerStrings[(int)component.Layer];
+
+				if (ImGui::BeginCombo("Layer", currentLayer))
+				{
+					for (int i = 0; i < (int)PhysicsLayer::Count; i++)
+					{
+						bool selected = currentLayer == layerStrings[i];
+						if (ImGui::Selectable(layerStrings[i], selected))
+							component.Layer = (PhysicsLayer)i;
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+
+				ImGui::DragFloat("Mass", &component.Mass, 0.1f, 0.0f, 10000.0f);
+				ImGui::DragFloat("Linear Damping", &component.LinearDamping, 0.01f, 0.0f, 1.0f);
+				ImGui::DragFloat("Angular Damping", &component.AngularDamping, 0.01f, 0.0f, 1.0f);
+				ImGui::DragFloat("Gravity Factor", &component.GravityFactor, 0.05f, -2.0f, 2.0f);
+				ImGui::Checkbox("Fixed Rotation", &component.FixedRotation);
+			});
+#pragma endregion
+
+#pragma region BoxColliderComponent
+
+			DrawComponent<BoxColliderComponent>("Box Collider", entity, true, [](auto& component)
+			{
+
+				if (DrawVec3Control("Offset", component.Offset))
+				{
+
+				}
+
+				if (DrawVec3Control("HalfExtents", component.HalfExtents))
+				{
+
+				}
+
+				if (ImGui::CollapsingHeader("Physics Material"))
+				{
+					ImGui::DragFloat("Friction", &component.Material.Friction, dragSpeed);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution, dragSpeed);
+					ImGui::DragFloat("Density", &component.Material.Density, dragSpeed);
+				}
+
+				ImGui::Checkbox("Is Trigger", &component.IsTrigger);
+
+
+			});
+#pragma endregion
+
+#pragma region SphereColliderComponent
+
+			DrawComponent<SphereColliderComponent>("Sphere Collider", entity, true, [](auto& component)
+			{
+
+				if (DrawVec3Control("Offset", component.Offset))
+				{
+
+				}
+
+				ImGui::DragFloat("Radius", &component.Radius, dragSpeed, dragSpeed);
+
+				if (ImGui::CollapsingHeader("Physics Material"))
+				{
+					ImGui::DragFloat("Friction", &component.Material.Friction, dragSpeed);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution, dragSpeed);
+					ImGui::DragFloat("Density", &component.Material.Density, dragSpeed);
+				}
+
+				ImGui::Checkbox("Is Trigger", &component.IsTrigger);
+
+			});
+
+#pragma endregion
+
+#pragma region CapsuleColliderComponent
+
+			DrawComponent<CapsuleColliderComponent>("Capsule Collider", entity, true, [](auto& component)
+			{
+
+				if (DrawVec3Control("Offset", component.Offset))
+				{
+
+				}
+
+				ImGui::DragFloat("Radius", &component.Radius, dragSpeed);
+				ImGui::DragFloat("Half Height", &component.HalfHeight, dragSpeed);
+
+				if (ImGui::CollapsingHeader("Physics Material"))
+				{
+					ImGui::DragFloat("Friction", &component.Material.Friction, dragSpeed);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution, dragSpeed);
+					ImGui::DragFloat("Density", &component.Material.Density, dragSpeed);
+				}
+
+				ImGui::Checkbox("Is Trigger", &component.IsTrigger);
+
+			});
+
+#pragma endregion
+
+#pragma region MeshColliderComponent
+
+			DrawComponent<MeshColliderComponent>("Mesh Collider", entity, true, [](auto& component)
+			{
+
+				std::string label = "None";
+				bool isMeshValid = false;
+				if (component.Mesh != 0)
+				{
+					if (AssetManager::IsAssetHandleValid(component.Mesh)
+						&& AssetManager::GetAssetType(component.Mesh) == AssetType::Mesh)
+					{
+						const auto& metadata =
+							Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Mesh);
+						label = metadata.FilePath.filename().string();
+						isMeshValid = true;
+					}
+					else
+					{
+						label = "Invalid";
+					}
+				}
+
+				ImVec2 btnLabelSize = ImGui::CalcTextSize(label.c_str());
+				btnLabelSize.x += 20.0f;
+
+				ImGui::Button(label.c_str(), btnLabelSize);
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+					{
+						AssetHandle handle = *(AssetHandle*)payload->Data;
+
+						if (AssetManager::GetAssetType(handle) == AssetType::Mesh)
+						{
+							component.Mesh = handle;
+						}
+						else
+						{
+							UG_CORE_WARN("Wrong Asset Type!");
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+
+				if (isMeshValid)
+				{
+					ImGui::SameLine();
+
+					ImVec2 xLabelSize = ImGui::CalcTextSize("X");
+					float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+					if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
+					{
+						component.Mesh = 0;
+					}
+				}
+
+				ImGui::SameLine();
+				ImGui::Text("Mesh Collider");
+
+				DrawVec3Control("Offset", component.Offset);
+
+				ImGui::Checkbox("Is Convex", &component.Convex);
+
+
+				if (ImGui::CollapsingHeader("Physics Material"))
+				{
+					ImGui::DragFloat("Friction", &component.Material.Friction, dragSpeed);
+					ImGui::DragFloat("Restitution", &component.Material.Restitution, dragSpeed);
+					ImGui::DragFloat("Density", &component.Material.Density, dragSpeed);
+				}
+
+				ImGui::Checkbox("Is Trigger", &component.IsTrigger);
+
+				
+
+			});
+
+#pragma endregion
+
 	}
 
 	template<typename T>

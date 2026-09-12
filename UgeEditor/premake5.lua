@@ -21,12 +21,16 @@ project "Uge-Editor"
 		"%{wks.location}/%{IncludeDir.GLM}",
 		"%{wks.location}/%{IncludeDir.ENTT}",
 		"%{wks.location}/%{IncludeDir.FILEWATCH}",
-		"%{wks.location}/%{IncludeDir.IMGUIZMO}"
+		"%{wks.location}/%{IncludeDir.IMGUIZMO}",
+		"%{wks.location}/%{IncludeDir.GOOGLETEST}",
+		"%{wks.location}/%{IncludeDir.GOOGLEMOCK}"
 	}
 
 	links
 	{
-		"Uge"
+		"Uge",
+		"googletest",
+		"googlemock"
 	}
 	
 	buildoptions {"/utf-8"}
@@ -42,16 +46,18 @@ project "Uge-Editor"
 
 
 	filter "configurations:Debug"
-		defines "UG_DEBUG"
+		defines { "UG_DEBUG", "UG_PROFILE=1" }
 		runtime "Debug"
 		symbols "on"
-		
-	
+
+
 	filter "configurations:Release"
-		defines "UG_RELEASE"
+		defines { "UG_RELEASE", "UG_PROFILE=1" }
 		runtime "Release"
 		optimize "on"
-	
+		-- Keep PDBs in Release so Uge::CrashHandler can symbolise its stack traces.
+		symbols "on"
+
 	filter "configurations:Dist"
 		defines "UG_DIST"
 		runtime "Release"

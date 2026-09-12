@@ -4,6 +4,7 @@
 
 #include "Uge/Core/Log.h"
 #include "Uge/Renderer/Renderer.h"
+#include "Uge/Physics/Physics.h"
 #include "Uge/Scripting/ScriptEngine.h"
 
 #include "Uge/Core/Input.h"
@@ -21,7 +22,10 @@ namespace Uge
 		: m_specification(spec)
 	{
 		UG_PROFILE_FUNCTION();
+		// Make sure the application has not already loaded
 		UG_CORE_ASSERT(!s_instance, "Application Already Exists!");
+
+		// Set the singleton instance 
 		s_instance = this;
 
 		if (!m_specification.WorkingDirectory.empty())
@@ -35,6 +39,7 @@ namespace Uge
 		m_window->SetVSync(true);
 
 		Renderer::Init();
+		Physics::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
@@ -49,6 +54,7 @@ namespace Uge
 
 		ScriptEngine::Shutdown();
 		Renderer::Shutdown();
+		Physics::Shutdown();
 
 	}
 
@@ -63,6 +69,10 @@ namespace Uge
 			float time = (float)glfwGetTime();			// Platform::GetTime
 			Timestep timestep = time - m_lastFrameTime;
 			m_lastFrameTime = time;
+
+			// Closes off the previous frame's scope timings and records its duration, so
+			// the editor's Debug panel has a stable, complete frame to display.
+			FrameProfiler::BeginFrame(timestep.GetMilliseconds());
 
 			ExecuteMainThreadQueue();
 

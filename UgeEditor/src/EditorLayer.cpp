@@ -2,6 +2,14 @@
 
 #include "Uge/Scripting/ScriptEngine.h"
 #include "Uge/Renderer/Font.h"
+#include "Uge/Asset/TextureImporter.h"
+#include "Uge/Asset/SceneImporter.h"
+#include "Uge/Asset/AssetManager.h"
+#include "Uge/Renderer/PostProcess.h"
+#include "Uge/Renderer/Bloom.h"
+#include "Uge/Renderer/ColorSpace.h"
+#include "Uge/Physics/PhysicsDebugRenderer.h"
+#include "Uge/Physics/ColliderWireframe.h"
 
 #include "imgui.h"
 #include <cstdint>
@@ -17,6 +25,22 @@ namespace Uge
 {
 
 
+	/** @brief Forwards Uge::PhysicsDebugRenderer lines into the Uge::Renderer2D line batch. */
+	class Renderer2DLineSink : public PhysicsDebugRenderer
+	{
+	public:
+		/**
+		 * @brief Draws one world-space line segment through Uge::Renderer2D.
+		 * @param from Start point.
+		 * @param to End point.
+		 * @param color RGBA colour, components in `[0, 1]`.
+		 */
+		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) override
+		{
+			Renderer2D::DrawLine(from, to, color, -1);
+		}
+	};
+
 
 	static Ref<Font> s_font;
 
@@ -31,10 +55,17 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
+		// Once per frame, before anything draws — see Uge::RenderStats.
+		RenderStats::Reset();
+
+		// Counts down an in-progress trace capture and closes the session when it ends.
+		m_debugPanel.OnUpdate();
+
 		m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 		if (m_shouldResize)
 		{
 			m_frameBuffer->Resize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+			m_displayFrameBuffer->Resize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 
 
 			m_editorCamera.SetViewportSize(m_viewportSize.x, m_viewportSize.y);
@@ -53,28 +84,38 @@ namespace Uge
 		{
 			{
 				UG_PROFILE_SCOPE("Renderer Prep")
-				RenderCommand::SetClearColor(glm::vec4(0.1f, 0.1f, 0.1f, 1));
+				// Decoded because the scene target is linear and the resolve pass encodes it.
+				// Written straight through, this grey would be encoded on the way out and the
+				// viewport background would come out at 0.345 rather than the 0.1 it reads as.
+				RenderCommand::SetClearColor(SrgbToLinear(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f)));
 				RenderCommand::Clear();
 			}
 			m_frameBuffer->ClearAttachment(1, -1);
 
-			switch (m_sceneState)
 			{
-			case Uge::EditorLayer::SceneState::Edit:
-				m_editorCamera.OnUpdate(ts);
-				m_activeScene->OnUpdateEditor(ts, m_editorCamera);
-				
-				break;
-			case Uge::EditorLayer::SceneState::Play:
-				m_activeScene->OnUpdateRuntime(ts);
+				UG_PROFILE_SCOPE("Scene Update");
+				switch (m_sceneState)
+				{
+				case Uge::EditorLayer::SceneState::Edit:
+					m_editorCamera.OnUpdate(ts);
+					m_activeScene->OnUpdateEditor(ts, m_editorCamera);
 
-				break;
-			default:
-				
-				break;
+					break;
+				case Uge::EditorLayer::SceneState::Play:
+					m_activeScene->OnUpdateRuntime(ts);
+
+					break;
+				default:
+
+					break;
+				}
 			}
 
-		
+			// A synchronous readback, so it stalls until the GPU has caught up with the
+			// whole frame. Timed separately because that stall is easily mistaken for the
+			// scene being slow to draw.
+			UG_PROFILE_SCOPE("Entity Picking Readback");
+
 			auto [mx, my] = ImGui::GetMousePos();
 			mx -= m_viewportBounds[0].x;
 			my -= m_viewportBounds[0].y;
@@ -100,40 +141,28 @@ namespace Uge
 				m_hoveredEntity = Entity();
 			}
 
+			OnOverlayRender();
+
 		}
 		m_frameBuffer->Unbind();
+
+		// Both read m_frameBuffer, so both are kept out of the block above, which still has it
+		// bound. Bloom first: the resolve samples its result.
+		{
+			UG_PROFILE_SCOPE("Bloom");
+			Bloom::Render(m_frameBuffer, PostProcess::GetSettings());
+		}
+		{
+			UG_PROFILE_SCOPE("Post Process Resolve");
+			PostProcess::Resolve(m_frameBuffer, m_displayFrameBuffer);
+		}
+		m_displayFrameBuffer->Unbind();
 
 	}
 
 	void EditorLayer::OnAttach()
 	{
 		UG_PROFILE_FUNCTION();
-		
-
-		m_iconPlay = Texture2D::Create("Resources/Icons/PlayButton.png");
-		m_iconStop = Texture2D::Create("Resources/Icons/StopButton.png");
-		m_iconPause = Texture2D::Create("Resources/Icons/PauseButton.png");
-		m_iconStep = Texture2D::Create("Resources/Icons/StepButton.png");
-		
-
-		m_activeScene = CreateRef<Scene>();
-		
-		// Load ImGui Font
-		ImGuiIO& io = ImGui::GetIO();
-		m_mainFontBold = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Bold.ttf", 24.5f);
-		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Regular.ttf", 24.5f);
-
-		IM_ASSERT(m_mainFont != NULL);
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-		
-		FramebufferSpecification fbSpec{ 1280, 720 };
-		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8,FramebufferTextureFormat::RED_INTEGER,  FramebufferTextureFormat::Depth };
-		m_frameBuffer = Framebuffer::Create(fbSpec);
-
-		m_editorScene = CreateRef<Scene>();
-		m_activeScene = m_editorScene;
-
-
 
 		auto appSpec = Application::Get().GetSpecifications();
 
@@ -146,18 +175,48 @@ namespace Uge
 		else
 		{
 
-			// TODO: prompt the user to select a directory
-
 			if (!OpenProject())
 			{
 				Application::Get().CloseProgram();
 			}
-			// NewProject();
 
 		}
+		
+		m_iconPlay = TextureImporter::LoadTexture2D("Resources/Icons/PlayButton.png");
+		m_iconStop = TextureImporter::LoadTexture2D("Resources/Icons/StopButton.png");
+		m_iconPause = TextureImporter::LoadTexture2D("Resources/Icons/PauseButton.png");
+		m_iconStep = TextureImporter::LoadTexture2D("Resources/Icons/StepButton.png");
+		
 
-		// std::filesystem::path checkPath = Project::GetAssetFileSystemPath("Textures/Checkerboard.png");
-		// m_texture = Texture2D::Create(checkPath.string());
+		//m_activeScene = CreateRef<Scene>();
+		
+		// Load ImGui Font
+		ImGuiIO& io = ImGui::GetIO();
+		m_mainFontBold = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Bold.ttf", 24.5f);
+		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Regular.ttf", 24.5f);
+
+		IM_ASSERT(m_mainFont != NULL);
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+		
+		// RGBA16F, not RGBA8: the scene pass writes linear radiance, which has no upper bound.
+		// An 8-bit target clamps on write, so a bright emissive surface would already be
+		// clipped before the resolve below could tonemap it. @see Uge::PostProcess
+		FramebufferSpecification fbSpec{ 1280, 720 };
+		fbSpec.Attachments = { FramebufferTextureFormat::RGBA16F,FramebufferTextureFormat::RED_INTEGER,  FramebufferTextureFormat::Depth };
+		m_frameBuffer = Framebuffer::Create(fbSpec);
+
+		// What the viewport actually displays: the tonemapped, sRGB-encoded result. Needs no
+		// depth or entity ID of its own - picking reads those back from m_frameBuffer.
+		FramebufferSpecification displaySpec{ 1280, 720 };
+		displaySpec.Attachments = { FramebufferTextureFormat::RGBA8 };
+		m_displayFrameBuffer = Framebuffer::Create(displaySpec);
+
+		m_editorScene = CreateRef<Scene>();
+		m_activeScene = m_editorScene;
+
+
+
+		
 
 
 		m_editorCamera = EditorCamera(60.0f, 16.0f/9.0f, 0.01f, 10000.0f);
@@ -165,6 +224,7 @@ namespace Uge
 
 
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		m_debugPanel.SetContext(m_activeScene);
 
 		
 
@@ -316,31 +376,67 @@ namespace Uge
 
 					ImGui::EndMenu();
 				}
+
+				if (ImGui::BeginMenu("View"))
+				{
+					ImGui::MenuItem("Scene Hierarchy", nullptr, &m_showSceneHierarchy);
+					ImGui::MenuItem("Content Browser", nullptr, &m_showContentBrowser);
+					ImGui::MenuItem("Renderer Settings", nullptr, &m_showRendererSettings);
+					ImGui::Separator();
+					ImGui::MenuItem("Console", nullptr, &m_showConsole);
+					ImGui::MenuItem("Diagnostics", nullptr, &m_showDebug);
+					ImGui::MenuItem("Loaded Assets", nullptr, &m_showLoadedAssets);
+					ImGui::Separator();
+					ImGui::MenuItem("Physics Colliders", nullptr, &m_showPhysicsColliders);
+					ImGui::BeginDisabled(!m_showPhysicsColliders);
+					ImGui::MenuItem("   X-Ray", nullptr, &m_colliderXRay);
+					ImGui::EndDisabled();
+
+					ImGui::EndMenu();
+				}
 				ImGui::EndMenuBar();
 			}
 
-			m_sceneHierarchyPanel.OnImGuiRender();
-			m_contentBrowserPanel->OnImGuiRender();
-
-
-			ImGui::Begin("Stats");
+			if (m_showSceneHierarchy)
 			{
-				std::string name = "None";
-				if (m_hoveredEntity)
-				{
-					name = m_hoveredEntity.GetComponent<TagComponent>().Tag;
-				}
-				ImGui::Text("Hovered Entity: %s", name.c_str());
-
-				//ImGui::Dummy({ 0.0f, 100.0f });
-				ImGui::Separator();
-				ImGui::Text("Viewport Panel Size");
-				ImGui::Text("X: %f", m_viewportSize.x);
-				ImGui::Text("Y: %f", m_viewportSize.y);
-
-				ImGui::Image((ImTextureID)Font::GetDefault()->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
+				m_sceneHierarchyPanel.OnImGuiRender();
 			}
-			ImGui::End();
+			if (m_showContentBrowser)
+			{
+				m_contentBrowserPanel->OnImGuiRender();
+			}
+			if (m_showRendererSettings)
+			{
+				m_rendererSettingsPanel.OnImGuiRender();
+			}
+			if (m_showConsole)
+			{
+				m_consolePanel.OnImGuiRender();
+			}
+			if (m_showDebug)
+			{
+				// Fed here rather than in OnUpdate so the panel always reports the same
+				// frame it is drawn in.
+				m_debugPanel.SetHoveredEntity(m_hoveredEntity);
+				m_debugPanel.OnImGuiRender();
+			}
+
+			if (m_showLoadedAssets)
+			{
+				ImGui::Begin("Loaded Assets", &m_showLoadedAssets);
+				{
+
+					auto loadedAssetNames = Project::GetActive()->GetEditorAssetManager()->GetLoadedAssetsNames();
+
+					for (auto& asset : loadedAssetNames)
+					{
+						ImGui::Text(asset.c_str());
+					}
+
+				}
+				ImGui::End();
+			}
+
 
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
 
@@ -374,19 +470,45 @@ namespace Uge
 				}
 
 
-				uint32_t textureID = m_frameBuffer->GetColorAttachment();
+				uint32_t textureID = m_displayFrameBuffer->GetColorAttachment();
 				ImGui::Image((void*)(uintptr_t)textureID, ImVec2{ m_viewportSize.x, m_viewportSize.y }, { 0, 1 }, { 1, 0 });
 
 				if (ImGui::BeginDragDropTarget())
 				{
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 					{
-						const wchar_t* path = (const wchar_t*)payload->Data;
-						OpenScene(path);
+						AssetHandle handle = *(AssetHandle*)payload->Data;
 
+						AssetType assetType = Project::GetActive()->GetEditorAssetManager()->GetAssetType(handle);
+
+						switch (assetType)
+						{
+						case Uge::AssetType::None:
+							break;
+						case Uge::AssetType::Scene:
+							OpenScene(handle);
+							break;
+						case Uge::AssetType::Texture2D:
+							break;
+						case Uge::AssetType::Mesh:
+							if (m_sceneState == SceneState::Edit)
+							{
+								AssetMetadata metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(handle);
+								
+								Entity ent = m_editorScene->CreateEntity(metadata.FilePath.filename().string());
+								MeshComponent& mcomp = ent.AddComponent<MeshComponent>();
+								mcomp.Mesh = handle;
+								
+
+							}
+
+							break;
+						case Uge::AssetType::Material:
+							break;
+						default:
+							break;
+						}
 					}
-					
-
 
 					ImGui::EndDragDropTarget();
 				}
@@ -543,8 +665,6 @@ namespace Uge
 
 	}
 
-	
-
 	void EditorLayer::OnEvent(Event& e)
 	{
 
@@ -672,6 +792,7 @@ namespace Uge
 						if (selectedEnt)
 						{
 							m_sceneHierarchyPanel.SetSelectedEntity({});
+
 							m_activeScene->DestroyEntity(selectedEnt);
 						}
 
@@ -753,8 +874,12 @@ namespace Uge
 
 			ScriptEngine::Init();
 
-			auto startScenePath = Project::GetAssetFileSystemPath(Project::GetActive()->GetConfig().StartScene);
-			OpenScene(startScenePath);
+			AssetHandle startScene = Project::GetActive()->GetConfig().StartScene;
+			if (startScene)
+			{
+
+				OpenScene(startScene);
+			}
 			m_contentBrowserPanel = CreateScope<ContentBrowserPanel>();
 
 
@@ -781,19 +906,11 @@ namespace Uge
 	{
 		std::string filepath = FileDialogs::SaveFile("Uge Scene (*.uge)\0*.uge\0\0");
 
-		std::filesystem::path absPath(filepath);
-		std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
 
-		std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
-
-
-
-		std::filesystem::path path = Project::GetAssetFileSystemPath(relativePath).string();
-
-		if (!path.empty())
+		if (!filepath.empty())
 		{
-			SerializeScene(m_activeScene, path);
-			m_editorScenePath = path;
+			SerializeScene(m_activeScene, filepath);
+			m_editorScenePath = filepath;
 
 		}
 
@@ -804,66 +921,62 @@ namespace Uge
 		m_activeScene = CreateRef<Scene>();
 		// m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		m_debugPanel.SetContext(m_activeScene);
 
 		m_editorScenePath = std::filesystem::path();
+
+		m_colliderEdgeCache.clear();
 
 	}
 
 	void EditorLayer::OpenScene()
 	{
-		std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*.uge\0");
-		
-		std::filesystem::path absPath(filepath);
-		std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
-
-		std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
-
-
-
-		std::filesystem::path path = Project::GetAssetFileSystemPath(relativePath).string();
-		
-		
-		if (!path.empty())
-		{
-			
-			OpenScene(path);
-
-		}
+		// std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*.uge\0");
+		// 
+		// std::filesystem::path absPath(filepath);
+		// std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
+		// 
+		// std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
+		// 
+		// 
+		// 
+		// std::filesystem::path path = Project::GetAssetFileSystemPath(relativePath).string();
+		// 
+		// 
+		// if (!path.empty())
+		// {
+		// 	
+		// 	OpenScene(path);
+		// 
+		// }
 
 	}
 
-	void EditorLayer::OpenScene(const std::filesystem::path& path)
+	void EditorLayer::OpenScene(AssetHandle handle)
 	{
+		UG_CORE_ASSERT(handle, "Handle is invalid!");
 
 		if (m_sceneState != SceneState::Edit)
 		{
 			OnSceneStop();
 		}
 
-		if (path.extension().string() != ".uge")
-		{
-			UG_WARN("Could not load {0}: Not a scene file!", path.filename().string());
-			return;
-		}
+		Ref<Scene> scene = AssetManager::GetAsset<Scene>(handle);
+		Ref<Scene> newScene = Scene::Copy(scene);
 
-		Ref<Scene> newScene = CreateRef<Scene>();
-
-		m_activeScene = CreateRef<Scene>();
 		SceneSerializer serializer(newScene);
 		
-		if (serializer.DeSerialize(path.string()))
-		{
-			m_editorScene = newScene;
+		
+		m_editorScene = newScene;
 
-			m_editorScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
-			m_sceneHierarchyPanel.SetContext(m_editorScene);
+		m_editorScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+		m_sceneHierarchyPanel.SetContext(m_editorScene);
+		m_debugPanel.SetContext(m_editorScene);
 
-			m_activeScene = m_editorScene;
-			m_editorScenePath = path;
+		m_activeScene = m_editorScene;
+		m_editorScenePath = Project::GetActive()->GetEditorAssetManager()->GetFilePath(handle);
 
-
-		}
-
+		m_colliderEdgeCache.clear();
 
 	}
 
@@ -876,6 +989,7 @@ namespace Uge
 		m_activeScene->OnRuntimeStart();
 
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		m_debugPanel.SetContext(m_activeScene);
 
 	}
 
@@ -895,6 +1009,7 @@ namespace Uge
 		m_activeScene = m_editorScene;
 
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		m_debugPanel.SetContext(m_activeScene);
 	
 	}
 
@@ -911,8 +1026,7 @@ namespace Uge
 	void EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)
 	{
 
-		SceneSerializer serializer(scene);
-		serializer.Serialize(path.string());
+		SceneImporter::SaveScene(scene, path);
 
 
 	}
@@ -935,7 +1049,96 @@ namespace Uge
 
 	}
 
-	
+	void EditorLayer::OnOverlayRender()
+	{
+
+		if (!m_showPhysicsColliders)
+		{
+			return;
+		}
+
+		if (m_sceneState == SceneState::Play)
+		{
+			Entity cam = m_activeScene->GetPrimaryCameraEntity();
+			if (!cam)
+			{
+				return;
+			}
+			Renderer2D::BeginScene(cam.GetComponent<CameraComponent>().Cam,
+				cam.GetComponent<TransformComponent>().GetTransform());
+		}
+		else
+		{
+			Renderer2D::BeginScene(m_editorCamera);
+		}
+
+		if (m_colliderXRay)
+		{
+			RenderCommand::SetDepthTest(false);
+		}
+
+		Renderer2DLineSink sink;
+
+		const glm::vec4 solidColor{ 0.35f, 0.90f, 0.35f, 1.0f };
+		const glm::vec4 triggerColor{ 0.95f, 0.80f, 0.25f, 1.0f };
+
+		auto boxes = m_activeScene->GetAllEntitiesWith<TransformComponent, BoxColliderComponent>();
+		for (auto [e, tc, bc] : boxes.each())
+		{
+			const glm::mat4 m = tc.GetTransform() * glm::translate(glm::mat4(1.0f), bc.Offset);
+			ColliderWireframe::DrawBox(sink, m, bc.HalfExtents,
+				bc.IsTrigger ? triggerColor : solidColor);
+		}
+
+		auto spheres = m_activeScene->GetAllEntitiesWith<TransformComponent, SphereColliderComponent>();
+		for (auto [e, tc, sc] : spheres.each())
+		{
+			const glm::mat4 m = tc.GetTransform() * glm::translate(glm::mat4(1.0f), sc.Offset);
+			ColliderWireframe::DrawSphere(sink, m, sc.Radius,
+				sc.IsTrigger ? triggerColor : solidColor);
+		}
+
+		auto capsules = m_activeScene->GetAllEntitiesWith<TransformComponent, CapsuleColliderComponent>();
+		for (auto [e, tc, cc] : capsules.each())
+		{
+			const glm::mat4 m = tc.GetTransform() * glm::translate(glm::mat4(1.0f), cc.Offset);
+			ColliderWireframe::DrawCapsule(sink, m, cc.Radius, cc.HalfHeight,
+				cc.IsTrigger ? triggerColor : solidColor);
+		}
+
+		auto meshes = m_activeScene->GetAllEntitiesWith<TransformComponent, MeshColliderComponent>();
+		for (auto [e, tc, mc] : meshes.each())
+		{
+			if (!mc.Mesh)
+				continue;
+
+			auto it = m_colliderEdgeCache.find(mc.Mesh);
+			if (it == m_colliderEdgeCache.end())
+			{
+				std::vector<glm::vec3> vertices, edges;
+				std::vector<uint32_t> indices;
+
+				if (Model::BuildCollisionGeometry(mc.Mesh, vertices, indices)
+					&& !ColliderWireframe::BuildEdges(vertices, indices, edges))
+				{
+					UG_WARN("Collider overlay: mesh is too dense to wireframe in full; truncated.");
+				}
+				it = m_colliderEdgeCache.emplace(mc.Mesh, std::move(edges)).first;
+			}
+
+			const glm::mat4 m = tc.GetTransform() * glm::translate(glm::mat4(1.0f), mc.Offset);
+			ColliderWireframe::DrawEdges(sink, m, it->second, mc.IsTrigger ? triggerColor : solidColor);
+		}
+		
+
+		Renderer2D::EndScene();
+
+		if (m_colliderXRay)
+		{
+			RenderCommand::SetDepthTest(true);   // global state — must be restored
+		}
+
+	}
 
 }
 

@@ -1,3 +1,9 @@
+/**
+ * @file WindowsWindow.h
+ * @brief GLFW-backed implementation of Uge::Window.
+ * @ingroup group_platform
+ */
+
 #pragma once
 
 #include "Uge/Core/Window.h"
@@ -10,12 +16,29 @@
 namespace Uge
 {
 
+	/**
+	 * @brief The desktop window, its graphics context, and the source of every input event.
+	 * @ingroup group_platform
+	 *
+	 * Wraps a `GLFWwindow` and owns the Uge::OpenGLContext rendering into it. During Init()
+	 * it installs GLFW callbacks that translate platform events into Uge::Event objects and
+	 * hand them to the callback set by Uge::Window::SetEventCallback — which is how input
+	 * reaches the layer stack.
+	 *
+	 * A `WindowData` struct is stored as the GLFW user pointer so the static callbacks can
+	 * reach the event sink and the cached window size.
+	 */
 	class WindowsWindow : public Window
 	{
 
 	public:
 
+		/**
+		 * @brief Creates the window and its graphics context.
+		 * @param props Title and initial dimensions.
+		 */
 		WindowsWindow(const WindowProps& props);
+		/** @brief Destroys the window and shuts GLFW down. */
 		virtual ~WindowsWindow();
 
 		void OnUpdate() override;
@@ -35,7 +58,12 @@ namespace Uge
 		inline virtual void* GetNativeWindow() const { return m_window; }
 
 	private:
+		/**
+		 * @brief Creates the GLFW window, the context, and installs the event callbacks.
+		 * @param props Title and initial dimensions.
+		 */
 		virtual void Init(const WindowProps& props);
+		/** @brief Destroys the GLFW window. */
 		virtual void Shutdown();
 
 	private:

@@ -1,10 +1,16 @@
 #include <ugpch.h>
 #include "Model.h"
 
+#include "Uge/Asset/AssetManager.h"
+#include "Uge/Renderer/Material.h"
+#include "Uge/Renderer/RenderCommand.h"
+
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 
 #include <assimp/Importer.hpp>
+#include <assimp/config.h>
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
 #include <assimp/scene.h>
@@ -17,6 +23,9 @@ namespace Uge
 		struct CameraData
 		{
 			glm::mat4 ViewProjection;
+			// vec4 rather than vec3: std140 pads a vec3 to 16 bytes anyway, and spelling it
+			// out keeps the C++ and GLSL declarations obviously identical.
+			glm::vec4 Position;
 		};
 
 		struct ModelData
@@ -24,6 +33,55 @@ namespace Uge
 			glm::mat4 ModelTransform;
 			int EntityData;
 		};
+
+		// Mirrors LightData in assets/shaders/Model.glsl. vec4 rather than vec3 because std140
+		// pads a vec3 to 16 bytes regardless; spelling it out keeps the two declarations
+		// obviously identical.
+		struct LightData
+		{
+			glm::vec4 Direction;
+			glm::vec4 Radiance;
+		};
+
+		// Mirrors SkyboxData in assets/shaders/Skybox.glsl.
+		struct SkyboxData
+		{
+			glm::mat4 ViewProjection;
+			float Intensity;
+			float Padding[3];
+		};
+
+		// Positions only; the skybox shader uses the vertex position as a sample direction.
+		static Ref<VertexArray> CreateSkyboxCube()
+		{
+			constexpr float vertices[] =
+			{
+				-1.0f, -1.0f, -1.0f,   1.0f, -1.0f, -1.0f,   1.0f,  1.0f, -1.0f,  -1.0f,  1.0f, -1.0f,
+				-1.0f, -1.0f,  1.0f,   1.0f, -1.0f,  1.0f,   1.0f,  1.0f,  1.0f,  -1.0f,  1.0f,  1.0f
+			};
+
+			constexpr uint32_t indices[] =
+			{
+				0, 2, 1,  0, 3, 2,
+				4, 5, 6,  4, 6, 7,
+				0, 7, 3,  0, 4, 7,
+				1, 2, 6,  1, 6, 5,
+				3, 6, 2,  3, 7, 6,
+				0, 1, 5,  0, 5, 4
+			};
+
+			Ref<VertexArray> vertexArray = VertexArray::Create();
+
+			Ref<VertexBuffer> vertexBuffer =
+				VertexBuffer::Create(const_cast<float*>(vertices), sizeof(vertices));
+			vertexBuffer->SetLayout({ { ShaderDataType::Float3, "a_Position" } });
+			vertexArray->AddVertexBuffer(vertexBuffer);
+
+			vertexArray->SetIndexBuffer(
+				IndexBuffer::Create(const_cast<uint32_t*>(indices), sizeof(indices) / sizeof(uint32_t)));
+
+			return vertexArray;
+		}
 
 		static glm::mat4 AssimpToGlm(const aiMatrix4x4t<float>& matrix)
 		{
@@ -34,11 +92,27 @@ namespace Uge
 			result[0][3] = matrix.d1; result[1][3] = matrix.d2; result[2][3] = matrix.d3; result[3][3] = matrix.d4;
 			return result;
 		}
+
+		// Materials are referenced by handle and resolved per draw rather than cached on the
+		// Mesh, so editing a material's blend mode takes effect without a reimport.
+		static AlphaMode GetMaterialBlendMode(AssetHandle materialHandle)
+		{
+			if (!materialHandle
+				|| !AssetManager::IsAssetHandleValid(materialHandle)
+				|| AssetManager::GetAssetType(materialHandle) != AssetType::Material)
+			{
+				return AlphaMode::Opaque;
+			}
+
+			Ref<Material> material = AssetManager::GetAsset<Material>(materialHandle);
+			return material ? material->GetBlendMode() : AlphaMode::Opaque;
+		}
 	}
 
 	Model::SceneData Model::s_sceneData;
 
-	Model::Model(const std::string& path)
+	Model::Model(const std::string& path, const MeshAssetMetadata& metadata)
+		: m_meshMetadata(metadata)
 	{
 		LoadModel(path);
 	}
@@ -51,28 +125,168 @@ namespace Uge
 		}
 
 		s_sceneData.ModelShader = Shader::Create("assets/shaders/Model.glsl");
-		s_sceneData.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 0);
+		// Binding 3, not 0: Renderer2D owns a camera block at binding 0 that is a bare mat4,
+		// while this one carries the camera position too. Sharing a binding point between two
+		// differently sized blocks lets a draw read past the end of whichever is bound.
+		s_sceneData.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 3);
 		s_sceneData.ModelUniformBuffer = UniformBuffer::Create(sizeof(ModelData), 1);
+
+		s_sceneData.LightUniformBuffer = UniformBuffer::Create(sizeof(LightData), 4);
+
+		s_sceneData.SkyboxShader = Shader::Create("assets/shaders/Skybox.glsl");
+		s_sceneData.SkyboxUniformBuffer = UniformBuffer::Create(sizeof(SkyboxData), 7);
+		s_sceneData.SkyboxCube = CreateSkyboxCube();
+
 		s_sceneData.Initialized = true;
 	}
 
-	void Model::BeginScene(const glm::mat4& viewProjection)
+	void Model::ApplyCullMode(CullMode mode)
+	{
+		// Function should be idempotent
+		if (s_sceneData.CurrentCullMode == mode)
+		{
+			return;
+		}
+
+		RenderCommand::SetCullMode(mode);
+		s_sceneData.CurrentCullMode = mode;
+
+	}
+
+	void Model::SetEnvironment(const Ref<Environment>& environment, float intensity)
+	{
+		// Only a valid environment counts: a half-built one would leave the shader sampling
+		// cubemaps that were never filled.
+		s_sceneData.SceneEnvironment = (environment && environment->IsValid()) ? environment : nullptr;
+		s_sceneData.EnvironmentIntensity = intensity;
+	}
+
+	void Model::SetDirectionalLight(const glm::vec3& direction, const glm::vec3& radiance)
+	{
+		// A zero direction cannot be normalized, and would leave the shader with a NaN light
+		// vector that poisons every fragment it touches.
+		const float lengthSquared = glm::dot(direction, direction);
+
+		s_sceneData.LightDirection = lengthSquared > 0.0f
+			? direction * glm::inversesqrt(lengthSquared)
+			: glm::vec3(0.0f);
+
+		s_sceneData.LightRadiance = lengthSquared > 0.0f ? radiance : glm::vec3(0.0f);
+	}
+
+	void Model::DrawSkybox(const glm::mat4& viewProjection)
+	{
+		UG_PROFILE_FUNCTION();
+
+		if (!s_sceneData.Initialized || !s_sceneData.SceneEnvironment)
+		{
+			return;
+		}
+
+		SkyboxData skyboxData{};
+		skyboxData.ViewProjection = viewProjection;
+		skyboxData.Intensity = s_sceneData.EnvironmentIntensity;
+		s_sceneData.SkyboxUniformBuffer->SetData(&skyboxData, sizeof(SkyboxData));
+
+		s_sceneData.SkyboxShader->Bind();
+		s_sceneData.SceneEnvironment->Skybox->Bind(0);
+
+		RenderCommand::SetCullMode(CullMode::None);
+
+		// The vertex stage emits z == w, which lands exactly on the far plane; GL_LESS would
+		// reject all of it. Depth writes stay on so the sky still occludes nothing but is
+		// itself occluded correctly.
+		RenderCommand::SetDepthFunc(DepthCompare::LessEqual);
+		RenderCommand::DrawIndexed(s_sceneData.SkyboxCube);
+		RenderCommand::SetDepthFunc(DepthCompare::Less);
+	}
+
+	void Model::BeginScene(const glm::mat4& viewProjection, const glm::vec3& cameraPosition)
 	{
 		EnsureSceneResources();
 
 		CameraData cameraData{};
 		cameraData.ViewProjection = viewProjection;
+		cameraData.Position = glm::vec4(cameraPosition, 1.0f);
 		s_sceneData.CameraUniformBuffer->SetData(&cameraData, sizeof(CameraData));
+
+		s_sceneData.CameraPosition = cameraPosition;
+
+		// Culling
+		s_sceneData.ViewFrustum = Math::Frustum::FromViewProjection(viewProjection);
+		ApplyCullMode(CullMode::Back);
+
+		// The shader wants the direction towards the light, which is the reverse of the
+		// direction the light travels in.
+		LightData lightData{};
+		lightData.Direction = glm::vec4(-s_sceneData.LightDirection, 0.0f);
+		lightData.Radiance = glm::vec4(s_sceneData.LightRadiance, 0.0f);
+		s_sceneData.LightUniformBuffer->SetData(&lightData, sizeof(LightData));
+
+		// Bound once for the whole pass rather than per material: the maps are scene state, and
+		// slots 6-8 are outside the range OpenGLMaterial::Bind touches.
+		if (s_sceneData.SceneEnvironment)
+		{
+			s_sceneData.SceneEnvironment->Irradiance->Bind(6);
+			s_sceneData.SceneEnvironment->Prefiltered->Bind(7);
+			s_sceneData.SceneEnvironment->BrdfLut->Bind(8);
+		}
+
+		Material::SetEnvironmentState(s_sceneData.SceneEnvironment != nullptr,
+			s_sceneData.SceneEnvironment ? s_sceneData.SceneEnvironment->GetPrefilteredMipCount() : 1,
+			s_sceneData.EnvironmentIntensity);
+
+		// Entries point into model submesh vectors, so anything an unterminated pass left
+		// behind must go rather than be drawn a frame late.
+		s_sceneData.BlendedQueue.clear();
 	}
 
 	void Model::EndScene()
 	{
+		if (!s_sceneData.Initialized || s_sceneData.BlendedQueue.empty())
+		{
+			return;
+		}
+
+		// Farthest first, so nearer surfaces blend over what is already behind them.
+		std::sort(s_sceneData.BlendedQueue.begin(), s_sceneData.BlendedQueue.end(),
+			[](const BlendedDraw& lhs, const BlendedDraw& rhs)
+			{
+				return lhs.SortKey > rhs.SortKey;
+			});
+
+		// Depth testing stays on so opaque geometry still occludes; only the writes go, which
+		// is what lets one transparent surface show through another.
+		RenderCommand::SetDepthWrite(false);
+
+		s_sceneData.ModelShader->Bind();
+		for (const BlendedDraw& blendedDraw : s_sceneData.BlendedQueue)
+		{
+			ModelData modelData{};
+			modelData.ModelTransform = blendedDraw.Transform;
+			modelData.EntityData = blendedDraw.EntityID;
+			s_sceneData.ModelUniformBuffer->SetData(&modelData, sizeof(ModelData));
+
+			blendedDraw.SubMesh->Draw(s_sceneData.ModelShader, blendedDraw.EntityID);
+		}
+
+		RenderCommand::SetDepthWrite(true);
+
+		s_sceneData.BlendedQueue.clear();
 	}
 
 	void Model::Draw(const glm::mat4& transform, int entityID) const
 	{
 		if (!s_sceneData.Initialized || m_meshes.empty())
 		{
+			return;
+		}
+
+		const bool cull = s_sceneData.FrustumCullingEnabled;
+
+		if (cull && !s_sceneData.ViewFrustum.Intersects(m_bounds.Transform(transform)))
+		{
+			RenderStats::Get().MeshCulledCount += (uint32_t)m_meshes.size();
 			return;
 		}
 
@@ -84,8 +298,82 @@ namespace Uge
 
 		for (const auto& mesh : m_meshes)
 		{
+
+			if (cull && !s_sceneData.ViewFrustum.Intersects(mesh.GetBounds().Transform(transform)))
+			{
+				RenderStats::Get().MeshCulledCount++;
+				continue;
+			}
+
+			if (GetMaterialBlendMode(mesh.GetMaterial()) == AlphaMode::Blend)
+			{
+				// Deferred to EndScene(): sorting has to span every model in the pass, not
+				// just the submeshes of this one.
+				const glm::vec3 worldCenter = glm::vec3(transform * glm::vec4(mesh.GetCenter(), 1.0f));
+				const glm::vec3 toCamera = worldCenter - s_sceneData.CameraPosition;
+
+				s_sceneData.BlendedQueue.push_back({ &mesh, transform, entityID, glm::dot(toCamera, toCamera) });
+				continue;
+			}
+
 			mesh.Draw(s_sceneData.ModelShader, entityID);
 		}
+	}
+
+	bool Model::BuildCollisionGeometry(AssetHandle mesh, std::vector<glm::vec3>& outVertices, std::vector<uint32_t>& outIndices)
+	{
+		// Clear outgoing vertex and index vectors
+		outVertices.clear();
+		outIndices.clear();
+
+		// Validate handle
+		if (!mesh || !AssetManager::IsAssetHandleValid(mesh)
+			|| AssetManager::GetAssetType(mesh) != AssetType::Mesh)
+		{
+			return false;
+
+		}
+
+		// Get asset and check if loaded
+		Ref<Model> model = AssetManager::GetAsset<Model>(mesh);
+		if (!model || !model->IsLoaded())
+		{
+			return false;
+
+		}
+
+		// Get total vertex and index count from the submeshes and reserve outgoing vector accordingly
+		size_t vertexCount = 0, indexCount = 0;
+		for (const Mesh& sub : model->GetMeshes())
+		{
+			vertexCount += sub.GetVertices().size();
+			indexCount += sub.GetIndices().size();
+		}
+		outVertices.reserve(vertexCount);
+		outIndices.reserve(indexCount);
+
+		// Add the verices and indices from the submeshes to the outgoing vectors
+		// Iterate over submeshes
+		for (const Mesh& sub : model->GetMeshes())
+		{
+			const uint32_t base = (uint32_t)outVertices.size();
+
+			// Iterate over each vertex and index in a submesh
+			for (const MeshVertex& v : sub.GetVertices())
+			{
+				outVertices.push_back(v.Position);
+
+			}
+			for (uint32_t i : sub.GetIndices())
+			{
+				outIndices.push_back(base + i);
+
+			}
+		}
+
+		// Return true if the vertex vector is not empty and if the index vector is greater or 
+		// equal to 3, that is it has at least one triangle
+		return !outVertices.empty() && outIndices.size() >= 3;
 	}
 
 	void Model::LoadModel(const std::string& path)
@@ -101,8 +389,13 @@ namespace Uge
 		}
 
 		Assimp::Importer importer;
+
+		// ProcessMesh below appends every face's indices into a triangle index buffer,
+		// so line/point primitives have to be discarded rather than just split out.
+		importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
+
+		// No aiProcess_CalcTangentSpace here either - see MeshImporter::ImportMesh.
 		const aiScene* scene = importer.ReadFile(path,
-			aiProcess_CalcTangentSpace |
 			aiProcess_Triangulate |
 			aiProcess_JoinIdenticalVertices |
 			aiProcess_SortByPType);
@@ -116,6 +409,9 @@ namespace Uge
 		std::filesystem::path modelPath(path);
 		m_directory = modelPath.has_parent_path() ? modelPath.parent_path().string() : std::string();
 
+		SetName(scene->mName.C_Str());
+
+		m_bounds = Math::AABB{};
 		ProcessNode(scene->mRootNode, scene, aiMatrix4x4t<float>());
 	}
 
@@ -139,26 +435,15 @@ namespace Uge
 	{
 		std::vector<MeshVertex> vertices;
 		std::vector<uint32_t> indices;
-		std::vector<Ref<Texture2D>> textures;
+
 		const glm::mat4 meshTransform = AssimpToGlm(transform);
 		const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(meshTransform)));
 
-		float diffuseTextureIndex = -1.0f;
-		if (mesh->mMaterialIndex >= 0)
+		AssetHandle materialHandle = 0;
+		if (mesh->mMaterialIndex < m_meshMetadata.MaterialHandles.size())
 		{
-			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			auto diffuseMaps = LoadMaterialTextures(material, scene, (int)aiTextureType_DIFFUSE, "texture_diffuse");
-			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+			materialHandle = m_meshMetadata.MaterialHandles[mesh->mMaterialIndex];
 
-			for (uint32_t i = 0; i < textures.size(); i++)
-			{
-				const auto& texture = textures[i];
-				if (texture && texture->m_name == "texture_diffuse")
-				{
-					diffuseTextureIndex = static_cast<float>(i);
-					break;
-				}
-			}
 		}
 
 		vertices.reserve(mesh->mNumVertices);
@@ -183,16 +468,11 @@ namespace Uge
 			{
 				vertex.TexCoord.x = mesh->mTextureCoords[0][i].x;
 				vertex.TexCoord.y = mesh->mTextureCoords[0][i].y;
-				vertex.HasDiffuseMap = diffuseTextureIndex >= 0.0f ? 1 : 0;
-				vertex.TexIndex = diffuseTextureIndex;
 			}
 			else
 			{
 				vertex.TexCoord = { 0.0f, 0.0f };
-				vertex.HasDiffuseMap = 0;
-				vertex.TexIndex = -1.0f;
 			}
-			vertex.EntityID = -1;
 
 			vertices.emplace_back(vertex);
 		}
@@ -206,7 +486,11 @@ namespace Uge
 			}
 		}
 
-		return Mesh(vertices, indices, textures, scene->mName.C_Str());
+		Mesh retMesh = Mesh(vertices, indices, materialHandle, mesh->mName.C_Str());
+
+		m_bounds.Grow(retMesh.GetBounds());
+
+		return retMesh;
 	}
 
 	std::vector<Ref<Texture2D>> Model::LoadMaterialTextures(aiMaterial* material, const aiScene* scene, int textureType, const std::string& typeName)
@@ -226,14 +510,15 @@ namespace Uge
 			}
 
 			auto cachedIt = std::find_if(m_loadedTextures.begin(), m_loadedTextures.end(),
-				[&relativePath](const Ref<Texture2D>& texture)
+				[&relativePath](const AssetHandle& texture)
 				{
-					return texture->m_path == relativePath;
+					
+					return AssetManager::GetAsset<Texture2D>(texture)->m_path == relativePath;
 				});
 
 			if (cachedIt != m_loadedTextures.end())
 			{
-				textures.emplace_back(*cachedIt);
+				// textures.emplace_back(*cachedIt);
 				continue;
 			}
 
@@ -263,7 +548,35 @@ namespace Uge
 
 				if (embeddedTexture->mHeight == 0)
 				{
-					meshTexture = Texture2D::Create(reinterpret_cast<const unsigned char*>(embeddedTexture->pcData), embeddedTexture->mWidth);
+
+					TextureSpecification spec;
+
+					spec.Format = ImageFormat::RGBA8;
+					spec.Height = 1;
+					spec.Width = embeddedTexture->mWidth;
+					std::vector<unsigned char> rgbaPixels;
+
+					rgbaPixels.resize(static_cast<size_t>(embeddedTexture->mWidth) * 4);
+
+					for (uint32_t texelIndex = 0; texelIndex < embeddedTexture->mWidth; texelIndex++)
+					{
+						const aiTexel& src = embeddedTexture->pcData[texelIndex];
+						const size_t dstOffset = static_cast<size_t>(texelIndex) * 4;
+						rgbaPixels[dstOffset + 0] = src.r;
+						rgbaPixels[dstOffset + 1] = src.g;
+						rgbaPixels[dstOffset + 2] = src.b;
+						rgbaPixels[dstOffset + 3] = src.a;
+					}
+
+
+					Buffer data;
+					data.Data = reinterpret_cast<uint8_t*>(rgbaPixels.data());
+					data.Size = static_cast<uint64_t>(rgbaPixels.size());
+					
+					
+					// meshTexture = Texture2D::Create(reinterpret_cast<const unsigned char*>(embeddedTexture->pcData), embeddedTexture->mWidth);
+					meshTexture = Texture2D::Create(spec, data);
+					meshTexture->SetName(embeddedTexture->mFilename.C_Str());
 				}
 				else
 				{
@@ -282,8 +595,20 @@ namespace Uge
 						rgbaPixels[dstOffset + 3] = src.a;
 					}
 
-					meshTexture = Texture2D::Create(width, height, typeName);
-					meshTexture->SetData(rgbaPixels.data(), static_cast<uint32_t>(rgbaPixels.size()));
+					TextureSpecification spec;
+
+
+
+					spec.Height = height;
+					spec.Width = width;
+
+					Buffer data;
+					data.Data = reinterpret_cast<uint8_t*>(rgbaPixels.data());
+					data.Size = static_cast<uint64_t>(rgbaPixels.size());
+
+					meshTexture = Texture2D::Create(spec, data);
+					meshTexture->SetName(embeddedTexture->mFilename.C_Str());
+					// meshTexture->SetData(rgbaPixels.data(), static_cast<uint32_t>(rgbaPixels.size()));
 				}
 			}
 			else
@@ -300,7 +625,7 @@ namespace Uge
 					continue;
 				}
 
-				meshTexture = Texture2D::Create(fullPath.string());
+				//meshTexture = Texture2D::Create(fullPath.string());
 			}
 
 			if (!meshTexture)
@@ -309,11 +634,11 @@ namespace Uge
 				continue;
 			}
 
-			meshTexture->m_name = typeName;
+			meshTexture->SetName(typeName);
 			meshTexture->m_path = relativePath;
 
 			textures.emplace_back(meshTexture);
-			m_loadedTextures.emplace_back(meshTexture);
+			// m_loadedTextures.emplace_back(meshTexture);
 		}
 
 		return textures;

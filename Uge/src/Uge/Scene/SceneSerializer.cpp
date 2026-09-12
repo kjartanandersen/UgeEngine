@@ -106,8 +106,6 @@ namespace YAML {
 		}
 	};
 
-	
-
 }
 
 namespace Uge
@@ -156,6 +154,7 @@ namespace Uge
 		out << YAML::BeginMap;	// Entity
 		out << YAML::Key << "Entity" << YAML::Value << entity.GetUUID();
 
+#pragma region TagComponent
 		// Get tag component
 		if (entity.HasComponent<TagComponent>())
 		{
@@ -167,7 +166,9 @@ namespace Uge
 
 			out << YAML::EndMap; // TagComponent
 		}
+#pragma endregion
 
+#pragma region TransformComponent
 		if (entity.HasComponent<TransformComponent>())
 		{
 			out << YAML::Key << "TransformComponent";
@@ -180,7 +181,9 @@ namespace Uge
 
 			out << YAML::EndMap; // TransformComponent
 		}
+#pragma endregion
 
+#pragma region CameraComponent
 		if (entity.HasComponent<CameraComponent>())
 		{
 			out << YAML::Key << "CameraComponent";
@@ -205,7 +208,9 @@ namespace Uge
 
 			out << YAML::EndMap; // CameraComponent
 		}
+#pragma endregion
 
+#pragma region ScriptComponent
 		if (entity.HasComponent<ScriptComponent>())
 		{
 			out << YAML::Key << "ScriptComponent";
@@ -268,7 +273,9 @@ namespace Uge
 
 			out << YAML::EndMap; // ScriptComponent
 		}
+#pragma endregion
 
+#pragma region SpriteRendererComponent
 		if (entity.HasComponent<SpriteRendererComponent>())
 		{
 			out << YAML::Key << "SpriteRendererComponent";
@@ -278,21 +285,196 @@ namespace Uge
 			out << YAML::Key << "Color" << YAML::Value << spriteRendererComponent.Color;
 			// TODO: Add texture support
 			
+			out << YAML::Key << "TextureHandle" << YAML::Value << spriteRendererComponent.Texture;
+
+			
+			out << YAML::Key << "TilingFactor" << YAML::Value << spriteRendererComponent.TilingFactor;
+
 
 			out << YAML::EndMap; // SpriteRendererComponent
 		}
+#pragma endregion
 
+#pragma region MeshComponent
 		if (entity.HasComponent<MeshComponent>())
 		{
 			out << YAML::Key << "MeshComponent";
 			out << YAML::BeginMap; // MeshComponent
 
 			auto& meshComponent = entity.GetComponent<MeshComponent>();
-			out << YAML::Key << "Path" << YAML::Value << meshComponent.FilePath;
+			out << YAML::Key << "MeshHandle" << YAML::Value << meshComponent.Mesh;
 
 			out << YAML::EndMap; // MeshComponent
 		}
+#pragma endregion
 
+#pragma region SkyLightComponent
+		if (entity.HasComponent<SkyLightComponent>())
+		{
+			out << YAML::Key << "SkyLightComponent";
+			out << YAML::BeginMap; // SkyLightComponent
+
+			auto& skyLightComponent = entity.GetComponent<SkyLightComponent>();
+			out << YAML::Key << "EnvironmentHandle" << YAML::Value << skyLightComponent.Environment;
+			out << YAML::Key << "Intensity" << YAML::Value << skyLightComponent.Intensity;
+
+			out << YAML::EndMap; // SkyLightComponent
+		}
+#pragma endregion
+
+#pragma region DirectionalLightComponent
+		if (entity.HasComponent<DirectionalLightComponent>())
+		{
+			out << YAML::Key << "DirectionalLightComponent";
+			out << YAML::BeginMap; // DirectionalLightComponent
+
+			auto& directionalLightComponent = entity.GetComponent<DirectionalLightComponent>();
+			out << YAML::Key << "Color" << YAML::Value << directionalLightComponent.Color;
+			out << YAML::Key << "Intensity" << YAML::Value << directionalLightComponent.Intensity;
+
+			out << YAML::EndMap; // DirectionalLightComponent
+		}
+#pragma endregion
+
+#pragma region RigidbodyComponent
+		if (entity.HasComponent<RigidbodyComponent>())
+		{
+			out << YAML::Key << "RigidbodyComponent";
+			out << YAML::BeginMap; // RigidbodyComponent
+
+			auto& rb = entity.GetComponent<RigidbodyComponent>();
+			out << YAML::Key << "BodyType" << YAML::Value << (int)rb.Type;
+			out << YAML::Key << "Layer" << YAML::Value << (int)rb.Layer;
+			out << YAML::Key << "Mass" << YAML::Value << rb.Mass;
+			out << YAML::Key << "LinearDamping" << YAML::Value << rb.LinearDamping;
+			out << YAML::Key << "AngularDamping" << YAML::Value << rb.AngularDamping;
+			out << YAML::Key << "GravityFactor" << YAML::Value << rb.GravityFactor;
+			out << YAML::Key << "FixedRotation" << YAML::Value << rb.FixedRotation;
+
+			out << YAML::EndMap; // RigidbodyComponent
+		}
+#pragma endregion
+
+#pragma region BoxColliderComponent
+		if (entity.HasComponent<BoxColliderComponent>())
+		{
+
+			out << YAML::Key << "BoxColliderComponent";
+			out << YAML::BeginMap; // BoxColliderComponent
+
+			auto& bc = entity.GetComponent<BoxColliderComponent>();
+			out << YAML::Key << "HalfExtents" << YAML::Value << bc.HalfExtents;
+			out << YAML::Key << "IsTrigger" << YAML::Value << bc.IsTrigger;
+
+			out << YAML::Key << "Material" << YAML::Value;
+			out << YAML::BeginMap; // Material
+
+				out << YAML::Key << "Density" << YAML::Value << bc.Material.Density;
+				out << YAML::Key << "Friction" << YAML::Value << bc.Material.Friction;
+				out << YAML::Key << "Restitution" << YAML::Value << bc.Material.Restitution;
+
+
+			out << YAML::EndMap; // Material
+
+			out << YAML::Key << "Offset" << YAML::Value << bc.Offset;
+
+
+			out << YAML::EndMap; // RigidbodyComponent
+
+		}
+#pragma endregion
+
+#pragma region SphereColliderComponent
+		if (entity.HasComponent<SphereColliderComponent>())
+		{
+
+			out << YAML::Key << "SphereColliderComponent";
+			out << YAML::BeginMap; // SphereColliderComponent
+
+			auto& scc = entity.GetComponent<SphereColliderComponent>();
+			out << YAML::Key << "IsTrigger" << YAML::Value << scc.IsTrigger;
+			
+			out << YAML::Key << "Material" << YAML::Value;
+			out << YAML::BeginMap; // Material
+
+				out << YAML::Key << "Density" << YAML::Value << scc.Material.Density;
+				out << YAML::Key << "Friction" << YAML::Value << scc.Material.Friction;
+				out << YAML::Key << "Restitution" << YAML::Value << scc.Material.Restitution;
+
+
+			out << YAML::EndMap; // Material
+			
+			out << YAML::Key << "Offset" << YAML::Value << scc.Offset;
+			out << YAML::Key << "Radius" << YAML::Value << scc.Radius;
+
+
+			out << YAML::EndMap; // SphereColliderComponent
+
+		}
+#pragma endregion
+
+#pragma region CapsuleColliderComponent
+		if (entity.HasComponent<CapsuleColliderComponent>())
+		{
+
+			out << YAML::Key << "CapsuleColliderComponent";
+			out << YAML::BeginMap; // CapsuleColliderComponent
+
+			auto& ccc = entity.GetComponent<CapsuleColliderComponent>();
+			out << YAML::Key << "HalfHeight"	<< YAML::Value << ccc.HalfHeight;
+			out << YAML::Key << "IsTrigger"		<< YAML::Value << ccc.IsTrigger;
+
+			out << YAML::Key << "Material" << YAML::Value;
+			out << YAML::BeginMap; // Material
+
+				out << YAML::Key << "Density"		<< YAML::Value << ccc.Material.Density;
+				out << YAML::Key << "Friction"		<< YAML::Value << ccc.Material.Friction;
+				out << YAML::Key << "Restitution"	<< YAML::Value << ccc.Material.Restitution;
+
+
+			out << YAML::EndMap; // Material
+
+			out << YAML::Key << "Offset"		<< YAML::Value << ccc.Offset;
+			out << YAML::Key << "Radius"		<< YAML::Value << ccc.Radius;
+				
+
+			out << YAML::EndMap; // CapsuleColliderComponent
+
+		}
+#pragma endregion
+
+#pragma region MeshColliderComponent
+		if (entity.HasComponent<MeshColliderComponent>())
+		{
+
+			out << YAML::Key << "MeshColliderComponent";
+			out << YAML::BeginMap; // MeshColliderComponent
+
+			auto& mcc = entity.GetComponent<MeshColliderComponent>();
+			out << YAML::Key << "MeshHandle"		<< YAML::Value << mcc.Mesh;
+
+			out << YAML::Key << "Convex"			<< YAML::Value << mcc.Convex;
+			out << YAML::Key << "IsTrigger"			<< YAML::Value << mcc.IsTrigger;
+
+			out << YAML::Key << "Material" << YAML::Value;
+			out << YAML::BeginMap; // Material
+
+				out << YAML::Key << "Density"		<< YAML::Value << mcc.Material.Density;
+				out << YAML::Key << "Friction"		<< YAML::Value << mcc.Material.Friction;
+				out << YAML::Key << "Restitution"	<< YAML::Value << mcc.Material.Restitution;
+
+
+			out << YAML::EndMap; // Material
+
+			out << YAML::Key << "Offset"			<< YAML::Value << mcc.Offset;
+
+
+			out << YAML::EndMap; // MeshColliderComponent
+
+		}
+#pragma endregion
+
+#pragma region TextComponent
 		if (entity.HasComponent<TextComponent>())
 		{
 			out << YAML::Key << "TextComponent";
@@ -307,6 +489,7 @@ namespace Uge
 
 			out << YAML::EndMap; // TextComponent
 		}
+#pragma endregion
 
 		out << YAML::EndMap;	// Entity
 
@@ -316,12 +499,12 @@ namespace Uge
 	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
 		: m_scene(scene) {}
 
-	void SceneSerializer::Serialize(const std::string& filepath)
+	void SceneSerializer::Serialize(const std::filesystem::path& filepath)
 	{
 
 		YAML::Emitter out;
 		out << YAML::BeginMap;
-		out << YAML::Key << "Scene" << YAML::Value << "Untitled";
+		out << YAML::Key << "Scene" << YAML::Value << Project::GetRelativePath(filepath.string()).string();
 		out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
 		for (auto entityID : m_scene->m_registry.view<entt::entity>())
@@ -343,35 +526,29 @@ namespace Uge
 		fout << out.c_str();
 
 	}
-	void SceneSerializer::SerializeRuntime(const std::string& filepath)
+
+	void SceneSerializer::SerializeRuntime(const std::filesystem::path& filepath)
 	{
 		
 		// Not implemented
 		UG_CORE_ASSERT(false);
 
 	}
-	bool SceneSerializer::DeSerialize(const std::string& filepath)
-	{
-		/*
-		std::ifstream stream(filepath);
-		std::stringstream strStream;
-		strStream << stream.rdbuf();
 
-		YAML::Node data = YAML::Load(strStream.str());
-		if (!data["Scene"])
-		{
-			return false;
-		}
-		*/
+	bool SceneSerializer::DeSerialize(const std::filesystem::path& filepath)
+	{
 
 		YAML::Node data;
 		try
 		{
-			data = YAML::LoadFile(filepath);
+			data = YAML::LoadFile(filepath.string());
 		}
-		catch (YAML::ParserException e)
+		// YAML::Exception rather than ParserException alone: a scene file that has been
+		// moved or deleted raises YAML::BadFile, which is not a ParserException and would
+		// otherwise be thrown all the way out through AssetManager::GetAsset.
+		catch (const YAML::Exception& e)
 		{
-			UG_CORE_ERROR("Failed to load .uge file {0}\n	{1}", filepath, e.what());
+			UG_CORE_ERROR("Failed to load .uge file {0}\n	{1}", filepath.string(), e.what());
 			return false;
 		}
 		if (!data["Scene"])
@@ -383,6 +560,8 @@ namespace Uge
 		std::string sceneName = data["Scene"].as<std::string>();
 		UG_CORE_TRACE("Deserializing scene '{0}'", sceneName);
 
+		m_scene->SetName(sceneName);
+
 		auto entities = data["Entities"];
 		if (entities)
 		{
@@ -392,16 +571,19 @@ namespace Uge
 				uint64_t uuid = entity["Entity"].as<uint64_t>();
 
 				std::string name;
+#pragma region TagComponent
 				auto ytgc = entity["TagComponent"];		// Tag Component
 				if (ytgc)
 				{
 					name = ytgc["Tag"].as<std::string>();
 				}
+#pragma endregion
 
 				UG_CORE_TRACE("Deserialized entity with ID {0} and name {1}", uuid, name);
 
 				Entity deserializedEntity = m_scene->CreateEntityWithUUID(uuid, name);
 
+#pragma region TransformComponent
 				auto ytc = entity["TransformComponent"];	// Tranform Component
 				if (ytc)
 				{
@@ -412,7 +594,9 @@ namespace Uge
 					tc.Scale = ytc["Scale"].as<glm::vec3>();
 
 				}
+#pragma endregion
 
+#pragma region CameraComponent
 				auto ycc = entity["CameraComponent"];	// Camera Component
 				if (ycc)
 				{
@@ -433,7 +617,9 @@ namespace Uge
 					cc.Primary = ycc["Primary"].as<bool>();
 					cc.FixedAspectRatio = ycc["FixedAspectRatio"].as<bool>();
 				}
+#pragma endregion
 
+#pragma region ScriptComponent
 				auto ysc = entity["ScriptComponent"];
 				if (ysc)
 				{
@@ -493,7 +679,9 @@ namespace Uge
 					}
 
 				}
+#pragma endregion
 
+#pragma region SpriteRendererComponent
 				auto ysrc = entity["SpriteRendererComponent"];		// Sprite Renderer Component
 				if (ysrc)
 				{
@@ -502,18 +690,187 @@ namespace Uge
 					auto& src = deserializedEntity.AddComponent<SpriteRendererComponent>();
 					src.Color = ysrc["Color"].as<glm::vec4>();
 
-				}
+					if (ysrc["TextureHandle"])
+					{
+						src.Texture = ysrc["TextureHandle"].as<AssetHandle>();
+					}
+					if (ysrc["TilingFactor"])
+					{
+						src.TilingFactor = ysrc["TilingFactor"].as<float>();
 
+					}
+
+				}
+#pragma endregion
+
+#pragma region MeshComponent
 				auto ymc = entity["MeshComponent"];		// Mesh Component
 				if (ymc)
 				{
 					UG_CORE_TRACE("Deserializing Mesh Component");
 
-					std::string meshPath = ymc["Path"] ? ymc["Path"].as<std::string>() : std::string();
+					AssetHandle meshAsset = ymc["MeshHandle"] ? ymc["MeshHandle"].as<AssetHandle>() : AssetHandle();
 					// std::filesystem::path path = Project::GetAssetFileSystemPath(meshPath);
-					deserializedEntity.AddComponent<MeshComponent>(meshPath);
+					deserializedEntity.AddComponent<MeshComponent>(meshAsset);
 				}
+#pragma endregion
 
+#pragma region SkyLightComponent
+				auto yslc = entity["SkyLightComponent"];	// Sky Light Component
+				if (yslc)
+				{
+					UG_CORE_TRACE("Deserializing Sky Light Component");
+
+					auto& src = deserializedEntity.AddComponent<SkyLightComponent>();
+
+					if (yslc["EnvironmentHandle"])
+					{
+						src.Environment = yslc["EnvironmentHandle"].as<AssetHandle>();
+					}
+					if (yslc["Intensity"])
+					{
+						src.Intensity = yslc["Intensity"].as<float>();
+					}
+				}
+#pragma endregion
+
+#pragma region DirectionalLightComponent
+				auto ydlc = entity["DirectionalLightComponent"];	// Directional Light Component
+				if (ydlc)
+				{
+					UG_CORE_TRACE("Deserializing Directional Light Component");
+
+					auto& src = deserializedEntity.AddComponent<DirectionalLightComponent>();
+
+					if (ydlc["Color"])
+					{
+						src.Color = ydlc["Color"].as<glm::vec3>();
+					}
+					if (ydlc["Intensity"])
+					{
+						src.Intensity = ydlc["Intensity"].as<float>();
+					}
+				}
+#pragma endregion
+
+
+#pragma region RigidbodyComponent
+				auto yrb = entity["RigidbodyComponent"];		// Rigid Body Component
+				if (yrb)
+				{
+					UG_CORE_TRACE("Deserializing Rigidbody Component");
+
+					auto& rb = deserializedEntity.AddComponent<RigidbodyComponent>();
+					if (yrb["BodyType"])			rb.Type = (BodyType)yrb["BodyType"].as<int>();
+					if (yrb["Layer"])				rb.Layer = (PhysicsLayer)yrb["Layer"].as<int>();
+					if (yrb["Mass"])				rb.Mass = yrb["Mass"].as<float>();
+					if (yrb["LinearDamping"])		rb.LinearDamping = yrb["LinearDamping"].as<float>();
+					if (yrb["AngularDamping"])		rb.AngularDamping = yrb["AngularDamping"].as<float>();
+					if (yrb["GravityFactor"])		rb.GravityFactor = yrb["GravityFactor"].as<float>();
+					if (yrb["FixedRotation"])		rb.FixedRotation = yrb["FixedRotation"].as<bool>();
+					
+				}
+#pragma endregion
+
+#pragma region BoxColliderComponent
+				auto ybcc = entity["BoxColliderComponent"];		// Box Collider Component
+				if (ybcc)
+				{
+					auto& bc = deserializedEntity.AddComponent<BoxColliderComponent>();
+					if (ybcc["HalfExtents"])					bc.HalfExtents	= ybcc["HalfExtents"].as<glm::vec3>();
+					if (ybcc["IsTrigger"])						bc.IsTrigger	= ybcc["IsTrigger"].as<bool>();
+					if (ybcc["Offset"])							bc.Offset		= ybcc["Offset"].as<glm::vec3>();
+
+					if (ybcc["Material"])
+					{
+						PhysicsMaterial material;
+						auto& ybccm = ybcc["Material"];
+						if (ybccm["Density"])					material.Density = ybccm["Density"].as<float>();
+						if (ybccm["Friction"])					material.Friction = ybccm["Friction"].as<float>();
+						if (ybccm["Restitution"])				material.Restitution = ybccm["Restitution"].as<float>();
+
+						bc.Material = material;
+					}
+
+
+				}
+#pragma endregion
+
+#pragma region SphereColliderComponent
+				auto yscc = entity["SphereColliderComponent"];		// Sphere Collider Component
+				if (yscc)
+				{
+					auto& scc = deserializedEntity.AddComponent<SphereColliderComponent>();
+					if (yscc["IsTrigger"])						scc.IsTrigger = yscc["IsTrigger"].as<bool>();
+					if (yscc["Offset"])							scc.Offset = yscc["Offset"].as<glm::vec3>();
+					if (yscc["Radius"])							scc.Radius = yscc["Radius"].as<float>();
+
+
+					if (yscc["Material"])
+					{
+						PhysicsMaterial material;
+						auto& ysccm = yscc["Material"];
+						if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
+						if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
+						if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
+
+						scc.Material = material;
+					}
+
+				}
+#pragma endregion
+
+#pragma region CapsuleColliderComponent
+				auto yccc = entity["CapsuleColliderComponent"];		// Capsule Collider Component
+				if (yccc)
+				{
+
+					auto& ccc = deserializedEntity.AddComponent<CapsuleColliderComponent>();
+					if (yccc["HalfHeight"])						ccc.HalfHeight = yccc["HalfHeight"].as<float>();
+					if (yccc["IsTrigger"])						ccc.IsTrigger = yccc["IsTrigger"].as<bool>();
+					if (yccc["Offset"])							ccc.Offset = yccc["Offset"].as<glm::vec3>();
+					if (yccc["Radius"])							ccc.Radius = yccc["Radius"].as<float>();
+
+					if (yccc["Material"])
+					{
+						PhysicsMaterial material;
+						auto& ysccm = yccc["Material"];
+						if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
+						if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
+						if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
+
+						ccc.Material = material;
+					}
+
+				}
+#pragma endregion
+
+#pragma region MeshColliderComponent
+				auto ymcc = entity["MeshColliderComponent"];		// Mesh Collider Component
+				if (ymcc)
+				{
+
+					auto& mcc = deserializedEntity.AddComponent<MeshColliderComponent>();
+					if (ymcc["Convex"])							mcc.Convex = ymcc["Convex"].as<bool>();
+					if (ymcc["IsTrigger"])						mcc.IsTrigger = ymcc["IsTrigger"].as<bool>();
+					if (ymcc["MeshHandle"])						mcc.Mesh = ymcc["MeshHandle"].as<AssetHandle>();
+
+					if (ymcc["Material"])
+					{
+						PhysicsMaterial material;
+						auto& ysccm = ymcc["Material"];
+						if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
+						if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
+						if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
+
+						mcc.Material = material;
+					}
+					if (ymcc["Offset"])							mcc.Offset = ymcc["Offset"].as<glm::vec3>();
+
+				}
+#pragma endregion
+				
+#pragma region TextComponent
 				auto ytec = entity["TextComponent"];		// Text Component
 				if (ytec)
 				{
@@ -529,6 +886,7 @@ namespace Uge
 					// src.Font = ; // TODO
 
 				}
+#pragma endregion
 
 			}
 
@@ -536,7 +894,8 @@ namespace Uge
 
 		return true;
 	}
-	bool SceneSerializer::DeSerializeRuntime(const std::string& filepath)
+
+	bool SceneSerializer::DeSerializeRuntime(const std::filesystem::path& filepath)
 	{
 
 
@@ -544,4 +903,5 @@ namespace Uge
 		UG_CORE_ASSERT(false);
 		return false;
 	}
+
 }

@@ -11,6 +11,7 @@ IncludeDir["GLM"]    				= "%{wks.location}/Uge/thirdparty/glm"
 IncludeDir["STBI"]   				= "%{wks.location}/Uge/thirdparty/stb_image"
 IncludeDir["ENTT"]   				= "%{wks.location}/Uge/thirdparty/entt/include"
 IncludeDir["ASSIMP"]				= "%{wks.location}/Uge/thirdparty/assimp/include"
+IncludeDir["RAPIDJSON"]				= "%{wks.location}/Uge/thirdparty/assimp/contrib/rapidjson/include"
 IncludeDir["YAMLCPP"]				= "%{wks.location}/Uge/thirdparty/yaml-cpp/include"
 IncludeDir["JOLT"]					= "%{wks.location}/Uge/thirdparty/JoltPhysics"
 IncludeDir["IMGUIZMO"]				= "%{wks.location}/Uge/thirdparty/ImGuizmo"
@@ -21,7 +22,17 @@ IncludeDir["SPIRVCROSS"]			= "%{wks.location}/Uge/thirdparty/SPIRV-Cross"
 IncludeDir["VULKANSDK"]				= "%{VULKAN_SDK}/Include"
 IncludeDir["MSDFGEN"]				= "%{wks.location}/Uge/thirdparty/ch-msdf-atlas-gen/msdfgen"
 IncludeDir["MSDF_ATLAS_GEN"]		= "%{wks.location}/Uge/thirdparty/ch-msdf-atlas-gen/msdf-atlas-gen"
+IncludeDir["GOOGLETEST"]			= "%{wks.location}/Uge/thirdparty/googletest/googletest/include"
+IncludeDir["GOOGLEMOCK"]			= "%{wks.location}/Uge/thirdparty/googletest/googlemock/include"
 
+-- Jolt's compile defines change its ABI. Every project that compiles a TU including a
+-- Jolt header must use exactly the same set as the Jolt library itself, or the layouts
+-- silently disagree. Applied by Uge/thirdparty/JoltPhysics, Uge and Uge-Tests.
+JoltDefines = {}
+JoltDefines["Common"]  = { "JPH_USE_CPU_COMPUTE" }
+JoltDefines["Debug"]   = { "JPH_ENABLE_ASSERTS", "JPH_DEBUG_RENDERER", "JPH_PROFILE_ENABLED" }
+JoltDefines["Release"] = { "JPH_DEBUG_RENDERER", "JPH_PROFILE_ENABLED" }
+JoltDefines["Dist"]    = { }
 
 -- Library Directories
 LibraryDir = {}
