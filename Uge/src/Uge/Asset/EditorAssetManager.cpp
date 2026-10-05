@@ -61,6 +61,12 @@ namespace Uge
             return memoryIt->second;
         }
 
+		// If the asset failed to import previously, don't try again.
+        if (m_failedImports.count(handle))
+        {
+			return nullptr;
+        }
+
         Ref<Asset> asset;
         if (IsAssetLoaded(handle))
         {
@@ -77,7 +83,9 @@ namespace Uge
             if (!asset)
             {
 
-                UG_CORE_ERROR("EditorAssetManager::GetAsset - asset import failed!");
+                UG_CORE_ERROR("EditorAssetManager::GetAsset - asset {0} import failed!", metadata.FilePath.string());
+				m_failedImports.insert(handle);
+				return nullptr;
 
             }
             m_loadedAssets[handle] = asset;

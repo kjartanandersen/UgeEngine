@@ -277,3 +277,65 @@ TEST_F(SceneSerializerTest, DeserializingMalformedYamlFails)
 
 	EXPECT_FALSE(SceneSerializer(loaded).DeSerialize(path));
 }
+
+TEST_F(SceneSerializerTest, AcceptsBooleansWrittenAsIntegers)
+{
+	// FirstGame's physicsScene.uge was written by 6e51012, whose mesh-collider writer
+	// emitted its flags through (int) casts. yaml-cpp's bool conversion rejects "1".
+	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/IntBools.uge",
+		"Scene: IntBools\n"
+		"Entities:\n"
+		"  - Entity: 42\n"
+		"    TagComponent:\n"
+		"      Tag: Collider\n"
+		"    MeshColliderComponent:\n"
+		"      Convex: 0\n"
+		"      IsTrigger: 1\n");
+
+	Uge::Ref<Scene> loaded = Uge::CreateRef<Scene>();
+	ASSERT_TRUE(SceneSerializer(loaded).DeSerialize(path));
+
+	Entity restored = loaded->FindEntityByName("Collider");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::MeshColliderComponent>());
+
+	// Both differ from the component's defaults (Convex = true, IsTrigger = false), so a
+	// pass means the values were actually read rather than left alone.
+	const Uge::MeshColliderComponent& collider = restored.GetComponent<Uge::MeshColliderComponent>();
+	EXPECT_FALSE(collider.Convex);
+	EXPECT_TRUE(collider.IsTrigger);
+}
+
+TEST_F(SceneSerializerTest, AMistypedValueFailsTheLoadWithoutThrowing)
+{
+	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/Mistyped.uge",
+		"Scene: Mistyped\n"
+		"Entities:\n"
+		"  - Entity: 7\n"
+		"    TagComponent:\n"
+		"      Tag: Light\n"
+		"    DirectionalLightComponent:\n"
+		"      Intensity: bright\n");
+
+	Uge::Ref<Scene> loaded = Uge::CreateRef<Scene>();
+
+	bool result = true;
+	EXPECT_NO_THROW({ result = SceneSerializer(loaded).DeSerialize(path); });
+	EXPECT_FALSE(result);
+}
+
+TEST_F(SceneSerializerTest, AScriptComponentWithAnUnknownClassStillSaves)
+{
+	// SCN-01: the writer used to dereference GetEntityClass's result without a check. Tests
+	// never call ScriptEngine::Init, so no class is known at all, which is exactly that case.
+	Entity entity = m_scene->CreateEntity("Scripted");
+	entity.AddComponent<Uge::ScriptComponent>().ClassName = "Game.DoesNotExist";
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	EXPECT_TRUE(m_deserialized);
+	Entity restored = loaded->FindEntityByName("Scripted");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::ScriptComponent>());
+	EXPECT_EQ(restored.GetComponent<Uge::ScriptComponent>().ClassName, "Game.DoesNotExist");
+}

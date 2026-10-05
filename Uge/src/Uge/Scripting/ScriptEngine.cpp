@@ -361,14 +361,21 @@ namespace Uge
 
 	Ref<ScriptClass> ScriptEngine::GetEntityClass(const std::string& name)
 	{
+		// Is null before Init() is called, or after Shutdown() is called.
+		if (!s_data)
+		{
+			UG_CORE_WARN("Script engine data is null");
+			return nullptr;
+		}
 
 		auto it = s_data->EntityClasses.find(name);
 		if (it == s_data->EntityClasses.end())
 		{
-			nullptr;
+			UG_CORE_WARN("Entity class not found: {0}", name);
+			return nullptr;
 		}
 
-		return s_data->EntityClasses.at(name);
+		return it->second;
 	}
 
 	std::unordered_map<std::string, Ref<ScriptClass>> ScriptEngine::GetEntityClasses()

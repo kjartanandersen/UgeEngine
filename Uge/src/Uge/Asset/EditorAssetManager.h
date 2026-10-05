@@ -9,6 +9,7 @@
 #include "AssetManagerBase.h"
 #include "AssetMetadata.h"
 #include <map>
+#include <unordered_set>
 
 namespace Uge
 {
@@ -205,6 +206,7 @@ namespace Uge
 		AssetRegistry m_assetRegistry;
 		MeshAssetRegistry m_meshAssetRegistry;
 		AssetMap  m_loadedAssets;
+		std::unordered_set<AssetHandle> m_failedImports; ///< Imports that failed this session; not retried until restart.
 
 		// Assets with no backing file (e.g. materials generated during mesh import).
 

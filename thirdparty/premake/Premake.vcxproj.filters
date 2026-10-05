@@ -61,6 +61,33 @@
     <Filter Include="..\UgeEditor\SandboxProject\Assets\Scripts">
       <UniqueIdentifier>{064D988C-F2B4-5E5A-5B20-737047A77546}</UniqueIdentifier>
     </Filter>
+    <Filter Include="..\premake">
+      <UniqueIdentifier>{D51DCEFC-C1D5-0F4A-2ADD-E8A516B4AA3A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\premake\thirdparty">
+      <UniqueIdentifier>{AFBB50AF-1B28-0CAA-E41B-A40750472E12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\premake\thirdparty\GLFW">
+      <UniqueIdentifier>{4E1CAF91-3A2C-5B62-A3E5-BF808F144AFB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\premake\thirdparty\JoltPhysics">
+      <UniqueIdentifier>{9A41365B-06B0-8BDA-4F99-46DABB468176}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\premake\thirdparty\assimp">
+      <UniqueIdentifier>{EB4B68F9-D706-58A5-80BE-D0EF6C58A235}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\premake\thirdparty\glm">
+      <UniqueIdentifier>{7E85B01B-EA47-E4A5-33F8-72329FF9BC83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\premake\thirdparty\googletest">
+      <UniqueIdentifier>{DB41A9C3-C792-9405-F0F6-82C7DCA6276F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\premake\thirdparty\imgui">
+      <UniqueIdentifier>{59900CCA-C59D-3AB0-4E84-369BBA900667}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\premake\thirdparty\yaml-cpp">
+      <UniqueIdentifier>{41B752A3-2DDD-1C0A-1623-A2D502E841D6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Sandbox\premake5.lua">
@@ -110,6 +137,27 @@
     </None>
     <None Include="..\..\UgeEditor\premake5.lua">
       <Filter>..\UgeEditor</Filter>
+    </None>
+    <None Include="..\..\premake\thirdparty\GLFW\premake5.lua">
+      <Filter>..\premake\thirdparty\GLFW</Filter>
+    </None>
+    <None Include="..\..\premake\thirdparty\JoltPhysics\premake5.lua">
+      <Filter>..\premake\thirdparty\JoltPhysics</Filter>
+    </None>
+    <None Include="..\..\premake\thirdparty\assimp\premake5.lua">
+      <Filter>..\premake\thirdparty\assimp</Filter>
+    </None>
+    <None Include="..\..\premake\thirdparty\glm\premake5.lua">
+      <Filter>..\premake\thirdparty\glm</Filter>
+    </None>
+    <None Include="..\..\premake\thirdparty\googletest\premake5.lua">
+      <Filter>..\premake\thirdparty\googletest</Filter>
+    </None>
+    <None Include="..\..\premake\thirdparty\imgui\premake5.lua">
+      <Filter>..\premake\thirdparty\imgui</Filter>
+    </None>
+    <None Include="..\..\premake\thirdparty\yaml-cpp\premake5.lua">
+      <Filter>..\premake\thirdparty\yaml-cpp</Filter>
     </None>
     <None Include="..\..\premake5.lua">
       <Filter>..</Filter>

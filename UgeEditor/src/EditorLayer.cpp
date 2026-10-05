@@ -962,10 +962,12 @@ namespace Uge
 		}
 
 		Ref<Scene> scene = AssetManager::GetAsset<Scene>(handle);
+		if (!scene)
+		{
+			UG_ERROR("Could not open scene {0}; see the errors above.", (uint64_t)handle);
+			return;
+		}
 		Ref<Scene> newScene = Scene::Copy(scene);
-
-		SceneSerializer serializer(newScene);
-		
 		
 		m_editorScene = newScene;
 
