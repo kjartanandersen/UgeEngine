@@ -1,0 +1,19 @@
+diff --git a/code/AssetLib/FBX/FBXConverter.cpp b/code/AssetLib/FBX/FBXConverter.cpp
+index f190d600a..288b085ab 100644
+--- a/code/AssetLib/FBX/FBXConverter.cpp
++++ b/code/AssetLib/FBX/FBXConverter.cpp
+@@ -3457,6 +3457,14 @@ FBXConverter::KeyFrameListList FBXConverter::GetRotationKeyframeList(const std::
+                 for (size_t n = 1; n < count; n++) {
+                     while (std::abs(vc - vp) >= 180.0f) {
+                         double step = std::floor(double(tc - tp) / std::abs(vc - vp) * 179.0f);
++                        if (!(step > 0.0)) {
++                            // The rotation rate is too steep to subdivide any further at
++                            // tick resolution (|vc - vp| > (tc - tp) * 179), the keys are
++                            // not in ascending time order, or tc == tp makes step NaN.
++                            // In each case tnew/vnew would come back equal to tp/vp and
++                            // this loop would spin forever appending keys.
++                            break;
++                        }
+                         int64_t tnew = tp + int64_t(step);
+                         float vnew = vp + (vc - vp) * float(step / (tc - tp));
+                         if (tnew >= adj_start && tnew <= adj_stop) {
