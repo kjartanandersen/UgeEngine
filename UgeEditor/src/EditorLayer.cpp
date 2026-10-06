@@ -943,14 +943,22 @@ namespace Uge
 
 	void EditorLayer::NewScene()
 	{
+
+		if (m_sceneState != SceneState::Edit)
+		{
+			OnSceneStop();
+		}
+
 		m_activeScene = CreateRef<Scene>();
-		// m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+		m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+		m_editorScene = m_activeScene;
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
 		m_debugPanel.SetContext(m_activeScene);
 
 		m_editorScenePath = std::filesystem::path();
 
 		m_colliderEdgeCache.clear();
+		m_hoveredEntity = {};
 
 	}
 
@@ -1004,6 +1012,7 @@ namespace Uge
 		m_editorScenePath = Project::GetActive()->GetEditorAssetManager()->GetFilePath(handle);
 
 		m_colliderEdgeCache.clear();
+		m_hoveredEntity = {};
 		WarnAboutMissingAssets(m_editorScene, m_editorScenePath);
 
 	}
