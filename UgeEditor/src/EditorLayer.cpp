@@ -44,6 +44,31 @@ namespace Uge
 
 	static Ref<Font> s_font;
 
+	// A handle the asset manager doesn't know can never resolve: the asset was deleted, or the
+	// handle never pointed anywhere. Say so once, when the scene opens, instead of
+	// leaving an entity that silently draws nothing.
+	static void WarnAboutMissingAssets(const Ref<Scene>& scene, const std::filesystem::path& scenePath)
+	{
+		auto check = [&](entt::entity handle, AssetHandle asset, const char* what)
+			{
+				if (asset != 0 && !AssetManager::IsAssetHandleValid(asset))
+				{
+					Entity entity{ handle, scene.get() };
+					UG_WARN("{0}: entity '{1}' has a {2} referencing missing asset {3}",
+						scenePath.generic_string(), entity.GetName(), what, (uint64_t)asset);
+				}
+			};
+
+		for (auto [e, mesh] : scene->GetAllEntitiesWith<MeshComponent>().each())
+			check(e, mesh.Mesh, "MeshComponent");
+		for (auto [e, collider] : scene->GetAllEntitiesWith<MeshColliderComponent>().each())
+			check(e, collider.Mesh, "MeshColliderComponent");
+		for (auto [e, sprite] : scene->GetAllEntitiesWith<SpriteRendererComponent>().each())
+			check(e, sprite.Texture, "SpriteRendererComponent texture");
+		for (auto [e, sky] : scene->GetAllEntitiesWith<SkyLightComponent>().each())
+			check(e, sky.Environment, "SkyLightComponent environment");
+	}
+
 	EditorLayer::EditorLayer()
 		: Layer("Sandbox2D")
 	{
@@ -979,6 +1004,7 @@ namespace Uge
 		m_editorScenePath = Project::GetActive()->GetEditorAssetManager()->GetFilePath(handle);
 
 		m_colliderEdgeCache.clear();
+		WarnAboutMissingAssets(m_editorScene, m_editorScenePath);
 
 	}
 

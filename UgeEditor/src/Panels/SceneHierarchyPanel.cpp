@@ -640,7 +640,7 @@ namespace Uge
 						}
 						else
 						{
-							label = "Invalid";
+							label = fmt::format("Missing ({})", (uint64_t)component.Texture);
 						}
 					}
 
@@ -716,7 +716,7 @@ namespace Uge
 						}
 						else
 						{
-							label = "Invalid";
+							label = fmt::format("Missing ({})", (uint64_t)component.Mesh);
 						}
 					}
 
@@ -789,7 +789,7 @@ namespace Uge
 						}
 						else
 						{
-							label = "Invalid";
+							label = fmt::format("Missing ({})", (uint64_t)component.Environment);
 						}
 					}
 
@@ -1011,7 +1011,8 @@ namespace Uge
 					}
 					else
 					{
-						label = "Invalid";
+						
+						label = fmt::format("Missing ({})", (uint64_t)component.Mesh);
 					}
 				}
 

@@ -339,3 +339,25 @@ TEST_F(SceneSerializerTest, AScriptComponentWithAnUnknownClassStillSaves)
 	ASSERT_TRUE(restored.HasComponent<Uge::ScriptComponent>());
 	EXPECT_EQ(restored.GetComponent<Uge::ScriptComponent>().ClassName, "Game.DoesNotExist");
 }
+
+TEST_F(SceneSerializerTest, AMeshComponentWithoutAHandleHasNoMesh)
+{
+	// SCN-16: a missing MeshHandle used to become AssetHandle(), a *random* id. The next save
+	// wrote that number into the file, and the original reference was gone.
+	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/OldMesh.uge",
+		"Scene: OldMesh\n"
+		"Entities:\n"
+		"  - Entity: 5\n"
+		"    TagComponent:\n"
+		"      Tag: Backpack\n"
+		"    MeshComponent:\n"
+		"      Path: Mesh/backpack/scene.gltf\n");
+
+	Uge::Ref<Scene> loaded = Uge::CreateRef<Scene>();
+	ASSERT_TRUE(SceneSerializer(loaded).DeSerialize(path));
+
+	Entity restored = loaded->FindEntityByName("Backpack");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::MeshComponent>());
+	EXPECT_EQ((uint64_t)restored.GetComponent<Uge::MeshComponent>().Mesh, 0ull);
+}

@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include <xhash>
+#include <cstdint>
+#include <functional>
 
 
 namespace Uge
@@ -21,16 +22,23 @@ namespace Uge
 	 * every entity an identity that survives a save/load round-trip, and Uge::AssetHandle,
 	 * which is an alias for this type.
 	 *
-	 * Default construction draws from a uniformly distributed 64-bit random engine.
-	 * Collisions are not checked for; at this width they are not a practical concern.
+	 * Default construction gives the null identifier, 0, which every system treats as "none". 
+	 * Generate() creates a new one.
 	 *
 	 * Specializes `std::hash`, so a UUID can key an unordered container directly.
 	 */
 	class UUID
 	{
 	public:
-		/** @brief Generates a new random identifier. */
-		UUID();
+		/** @brief The null identifier, 0: "no entity", "no asset". */
+		UUID() = default;
+
+		/**
+		 * @brief Creates a new random identifier.
+		 * @return A uniformly distributed 64-bit value; never 0, the null identifier.
+		 */
+		static UUID Generate();
+
 		/**
 		 * @brief Wraps an existing identifier value.
 		 * @param uuid Raw value, typically read back from a serialized file.
@@ -46,7 +54,7 @@ namespace Uge
 		operator uint64_t() const { return m_UUID; }
 
 	private:
-		uint64_t m_UUID;
+		uint64_t m_UUID = 0;
 
 	};
 

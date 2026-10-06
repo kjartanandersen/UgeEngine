@@ -13,7 +13,7 @@ namespace UgeTests
 		// A UUID rather than the test name: two fixtures alive at once, or a previous run
 		// that failed to clean up, must not collide.
 		m_root = std::filesystem::temp_directory_path()
-			/ ("uge-tests-" + std::to_string((uint64_t)Uge::UUID()));
+			/ ("uge-tests-" + std::to_string((uint64_t)Uge::UUID((uint64_t)Uge::UUID::Generate())));
 
 		std::filesystem::create_directories(AssetDirectory());
 

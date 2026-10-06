@@ -180,3 +180,10 @@ TEST_F(ProjectTest, LoadingADirectoryReturnsNull)
 
 	EXPECT_TRUE(Project::GetActive());
 }
+
+TEST_F(ProjectTest, ANewProjectHasNoStartScene)
+{
+	// SCN-16: StartScene had no initializer, so Project::New() gave every new project a random
+	// start scene — which TempProject saved into its .ugproj and loaded back here.
+	EXPECT_EQ((uint64_t)Project::GetActive()->GetConfig().StartScene, 0ull);
+}

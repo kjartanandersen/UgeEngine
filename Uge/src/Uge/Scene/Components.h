@@ -47,7 +47,7 @@ namespace Uge
 	struct IDComponent
 	{
 		UUID ID; ///< The entity's persistent identifier.
-		/** @brief Constructs the component with a freshly generated identifier. */
+		/** @brief Null identifier; Scene::CreateEntityWithUUID supplies the real one. */
 		IDComponent() = default;
 		/** @brief Copy constructor. */
 		IDComponent(const IDComponent&) = default;

@@ -754,7 +754,7 @@ namespace Uge
 					{
 						UG_CORE_TRACE("Deserializing Mesh Component");
 
-						AssetHandle meshAsset = ymc["MeshHandle"] ? ymc["MeshHandle"].as<AssetHandle>() : AssetHandle();
+						AssetHandle meshAsset = ymc["MeshHandle"] ? ymc["MeshHandle"].as<AssetHandle>() : AssetHandle(0);
 						// std::filesystem::path path = Project::GetAssetFileSystemPath(meshPath);
 						deserializedEntity.AddComponent<MeshComponent>(meshAsset);
 					}

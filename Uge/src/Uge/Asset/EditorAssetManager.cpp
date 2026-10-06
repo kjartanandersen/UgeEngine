@@ -139,7 +139,7 @@ namespace Uge
 
     AssetHandle EditorAssetManager::ImportAsset(const std::filesystem::path& filepath, const std::string& name)
     {
-        AssetHandle handle; // TODO: Generate new handle
+        AssetHandle handle = AssetHandle::Generate();
         AssetMetadata metadata;
         metadata.FilePath = filepath;
 
@@ -208,7 +208,7 @@ namespace Uge
 
     AssetHandle EditorAssetManager::AddMemoryOnlyAsset(const Ref<Asset>& asset)
     {
-        AssetHandle handle; // Generates a new random handle
+        AssetHandle handle = AssetHandle::Generate();
 
         if (asset)
         {
