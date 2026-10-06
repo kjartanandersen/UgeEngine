@@ -9,6 +9,7 @@
     <Project Path="Uge\Uge.vcxproj" Id="262A880B-9233-887C-1BAF-9E7C87B7937C">
     </Project>
     <Project Path="Uge-ScriptCore\Uge-ScriptCore.csproj" Id="D1A0619A-BD6E-55A0-A602-C6C6926F3105">
+      <Platform Project="x64" />
     </Project>
   </Folder>
   <Folder Name="/Dependencies/">
@@ -52,5 +53,8 @@
   <Folder Name="/Tools/">
     <Project Path="UgeEditor\Uge-Editor.vcxproj" Id="1A4778D1-06FF-B91E-6F06-937A5BDD540F" DefaultStartup="true">
     </Project>
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
   </Folder>
 </Solution>

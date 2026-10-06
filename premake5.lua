@@ -1,4 +1,5 @@
 include "./thirdparty/premake/premake_customization/solution_items.lua"
+include "./thirdparty/premake/premake_customization/slnx_platforms.lua"
 include "Dependencies.lua"
 
 -- Seven dependency build scripts can't be committed inside their submodules, because those

@@ -22,3 +22,18 @@ premake.override(premake.vstudio.sln2005, "projects", function(base, wks)
 	end
 	base(wks)
 end)
+
+-- The same for the .slnx (vs2026) writer, where solution items are a folder of <File> entries.
+premake.override(premake.vstudio.sln2026.elements, "solution", function(base, wks)
+	local calls = base(wks)
+	table.insert(calls, function(wks)
+		if wks.solution_items and #wks.solution_items > 0 then
+			premake.push('<Folder Name="/Solution Items/">')
+			for _, item in ipairs(wks.solution_items) do
+				premake.w('<File Path="%s" />', item)
+			end
+			premake.pop('</Folder>')
+		end
+	end)
+	return calls
+end)
