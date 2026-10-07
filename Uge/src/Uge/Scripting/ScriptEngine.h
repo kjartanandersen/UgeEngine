@@ -220,6 +220,8 @@ namespace Uge
 	 * Created by Uge::ScriptEngine::OnCreateEntity when the scene starts running. It caches
 	 * the `OnCreate` and `OnUpdate` method pointers up front so the per-frame call does not
 	 * pay for a method lookup.
+	 * The managed object is held through a strong GC handle. Mono doesn't scan native memory,
+	 * so a plain pointer would neither keep the object alive nor follow it when the collector moves it.
 	 */
 	class ScriptInstance
 	{
@@ -231,6 +233,14 @@ namespace Uge
 		 * @param entity Entity this script is attached to.
 		 */
 		ScriptInstance(Ref<ScriptClass> scriptClass, Entity entity);
+
+		/** @brief Releases the GC handle, so Mono can collect the managed object. */
+		~ScriptInstance();
+
+		/** @brief Not copyable: both copies would free the same GC handle. */
+		ScriptInstance(const ScriptInstance&) = delete;
+		/** @brief Not copyable: both copies would free the same GC handle. */
+		ScriptInstance& operator=(const ScriptInstance&) = delete;
 
 		/** @brief Calls the script's `OnCreate`, once, when the scene starts. */
 		void InvokeOnCreate();
@@ -283,9 +293,10 @@ namespace Uge
 
 		/**
 		 * @brief The underlying managed object.
-		 * @return The `MonoObject` this instance wraps.
+		 * @return The `MonoObject` this instance wraps. Don't keep it: the collector can move the object,
+		 * so ask again each time.
 		 */
-		MonoObject* GetManagedMonoObject() { return m_instance; }
+		MonoObject* GetManagedMonoObject();
 	
 	private:
 
@@ -295,7 +306,7 @@ namespace Uge
 
 	private:
 		Ref<ScriptClass> m_scriptClass;
-		MonoObject* m_instance = nullptr;
+		uint32_t m_gcHandle = 0;				///< Strong GC handle that keeps the managed object alive.
 		MonoMethod* m_constructor = nullptr;
 		MonoMethod* m_onCreateMethod = nullptr;
 		MonoMethod* m_onUpdateMethod = nullptr;
@@ -381,13 +392,14 @@ namespace Uge
 		static void OnRuntimeStop();
 
 		/**
-		 * @brief Instantiates an entity's script and calls its `OnCreate`.
+		 * @brief Instantiates an entity's script and calls its `OnCreate`. If the class doesn't exist,
+		 * logs one warning naming the entity and class, and creates nothing.
 		 * @param entity Entity carrying a Uge::ScriptComponent.
 		 */
 		static void OnCreateEntity(Entity entity);
 
 		/**
-		 * @brief Calls an entity script's `OnUpdate`.
+		 * @brief Calls an entity script's `OnUpdate`. Does nothing for an entity without an instance.
 		 * @param entity Entity whose script should tick.
 		 * @param ts Frame delta time.
 		 */

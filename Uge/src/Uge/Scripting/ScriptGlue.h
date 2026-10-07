@@ -36,7 +36,7 @@ namespace Uge
 		/**
 		 * @brief Registers the component types so C# can query `HasComponent<T>()`.
 		 *
-		 * Builds a map from managed component type to a predicate testing the native registry.
+		 * Only components with a C# class in Uge-ScriptCore are registered; each is listed by name in ScriptGlue.cpp.
 		 */
 		static void RegisterComponents();
 

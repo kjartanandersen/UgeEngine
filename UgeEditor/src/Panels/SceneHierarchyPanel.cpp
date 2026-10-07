@@ -557,6 +557,13 @@ namespace Uge
 
 						}
 					}
+					else
+					{
+						// Nothing is running: the class is missing (OnCreateEntity warned), or the
+						// component was added during this Play session.
+						ImGui::TextDisabled(scriptClassExists ? "Not running: added during Play; starts on the next Play"
+							: "Not running: class not found");
+					}
 
 
 				}
