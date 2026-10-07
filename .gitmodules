@@ -1,30 +1,40 @@
 [submodule "Uge/thirdparty/spdlog"]
 	path = Uge/thirdparty/spdlog
 	url = git@github.com:gabime/spdlog.git
+	ignore = dirty
 [submodule "Uge/thirdparty/GLFW"]
 	path = Uge/thirdparty/GLFW
 	url = git@github.com:glfw/glfw.git
+	ignore = dirty
 [submodule "Uge/thirdparty/imgui"]
 	path = Uge/thirdparty/imgui
 	url = git@github.com:ocornut/imgui.git
+	ignore = dirty
 [submodule "Uge/thirdparty/glm"]
 	path = Uge/thirdparty/glm
 	url = git@github.com:g-truc/glm.git
+	ignore = dirty
 [submodule "Uge/thirdparty/yaml-cpp"]
 	path = Uge/thirdparty/yaml-cpp
 	url = git@github.com:jbeder/yaml-cpp.git
+	ignore = dirty
 [submodule "Uge/thirdparty/ImGuizmo"]
 	path = Uge/thirdparty/ImGuizmo
 	url = git@github.com:CedricGuillemet/ImGuizmo.git
+	ignore = dirty
 [submodule "Uge/thirdparty/assimp"]
 	path = Uge/thirdparty/assimp
 	url = git@github.com:assimp/assimp.git
+	ignore = dirty
 [submodule "Uge/thirdparty/JoltPhysics"]
 	path = Uge/thirdparty/JoltPhysics
 	url = git@github.com:jrouwe/JoltPhysics.git
+	ignore = dirty
 [submodule "Uge/thirdparty/ch-msdf-atlas-gen"]
 	path = Uge/thirdparty/ch-msdf-atlas-gen
 	url = git@github.com:TheCherno/msdf-atlas-gen.git
+	ignore = dirty
 [submodule "Uge/thirdparty/googletest"]
 	path = Uge/thirdparty/googletest
 	url = git@github.com:google/googletest.git
+	ignore = dirty
