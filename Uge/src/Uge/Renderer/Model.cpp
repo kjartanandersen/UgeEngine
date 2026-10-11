@@ -94,18 +94,26 @@ namespace Uge
 		}
 
 		// Materials are referenced by handle and resolved per draw rather than cached on the
-		// Mesh, so editing a material's blend mode takes effect without a reimport.
-		static AlphaMode GetMaterialBlendMode(AssetHandle materialHandle)
+		// Mesh, so editing a material (its blend mode, whether it's double-sided) takes effect
+		// without a reimport.
+		static Ref<Material> ResolveMaterial(AssetHandle materialHandle)
 		{
 			if (!materialHandle
 				|| !AssetManager::IsAssetHandleValid(materialHandle)
 				|| AssetManager::GetAssetType(materialHandle) != AssetType::Material)
 			{
-				return AlphaMode::Opaque;
+				return nullptr;
 			}
 
-			Ref<Material> material = AssetManager::GetAsset<Material>(materialHandle);
-			return material ? material->GetBlendMode() : AlphaMode::Opaque;
+			return AssetManager::GetAsset<Material>(materialHandle);
+		}
+
+		// Double-sided materials are thin cards meant to be seen from both sides (foliage,
+		// chains, single-sheet panels), so they draw both faces. Everything else culls back
+		// faces.
+		static CullMode CullModeFor(const Ref<Material>& material)
+		{
+			return material && material->IsDoubleSided() ? CullMode::None : CullMode::Back;
 		}
 	}
 
@@ -275,6 +283,7 @@ namespace Uge
 				modelData.EntityData = blendedDraw.EntityID;
 				s_sceneData.ModelUniformBuffer->SetData(&modelData, sizeof(ModelData));
 
+				ApplyCullMode(CullModeFor(ResolveMaterial(blendedDraw.SubMesh->GetMaterial())));
 				blendedDraw.SubMesh->Draw(s_sceneData.ModelShader, blendedDraw.EntityID);
 			}
 
@@ -319,7 +328,8 @@ namespace Uge
 				continue;
 			}
 
-			if (GetMaterialBlendMode(mesh.GetMaterial()) == AlphaMode::Blend)
+			const Ref<Material> material = ResolveMaterial(mesh.GetMaterial());
+			if (material && material->GetBlendMode() == AlphaMode::Blend)
 			{
 				// Deferred to EndScene(): sorting has to span every model in the pass, not
 				// just the submeshes of this one.
@@ -330,6 +340,7 @@ namespace Uge
 				continue;
 			}
 
+			ApplyCullMode(CullModeFor(material));
 			mesh.Draw(s_sceneData.ModelShader, entityID);
 		}
 	}
