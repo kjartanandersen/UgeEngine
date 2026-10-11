@@ -126,6 +126,7 @@ namespace Uge
 
 		/**
 		 * @brief Begins the mesh pass, uploading the camera matrix to the shared uniform buffer.
+		 * Turns back-face culling on for the pass.
 		 * @param viewProjection Combined view-projection matrix.
 		 * @param cameraPosition Camera position in world space, used to sort blended submeshes.
 		 *
@@ -171,6 +172,7 @@ namespace Uge
 		static void DrawSkybox(const glm::mat4& viewProjection);
 		/**
 		 * @brief Ends the mesh pass opened by BeginScene(), flushing the blended queue.
+		 * Turns culling off again for whatever draws next.
 		 *
 		 * Draws every queued transparent submesh back to front with depth writes disabled,
 		 * then restores them. Skipping this call leaves transparent geometry undrawn.
@@ -251,7 +253,7 @@ namespace Uge
 			// Cull Data
 			Math::Frustum ViewFrustum;                      ///< accepts everything until BeginScene()
 			bool FrustumCullingEnabled = true;				///< Is frustum culling enabled
-			CullMode CurrentCullMode = CullMode::None;		///< last state pushed to the API
+			CullMode CurrentCullMode = CullMode::None;		///< Last mode set through ApplyCullMode(); BeginScene() re-syncs it, since code outside the pass can change it
 		};
 
 		static SceneData s_sceneData;
