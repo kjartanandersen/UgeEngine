@@ -18,6 +18,7 @@ namespace Uge
 	 * @ingroup group_asset
 	 */
 	using AssetRegistry = std::map<AssetHandle, AssetMetadata>;
+
 	/**
 	 * @brief Additional per-model registry data: material handles and dependencies.
 	 * @ingroup group_asset
@@ -57,25 +58,27 @@ namespace Uge
 		 * @return `true` if the asset is known.
 		 */
 		virtual bool IsAssetHandleValid(AssetHandle handle) const override;
+
 		/**
 		 * @brief Whether a handle is present in the mesh registry.
 		 * @param handle Handle to test.
 		 * @return `true` if mesh metadata exists for it.
 		 */
 		virtual bool IsMeshAssetHandleValid(AssetHandle handle) const override;
+
 		/**
 		 * @brief Whether an asset is already in the loaded cache.
 		 * @param handle Handle to test.
 		 * @return `true` if loaded.
 		 */
 		virtual bool IsAssetLoaded(AssetHandle handle) const override;
+
 		/**
 		 * @brief The registered type of an asset.
 		 * @param handle Handle to query.
 		 * @return The asset type, or Uge::AssetType::None if unknown.
 		 */
 		virtual AssetType GetAssetType(AssetHandle handle) const override;
-
 
 		/**
 		 * @brief Registers a file as an asset and imports it immediately.
@@ -87,6 +90,7 @@ namespace Uge
 		 * distinct assets. Use GetOrImportAsset() to avoid that.
 		 */
 		AssetHandle ImportAsset(const std::filesystem::path& filepath, const std::string& name = "");
+
 		/**
 		 * @brief Returns the handle already registered for a file, importing it if there is none.
 		 * @param filepath Path relative to the project's asset directory.
@@ -111,7 +115,6 @@ namespace Uge
 		 */
 		AssetHandle AddMemoryOnlyAsset(const Ref<Asset>& asset);
 
-
 		/**
 		 * @brief The registry entry for an asset.
 		 * @param handle Handle to look up.
@@ -119,6 +122,7 @@ namespace Uge
 		 *         to `false`, when the handle is unknown.
 		 */
 		const AssetMetadata& GetMetadata(AssetHandle handle) const;
+
 		/**
 		 * @brief The source file of an asset.
 		 * @param handle Handle to look up.
@@ -126,18 +130,21 @@ namespace Uge
 		 *         memory-only assets.
 		 */
 		const std::filesystem::path& GetFilePath(AssetHandle handle) const;
+
 		/**
 		 * @brief The mesh registry entry for a model.
 		 * @param handle Model handle to look up.
 		 * @return Const reference to its material handles and dependency list.
 		 */
 		const MeshAssetMetadata& GetMeshMetadata(AssetHandle handle) const;
+
 		/**
 		 * @brief Stores or replaces a model's mesh registry entry.
 		 * @param handle Model handle.
 		 * @param metadata Material handles and dependencies recorded during import.
 		 */
 		void SetMeshMetadata(AssetHandle handle, const MeshAssetMetadata& metadata);
+
 		/**
 		 * @brief Names of every asset currently in memory.
 		 * @return One display name per loaded asset; used by the editor's debug panel.
@@ -150,12 +157,12 @@ namespace Uge
 		 */
 		const AssetRegistry& GetAssetRegistry() const { return m_assetRegistry; }
 
-
 		/**
 		 * @brief Writes the registry to Uge::Project::GetAssetRegistryPath() as YAML.
 		 * @note Memory-only assets are excluded.
 		 */
 		void SerializeAssetRegistry();
+
 		/**
 		 * @brief Reads the registry back from the project's registry file.
 		 * @return `true` on success; `false` if the file is missing or malformed.
@@ -171,7 +178,6 @@ namespace Uge
 		 */
 		virtual void DeleteAsset(AssetHandle handle) override;
 
-
 		/**
 		 * @brief Unloads a model and the materials and textures only it used.
 		 * @param handle Model to release.
@@ -180,11 +186,13 @@ namespace Uge
 		 * no other model still lists. A later reimport rebuilds the entry.
 		 */
 		void DeleteModel(AssetHandle handle);
+
 		/**
 		 * @brief Unloads a texture, leaving its registry entry in place.
 		 * @param handle Texture to release.
 		 */
 		void DeleteTexture(AssetHandle handle);
+
 		/**
 		 * @brief Unloads a material.
 		 * @param handle Material to release.
@@ -192,6 +200,12 @@ namespace Uge
 		 *       reimporting the model creates fresh ones. @see AddMemoryOnlyAsset
 		 */
 		void DeleteMaterial(AssetHandle handle);
+
+		/**
+		 * @brief Unloads a scene.
+		 * @param handle Scene to release.
+		 */
+		void DeleteScene(AssetHandle handle);
 
 	private:
 		/**

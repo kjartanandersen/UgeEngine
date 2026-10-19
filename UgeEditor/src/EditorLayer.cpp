@@ -916,9 +916,17 @@ namespace Uge
 	void EditorLayer::SaveScene()
 	{
 
+		if (m_sceneState != SceneState::Edit)
+		{
+
+			UG_WARN("Cannot save scene while in play mode.");
+			return;
+
+		}
+
 		if (!m_editorScenePath.empty())
 		{
-			SerializeScene(m_activeScene, m_editorScenePath);
+			SerializeScene(m_editorScene, m_editorScenePath);
 		}
 		else
 		{
@@ -929,14 +937,37 @@ namespace Uge
 
 	void EditorLayer::SaveSceneAs()
 	{
+
+		if (m_sceneState != SceneState::Edit)
+		{
+			UG_WARN("Cannot save scene while in play mode.");
+			return;
+		}
+
 		std::string filepath = FileDialogs::SaveFile("Uge Scene (*.uge)\0*.uge\0\0");
 
-
-		if (!filepath.empty())
+		if (filepath.empty())
 		{
-			SerializeScene(m_activeScene, filepath);
-			m_editorScenePath = filepath;
+			return;
+		}
 
+		SerializeScene(m_editorScene, filepath);
+		m_editorScenePath = filepath;
+
+		// Register the file, so it appears in the content browser's Asset view and can be
+		// opened from there. Only a .uge file inside the asset directory can be.
+		const std::filesystem::path relative = Project::GetRelativePath(filepath);
+		if (relative.empty() || *relative.begin() == ".." || relative.extension() != ".uge")
+		{
+			UG_WARN("Saved {0}, but it isn't in the asset registry: it's outside the asset directory or not a .uge file.", filepath);
+			return;
+		}
+
+		const AssetHandle handle = Project::GetActive()->GetEditorAssetManager()->GetOrImportAsset(relative, relative.filename().string());
+		if (AssetManager::IsAssetHandleValid(handle))
+		{
+			m_editorScenePath = relative; // the same form OpenScene uses
+			m_contentBrowserPanel->RefreshAssetTree();
 		}
 
 	}
@@ -993,6 +1024,10 @@ namespace Uge
 		{
 			OnSceneStop();
 		}
+
+		// Read the file every time. The editor edits a copy and saves to disk, so the asset
+		// cached on first open is stale after any save, and edits made outside the editor would never show
+		AssetManager::DeleteAsset(handle);
 
 		Ref<Scene> scene = AssetManager::GetAsset<Scene>(handle);
 		if (!scene)

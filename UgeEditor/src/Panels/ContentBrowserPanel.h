@@ -35,8 +35,7 @@ namespace Uge
 
 		/** @brief Draws the breadcrumb bar and the item grid for the current directory. */
 		void OnImGuiRender();
-
-	private:
+		
 		/** @brief Rebuilds the directory tree from the current asset registry. */
 		void RefreshAssetTree();
 

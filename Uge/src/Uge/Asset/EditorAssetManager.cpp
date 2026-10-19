@@ -337,6 +337,7 @@ namespace Uge
             DeleteModel(handle);
             break;
         case AssetType::Scene:
+			DeleteScene(handle);
             break;
         case AssetType::None:
             break;
@@ -380,6 +381,16 @@ namespace Uge
     void EditorAssetManager::DeleteMaterial(AssetHandle handle)
     {
         m_loadedAssets.erase(handle);
+    }
+
+    void EditorAssetManager::DeleteScene(AssetHandle handle)
+    {
+        // Only unload: the registry entry is the file's identity, and erasing it would invalidate 
+        // the handle that scenes, the content browser and the registry file refer to.
+
+		m_loadedAssets.erase(handle);
+		m_failedImports.erase(handle);
+
     }
 
     bool EditorAssetManager::IsDependencyOfAnyModel(AssetHandle dependency) const

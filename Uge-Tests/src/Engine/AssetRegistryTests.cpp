@@ -294,6 +294,27 @@ TEST_F(AssetRegistryTest, DeletingAnAssetUnloadsItButKeepsItRegistered)
 	EXPECT_NE(AssetManager::GetAsset<Scene>(handle), nullptr);
 }
 
+TEST_F(AssetRegistryTest, DeletingASceneUnloadsItSoTheFileIsReadAgain)
+{
+	// The editor writes scenes to disk, but GetAsset kept serving the copy it cached on
+	// first load, so reopening a saved scene showed it as it was before the save.
+	const std::filesystem::path relative = WriteScene("Scenes/Level.uge");
+	const AssetHandle handle = Manager().ImportAsset(relative, "Level");
+	ASSERT_NE(AssetManager::GetAsset<Scene>(handle), nullptr);
+
+	// What the editor's Save does: write a changed scene over the file.
+	Uge::Ref<Scene> edited = Uge::CreateRef<Scene>();
+	edited->CreateEntity("Added in the editor");
+	Uge::SceneSerializer(edited).Serialize(Project::GetAssetFileSystemPath(relative));
+
+	Manager().DeleteAsset(handle);
+	EXPECT_FALSE(Manager().IsAssetLoaded(handle));
+
+	Uge::Ref<Scene> reloaded = AssetManager::GetAsset<Scene>(handle);
+	ASSERT_NE(reloaded, nullptr);
+	EXPECT_TRUE(reloaded->FindEntityByName("Added in the editor"));
+}
+
 TEST_F(AssetRegistryTest, ResolvingAnAssetWhoseFileIsGoneReturnsNull)
 {
 	// Content deleted from disk while a scene still refers to it must resolve to null, not
