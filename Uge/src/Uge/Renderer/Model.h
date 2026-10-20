@@ -82,6 +82,12 @@ namespace Uge
 		explicit Model(const std::string& path, const MeshAssetMetadata& metadata = {});
 
 		/**
+		 * @brief Releases the shared shaders, uniform buffers, skybox cube and current
+		 * environment. Called from Renderer::Shutdown(); a later draw recreates them.
+		 */
+		static void Shutdown();
+
+		/**
 		 * @brief Submits every submesh at the given transform.
 		 * @param transform World transform to render at.
 		 * @param entityID ID written to the picking attachment; `-1` for none.

@@ -220,7 +220,13 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		
+		// The staging buffers are plain new[]; everything else is a Ref. Released here, while
+		// the GL context still exists, not in static destruction after it.
+		delete[] m_data.VertexBufferBase;
+		delete[] m_data.TextVertexBufferBase;
+		delete[] m_data.LineVertexBufferBase;
+
+		m_data = Renderer2DData();
 
 	}
 

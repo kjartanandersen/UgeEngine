@@ -249,6 +249,9 @@ namespace Uge
 		 */
 		static void BindDefaultProperties();
 
+		/** @brief Releases all resources held by the material system. */
+		static void Shutdown();
+
 		/**
 		 * @brief Records whether an environment is bound, for every material to include.
 		 * @param hasEnvironment `true` once the scene's environment maps are bound.

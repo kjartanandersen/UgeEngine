@@ -64,6 +64,15 @@ namespace Uge
 		void PopOverlay(Layer* overlay);
 
 		/**
+		 * @brief Detaches and deletes every layer and overlay, leaving the stack empty.
+		 *
+		 * Layers go first, then overlays, in stack order. Application's destructor calls this
+		 * before the engine subsystems shut down, so layers are destroyed while everything
+		 * they use still exists.
+		 */
+		void Clear();
+
+		/**
 		 * @brief Iterator to the bottom-most layer.
 		 * @return Begin iterator, in update order.
 		 */

@@ -6,6 +6,7 @@
 #include "Uge/Renderer/Renderer.h"
 #include "Uge/Physics/Physics.h"
 #include "Uge/Scripting/ScriptEngine.h"
+#include "Uge/Project/Project.h"
 
 #include "Uge/Core/Input.h"
 #include "Uge/Core/KeyCodes.h"
@@ -14,7 +15,6 @@
 
 namespace Uge
 {
-	
 	
 	Application* Application::s_instance = nullptr;
 
@@ -52,9 +52,21 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
+		// Layers first, while every subsystem they use still exists: the editor's scenes own
+		// physics worlds, framebuffers and script instances. As a data member, the layer stack
+		// would otherwise be destroyed after this body, after Physics::Shutdown.
+		m_layerStack.Clear();
+
 		ScriptEngine::Shutdown();
-		Renderer::Shutdown();
+
+		// The project's asset manager holds every loaded texture, mesh and environment. Left to
+		// static destruction, it would go after the window, with no GL context left.
+		Project::Unload();
+
 		Physics::Shutdown();
+
+		// Needs the GL context, which lives until m_window is destroyed after this body.
+		Renderer::Shutdown();
 
 	}
 

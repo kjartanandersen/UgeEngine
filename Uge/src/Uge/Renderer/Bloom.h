@@ -57,6 +57,14 @@ namespace Uge
 		static void Resize(uint32_t width, uint32_t height);
 
 		/**
+		 * @brief Releases the shared shaders, uniform buffer and framebuffers.
+		 *
+		 * Call at shutdown to avoid leaking GPU resources. The chain is rebuilt on first use
+		 * after this call.
+		 */
+		static void Shutdown();
+
+		/**
 		 * @brief Runs the threshold, downsample and upsample chain.
 		 * @param scene Framebuffer whose colour attachment 0 holds the linear HDR scene.
 		 * @param settings Threshold, knee and whether bloom is enabled at all.

@@ -14,6 +14,7 @@
 namespace Uge
 {
 	
+	static Ref<Font> s_defaultFont;
 
 	template<typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GenFunc>
 	static Ref<Texture2D> createAndCacheAtlas(const std::string& fontName, float fontSize, 
@@ -171,14 +172,20 @@ namespace Uge
 	Ref<Font> Font::GetDefault()
 	{
 
-		static Ref<Font> defaultFont;
-		if (!defaultFont)
+		if (!s_defaultFont)
 		{
-			defaultFont = CreateRef<Font>("assets/fonts/Roboto-Regular/static/Roboto-Regular.ttf");
+			s_defaultFont = CreateRef<Font>("assets/fonts/Roboto-Regular/static/Roboto-Regular.ttf");
 		}
 
-		return defaultFont;
+		return s_defaultFont;
 		
+	}
+
+	void Font::ResetDefault()
+	{
+
+		s_defaultFont.reset();
+
 	}
 
 }

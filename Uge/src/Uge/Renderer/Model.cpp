@@ -125,6 +125,14 @@ namespace Uge
 		LoadModel(path);
 	}
 
+	void Model::Shutdown()
+	{
+		
+		// Initialized goes back to false, so a later draw recreates the resources
+		s_sceneData = SceneData();
+	
+	}
+
 	void Model::EnsureSceneResources()
 	{
 		if (s_sceneData.Initialized)

@@ -42,7 +42,6 @@ namespace Uge
 	};
 
 
-	static Ref<Font> s_font;
 
 	// A handle the asset manager doesn't know can never resolve: the asset was deleted, or the
 	// handle never pointed anywhere. Say so once, when the scene opens, instead of
@@ -72,7 +71,6 @@ namespace Uge
 	EditorLayer::EditorLayer()
 		: Layer("Sandbox2D")
 	{
-		s_font = Font::GetDefault();
 	}
 
 	void EditorLayer::OnUpdate(Timestep ts)
@@ -260,6 +258,13 @@ namespace Uge
 
 
 		UG_PROFILE_FUNCTION();
+
+		// Closing the window during Play: stop the runtime the normal way, so its physics world
+		// and script instances are torn down before the subsystems go.
+		if (m_sceneState != SceneState::Edit)
+		{
+			OnSceneStop();
+		}
 
 	}
 

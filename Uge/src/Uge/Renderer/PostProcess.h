@@ -108,6 +108,14 @@ namespace Uge
 		static void Resolve(const Ref<Framebuffer>& source, const Ref<Framebuffer>& target);
 
 		/**
+		 * @brief Releases the shared shader and uniform buffer.
+		 *
+		 * Call at shutdown to avoid leaking GPU resources. The shader is rebuilt on first use
+		 * after this call.
+		 */
+		static void Shutdown();
+
+		/**
 		 * @brief The current resolve parameters.
 		 * @return Const reference to the settings.
 		 */

@@ -6,8 +6,10 @@
 
 namespace Uge
 {
-
-
+	// Created on first Bind() rather than at startup: the graphics context does not exist yet
+	// when the first materials are constructed during model import. A file static, not a
+	// function static, so Shutdown() can release it while the context exists.
+	static Ref<UniformBuffer> s_propertiesUniformBuffer;
 
 	Ref<Material> Material::Create(const Ref<Shader>& shader)
 	{
@@ -35,10 +37,11 @@ namespace Uge
 
 	const Ref<UniformBuffer>& Material::PropertiesUniformBuffer()
 	{
-		// Created on first Bind() rather than at startup: the graphics context does not
-		// exist yet when the first materials are constructed during model import.
-		static Ref<UniformBuffer> s_propertiesUniformBuffer =
-			UniformBuffer::Create(sizeof(MaterialUniformData), 2);
+
+		if (!s_propertiesUniformBuffer)
+		{
+			s_propertiesUniformBuffer = UniformBuffer::Create(sizeof(MaterialUniformData), 2);
+		}
 
 		return s_propertiesUniformBuffer;
 	}
@@ -59,6 +62,13 @@ namespace Uge
 		data.EnvironmentIntensity = s_environmentIntensity;
 
 		PropertiesUniformBuffer()->SetData(&data, sizeof(data));
+	}
+
+	void Material::Shutdown()
+	{
+
+		s_propertiesUniformBuffer.reset();
+
 	}
 
 	MaterialUniformData Material::BuildUniformData() const
