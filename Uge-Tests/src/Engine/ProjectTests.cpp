@@ -183,7 +183,7 @@ TEST_F(ProjectTest, LoadingADirectoryReturnsNull)
 
 TEST_F(ProjectTest, ANewProjectHasNoStartScene)
 {
-	// SCN-16: StartScene had no initializer, so Project::New() gave every new project a random
-	// start scene — which TempProject saved into its .ugproj and loaded back here.
+	// A new project has no start scene until one is chosen, so it opens on an empty scene.
+	// The fixture saves the project and loads it back, so this also checks that 0 survives.
 	EXPECT_EQ((uint64_t)Project::GetActive()->GetConfig().StartScene, 0ull);
 }

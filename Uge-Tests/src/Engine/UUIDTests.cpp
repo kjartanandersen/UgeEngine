@@ -14,8 +14,7 @@
 
 TEST(UUIDTest, DefaultConstructedIsTheNullIdentifier)
 {
-	// A handle declared without an initializer must mean "none", not a random id that points
-	// at nothing and gets saved that way (SCN-16).
+	// A default-constructed identifier is the null identifier, 0: "no entity", "no asset".
 	EXPECT_EQ((uint64_t)Uge::UUID(), 0ull);
 	EXPECT_EQ((uint64_t)Uge::AssetHandle(), 0ull);
 }

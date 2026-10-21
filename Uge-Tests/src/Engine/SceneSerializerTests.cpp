@@ -326,8 +326,8 @@ TEST_F(SceneSerializerTest, AMistypedValueFailsTheLoadWithoutThrowing)
 
 TEST_F(SceneSerializerTest, AScriptComponentWithAnUnknownClassStillSaves)
 {
-	// SCN-01: the writer used to dereference GetEntityClass's result without a check. Tests
-	// never call ScriptEngine::Init, so no class is known at all, which is exactly that case.
+	// Tests never initialise the script engine, so no script class is known at all. Saving
+	// still keeps the component and its class name; it just writes no fields.
 	Entity entity = m_scene->CreateEntity("Scripted");
 	entity.AddComponent<Uge::ScriptComponent>().ClassName = "Game.DoesNotExist";
 
@@ -342,8 +342,8 @@ TEST_F(SceneSerializerTest, AScriptComponentWithAnUnknownClassStillSaves)
 
 TEST_F(SceneSerializerTest, AMeshComponentWithoutAHandleHasNoMesh)
 {
-	// SCN-16: a missing MeshHandle used to become AssetHandle(), a *random* id. The next save
-	// wrote that number into the file, and the original reference was gone.
+	// Scenes from before asset handles describe a mesh by path, with no MeshHandle key. The
+	// component is kept with no mesh; 0 means "none".
 	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/OldMesh.uge",
 		"Scene: OldMesh\n"
 		"Entities:\n"
@@ -360,4 +360,187 @@ TEST_F(SceneSerializerTest, AMeshComponentWithoutAHandleHasNoMesh)
 	ASSERT_TRUE(restored);
 	ASSERT_TRUE(restored.HasComponent<Uge::MeshComponent>());
 	EXPECT_EQ((uint64_t)restored.GetComponent<Uge::MeshComponent>().Mesh, 0ull);
+}
+
+namespace
+{
+	/** @brief A material with no default values, so one that isn't read back shows up. */
+	Uge::PhysicsMaterial DistinctMaterial()
+	{
+		Uge::PhysicsMaterial material;
+		material.Friction = 0.7f;
+		material.Restitution = 0.25f;
+		material.Density = 500.0f;
+		return material;
+	}
+
+	void ExpectDistinctMaterial(const Uge::PhysicsMaterial& material)
+	{
+		EXPECT_NEAR(material.Friction, 0.7f, 1e-5f);
+		EXPECT_NEAR(material.Restitution, 0.25f, 1e-5f);
+		EXPECT_NEAR(material.Density, 500.0f, 1e-3f);
+	}
+
+	void ExpectSameVector(const glm::vec3& actual, const glm::vec3& expected)
+	{
+		EXPECT_NEAR(actual.x, expected.x, 1e-5f);
+		EXPECT_NEAR(actual.y, expected.y, 1e-5f);
+		EXPECT_NEAR(actual.z, expected.z, 1e-5f);
+	}
+}
+
+TEST_F(SceneSerializerTest, PreservesRigidbodies)
+{
+	Entity entity = m_scene->CreateEntity("Crate");
+	Uge::RigidbodyComponent& body = entity.AddComponent<Uge::RigidbodyComponent>();
+	body.Type = Uge::BodyType::Kinematic;
+	body.Layer = Uge::PhysicsLayer::Static;
+	body.Mass = 3.5f;
+	body.LinearDamping = 0.2f;
+	body.AngularDamping = 0.3f;
+	body.GravityFactor = 0.5f;
+	body.FixedRotation = true;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Crate");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::RigidbodyComponent>());
+
+	const Uge::RigidbodyComponent& result = restored.GetComponent<Uge::RigidbodyComponent>();
+	EXPECT_EQ(result.Type, Uge::BodyType::Kinematic);
+	EXPECT_EQ(result.Layer, Uge::PhysicsLayer::Static);
+	EXPECT_NEAR(result.Mass, 3.5f, 1e-5f);
+	EXPECT_NEAR(result.LinearDamping, 0.2f, 1e-5f);
+	EXPECT_NEAR(result.AngularDamping, 0.3f, 1e-5f);
+	EXPECT_NEAR(result.GravityFactor, 0.5f, 1e-5f);
+	EXPECT_TRUE(result.FixedRotation);
+}
+
+TEST_F(SceneSerializerTest, PreservesBoxColliders)
+{
+	Entity entity = m_scene->CreateEntity("Wall");
+	Uge::BoxColliderComponent& box = entity.AddComponent<Uge::BoxColliderComponent>();
+	box.Offset = { 1.0f, 2.0f, 3.0f };
+	box.HalfExtents = { 0.5f, 1.5f, 2.5f };
+	box.Material = DistinctMaterial();
+	box.IsTrigger = true;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Wall");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::BoxColliderComponent>());
+
+	const Uge::BoxColliderComponent& result = restored.GetComponent<Uge::BoxColliderComponent>();
+	ExpectSameVector(result.Offset, { 1.0f, 2.0f, 3.0f });
+	ExpectSameVector(result.HalfExtents, { 0.5f, 1.5f, 2.5f });
+	ExpectDistinctMaterial(result.Material);
+	EXPECT_TRUE(result.IsTrigger);
+}
+
+TEST_F(SceneSerializerTest, PreservesSphereColliders)
+{
+	Entity entity = m_scene->CreateEntity("Ball");
+	Uge::SphereColliderComponent& sphere = entity.AddComponent<Uge::SphereColliderComponent>();
+	sphere.Offset = { -1.0f, 0.5f, 2.0f };
+	sphere.Radius = 1.25f;
+	sphere.Material = DistinctMaterial();
+	sphere.IsTrigger = true;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Ball");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::SphereColliderComponent>());
+
+	const Uge::SphereColliderComponent& result = restored.GetComponent<Uge::SphereColliderComponent>();
+	ExpectSameVector(result.Offset, { -1.0f, 0.5f, 2.0f });
+	EXPECT_NEAR(result.Radius, 1.25f, 1e-5f);
+	ExpectDistinctMaterial(result.Material);
+	EXPECT_TRUE(result.IsTrigger);
+}
+
+TEST_F(SceneSerializerTest, PreservesCapsuleColliders)
+{
+	Entity entity = m_scene->CreateEntity("Pill");
+	Uge::CapsuleColliderComponent& capsule = entity.AddComponent<Uge::CapsuleColliderComponent>();
+	capsule.Offset = { 0.0f, 1.0f, 0.0f };
+	capsule.Radius = 0.4f;
+	capsule.HalfHeight = 1.75f; // not a whole number, so any rounding on the way shows
+	capsule.Material = DistinctMaterial();
+	capsule.IsTrigger = true;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Pill");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::CapsuleColliderComponent>());
+
+	const Uge::CapsuleColliderComponent& result = restored.GetComponent<Uge::CapsuleColliderComponent>();
+	ExpectSameVector(result.Offset, { 0.0f, 1.0f, 0.0f });
+	EXPECT_NEAR(result.Radius, 0.4f, 1e-5f);
+	EXPECT_NEAR(result.HalfHeight, 1.75f, 1e-5f);
+	ExpectDistinctMaterial(result.Material);
+	EXPECT_TRUE(result.IsTrigger);
+}
+
+TEST_F(SceneSerializerTest, PreservesMeshColliders)
+{
+	// The mesh is a handle; the model behind it doesn't need to exist for the handle to be
+	// saved and loaded.
+	Entity entity = m_scene->CreateEntity("Rock");
+	Uge::MeshColliderComponent& collider = entity.AddComponent<Uge::MeshColliderComponent>();
+	collider.Mesh = Uge::AssetHandle(1234567ull);
+	collider.Convex = false;
+	collider.Offset = { 2.0f, 0.0f, -1.0f };
+	collider.Material = DistinctMaterial();
+	collider.IsTrigger = true;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Rock");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::MeshColliderComponent>());
+
+	const Uge::MeshColliderComponent& result = restored.GetComponent<Uge::MeshColliderComponent>();
+	EXPECT_EQ((uint64_t)result.Mesh, 1234567ull);
+	EXPECT_FALSE(result.Convex);
+	ExpectSameVector(result.Offset, { 2.0f, 0.0f, -1.0f });
+	ExpectDistinctMaterial(result.Material);
+	EXPECT_TRUE(result.IsTrigger);
+}
+
+TEST_F(SceneSerializerTest, PreservesSkyLights)
+{
+	Entity entity = m_scene->CreateEntity("Sky");
+	Uge::SkyLightComponent& sky = entity.AddComponent<Uge::SkyLightComponent>();
+	sky.Environment = Uge::AssetHandle(7654321ull);
+	sky.Intensity = 2.5f;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Sky");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::SkyLightComponent>());
+
+	const Uge::SkyLightComponent& result = restored.GetComponent<Uge::SkyLightComponent>();
+	EXPECT_EQ((uint64_t)result.Environment, 7654321ull);
+	EXPECT_NEAR(result.Intensity, 2.5f, 1e-5f);
+}
+
+TEST_F(SceneSerializerTest, AScriptComponentWithNoClassKeepsItsEmptyName)
+{
+	// A Script component just added in the editor has no class yet. Saving and loading
+	// keeps the component, with the class still empty.
+	Entity entity = m_scene->CreateEntity("Unassigned");
+	entity.AddComponent<Uge::ScriptComponent>();
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+	ASSERT_TRUE(m_deserialized);
+
+	Entity restored = loaded->FindEntityByName("Unassigned");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::ScriptComponent>());
+	EXPECT_TRUE(restored.GetComponent<Uge::ScriptComponent>().ClassName.empty());
 }
