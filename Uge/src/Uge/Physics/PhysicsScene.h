@@ -110,6 +110,9 @@ namespace Uge
 
         /**
          * @brief Collects every body overlapping a sphere.
+         *
+         * Triggers are not reported, matching CastRay(). Each body appears once, however many
+         * of its colliders the sphere touches.
          * @param center World-space centre.
          * @param radius Sphere radius.
          * @param mask Layers to test against.

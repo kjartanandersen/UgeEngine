@@ -86,10 +86,9 @@ namespace Uge
                 JPH::ShapeSettings::ShapeResult hull = s->Create();
                 if (hull.HasError())
                 {
-                    // Almost always "too many points in hull". Interior points are already discarded,
-                    // so the only remaining knob is how far a point may sit outside the hull.
+                    UG_CORE_WARN("Physics: convex hull failed ({0}); retrying with a looser tolerance.", hull.GetError());
                     s->mHullTolerance = 0.05f;
-                    hull = s->Create();
+                    s->ClearCachedResult();
                 }
                 settings = s;
             }
@@ -620,22 +619,32 @@ namespace Uge
 
         JPH::CollideShapeSettings settings;
         const JoltLayers::MaskObjectLayerFilter layerFilters(mask);
+        const IgnoreSensorsBodyFilter bodyFilter;
         JPH::AllHitCollisionCollector<JPH::CollideShapeCollector> collector;
 
-        m_physicsSystem.GetNarrowPhaseQuery().CollideShape(&shape, JPH::Vec3::sOne(), JPH::Mat44::sTranslation(ToJolt(center)), 
-                                                            settings, JPH::Vec3::sZero(), collector, {});
+        // The {} is the broad-phase filter; the layer mask and the sensor filter come after it.
+        // Passing only {} left those two at their defaults, so every layer and every trigger
+        // was reported.
+        m_physicsSystem.GetNarrowPhaseQuery().CollideShape(&shape, JPH::Vec3::sOne(),
+            JPH::Mat44::sTranslation(ToJolt(center)), settings, JPH::Vec3::sZero(), collector,
+            {}, layerFilters, bodyFilter);
 
-        outBodies.reserve(collector.mHits.size());
-
+        // One hit per sub-shape touched, so a compound body can appear several times. Sort and
+        // drop repeats rather than searching outBodies for each hit, which is quadratic.
+        std::vector<JPH::BodyID> ids;
+        ids.reserve(collector.mHits.size());
         for (const auto& hit : collector.mHits)
         {
-            const PhysicsBodyID id = FromJoltBodyID(hit.mBodyID2);
-            if (std::find(outBodies.begin(), outBodies.end(), id) == outBodies.end())
-            {
-                outBodies.push_back(FromJoltBodyID(hit.mBodyID2));
+            ids.push_back(hit.mBodyID2);
+        }
 
-            }
+        std::sort(ids.begin(), ids.end());
+        ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
 
+        outBodies.reserve(ids.size());
+        for (const JPH::BodyID& id : ids)
+        {
+            outBodies.push_back(FromJoltBodyID(id));
         }
 
     }
