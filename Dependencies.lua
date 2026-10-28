@@ -38,12 +38,15 @@ JoltDefines["Dist"]    = { }
 LibraryDir = {}
 
 LibraryDir["VulkanSDK"]				= "%{VULKAN_SDK}/Lib"
-LibraryDir["MONO"]					= "%{wks.location}//Uge/thirdparty/mono/lib/%{cfg.buildcfg}"
-
+LibraryDir["MONO"] 					= "%{wks.location}/Uge/thirdparty/mono/lib"
 
 -- Libraries
 Library = {}
-Library["MONO"]						= "%{LibraryDir.MONO}/libmono-static-sgen.lib"
+
+-- Mono is prebuilt in Debug and Release only. Dist links the Release build, which uses the
+-- same release C runtime.
+Library["MONO_Debug"]				= "%{LibraryDir.MONO}/Debug/libmono-static-sgen.lib"
+Library["MONO_Release"]				= "%{LibraryDir.MONO}/Release/libmono-static-sgen.lib"
 
 Library["Vulkan"]					= "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 Library["VulkanUtils"]				= "%{LibraryDir.VulkanSDK}/VkLayer_utils.lib"

@@ -67,9 +67,7 @@ project "Uge"
 		"Jolt",
 		"googletest",
 		"googlemock",
-		"opengl32.lib",
-
-		"%{Library.MONO}"
+		"opengl32.lib"
 	}
 	
 	
@@ -118,7 +116,8 @@ project "Uge"
 		{
 			"%{Library.ShaderC_Debug}",
 			"%{Library.SPIRV_Cross_Debug}",
-			"%{Library.SPIRV_Cross_GLSL_Debug}"
+			"%{Library.SPIRV_Cross_GLSL_Debug}",
+			"%{Library.MONO_Debug}"
 		}
 		
 	
@@ -138,7 +137,8 @@ project "Uge"
 		{
 			"%{Library.ShaderC_Release}",
 			"%{Library.SPIRV_Cross_Release}",
-			"%{Library.SPIRV_Cross_GLSL_Release}"
+			"%{Library.SPIRV_Cross_GLSL_Release}",
+			"%{Library.MONO_Release}"
 		}
 
 	
@@ -151,7 +151,8 @@ project "Uge"
 		{
 			"%{Library.ShaderC_Release}",
 			"%{Library.SPIRV_Cross_Release}",
-			"%{Library.SPIRV_Cross_GLSL_Release}"
+			"%{Library.SPIRV_Cross_GLSL_Release}",
+			"%{Library.MONO_Release}"
 		}
 
 
