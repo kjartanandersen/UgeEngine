@@ -57,13 +57,10 @@ project "Jolt"
 	filter "configurations:Release"
 		runtime "Release"
 		optimize "on"
-		defines "NDEBUG" 
 		defines(JoltDefines.Release)
 
 	filter "configurations:Dist"
 		runtime "Release"
 		optimize "on"
-		defines
-		{
-			"NDEBUG"
-		}
+		defines(JoltDefines.Dist)
+

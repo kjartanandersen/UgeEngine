@@ -83,5 +83,6 @@ project "Uge-Tests"
 
 	filter "configurations:Dist"
 		defines "UG_DIST"
+		defines(JoltDefines.Dist)
 		runtime "Release"
 		optimize "on"
