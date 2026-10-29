@@ -102,6 +102,11 @@ namespace Uge
 			m_rendererAPI->SetBlendMode(mode);
 		}
 
+		/**
+		* @brief Sets which faces subsequent draws discard.
+		* @param mode Faces to cull.
+		* @see RendererAPI::SetCullMode
+		*/
 		inline static void SetCullMode(CullMode mode)
 		{
 			m_rendererAPI->SetCullMode(mode);

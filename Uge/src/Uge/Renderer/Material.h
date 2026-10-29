@@ -280,6 +280,14 @@ namespace Uge
 		 */
 		AssetType GetType() const override { return GetStaticType(); }
 
+		/**
+		* @brief Whether both faces of the material are meant to be seen.
+		* @return `true` for thin surfaces such as foliage, chains and single-sheet panels.
+		*
+		* Set from the imported material's two-sided flag. Uge::Model draws submeshes with
+		* such a material with culling off, and the shader flips a back face's normal so it
+		* is lit like the front.
+		*/
 		bool IsDoubleSided() const { return m_properties.DoubleSided; }
 
 

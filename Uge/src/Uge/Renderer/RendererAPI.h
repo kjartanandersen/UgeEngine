@@ -36,16 +36,18 @@ namespace Uge
 		None = 2 ///< Source replaces destination.
 	};
 
- /**
-     @enum  Uge::CullMode
-     @brief The Cull mode 
-	 @ingroup group_renderer
- **/
+	/**
+	* @brief Which triangle faces the rasterizer discards.
+	* @ingroup group_renderer
+	*
+	* Front faces are the counter-clockwise ones. That's OpenGL's default, which the engine
+	* never changes.
+	*/
 	enum class CullMode
 	{
-		None	= 0,	///< No culling
- 		Front	= 1,	///< Front face culling
-		Back	= 2		///< back face culling
+		None	= 0,	///< Draws both faces.
+		Front	= 1,	///< Discards front faces.
+		Back	= 2		///< Discards back faces; the default inside the 3D pass.
 	};
 
 	/**
@@ -143,6 +145,17 @@ namespace Uge
 		 */
 		virtual void SetBlendMode(BlendMode mode) = 0;
 
+		/**
+		* @brief Sets which faces subsequent draws discard.
+		* @param mode Faces to cull; Uge::CullMode::None draws both.
+		*
+		* Uge::Model owns this during its pass. Uge::Model::BeginScene forces
+		* Uge::CullMode::Back, a submesh whose material is double-sided switches to
+		* Uge::CullMode::None, and Uge::Model::EndScene turns culling off again.
+		*
+		* @warning Global state. Restore Uge::CullMode::None after changing it outside that
+		* pass, or sprites, text and the editor overlay seen from behind disappear.
+		*/
 		virtual void SetCullMode(CullMode mode) = 0;
 
 		/**
