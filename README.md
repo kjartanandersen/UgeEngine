@@ -47,11 +47,27 @@ scripts\Win-GenProjects.bat
 python scripts/Setup.py
 
 # 3. Build
-msbuild Uge.sln /p:Configuration=Debug /p:Platform=x64 /m
+msbuild Uge.slnx /p:Configuration=Debug /p:Platform=x64 /m
 ```
 
-Then open `Uge.sln` and run — `Uge-Editor` is the startup project. It runs with `UgeEditor/` as its
-working directory and opens `UgeEditor/SandboxProject/Sandbox.ugproj`.
+Then open `Uge.slnx` and run — `Uge-Editor` is the startup project. It runs with `UgeEditor/` as its
+working directory and opens the `.ugproj` passed as its first command-line argument, or asks for
+one with a file dialog.
+
+The repository has no sample project. A minimal one is a folder holding an empty `Assets/` folder
+and a `.ugproj` file:
+
+```yaml
+Project:
+  Name: MyGame
+  StartScene: 0
+  AssetDirectory: Assets
+  AssetRegistryPath: AssetRegistry.ugreg
+  ScriptModulePath: Scripts/Binaries/MyGame.dll
+```
+
+The asset registry is created on first open. Until the project's C# scripts are built to
+`ScriptModulePath`, the editor logs that it can't load them and runs without scripts.
 
 Binaries land in `bin/<Config>-windows-x86_64/<Project>/`.
 
@@ -65,7 +81,7 @@ Binaries land in `bin/<Config>-windows-x86_64/<Project>/`.
 
 ### Regenerating projects
 
-The `.sln`/`.vcxproj` files are **generated artifacts** — never edit them by hand. Each project picks
+The `.slnx`/`.vcxproj` files are **generated artifacts** — never edit them by hand. Each project picks
 up its sources through `src/**.h` / `src/**.cpp` globs in its `premake5.lua`, so re-run
 `scripts\Win-GenProjects.bat` after adding, renaming or deleting a file.
 
@@ -80,7 +96,6 @@ Uge/               the engine static library
                    assimp, yaml-cpp, spdlog, JoltPhysics, msdf-atlas-gen,
                    stb_image, mono, googletest
 UgeEditor/         the editor application (startup project)
-  SandboxProject/  the sample project the editor opens
   assets/          editor shaders, fonts and the SPIR-V shader cache
 Sandbox/           a minimal client app built on the engine
 Uge-ScriptCore/    the C# scripting core (.NET Framework 4.7.2)
@@ -94,7 +109,7 @@ docs/              Doxyfile and generated API documentation
 `Uge-Tests` is a GoogleTest runner covering both the engine and the editor.
 
 ```bash
-msbuild Uge.sln /t:Tests\Uge-Tests /p:Configuration=Debug /p:Platform=x64 /m
+msbuild Uge.slnx /t:Tests\Uge-Tests /p:Configuration=Debug /p:Platform=x64 /m
 bin/Debug-windows-x86_64/Uge-Tests/Uge-Tests.exe
 ```
 

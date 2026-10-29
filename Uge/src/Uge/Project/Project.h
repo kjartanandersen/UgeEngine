@@ -45,7 +45,7 @@ namespace Uge
 	 * one having been loaded first.
 	 *
 	 * @code
-	 * Ref<Project> project = Project::Load("SandboxProject/Sandbox.ugproj");
+	 * Ref<Project> project = Project::Load("MyGame/MyGame.ugproj");
 	 * auto scene = AssetManager::GetAsset<Scene>(project->GetConfig().StartScene);
 	 * @endcode
 	 *
@@ -203,12 +203,14 @@ namespace Uge
 		/**
 		 * @brief Creates an empty project and makes it active.
 		 * @return The new project.
+		 * @warning The project has no directory and no asset manager. Save it with
+		 * SaveActive() and open it with Load() before using Uge::AssetManager.
 		 */
 		static Ref<Project> New();
 		/**
 		 * @brief Loads a `.ugproj` file and makes it the active project.
 		 * @param path Path to the project file.
-		 * @return The loaded project, or null if it could not be read.
+		 * @return The loaded project, or null if it could not be read. The project that was active stays active then.
 		 *
 		 * Also creates the asset manager and deserializes the asset registry.
 		 */
@@ -216,7 +218,7 @@ namespace Uge
 		/**
 		 * @brief Writes the active project to a `.ugproj` file.
 		 * @param path Destination path.
-		 * @return `true` on success.
+		 * @return `true` on success. On failure the project directory is unchanged.
 		 */
 		static bool SaveActive(const std::filesystem::path& path);
 

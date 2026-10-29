@@ -26,6 +26,15 @@ namespace
 	{
 	protected:
 		TempProject m_project;
+
+		/** @brief Writes a `.ugproj` file into the project's root and returns its path. */
+		std::filesystem::path WriteProjectFile(const std::string& name, const std::string& contents) const
+		{
+			const std::filesystem::path path = m_project.Root() / name;
+			std::ofstream out(path);
+			out << contents;
+			return path;
+		}
 	};
 
 }
@@ -187,3 +196,92 @@ TEST_F(ProjectTest, ANewProjectHasNoStartScene)
 	// The fixture saves the project and loads it back, so this also checks that 0 survives.
 	EXPECT_EQ((uint64_t)Project::GetActive()->GetConfig().StartScene, 0ull);
 }
+
+TEST_F(ProjectTest, AStartSceneThatIsNotAHandleIsIgnored)
+{
+	// A path where a handle belongs loads the rest of the project, with no start scene.
+	const std::filesystem::path file = WriteProjectFile("PathStartScene.ugproj",
+		"Project:\n"
+		"  Name: Sample\n"
+		"  StartScene: \"Scenes/Level.uge\"\n"
+		"  AssetDirectory: Assets\n"
+		"  ScriptModulePath: Scripts/Binaries/Sample.dll\n");
+
+	Uge::Ref<Project> target = Uge::CreateRef<Project>();
+	Uge::ProjectSerializer serializer(target);
+
+	bool loaded = false;
+	EXPECT_NO_THROW(loaded = serializer.Deserialize(file));
+	EXPECT_TRUE(loaded);
+	EXPECT_EQ((uint64_t)target->GetConfig().StartScene, 0ull);
+	EXPECT_EQ(target->GetConfig().Name, "Sample");
+}
+
+TEST_F(ProjectTest, AProjectFileMissingARequiredSettingFails)
+{
+	const char* lines[] = {
+		"  Name: Sample\n",
+		"  AssetDirectory: Assets\n",
+		"  ScriptModulePath: Scripts/Binaries/Sample.dll\n",
+	};
+
+	for (int missing = 0; missing < 3; missing++)
+	{
+		std::string contents = "Project:\n";
+		for (int i = 0; i < 3; i++)
+		{
+			if (i != missing)
+			{
+				contents += lines[i];
+			}
+		}
+		const std::filesystem::path file = WriteProjectFile("Missing" + std::to_string(missing) + ".ugproj", contents);
+
+		Uge::Ref<Project> target = Uge::CreateRef<Project>();
+		Uge::ProjectSerializer serializer(target);
+
+		bool loaded = true;
+		EXPECT_NO_THROW(loaded = serializer.Deserialize(file));
+		EXPECT_FALSE(loaded) << "Loaded without:" << lines[missing];
+	}
+}
+
+TEST_F(ProjectTest, AMistypedSettingFailsWithoutThrowing)
+{
+	// A sequence where the name's string belongs.
+	const std::filesystem::path file = WriteProjectFile("Mistyped.ugproj",
+		"Project:\n"
+		"  Name: [a, b]\n"
+		"  AssetDirectory: Assets\n"
+		"  ScriptModulePath: Scripts/Binaries/Sample.dll\n");
+
+	Uge::Ref<Project> target = Uge::CreateRef<Project>();
+	Uge::ProjectSerializer serializer(target);
+
+	bool loaded = true;
+	EXPECT_NO_THROW(loaded = serializer.Deserialize(file));
+	EXPECT_FALSE(loaded);
+	EXPECT_EQ(target->GetConfig().Name, "Untitled");
+}
+
+TEST_F(ProjectTest, AFileThatIsNotAMapFailsWithoutThrowing)
+{
+	// Subscripting a scalar document throws in yaml-cpp, so this checks the whole read is guarded.
+	const std::filesystem::path file = WriteProjectFile("Scalar.ugproj", "just some text\n");
+
+	Uge::Ref<Project> target = Uge::CreateRef<Project>();
+	Uge::ProjectSerializer serializer(target);
+
+	bool loaded = true;
+	EXPECT_NO_THROW(loaded = serializer.Deserialize(file));
+	EXPECT_FALSE(loaded);
+}
+
+TEST_F(ProjectTest, SavingIntoAMissingFolderFails)
+{
+	EXPECT_FALSE(Project::SaveActive(m_project.Root() / "NoSuchFolder" / "TestProject.ugproj"));
+
+	// A failed save leaves the project where it was.
+	EXPECT_EQ(Project::GetProjectDirectory(), m_project.Root());
+}
+
