@@ -178,9 +178,6 @@ namespace Uge
 
 		EditorCamera m_editorCamera;
 
-		ImFont* m_mainFont;
-		ImFont* m_mainFontBold;
-
 		glm::vec2 m_viewportSize{0.0f, 0.0f};
 		glm::vec2 m_viewportBounds[2];
 

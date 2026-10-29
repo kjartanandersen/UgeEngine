@@ -215,10 +215,25 @@ namespace Uge
 		
 		// Load ImGui Font
 		ImGuiIO& io = ImGui::GetIO();
-		m_mainFontBold = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Bold.ttf", 24.5f);
-		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Regular.ttf", 24.5f);
+		ImFontConfig fontConfig;
+		fontConfig.Flags |= ImFontFlags_NoLoadError; // return null for a missing file instead of asserting
 
-		IM_ASSERT(m_mainFont != NULL);
+		ImFont* regularFont = io.Fonts->AddFontFromFileTTF("assets/fonts/Roboto-Regular/static/Roboto-Regular.ttf", 24.5f, &fontConfig);
+		if (!regularFont)
+		{
+			UG_WARN("Could not load the editor font Roboto-Regular.ttf; using ImGui's default font");
+			regularFont = io.Fonts->AddFontDefault();
+		}
+
+		ImFont* boldFont = io.Fonts->AddFontFromFileTTF("assets/fonts/Roboto-Regular/static/Roboto-Bold.ttf", 24.5f, &fontConfig);
+		if (!boldFont)
+		{
+			UG_WARN("Could not load the editor font Roboto-Bold.ttf; using the regular font");
+			boldFont = regularFont;
+		}
+
+		io.FontDefault = regularFont;
+		SceneHierarchyPanel::SetBoldFont(boldFont);
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		
 		// RGBA16F, not RGBA8: the scene pass writes linear radiance, which has no upper bound.
@@ -281,11 +296,9 @@ namespace Uge
 		*
 		*****************************/
 
-		ImGui::PushFont(m_mainFont);
-
 		// TL;DR; this demo is more complicated than what most users you would normally use.
-	// If we remove all options we are showcasing, this demo would become a simple call to ImGui::DockSpaceOverViewport() !!
-	// In this specific demo, we are not using DockSpaceOverViewport() because:
+		// If we remove all options we are showcasing, this demo would become a simple call to ImGui::DockSpaceOverViewport() !!
+		// In this specific demo, we are not using DockSpaceOverViewport() because:
 
 		static bool isOpen = true;
 		static bool opt_fullscreen = true;
@@ -617,10 +630,6 @@ namespace Uge
 		}
 		UI_Toolbar();
 		ImGui::End();
-
-		
-		ImGui::PopFont();
-
 	}
 
 	void EditorLayer::UI_Toolbar()

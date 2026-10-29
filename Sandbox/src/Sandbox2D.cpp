@@ -179,7 +179,7 @@ void Sandbox2D::OnAttach()
 
 	ImGuiIO& io = ImGui::GetIO();
 	// m_texture = Uge::Texture2D::Create("assets/textures/Checkerboard.png");
-	m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\Uge\\assets\\fonts\\PlayfairDisplayBold-nRv8g.ttf", 32.5f);
+	m_mainFont = io.Fonts->AddFontFromFileTTF("../Uge/assets/fonts/PlayfairDisplayBold-nRv8g.ttf", 32.5f);
 	IM_ASSERT(m_mainFont != NULL);
 
 	

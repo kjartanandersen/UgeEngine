@@ -51,6 +51,15 @@ namespace Uge
 		 */
 		void SetSelectedEntity(Entity entity);
 
+		/**
+		 * @brief Sets the font for the X, Y and Z buttons of the vector fields.
+		 * @param font A font in ImGui's font atlas, or `nullptr` to draw them in the current font.
+		 *
+		 * Shared by every panel. The editor sets it once its fonts are loaded; until then,
+		 * and in tests, the buttons use the current font.
+		 */
+		static void SetBoldFont(ImFont* font);
+
 	private:
 		/**
 		 * @brief Adds one entry to the "Add Component" menu, if the entity lacks that component.

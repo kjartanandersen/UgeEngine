@@ -93,7 +93,7 @@ namespace Uge
          * @param impulse Impulse in newton-seconds.
          */
         virtual void AddImpulse(PhysicsBodyID body, const glm::vec3& impulse) = 0;
-        /** @brief Applies an instantaneous angular impulse. @param body Body. @param impulse N·m·s. */
+        /** @brief Applies an instantaneous angular impulse. @param body Body. @param impulse N*m*s. */
         virtual void AddTorqueImpulse(PhysicsBodyID body, const glm::vec3& impulse) = 0;
 
         /**

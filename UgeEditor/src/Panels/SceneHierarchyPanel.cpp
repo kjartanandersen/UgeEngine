@@ -22,13 +22,15 @@
 namespace Uge
 {
 	constexpr float dragSpeed = 0.1f;
+
+	// The font for the X, Y and Z buttons of the vector fields. Null until the editor sets one.
+	static ImFont* s_boldFont = nullptr;
 	
 	static bool DrawVec3Control(const std::string& label, glm::vec3& values,
 		float resetValue = 0.0f, float columnWidth = 100.0f)
 	{
 
-		ImGuiIO& io = ImGui::GetIO();
-		auto boldFont = io.Fonts->Fonts[0];
+		ImFont* boldFont = s_boldFont; // null keeps the current font
 
 
 		bool hasChanged = false;
@@ -276,6 +278,13 @@ namespace Uge
 		m_selectionContext = entity;
 
 
+	}
+
+	void SceneHierarchyPanel::SetBoldFont(ImFont* font)
+	{
+	
+		s_boldFont = font;
+	
 	}
 
 	void SceneHierarchyPanel::DrawEntityNode(Entity entity)
