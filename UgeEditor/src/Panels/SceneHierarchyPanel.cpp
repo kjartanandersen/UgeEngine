@@ -584,7 +584,7 @@ namespace Uge
 						Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(component.ClassName);
 						const auto& fields = entityClass->GetFields();
 
-						auto& entityFields = ScriptEngine::GetScriptFieldMap(entity.GetUUID());
+						ScriptFieldMap& entityFields = *ScriptEngine::GetScriptFieldMap(entity.GetUUID()); // the class exists, so the engine does
 
 
 						for (const auto& [name, field] : fields)

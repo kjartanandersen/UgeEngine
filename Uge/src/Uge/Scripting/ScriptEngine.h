@@ -113,12 +113,12 @@ namespace Uge
 		 * @warning No type checking: reading as the wrong `T` reinterprets the raw bytes.
 		 */
 		template<typename T>
-		T GetValue()
+		T GetValue() const
 		{
 			static_assert(sizeof(T) <= 16, "Type too large!");
-			return *(T*)m_dataBuffer;
-			
-
+			T value;
+			memcpy(&value, m_dataBuffer, sizeof(T));
+			return value;
 		}
 
 		/**
@@ -350,6 +350,7 @@ namespace Uge
 		 * @return `true` on success.
 		 */
 		static bool LoadAssembly(const std::filesystem::path& filePath);
+
 		/**
 		 * @brief Loads the project's script assembly and reflects its entity classes.
 		 * @param filePath Path to the project's script DLL.
@@ -371,17 +372,23 @@ namespace Uge
 		 * @return The class, or null if it is not in the loaded assembly.
 		 */
 		static Ref<ScriptClass> GetEntityClass(const std::string& name);
+
 		/**
 		 * @brief Every class deriving from the script core's `Entity`.
 		 * @return Map from fully qualified name to class; populates the editor's script picker.
 		 */
 		static std::unordered_map<std::string, Ref<ScriptClass>> GetEntityClasses();
+
 		/**
-		 * @brief The stored field values for an entity's script.
-		 * @param entityID Entity to look up.
-		 * @return Mutable reference to its field map, created empty if it does not exist.
-		 */
-		static ScriptFieldMap& GetScriptFieldMap(UUID entityID);
+		* @brief The stored field values for an entity's script.
+		* @param entityID Entity to look up.
+		* @return Its field map, created empty if it does not exist. Null before Init() or
+		* after Shutdown(), when there is nowhere to store values.
+		*
+		* Values are kept by name and type even while their class isn't loaded, so a scene
+		* saved before its scripts are built keeps them.
+		*/
+		static ScriptFieldMap* GetScriptFieldMap(UUID entityID);
 
 		/**
 		 * @brief Binds the engine to a scene entering play mode.

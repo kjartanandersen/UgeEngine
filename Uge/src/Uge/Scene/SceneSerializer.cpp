@@ -250,59 +250,54 @@ namespace Uge
 
 			out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.ClassName;
 
-			// Fields
+			// Fields come from the values stored for the entity rather than from its class,
+			// so they're written even when the class can't be found: a scene opened before its
+			// scripts are built keeps its field values when it's saved.
 			Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(scriptComponent.ClassName);
+			ScriptFieldMap* entityFields = ScriptEngine::GetScriptFieldMap(entity.GetUUID());
 
-			// Serialize the script fields if the class exists and has fields
-			if (entityClass && !entityClass->GetFields().empty())
+			if (entityFields && !entityFields->empty())
 			{
-				const auto& fields = entityClass->GetFields();
-
-				
 				out << YAML::Key << "ScriptFields" << YAML::Value;
-
-				auto& entityFields = ScriptEngine::GetScriptFieldMap(entity.GetUUID());
 				out << YAML::BeginSeq;
-				for (const auto& [name, field] : fields)
+				for (const auto& [name, scriptField] : *entityFields)
 				{
-					if (entityFields.find(name) == entityFields.end())
+					// With the class loaded, a value for a field it no longer declares is
+					// dropped. Without it there's no telling, so every value is kept.
+					if (entityClass && entityClass->GetFields().find(name) == entityClass->GetFields().end())
 					{
 						continue;
 					}
 
+					const ScriptFieldType type = scriptField.Field.Type;
 
 					out << YAML::BeginMap; // ScriptField
 					out << YAML::Key << "Name" << YAML::Value << name;
-					out << YAML::Key << "Type" << YAML::Value << Utils::ScriptFieldTypeToString(field.Type);
+					out << YAML::Key << "Type" << YAML::Value << Utils::ScriptFieldTypeToString(type);
 
 					out << YAML::Key << "Data" << YAML::Value;
-					ScriptFieldInstance& scriptField = entityFields.at(name);
-
-					switch (field.Type)
+					switch (type)
 					{
-						WRITE_SCRIPT_FIELD(Float, float);
-						WRITE_SCRIPT_FIELD(Double, double);
-						WRITE_SCRIPT_FIELD(Bool, bool);
-						WRITE_SCRIPT_FIELD(Char, char);
-						WRITE_SCRIPT_FIELD(Byte, int8_t);
-						WRITE_SCRIPT_FIELD(Short, int16_t);
-						WRITE_SCRIPT_FIELD(Int, int32_t);
-						WRITE_SCRIPT_FIELD(Long, int64_t);
-						WRITE_SCRIPT_FIELD(UByte, uint8_t);
-						WRITE_SCRIPT_FIELD(UShort, uint16_t);
-						WRITE_SCRIPT_FIELD(UInt, uint32_t);
-						WRITE_SCRIPT_FIELD(ULong, uint64_t);
+						WRITE_SCRIPT_FIELD(Float,	float);
+						WRITE_SCRIPT_FIELD(Double,	double);
+						WRITE_SCRIPT_FIELD(Bool,	bool);
+						WRITE_SCRIPT_FIELD(Char,	char);
+						WRITE_SCRIPT_FIELD(Byte,	int8_t);
+						WRITE_SCRIPT_FIELD(Short,	int16_t);
+						WRITE_SCRIPT_FIELD(Int,		int32_t);
+						WRITE_SCRIPT_FIELD(Long,	int64_t);
+						WRITE_SCRIPT_FIELD(UByte,	uint8_t);
+						WRITE_SCRIPT_FIELD(UShort,	uint16_t);
+						WRITE_SCRIPT_FIELD(UInt,	uint32_t);
+						WRITE_SCRIPT_FIELD(ULong,	uint64_t);
 						WRITE_SCRIPT_FIELD(Vector2, glm::vec2);
 						WRITE_SCRIPT_FIELD(Vector3, glm::vec3);
 						WRITE_SCRIPT_FIELD(Vector4, glm::vec4);
-						WRITE_SCRIPT_FIELD(Entity, UUID);
+						WRITE_SCRIPT_FIELD(Entity,	UUID);
 					}
-					out << YAML::EndMap; // ScriptFields
-
+					out << YAML::EndMap; // ScriptField
 				}
 				out << YAML::EndSeq;
-				
-
 			}
 
 			
@@ -674,53 +669,65 @@ namespace Uge
 
 						sc.ClassName = ysc["ClassName"].as<std::string>();
 
+						// Values are kept even when the class can't be found, under the name and
+						// type the file gives, so saving the scene again writes them back.
 						auto scriptFields = ysc["ScriptFields"];
-						if (scriptFields)
+						ScriptFieldMap* entityFields = scriptFields ? ScriptEngine::GetScriptFieldMap(deserializedEntity.GetUUID()) : nullptr;
+						if (entityFields)
 						{
 							Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(sc.ClassName);
-							if (entityClass)
+
+							for (auto scriptField : scriptFields)
 							{
-								const auto& fields = entityClass->GetFields();
-								auto& entityFields = ScriptEngine::GetScriptFieldMap(deserializedEntity.GetUUID());
+								std::string name = scriptField["Name"].as<std::string>();
+								std::string typeString = scriptField["Type"].as<std::string>();
+								ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
 
-								for (auto scriptField : scriptFields)
+								// A type this engine doesn't know has no value to read.
+								if (type == ScriptFieldType::None)
 								{
-									std::string name = scriptField["Name"].as<std::string>();
-									std::string typeString = scriptField["Type"].as<std::string>();
-									ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
+									continue;
+								}
 
-									ScriptFieldInstance& fieldInstance = entityFields[name];
+								ScriptField field;
+								field.Name = name;
+								field.Type = type;
 
-									// TODO: turn this assert into log warning
-									// UG_CORE_ASSERT(fields.find(name) != fields.end());
-
-									if (fields.find(name) == fields.end())
-										continue;
-
-									fieldInstance.Field = fields.at(name);
-
-									switch (type)
+								if (entityClass)
+								{
+									// Drop a value the class can no longer take: a field it doesn't
+									// declare any more, or one whose type has changed.
+									auto it = entityClass->GetFields().find(name);
+									if (it == entityClass->GetFields().end() || it->second.Type != type)
 									{
-										READ_SCRIPT_FIELD(Float, float);
-										READ_SCRIPT_FIELD(Double, double);
-										READ_SCRIPT_FIELD(Bool, bool);
-										READ_SCRIPT_FIELD(Char, char);
-										READ_SCRIPT_FIELD(Byte, int8_t);
-										READ_SCRIPT_FIELD(Short, int16_t);
-										READ_SCRIPT_FIELD(Int, int32_t);
-										READ_SCRIPT_FIELD(Long, int64_t);
-										READ_SCRIPT_FIELD(UByte, uint8_t);
-										READ_SCRIPT_FIELD(UShort, uint16_t);
-										READ_SCRIPT_FIELD(UInt, uint32_t);
-										READ_SCRIPT_FIELD(ULong, uint64_t);
-										READ_SCRIPT_FIELD(Vector2, glm::vec2);
-										READ_SCRIPT_FIELD(Vector3, glm::vec3);
-										READ_SCRIPT_FIELD(Vector4, glm::vec4);
-										READ_SCRIPT_FIELD(Entity, UUID);
+										continue;
 									}
+									field = it->second;
+								}
+
+								ScriptFieldInstance& fieldInstance = (*entityFields)[name];
+								fieldInstance.Field = field;
+
+								switch (type)
+								{
+									READ_SCRIPT_FIELD(Float, float);
+									READ_SCRIPT_FIELD(Double, double);
+									READ_SCRIPT_FIELD(Bool, bool);
+									READ_SCRIPT_FIELD(Char, char);
+									READ_SCRIPT_FIELD(Byte, int8_t);
+									READ_SCRIPT_FIELD(Short, int16_t);
+									READ_SCRIPT_FIELD(Int, int32_t);
+									READ_SCRIPT_FIELD(Long, int64_t);
+									READ_SCRIPT_FIELD(UByte, uint8_t);
+									READ_SCRIPT_FIELD(UShort, uint16_t);
+									READ_SCRIPT_FIELD(UInt, uint32_t);
+									READ_SCRIPT_FIELD(ULong, uint64_t);
+									READ_SCRIPT_FIELD(Vector2, glm::vec2);
+									READ_SCRIPT_FIELD(Vector3, glm::vec3);
+									READ_SCRIPT_FIELD(Vector4, glm::vec4);
+									READ_SCRIPT_FIELD(Entity, UUID);
 								}
 							}
-
 						}
 
 					}

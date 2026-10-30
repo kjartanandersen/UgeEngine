@@ -424,14 +424,15 @@ namespace Uge
 		return s_data->EntityClasses;
 	}
 
-	ScriptFieldMap& ScriptEngine::GetScriptFieldMap(UUID entityID)
+	ScriptFieldMap* ScriptEngine::GetScriptFieldMap(UUID entityID)
 	{
-		
-		auto it = s_data->EntityScriptFields.find(entityID);
-		// UG_CORE_ASSERT(it != s_data->EntityScriptFields.end());
+		// Null before Init() is called, or after Shutdown() is called.
+		if (!s_data)
+		{
+			return nullptr;
+		}
 
-		return s_data->EntityScriptFields[entityID];
-
+		return &s_data->EntityScriptFields[entityID];
 	}
 
 	bool ScriptEngine::EntityClassExists(const std::string& fullClassName)

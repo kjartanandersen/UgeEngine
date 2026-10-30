@@ -12,6 +12,7 @@
 #include "Uge/Scene/Entity.h"
 #include "Uge/Scene/Scene.h"
 #include "Uge/Scene/SceneSerializer.h"
+#include "Uge/Scripting/ScriptEngine.h"
 
 #include <gtest/gtest.h>
 
@@ -326,7 +327,7 @@ TEST_F(SceneSerializerTest, AMistypedValueFailsTheLoadWithoutThrowing)
 
 TEST_F(SceneSerializerTest, AScriptComponentWithAnUnknownClassStillSaves)
 {
-	// Tests never initialise the script engine, so no script class is known at all. Saving
+	// This test doesn't start the script engine, so no script class is known at all. Saving
 	// still keeps the component and its class name; it just writes no fields.
 	Entity entity = m_scene->CreateEntity("Scripted");
 	entity.AddComponent<Uge::ScriptComponent>().ClassName = "Game.DoesNotExist";
@@ -543,4 +544,60 @@ TEST_F(SceneSerializerTest, AScriptComponentWithNoClassKeepsItsEmptyName)
 	ASSERT_TRUE(restored);
 	ASSERT_TRUE(restored.HasComponent<Uge::ScriptComponent>());
 	EXPECT_TRUE(restored.GetComponent<Uge::ScriptComponent>().ClassName.empty());
+}
+
+namespace
+{
+	/** @brief Starts the script engine for one test, and shuts it down however the test ends. */
+	struct ScopedScriptEngine
+	{
+		ScopedScriptEngine() { Uge::ScriptEngine::Init(); }
+		~ScopedScriptEngine() { Uge::ScriptEngine::Shutdown(); }
+	};
+}
+
+TEST_F(SceneSerializerTest, AScriptWhoseClassIsMissingKeepsItsFieldValues)
+{
+	// From the repo root, where the tests run, Init() finds no Mono runtime. It stops after
+	// creating the field storage and knows no script classes, like an editor whose project
+	// scripts haven't been built. Anywhere else it would start Mono, which can't be started
+	// twice in one process.
+	if (std::filesystem::exists("mono/lib"))
+	{
+		GTEST_SKIP() << "Mono's runtime is in the working directory; run the tests from the repo root.";
+	}
+	ScopedScriptEngine scriptEngine;
+
+	const std::filesystem::path original = m_project.WriteAssetFile("Scenes/Scripted.uge",
+		"Scene: Scripted\n"
+		"Entities:\n"
+		"  - Entity: 42\n"
+		"    TagComponent:\n"
+		"      Tag: Player\n"
+		"    ScriptComponent:\n"
+		"      ClassName: Game.Player\n"
+		"      ScriptFields:\n"
+		"        - Name: Speed\n"
+		"          Type: Float\n"
+		"          Data: 2.5\n");
+
+	Uge::Ref<Scene> opened = Uge::CreateRef<Scene>();
+	ASSERT_TRUE(SceneSerializer(opened).DeSerialize(original));
+
+	const std::filesystem::path resaved = Project::GetAssetFileSystemPath("Scenes/Resaved.uge");
+	SceneSerializer(opened).Serialize(resaved);
+
+	// Restart the engine, so the value can only come from the resaved file.
+	Uge::ScriptEngine::Shutdown();
+	Uge::ScriptEngine::Init();
+
+	Uge::Ref<Scene> reopened = Uge::CreateRef<Scene>();
+	ASSERT_TRUE(SceneSerializer(reopened).DeSerialize(resaved));
+
+	Uge::ScriptFieldMap* fields = Uge::ScriptEngine::GetScriptFieldMap(Uge::UUID(42));
+	ASSERT_NE(fields, nullptr);
+	auto speed = fields->find("Speed");
+	ASSERT_NE(speed, fields->end());
+	EXPECT_EQ(speed->second.Field.Type, Uge::ScriptFieldType::Float);
+	EXPECT_FLOAT_EQ(speed->second.GetValue<float>(), 2.5f);
 }
