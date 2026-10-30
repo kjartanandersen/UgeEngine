@@ -35,7 +35,7 @@ namespace Uge
 		{ "Uge.Vector3", ScriptFieldType::Vector3 },
 		{ "Uge.Vector4", ScriptFieldType::Vector4 },
 
-		{ "System.Int", ScriptFieldType::Int },
+		{ "System.Int32", ScriptFieldType::Int },
 		{ "System.UInt32", ScriptFieldType::UInt },
 		{ "System.Int64", ScriptFieldType::Long },
 		{ "System.UInt64", ScriptFieldType::ULong },
@@ -106,6 +106,17 @@ namespace Uge
 
 		}
 
+		ScriptFieldType ScriptFieldTypeFromManagedName(const std::string& typeName)
+		{
+			auto it = s_scriptFieldTypeMap.find(typeName);
+			if (it == s_scriptFieldTypeMap.end())
+			{
+				UG_CORE_WARN("Script fields of type {0} aren't supported: scripts can use them, but the editor can't set or save their values", typeName);
+				return ScriptFieldType::None;
+			}
+			return it->second;
+		}
+
 		/**
 		 * @brief Maps a managed type onto the engine's field-type enumeration.
 		 * @param monoType Managed type to classify.
@@ -113,25 +124,11 @@ namespace Uge
 		 */
 		ScriptFieldType MonoTypeToScriptFieldType(MonoType* monoType)
 		{
-			std::string typeName = mono_type_get_name(monoType);
-
-			auto it = s_scriptFieldTypeMap.find(typeName);
-			if (it == s_scriptFieldTypeMap.end())
-			{
-				UG_CORE_ERROR("Typename is {0}", typeName);
-				return ScriptFieldType::None;
-			}
-			return it->second;
-
-			// if (s_scriptFieldTypeMap.find(typeName) == s_scriptFieldTypeMap.end())
-			// {
-			// 	return ScriptFieldType::None;
-			// }
-			// 
-			// return s_scriptFieldTypeMap.at(typeName);
-
-			
-
+			// mono_type_get_name allocates the string it returns; the caller frees it.
+			char* typeName = mono_type_get_name(monoType);
+			ScriptFieldType type = ScriptFieldTypeFromManagedName(typeName);
+			mono_free(typeName);
+			return type;
 		}
 
 	}

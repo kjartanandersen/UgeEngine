@@ -467,6 +467,17 @@ namespace Uge
 	{
 
 		/**
+		* @brief Maps the name Mono gives a managed type onto the engine's field types.
+		* @param typeName A type name as `mono_type_get_name` returns it, such as `System.Int32`.
+		* @return The matching type, or `None` for a type the engine can't store; that case
+		* is logged as a warning.
+		*
+		* The names are .NET's, not C#'s keywords: `int` is `System.Int32`, and `float` is
+		* `System.Single`.
+		*/
+		ScriptFieldType ScriptFieldTypeFromManagedName(const std::string& typeName);
+
+		/**
 		 * @brief Parses a field type from its serialized name.
 		 * @param fieldType String produced by Uge::Utils::ScriptFieldTypeToString.
 		 * @return The matching type; asserts in Debug and returns `None` if unrecognized.
