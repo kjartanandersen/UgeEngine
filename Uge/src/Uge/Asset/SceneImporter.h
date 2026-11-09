@@ -41,9 +41,11 @@ namespace Uge
 		/**
 		 * @brief Writes a scene to disk as YAML.
 		 * @param scene Scene to save.
-		 * @param path Destination `.uge` path; overwritten if it exists.
+		 * @param path Destination `.uge` path; replaced if it exists.
+		 * @return `true` if the scene was written. On failure the reason is logged, and the
+		 * file at @p path is unchanged.
 		 */
-		static void SaveScene(Ref<Scene> scene, const std::filesystem::path& path);
+		static bool SaveScene(Ref<Scene> scene, const std::filesystem::path& path);
 
 	};
 

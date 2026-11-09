@@ -965,7 +965,11 @@ namespace Uge
 			return;
 		}
 
-		SerializeScene(m_editorScene, filepath);
+		// The serializer has logged why. The scene keeps its old path, and nothing is registered.
+		if (!SerializeScene(m_editorScene, filepath))
+		{
+			return;
+		}
 		m_editorScenePath = filepath;
 
 		// Register the file, so it appears in the content browser's Asset view and can be
@@ -1109,10 +1113,10 @@ namespace Uge
 		m_activeScene->SetPaused(true);
 	}
 
-	void EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)
+	bool EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)
 	{
 
-		SceneImporter::SaveScene(scene, path);
+		return SceneImporter::SaveScene(scene, path);
 
 
 	}

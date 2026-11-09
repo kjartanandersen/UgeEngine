@@ -132,8 +132,9 @@ namespace Uge
 		 * @brief Writes a scene to a path via Uge::SceneSerializer.
 		 * @param scene Scene to save.
 		 * @param path Destination `.uge` path.
+		 * @return `true` if the scene was written; the serializer logs why not.
 		 */
-		void SerializeScene(Ref<Scene> scene, const std::filesystem::path& path);
+		bool SerializeScene(Ref<Scene> scene, const std::filesystem::path& path);
 
 		// UI panels
 		/** @brief Draws the play/pause/step/stop toolbar above the viewport. */

@@ -38,10 +38,15 @@ namespace Uge
 		SceneSerializer(const Ref<Scene>& scene);
 
 		/**
-		 * @brief Writes the scene as human-readable YAML.
-		 * @param filepath Destination `.uge` path; overwritten if it exists.
-		 */
-		void Serialize(const std::filesystem::path& filepath);
+		* @brief Writes the scene as human-readable YAML.
+		* @param filepath Destination `.uge` path; replaced if it exists.
+		* @return `true` if the file was written. On failure the reason is logged, and any
+		* existing file at @p filepath is left as it was.
+		*
+		* The YAML goes to `<filepath>.tmp` first, which then replaces the destination in one
+		* step, so a save that fails part-way never leaves a truncated scene.
+		*/
+		bool Serialize(const std::filesystem::path& filepath);
 		/**
 		 * @brief Writes the scene in a packed runtime form.
 		 * @param filepath Destination path.

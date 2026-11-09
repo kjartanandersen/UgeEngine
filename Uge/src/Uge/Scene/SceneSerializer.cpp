@@ -542,7 +542,7 @@ namespace Uge
 	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
 		: m_scene(scene) {}
 
-	void SceneSerializer::Serialize(const std::filesystem::path& filepath)
+	bool SceneSerializer::Serialize(const std::filesystem::path& filepath)
 	{
 
 		YAML::Emitter out;
@@ -555,7 +555,7 @@ namespace Uge
 			Entity entity = { entityID, m_scene.get() };
 			if (!entity)
 			{
-				return;
+				continue;
 			}
 
 			SerializeEntity(out, entity);
@@ -565,8 +565,38 @@ namespace Uge
 		out << YAML::EndSeq;
 		out << YAML::EndMap;
 
-		std::ofstream fout(filepath);
+		if (!out.good())
+		{
+			UG_CORE_ERROR("Failed to save scene '{0}': {1}", filepath.string(), out.GetLastError());
+			return false;
+		}
+
+		// Written beside the scene first and then moved over it, so a save that fails part-way
+		// (a full disk, a crash, the file held open elsewhere) leaves the previous version whole.
+		std::filesystem::path tempPath = filepath;
+		tempPath += ".tmp";
+
+		std::ofstream fout(tempPath);
 		fout << out.c_str();
+		fout.close();
+
+		std::error_code error;
+		if (fout.fail())
+		{
+			UG_CORE_ERROR("Failed to save scene '{0}': couldn't write '{1}'", filepath.string(), tempPath.string());
+			std::filesystem::remove(tempPath, error);
+			return false;
+		}
+
+		std::filesystem::rename(tempPath, filepath, error);
+		if (error)
+		{
+			UG_CORE_ERROR("Failed to save scene '{0}': {1}", filepath.string(), error.message());
+			std::filesystem::remove(tempPath, error);
+			return false;
+		}
+
+		return true;
 
 	}
 

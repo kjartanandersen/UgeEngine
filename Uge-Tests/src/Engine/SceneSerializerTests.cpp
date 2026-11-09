@@ -635,3 +635,37 @@ TEST_F(SceneSerializerTest, AFieldValueOfATypeThatCantBeSavedIsLeftOut)
 	EXPECT_NE(text.find("Speed"), std::string::npos);
 	EXPECT_EQ(text.find("Title"), std::string::npos);
 }
+
+TEST_F(SceneSerializerTest, SavingIntoAMissingFolderFails)
+{
+	m_scene->CreateEntity("Crate");
+	const std::filesystem::path path = Project::GetAssetFileSystemPath("NoSuchFolder/Level.uge");
+
+	EXPECT_FALSE(SceneSerializer(m_scene).Serialize(path));
+	EXPECT_FALSE(std::filesystem::exists(path));
+}
+
+TEST_F(SceneSerializerTest, AFailedSaveLeavesThePreviousFileIntact)
+{
+	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/Level.uge", "previous contents\n");
+	m_scene->CreateEntity("Crate");
+
+	// A file held open by std::ifstream can't be replaced on Windows, because the handle doesn't
+	// share delete access. So the save gets as far as its last step, the rename, and fails there.
+	bool saved = true;
+	{
+		std::ifstream held(path);
+		ASSERT_TRUE(held.is_open());
+		saved = SceneSerializer(m_scene).Serialize(path);
+	}
+	EXPECT_FALSE(saved);
+
+	std::ifstream in(path);
+	const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	EXPECT_EQ(text, "previous contents\n");
+
+	std::filesystem::path temp = path;
+	temp += ".tmp";
+	EXPECT_FALSE(std::filesystem::exists(temp));
+}
+
