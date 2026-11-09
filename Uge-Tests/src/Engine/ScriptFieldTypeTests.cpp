@@ -49,3 +49,28 @@ TEST(ScriptFieldTypeTest, AnUnsupportedTypeIsNone)
 	// A generic list is a valid field type in C#, but not one the engine can store.
 	EXPECT_EQ(ScriptFieldTypeFromManagedName("System.Collections.Generic.List`1<System.Int32>"), ScriptFieldType::None);
 }
+
+TEST(ScriptFieldTypeTest, EverySerializedNameReadsBack)
+{
+	// Scene files store a field's type by these names, so each must parse back to its type.
+	const ScriptFieldType types[] = {
+		ScriptFieldType::Float, ScriptFieldType::Double,
+		ScriptFieldType::Vector2, ScriptFieldType::Vector3, ScriptFieldType::Vector4,
+		ScriptFieldType::Int, ScriptFieldType::UInt, ScriptFieldType::Long, ScriptFieldType::ULong,
+		ScriptFieldType::Short, ScriptFieldType::UShort, ScriptFieldType::Bool,
+		ScriptFieldType::Byte, ScriptFieldType::UByte, ScriptFieldType::Char,
+		ScriptFieldType::String, ScriptFieldType::Entity,
+	};
+
+	for (ScriptFieldType type : types)
+	{
+		const char* name = Uge::Utils::ScriptFieldTypeToString(type);
+		EXPECT_EQ(Uge::Utils::ScriptFieldTypeFromString(name), type) << name;
+	}
+}
+
+TEST(ScriptFieldTypeTest, AnUnknownSerializedNameIsNone)
+{
+	// A scene file can name a type this engine doesn't know, from a newer version for example.
+	EXPECT_EQ(Uge::Utils::ScriptFieldTypeFromString("Quaternion"), ScriptFieldType::None);
+}

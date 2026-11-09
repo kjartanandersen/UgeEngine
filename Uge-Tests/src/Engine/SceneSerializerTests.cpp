@@ -601,3 +601,37 @@ TEST_F(SceneSerializerTest, AScriptWhoseClassIsMissingKeepsItsFieldValues)
 	EXPECT_EQ(speed->second.Field.Type, Uge::ScriptFieldType::Float);
 	EXPECT_FLOAT_EQ(speed->second.GetValue<float>(), 2.5f);
 }
+
+TEST_F(SceneSerializerTest, AFieldValueOfATypeThatCantBeSavedIsLeftOut)
+{
+	if (std::filesystem::exists("mono/lib"))
+	{
+		GTEST_SKIP() << "Mono's runtime is in the working directory; run the tests from the repo root.";
+	}
+	ScopedScriptEngine scriptEngine;
+
+	Entity entity = m_scene->CreateEntityWithUUID(Uge::UUID(42), "Player");
+	entity.AddComponent<Uge::ScriptComponent>().ClassName = "Game.Player";
+
+	Uge::ScriptFieldMap* fields = Uge::ScriptEngine::GetScriptFieldMap(Uge::UUID(42));
+	ASSERT_NE(fields, nullptr);
+
+	Uge::ScriptFieldInstance& speed = (*fields)["Speed"];
+	speed.Field.Name = "Speed";
+	speed.Field.Type = Uge::ScriptFieldType::Float;
+	speed.SetValue(2.5f);
+
+	// Strings have nowhere to keep a value yet, so this one can't be saved.
+	Uge::ScriptFieldInstance& title = (*fields)["Title"];
+	title.Field.Name = "Title";
+	title.Field.Type = Uge::ScriptFieldType::String;
+
+	const std::filesystem::path path = Project::GetAssetFileSystemPath("Scenes/Fields.uge");
+	std::filesystem::create_directories(path.parent_path());
+	SceneSerializer(m_scene).Serialize(path);
+
+	std::ifstream in(path);
+	const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	EXPECT_NE(text.find("Speed"), std::string::npos);
+	EXPECT_EQ(text.find("Title"), std::string::npos);
+}

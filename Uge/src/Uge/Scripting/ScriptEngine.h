@@ -480,7 +480,10 @@ namespace Uge
 		/**
 		 * @brief Parses a field type from its serialized name.
 		 * @param fieldType String produced by Uge::Utils::ScriptFieldTypeToString.
-		 * @return The matching type; asserts in Debug and returns `None` if unrecognized.
+		 * @return The matching type, or `None` if the name isn't recognized.
+		 *
+		 * The name comes from a scene file, which can hold one this engine doesn't know, from a
+		 * newer version for example. That's data to skip rather than a programming error.
 		 */
 		inline ScriptFieldType ScriptFieldTypeFromString(std::string_view fieldType)
 		{
@@ -489,6 +492,7 @@ namespace Uge
 			if (fieldType == "Double")  return ScriptFieldType::Double;
 			if (fieldType == "Bool")    return ScriptFieldType::Bool;
 			if (fieldType == "Char")    return ScriptFieldType::Char;
+			if (fieldType == "String")  return ScriptFieldType::String;
 			if (fieldType == "Byte")    return ScriptFieldType::Byte;
 			if (fieldType == "Short")   return ScriptFieldType::Short;
 			if (fieldType == "Int")     return ScriptFieldType::Int;
@@ -502,7 +506,6 @@ namespace Uge
 			if (fieldType == "Vector4") return ScriptFieldType::Vector4;
 			if (fieldType == "Entity")  return ScriptFieldType::Entity;
 
-			UG_CORE_ASSERT(false, "Unknown ScriptFieldType");
 			return ScriptFieldType::None;
 		}
 

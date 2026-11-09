@@ -636,10 +636,22 @@ namespace Uge
 			if (s_data->EntityScriptFields.find(entityID) != s_data->EntityScriptFields.end())
 			{
 				const ScriptFieldMap& fieldMap = s_data->EntityScriptFields.at(entityID);
+				const auto& classFields = instance->GetScriptClass()->GetFields();
 				for (const auto& [name, fieldInstance] : fieldMap)
 				{
-					instance->SetFieldValueInternal(name, fieldInstance.m_dataBuffer);
+					// A value is copied only into a field of the same type. After a reload that
+					// changed a field's type, the stored bytes belong to the old type. The field
+					// keeps its default, and the stored value stays for when the type changes back.
+					auto it = classFields.find(name);
+					if (it != classFields.end() && it->second.Type != fieldInstance.Field.Type)
+					{
+						UG_CORE_WARN("{0}.{1} is now {2} but its value was set as {3}, so the field starts from its default",
+							sc.ClassName, name, Utils::ScriptFieldTypeToString(it->second.Type),
+							Utils::ScriptFieldTypeToString(fieldInstance.Field.Type));
+						continue;
+					}
 
+					instance->SetFieldValueInternal(name, fieldInstance.m_dataBuffer);
 				}
 
 

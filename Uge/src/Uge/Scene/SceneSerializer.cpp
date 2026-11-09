@@ -124,7 +124,12 @@ namespace Uge
 		break;                                         \
 	}
 
-
+	// Whether a script field's value can be written to and read from a scene file. None
+	// and String have no value to store yet.
+	static bool IsSerializableFieldType(ScriptFieldType type)
+	{
+		return type != ScriptFieldType::None && type != ScriptFieldType::String;
+	}
 
 	YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v)
 	{
@@ -270,6 +275,12 @@ namespace Uge
 					}
 
 					const ScriptFieldType type = scriptField.Field.Type;
+
+					// A type with no case in the switch below would be written as an empty "Data:".
+					if (!IsSerializableFieldType(type))
+					{
+						continue;
+					}
 
 					out << YAML::BeginMap; // ScriptField
 					out << YAML::Key << "Name" << YAML::Value << name;
@@ -683,8 +694,8 @@ namespace Uge
 								std::string typeString = scriptField["Type"].as<std::string>();
 								ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
 
-								// A type this engine doesn't know has no value to read.
-								if (type == ScriptFieldType::None)
+								// A type this engine can't keep a value of, such as a string, is skipped.
+								if (!IsSerializableFieldType(type))
 								{
 									continue;
 								}
@@ -695,11 +706,21 @@ namespace Uge
 
 								if (entityClass)
 								{
-									// Drop a value the class can no longer take: a field it doesn't
-									// declare any more, or one whose type has changed.
+									// A value the class can no longer take is dropped, and the field starts
+									// from its default: the class doesn't declare it any more, or its type
+									// has changed since the scene was saved.
 									auto it = entityClass->GetFields().find(name);
-									if (it == entityClass->GetFields().end() || it->second.Type != type)
+									if (it == entityClass->GetFields().end())
 									{
+										UG_CORE_WARN("{0} on '{1}' no longer has a field {2}, so its saved value is dropped",
+											sc.ClassName, deserializedEntity.GetName(), name);
+										continue;
+									}
+									if (it->second.Type != type)
+									{
+										UG_CORE_WARN("{0}.{1} on '{2}' is now {3} but was saved as {4}, so its saved value is dropped",
+											sc.ClassName, name, deserializedEntity.GetName(),
+											Utils::ScriptFieldTypeToString(it->second.Type), typeString);
 										continue;
 									}
 									field = it->second;
