@@ -473,7 +473,7 @@ namespace Uge
 
 					for (auto& asset : loadedAssetNames)
 					{
-						ImGui::Text(asset.c_str());
+						ImGui::TextUnformatted(asset.c_str());
 					}
 
 				}

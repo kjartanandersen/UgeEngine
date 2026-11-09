@@ -144,7 +144,7 @@ namespace Uge
 
 
 
-						ImGui::TextWrapped(itemStr.c_str());
+						ImGui::TextWrapped("%s", itemStr.c_str());
 
 						ImGui::NextColumn();
 
@@ -198,7 +198,7 @@ namespace Uge
 
 						
 
-						ImGui::TextWrapped(filenameString.c_str());
+						ImGui::TextWrapped("%s", filenameString.c_str());
 
 						ImGui::NextColumn();
 
