@@ -8,13 +8,14 @@ namespace Uge
 
 	namespace
 	{
-		// Keyed by the scope label. `UG_PROFILE_SCOPE` always passes a literal, so the
-		// pointer would be stable, but hashing the text keeps identical labels from
-		// different translation units on one row — which is what a reader expects.
+		// Keyed by the label's address, so Submit() does no string work. Every UG_PROFILE_*
+		// label is a string literal or __FUNCSIG__, which last for the whole program, so the
+		// address is stable. The same text can sit at more than one address, one copy per
+		// translation unit, so BeginFrame() merges entries by their text into the rows it shows.
 		struct ProfilerState
 		{
 			std::mutex Mutex;
-			std::unordered_map<std::string, ProfileEntry> Accumulating;
+			std::unordered_map<const char*, ProfileEntry> Accumulating;
 			std::vector<ProfileEntry> LastFrame;
 
 			std::vector<float> FrameTimes;
@@ -73,13 +74,24 @@ namespace Uge
 		ProfilerState& state = State();
 		std::lock_guard<std::mutex> lock(state.Mutex);
 
-		state.LastFrame.clear();
-		state.LastFrame.reserve(state.Accumulating.size());
-		for (auto& [name, entry] : state.Accumulating)
+		// One row per label text, since the same label can arrive from several addresses.
+		// This is the profiler's only string work, once per scope per frame.
+		std::unordered_map<std::string, ProfileEntry> rows;
+		for (const auto& [label, entry] : state.Accumulating)
 		{
-			state.LastFrame.push_back(entry);
+			ProfileEntry& row = rows[label];
+			row.TotalMs += entry.TotalMs;
+			row.Calls += entry.Calls;
 		}
 		state.Accumulating.clear();
+
+		state.LastFrame.clear();
+		state.LastFrame.reserve(rows.size());
+		for (auto& [label, row] : rows)
+		{
+			row.Name = ShortenScopeName(label.c_str());
+			state.LastFrame.push_back(std::move(row));
+		}
 
 		std::sort(state.LastFrame.begin(), state.LastFrame.end(),
 			[](const ProfileEntry& lhs, const ProfileEntry& rhs) { return lhs.TotalMs > rhs.TotalMs; });
@@ -104,24 +116,11 @@ namespace Uge
 			return;
 		}
 
-#ifdef UG_DEBUG
-		if (strcmp(name, "__cdecl Uge::OpenGLTexture2D::~OpenGLTexture2D(void)") == 0)
-		{
-			int a = 0;
-		}
-
-#endif
 		ProfilerState& state = State();
 
 		std::lock_guard<std::mutex> lock(state.Mutex);
 
 		ProfileEntry& entry = state.Accumulating[name];
-		if (entry.Calls == 0)
-		{
-			// Only on the frame's first call for this scope, so the string work does not
-			// repeat for a scope entered hundreds of times.
-			entry.Name = ShortenScopeName(name);
-		}
 		entry.TotalMs += milliseconds;
 		entry.Calls++;
 	}

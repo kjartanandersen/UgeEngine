@@ -77,8 +77,6 @@ namespace Uge
 
 	void OpenGLTextureCube::Bind(uint32_t slot) const
 	{
-		UG_PROFILE_FUNCTION();
-
 		glBindTextureUnit(slot, m_rendererID);
 	}
 

@@ -353,9 +353,6 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
 	{
-		UG_PROFILE_FUNCTION();
-
-
 		
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
@@ -382,8 +379,6 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor)
 	{
-
-		UG_PROFILE_FUNCTION();
 
 		constexpr glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		const glm::vec2* textureCoords = subTexture->GetTextCoords();
@@ -440,8 +435,6 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID )
 	{
-		UG_PROFILE_FUNCTION();
-
 
 		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
 		{
@@ -481,8 +474,6 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int entityID )
 	{
-
-		UG_PROFILE_FUNCTION();
 		UG_CORE_VERIFY(texture);
 
 		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
@@ -520,8 +511,6 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
 	{
-		UG_PROFILE_FUNCTION();
-
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
@@ -536,9 +525,6 @@ namespace Uge
 
 	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const glm::vec4& color)
 	{
-
-		UG_PROFILE_FUNCTION();
-
 		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
 		{
 
@@ -595,9 +581,6 @@ namespace Uge
 
 	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
 	{
-
-		UG_PROFILE_FUNCTION();
-
 		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
 		{
 
@@ -657,8 +640,6 @@ namespace Uge
 
 	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor)
 	{
-
-		UG_PROFILE_FUNCTION();
 
 		constexpr glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		const glm::vec2* textureCoords = subTexture->GetTextCoords();
@@ -763,8 +744,6 @@ namespace Uge
 
 	void Renderer2D::DrawSprite(const glm::mat4& transform, const SpriteRendererComponent& src, int entityID)
 	{
-
-		UG_PROFILE_FUNCTION();
 
 		if (src.Texture)
 		{

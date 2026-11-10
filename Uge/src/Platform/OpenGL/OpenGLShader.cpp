@@ -473,16 +473,12 @@ namespace Uge
 
 	void OpenGLShader::Bind() const
 	{
-		UG_PROFILE_FUNCTION();
-
 		glUseProgram(m_rendererID);
 
 	}
 
 	void OpenGLShader::Unbind() const
 	{
-		UG_PROFILE_FUNCTION();
-
 		glUseProgram(0);
 
 
@@ -491,8 +487,6 @@ namespace Uge
 
 	void OpenGLShader::SetInt(const std::string name, int value)
 	{
-		UG_PROFILE_FUNCTION();
-
 		UploadUniformInt(name, value);
 
 
@@ -500,10 +494,6 @@ namespace Uge
 
 	void OpenGLShader::SetIntArray(const std::string name, int* values, int count)
 	{
-
-
-		UG_PROFILE_FUNCTION();
-
 		UploadUniformIntArray(name, values, count);
 
 	}
@@ -511,15 +501,11 @@ namespace Uge
 	void OpenGLShader::SetFloat(const std::string name, float value)
 	{
 
-		UG_PROFILE_FUNCTION();
-
 		UploadUniformFloat(name, value);
 	}
 
 	void OpenGLShader::SetFloat3(const std::string name, const glm::vec3& values)
 	{
-		UG_PROFILE_FUNCTION();
-
 		UploadUniformFloat3(name, values);
 
 
@@ -527,8 +513,6 @@ namespace Uge
 
 	void OpenGLShader::SetFloat4(const std::string name, const glm::vec4& values)
 	{
-		UG_PROFILE_FUNCTION();
-
 		UploadUniformFloat4(name, values);
 
 
@@ -536,8 +520,6 @@ namespace Uge
 
 	void OpenGLShader::SetMat4(const std::string name, const glm::mat4& values)
 	{
-		UG_PROFILE_FUNCTION();
-
 		UploadUniformMat4(name, values);
 
 
