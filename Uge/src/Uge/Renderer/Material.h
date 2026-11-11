@@ -162,13 +162,15 @@ namespace Uge
 		virtual void Bind() = 0;
 
 		/**
-		 * @brief The shader this material uses.
-		 * @return The shader program.
+		 * @brief The shader this material binds itself.
+		 * @return The shader, or null when the material relies on the caller to bind one.
+		 * Materials created by the mesh importer have none: Uge::Model binds its own shader
+		 * before drawing them.
 		 */
 		virtual Ref<Shader> GetShader() const = 0;
 		/**
-		 * @brief Replaces the shader.
-		 * @param shader New shader program.
+		 * @brief Replaces the shader that Bind() binds.
+		 * @param shader New shader program, or null to leave binding a shader to the caller.
 		 */
 		virtual void SetShader(const Ref<Shader>& shader) = 0;
 

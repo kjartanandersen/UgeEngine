@@ -17,7 +17,9 @@ namespace Uge
 		// Imported materials share the Model's shader, which is bound by the caller
 		// (Mesh::Draw). A material only owns a shader when one is explicitly assigned.
 		if (m_shader)
+		{
 			m_shader->Bind();
+		}
 
 		// Uploaded per material rather than per frame: without it the shader has no way to
 		// tell a black plastic from a silver paint, since neither has a base colour map.
@@ -37,13 +39,11 @@ namespace Uge
 	}
 	Ref<Shader> OpenGLMaterial::GetShader() const
 	{
-
-
 		return m_shader;
 	}
 	void OpenGLMaterial::SetShader(const Ref<Shader>& shader)
 	{
-
+		m_shader = shader;
 
 	}
 	void OpenGLMaterial::BindTexture(AssetHandle handle, uint32_t slot)
