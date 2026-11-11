@@ -5,10 +5,6 @@
 namespace Uge
 {
 
-
-
-
-
 	LayerStack::LayerStack()
 	{
 
@@ -81,6 +77,18 @@ namespace Uge
 		}
 
 
+	}
+
+	void LayerStack::Clear()
+	{
+		for (Layer* layer : m_layers)
+		{
+			layer->OnDetach();
+			delete layer;
+		}
+
+		m_layers.clear();
+		m_layerInsertIndex = 0;
 	}
 
 }

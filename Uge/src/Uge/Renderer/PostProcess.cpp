@@ -81,4 +81,11 @@ namespace Uge
 		RenderCommand::SetDepthTest(true);
 	}
 
+	void PostProcess::Shutdown()
+	{
+		
+		s_resolveData = ResolveData();
+		
+	}
+
 }

@@ -39,7 +39,7 @@ namespace Uge
 
 
 	}
-	void SceneImporter::SaveScene(Ref<Scene> scene, const std::filesystem::path& path)
+	bool SceneImporter::SaveScene(Ref<Scene> scene, const std::filesystem::path& path)
 	{
 
 
@@ -47,7 +47,7 @@ namespace Uge
 
 
 		SceneSerializer serializer(scene);
-		serializer.Serialize(Project::GetAssetDirectory() / path);
+		return serializer.Serialize(Project::GetAssetDirectory() / path);
 
 
 	}

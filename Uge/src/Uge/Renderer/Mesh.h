@@ -141,6 +141,13 @@ namespace Uge
 		 */
 		const std::vector<uint32_t>& GetIndices() const { return m_indices; }
 
+		/**
+		* @brief The box around the mesh's vertices.
+		* @return The bounds, in the same space as GetVertices(); not valid for an empty mesh.
+		*
+		* Uge::Model transforms it by the entity's transform to test the submesh against the
+		* view frustum, and grows the model's own bounds from it.
+		*/
 		const Math::AABB& GetBounds() const { return m_bounds; }
 
 

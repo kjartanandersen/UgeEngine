@@ -94,18 +94,24 @@ namespace Uge
 		}
 
 		// Materials are referenced by handle and resolved per draw rather than cached on the
-		// Mesh, so editing a material's blend mode takes effect without a reimport.
-		static AlphaMode GetMaterialBlendMode(AssetHandle materialHandle)
+		// Mesh, so editing a material (its blend mode, whether it's double-sided) takes effect
+		// without a reimport.
+		static Ref<Material> ResolveMaterial(AssetHandle materialHandle)
 		{
-			if (!materialHandle
-				|| !AssetManager::IsAssetHandleValid(materialHandle)
-				|| AssetManager::GetAssetType(materialHandle) != AssetType::Material)
+			if (!materialHandle)
 			{
-				return AlphaMode::Opaque;
+				return nullptr;
 			}
 
-			Ref<Material> material = AssetManager::GetAsset<Material>(materialHandle);
-			return material ? material->GetBlendMode() : AlphaMode::Opaque;
+			return AssetManager::GetAsset<Material>(materialHandle);
+		}
+
+		// Double-sided materials are thin cards meant to be seen from both sides (foliage,
+		// chains, single-sheet panels), so they draw both faces. Everything else culls back
+		// faces.
+		static CullMode CullModeFor(const Ref<Material>& material)
+		{
+			return material && material->IsDoubleSided() ? CullMode::None : CullMode::Back;
 		}
 	}
 
@@ -115,6 +121,14 @@ namespace Uge
 		: m_meshMetadata(metadata)
 	{
 		LoadModel(path);
+	}
+
+	void Model::Shutdown()
+	{
+		
+		// Initialized goes back to false, so a later draw recreates the resources
+		s_sceneData = SceneData();
+	
 	}
 
 	void Model::EnsureSceneResources()
@@ -142,7 +156,8 @@ namespace Uge
 
 	void Model::ApplyCullMode(CullMode mode)
 	{
-		// Function should be idempotent
+		// Skips the GL call when the mode is already set. Only safe because every change inside the 
+		// pass goes through here, and BeginScene re-syncs the cache each frame.
 		if (s_sceneData.CurrentCullMode == mode)
 		{
 			return;
@@ -191,7 +206,7 @@ namespace Uge
 		s_sceneData.SkyboxShader->Bind();
 		s_sceneData.SceneEnvironment->Skybox->Bind(0);
 
-		RenderCommand::SetCullMode(CullMode::None);
+		ApplyCullMode(CullMode::None); // The cube is seen from the inside, so culling the back faces would hide it entirely.
 
 		// The vertex stage emits z == w, which lands exactly on the far plane; GL_LESS would
 		// reject all of it. Depth writes stay on so the sky still occludes nothing but is
@@ -199,6 +214,8 @@ namespace Uge
 		RenderCommand::SetDepthFunc(DepthCompare::LessEqual);
 		RenderCommand::DrawIndexed(s_sceneData.SkyboxCube);
 		RenderCommand::SetDepthFunc(DepthCompare::Less);
+
+		ApplyCullMode(CullMode::Back); // Back to the default for the rest of the scene, which is drawn from the outside.
 	}
 
 	void Model::BeginScene(const glm::mat4& viewProjection, const glm::vec3& cameraPosition)
@@ -214,7 +231,10 @@ namespace Uge
 
 		// Culling
 		s_sceneData.ViewFrustum = Math::Frustum::FromViewProjection(viewProjection);
-		ApplyCullMode(CullMode::Back);
+		// Forced, not cached: code outside this pass (the environment builder, ImGui, any other
+		// renderer) may have changed it since the last frame. One GL call per frame
+		RenderCommand::SetCullMode(CullMode::Back);
+		s_sceneData.CurrentCullMode = CullMode::Back;
 
 		// The shader wants the direction towards the light, which is the reverse of the
 		// direction the light travels in.
@@ -243,36 +263,45 @@ namespace Uge
 
 	void Model::EndScene()
 	{
-		if (!s_sceneData.Initialized || s_sceneData.BlendedQueue.empty())
+		if (!s_sceneData.Initialized)
 		{
 			return;
 		}
 
-		// Farthest first, so nearer surfaces blend over what is already behind them.
-		std::sort(s_sceneData.BlendedQueue.begin(), s_sceneData.BlendedQueue.end(),
-			[](const BlendedDraw& lhs, const BlendedDraw& rhs)
-			{
-				return lhs.SortKey > rhs.SortKey;
-			});
-
-		// Depth testing stays on so opaque geometry still occludes; only the writes go, which
-		// is what lets one transparent surface show through another.
-		RenderCommand::SetDepthWrite(false);
-
-		s_sceneData.ModelShader->Bind();
-		for (const BlendedDraw& blendedDraw : s_sceneData.BlendedQueue)
+		if (!s_sceneData.BlendedQueue.empty())
 		{
-			ModelData modelData{};
-			modelData.ModelTransform = blendedDraw.Transform;
-			modelData.EntityData = blendedDraw.EntityID;
-			s_sceneData.ModelUniformBuffer->SetData(&modelData, sizeof(ModelData));
+			// Farthest first, so nearer surfaces blend over what is already behind them.
+			std::sort(s_sceneData.BlendedQueue.begin(), s_sceneData.BlendedQueue.end(),
+				[](const BlendedDraw& lhs, const BlendedDraw& rhs)
+				{
+					return lhs.SortKey > rhs.SortKey;
+				});
 
-			blendedDraw.SubMesh->Draw(s_sceneData.ModelShader, blendedDraw.EntityID);
+			// Depth testing stays on so opaque geometry still occludes; only the writes go, which
+			// is what lets one transparent surface show through another.
+			RenderCommand::SetDepthWrite(false);
+
+			s_sceneData.ModelShader->Bind();
+			for (const BlendedDraw& blendedDraw : s_sceneData.BlendedQueue)
+			{
+				ModelData modelData{};
+				modelData.ModelTransform = blendedDraw.Transform;
+				modelData.EntityData = blendedDraw.EntityID;
+				s_sceneData.ModelUniformBuffer->SetData(&modelData, sizeof(ModelData));
+
+				ApplyCullMode(CullModeFor(ResolveMaterial(blendedDraw.SubMesh->GetMaterial())));
+				blendedDraw.SubMesh->Draw(s_sceneData.ModelShader, blendedDraw.EntityID);
+			}
+
+			RenderCommand::SetDepthWrite(true);
+
+			s_sceneData.BlendedQueue.clear();
 		}
 
-		RenderCommand::SetDepthWrite(true);
-
-		s_sceneData.BlendedQueue.clear();
+		// Culling belongs to this pass. Renderer2D, the post-process passes and the editor
+		// overlay draw afterwards and expect it off: a sprite or text seen from behind should
+		// still show.
+		ApplyCullMode(CullMode::None);
 	}
 
 	void Model::Draw(const glm::mat4& transform, int entityID) const
@@ -305,7 +334,8 @@ namespace Uge
 				continue;
 			}
 
-			if (GetMaterialBlendMode(mesh.GetMaterial()) == AlphaMode::Blend)
+			const Ref<Material> material = ResolveMaterial(mesh.GetMaterial());
+			if (material && material->GetBlendMode() == AlphaMode::Blend)
 			{
 				// Deferred to EndScene(): sorting has to span every model in the pass, not
 				// just the submeshes of this one.
@@ -316,6 +346,7 @@ namespace Uge
 				continue;
 			}
 
+			ApplyCullMode(CullModeFor(material));
 			mesh.Draw(s_sceneData.ModelShader, entityID);
 		}
 	}
@@ -327,8 +358,7 @@ namespace Uge
 		outIndices.clear();
 
 		// Validate handle
-		if (!mesh || !AssetManager::IsAssetHandleValid(mesh)
-			|| AssetManager::GetAssetType(mesh) != AssetType::Mesh)
+		if (!mesh)
 		{
 			return false;
 

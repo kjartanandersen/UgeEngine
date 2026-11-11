@@ -47,11 +47,11 @@ namespace Uge
 #endif
 
 	static JoltData* s_joltData = nullptr;
-
 	
 	JoltAPI::JoltAPI()
 	{
 	}
+
 	JoltAPI::~JoltAPI()
 	{
 		Shutdown();
@@ -84,17 +84,14 @@ namespace Uge
 
 		s_joltData = new JoltData();
 
-		// We need a temp allocator for temporary allocations during the physics update.We're
-		// pre-allocating 10 MB to avoid having to do allocations during the physics update.
-		// B.t.w. 10 MB is way too much for this example but it is a typical value you can use.
-		// If you don't want to pre-allocate you can also use TempAllocatorMalloc to fall back to
-		// malloc / free.
+		// Scratch memory for the physics update, pre-allocated (32 MB) so a step never has to
+		// allocate. TempAllocatorMalloc would fall back to malloc/free instead.
 		s_joltData->TempAllocator = CreateScope<JPH::TempAllocatorImpl>(32 * 1024 * 1024);
 
 		// We need a job system that will execute physics jobs on multiple threads. Typically
 		// you would implement the JobSystem interface yourself and let Jolt Physics run on top
 		// of your own job scheduler. JobSystemThreadPool is an example implementation.
-		s_joltData->JobThreadPool = CreateScope<JPH::JobSystemThreadPool>(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, std::max(1u, std::thread::hardware_concurrency() - 1));
+		s_joltData->JobThreadPool = CreateScope<JPH::JobSystemThreadPool>(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, std::max(1, (int)std::thread::hardware_concurrency() - 1));
 
 #ifdef JPH_DEBUG_RENDERER
 		s_joltData->DebugRenderer = CreateScope<JoltDebugRenderer>();
@@ -123,7 +120,6 @@ namespace Uge
 		JPH::Factory::sInstance = nullptr;
 
 	}
-
 
 	Scope<PhysicsScene> JoltAPI::CreateScene(const PhysicsSceneDesc& desc)
 	{

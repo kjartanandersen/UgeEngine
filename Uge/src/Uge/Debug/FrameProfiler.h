@@ -35,8 +35,8 @@ namespace Uge
 	 *
 	 * The Chrome-tracing output of Uge::Instrumentor answers "what happened during those
 	 * three seconds"; this answers "what is costing me *right now*", which is the question
-	 * a live panel needs. Both are fed from the same Uge::InstrumentationTimer, but this
-	 * one is always on and allocates nothing per event beyond a map lookup.
+	 * a live panel needs. Both are fed from the same Uge::InstrumentationTimer, but this one 
+	 * is always on, and does no string work per event: each label’s text is read once per frame, in BeginFrame().
 	 *
 	 * Uge::Application::Run calls BeginFrame() once per frame; the editor's Debug panel
 	 * reads GetLastFrame() and GetFrameTimeHistory().
@@ -53,12 +53,14 @@ namespace Uge
 		 *
 		 * Snapshots the accumulated scopes so GetLastFrame() stays stable for the whole
 		 * frame, then clears the accumulator and records @p frameMs in the history ring.
+		 * Scopes whose labels have the same text become one row.
 		 */
 		static void BeginFrame(float frameMs);
 
 		/**
 		 * @brief Records one completed scope timing into the frame being accumulated.
-		 * @param name Scope label; must outlive the call, so pass a string literal.
+		 * @param name Scope label. It must stay valid until the next BeginFrame(), which 
+		 * is when its text is read; every `UG_PROFILE_*` label is a string literal or `__FUNCSIG__`, which last for the whole program.
 		 * @param milliseconds Duration of the scope.
 		 *
 		 * Called by Uge::InstrumentationTimer; there is rarely a reason to call it directly.

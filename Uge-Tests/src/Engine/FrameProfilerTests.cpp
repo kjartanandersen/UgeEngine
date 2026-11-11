@@ -230,3 +230,23 @@ TEST_F(FrameProfilerTest, SubmitIsSafeFromMultipleThreads)
 	EXPECT_EQ(entry->Calls, (uint32_t)(threads * perThread));
 	EXPECT_NEAR(entry->TotalMs, (float)(threads * perThread), 1.0f);
 }
+
+TEST_F(FrameProfilerTest, ALabelAtTwoAddressesIsOneRow)
+{
+	// The same text can sit at two addresses, as a literal does when two translation units
+	// each keep their own copy. Rows are by text, not by address.
+	const char first[] = "Scene Physics";
+	const char second[] = "Scene Physics";
+	ASSERT_NE(static_cast<const void*>(first), static_cast<const void*>(second));
+
+	FrameProfiler::Submit(first, 1.0f);
+	FrameProfiler::Submit(second, 2.0f);
+	FrameProfiler::BeginFrame(16.0f);
+
+	const std::vector<ProfileEntry> entries = FrameProfiler::GetLastFrame();
+	ASSERT_EQ(entries.size(), 1u);
+	EXPECT_EQ(entries[0].Name, "Scene Physics");
+	EXPECT_EQ(entries[0].Calls, 2u);
+	EXPECT_NEAR(entries[0].TotalMs, 3.0f, 1e-5f);
+}
+

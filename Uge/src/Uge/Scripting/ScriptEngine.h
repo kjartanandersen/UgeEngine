@@ -113,12 +113,12 @@ namespace Uge
 		 * @warning No type checking: reading as the wrong `T` reinterprets the raw bytes.
 		 */
 		template<typename T>
-		T GetValue()
+		T GetValue() const
 		{
 			static_assert(sizeof(T) <= 16, "Type too large!");
-			return *(T*)m_dataBuffer;
-			
-
+			T value;
+			memcpy(&value, m_dataBuffer, sizeof(T));
+			return value;
 		}
 
 		/**
@@ -220,6 +220,8 @@ namespace Uge
 	 * Created by Uge::ScriptEngine::OnCreateEntity when the scene starts running. It caches
 	 * the `OnCreate` and `OnUpdate` method pointers up front so the per-frame call does not
 	 * pay for a method lookup.
+	 * The managed object is held through a strong GC handle. Mono doesn't scan native memory,
+	 * so a plain pointer would neither keep the object alive nor follow it when the collector moves it.
 	 */
 	class ScriptInstance
 	{
@@ -231,6 +233,14 @@ namespace Uge
 		 * @param entity Entity this script is attached to.
 		 */
 		ScriptInstance(Ref<ScriptClass> scriptClass, Entity entity);
+
+		/** @brief Releases the GC handle, so Mono can collect the managed object. */
+		~ScriptInstance();
+
+		/** @brief Not copyable: both copies would free the same GC handle. */
+		ScriptInstance(const ScriptInstance&) = delete;
+		/** @brief Not copyable: both copies would free the same GC handle. */
+		ScriptInstance& operator=(const ScriptInstance&) = delete;
 
 		/** @brief Calls the script's `OnCreate`, once, when the scene starts. */
 		void InvokeOnCreate();
@@ -283,9 +293,10 @@ namespace Uge
 
 		/**
 		 * @brief The underlying managed object.
-		 * @return The `MonoObject` this instance wraps.
+		 * @return The `MonoObject` this instance wraps. Don't keep it: the collector can move the object,
+		 * so ask again each time.
 		 */
-		MonoObject* GetManagedMonoObject() { return m_instance; }
+		MonoObject* GetManagedMonoObject();
 	
 	private:
 
@@ -295,7 +306,7 @@ namespace Uge
 
 	private:
 		Ref<ScriptClass> m_scriptClass;
-		MonoObject* m_instance = nullptr;
+		uint32_t m_gcHandle = 0;				///< Strong GC handle that keeps the managed object alive.
 		MonoMethod* m_constructor = nullptr;
 		MonoMethod* m_onCreateMethod = nullptr;
 		MonoMethod* m_onUpdateMethod = nullptr;
@@ -339,6 +350,7 @@ namespace Uge
 		 * @return `true` on success.
 		 */
 		static bool LoadAssembly(const std::filesystem::path& filePath);
+
 		/**
 		 * @brief Loads the project's script assembly and reflects its entity classes.
 		 * @param filePath Path to the project's script DLL.
@@ -360,17 +372,23 @@ namespace Uge
 		 * @return The class, or null if it is not in the loaded assembly.
 		 */
 		static Ref<ScriptClass> GetEntityClass(const std::string& name);
+
 		/**
 		 * @brief Every class deriving from the script core's `Entity`.
 		 * @return Map from fully qualified name to class; populates the editor's script picker.
 		 */
 		static std::unordered_map<std::string, Ref<ScriptClass>> GetEntityClasses();
+
 		/**
-		 * @brief The stored field values for an entity's script.
-		 * @param entityID Entity to look up.
-		 * @return Mutable reference to its field map, created empty if it does not exist.
-		 */
-		static ScriptFieldMap& GetScriptFieldMap(UUID entityID);
+		* @brief The stored field values for an entity's script.
+		* @param entityID Entity to look up.
+		* @return Its field map, created empty if it does not exist. Null before Init() or
+		* after Shutdown(), when there is nowhere to store values.
+		*
+		* Values are kept by name and type even while their class isn't loaded, so a scene
+		* saved before its scripts are built keeps them.
+		*/
+		static ScriptFieldMap* GetScriptFieldMap(UUID entityID);
 
 		/**
 		 * @brief Binds the engine to a scene entering play mode.
@@ -381,13 +399,14 @@ namespace Uge
 		static void OnRuntimeStop();
 
 		/**
-		 * @brief Instantiates an entity's script and calls its `OnCreate`.
+		 * @brief Instantiates an entity's script and calls its `OnCreate`. If the class doesn't exist,
+		 * logs one warning naming the entity and class, and creates nothing.
 		 * @param entity Entity carrying a Uge::ScriptComponent.
 		 */
 		static void OnCreateEntity(Entity entity);
 
 		/**
-		 * @brief Calls an entity script's `OnUpdate`.
+		 * @brief Calls an entity script's `OnUpdate`. Does nothing for an entity without an instance.
 		 * @param entity Entity whose script should tick.
 		 * @param ts Frame delta time.
 		 */
@@ -448,9 +467,23 @@ namespace Uge
 	{
 
 		/**
+		* @brief Maps the name Mono gives a managed type onto the engine's field types.
+		* @param typeName A type name as `mono_type_get_name` returns it, such as `System.Int32`.
+		* @return The matching type, or `None` for a type the engine can't store; that case
+		* is logged as a warning.
+		*
+		* The names are .NET's, not C#'s keywords: `int` is `System.Int32`, and `float` is
+		* `System.Single`.
+		*/
+		ScriptFieldType ScriptFieldTypeFromManagedName(const std::string& typeName);
+
+		/**
 		 * @brief Parses a field type from its serialized name.
 		 * @param fieldType String produced by Uge::Utils::ScriptFieldTypeToString.
-		 * @return The matching type; asserts in Debug and returns `None` if unrecognized.
+		 * @return The matching type, or `None` if the name isn't recognized.
+		 *
+		 * The name comes from a scene file, which can hold one this engine doesn't know, from a
+		 * newer version for example. That's data to skip rather than a programming error.
 		 */
 		inline ScriptFieldType ScriptFieldTypeFromString(std::string_view fieldType)
 		{
@@ -459,6 +492,7 @@ namespace Uge
 			if (fieldType == "Double")  return ScriptFieldType::Double;
 			if (fieldType == "Bool")    return ScriptFieldType::Bool;
 			if (fieldType == "Char")    return ScriptFieldType::Char;
+			if (fieldType == "String")  return ScriptFieldType::String;
 			if (fieldType == "Byte")    return ScriptFieldType::Byte;
 			if (fieldType == "Short")   return ScriptFieldType::Short;
 			if (fieldType == "Int")     return ScriptFieldType::Int;
@@ -472,7 +506,6 @@ namespace Uge
 			if (fieldType == "Vector4") return ScriptFieldType::Vector4;
 			if (fieldType == "Entity")  return ScriptFieldType::Entity;
 
-			UG_CORE_ASSERT(false, "Unknown ScriptFieldType");
 			return ScriptFieldType::None;
 		}
 

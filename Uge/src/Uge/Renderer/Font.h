@@ -60,6 +60,9 @@ namespace Uge
 		 */
 		static Ref<Font> GetDefault();
 
+		/** @brief Releases the default font and its atlas texture. */ 
+		static void ResetDefault();
+
 	private:
 		MSDFData* m_data;
 		Ref<Texture2D> m_atlasTexture;

@@ -202,6 +202,27 @@ TEST_F(AssetRegistryTest, MemoryOnlyAssetsAreUsableButNotRegistered)
 	EXPECT_FALSE(Manager().GetMetadata(handle));
 }
 
+TEST_F(AssetRegistryTest, LoadedAssetOfAnotherTypeResolvesToNull)
+{
+	// A scene edited by hand can hold a handle to the wrong kind of asset. Asking for it as
+	// another type gives null rather than a pointer to the wrong object.
+	Uge::Ref<UgeTests::MockTexture2D> texture = Uge::CreateRef<UgeTests::MockTexture2D>();
+	const AssetHandle handle = Manager().AddMemoryOnlyAsset(texture);
+
+	EXPECT_EQ(AssetManager::GetAsset<Scene>(handle), nullptr);
+	EXPECT_EQ(AssetManager::GetAsset<Uge::Texture2D>(handle), texture);
+}
+
+TEST_F(AssetRegistryTest, RegisteredAssetOfAnotherTypeResolvesToNull)
+{
+	// The same for an asset that isn't loaded yet. Asking for the wrong type first leaves
+	// the asset usable as its own type.
+	const AssetHandle handle = Manager().ImportAsset(WriteScene("Scenes/NotATexture.uge"), "NotATexture");
+
+	EXPECT_EQ(AssetManager::GetAsset<Uge::Texture2D>(handle), nullptr);
+	EXPECT_NE(AssetManager::GetAsset<Scene>(handle), nullptr);
+}
+
 TEST_F(AssetRegistryTest, MemoryOnlyAssetsAreNotWrittenToTheRegistryFile)
 {
 	Manager().AddMemoryOnlyAsset(Uge::CreateRef<UgeTests::MockTexture2D>());
@@ -292,6 +313,27 @@ TEST_F(AssetRegistryTest, DeletingAnAssetUnloadsItButKeepsItRegistered)
 	// The scene is still registered and can be resolved again.
 	EXPECT_TRUE(Manager().IsAssetHandleValid(handle));
 	EXPECT_NE(AssetManager::GetAsset<Scene>(handle), nullptr);
+}
+
+TEST_F(AssetRegistryTest, DeletingASceneUnloadsItSoTheFileIsReadAgain)
+{
+	// The editor writes scenes to disk, but GetAsset kept serving the copy it cached on
+	// first load, so reopening a saved scene showed it as it was before the save.
+	const std::filesystem::path relative = WriteScene("Scenes/Level.uge");
+	const AssetHandle handle = Manager().ImportAsset(relative, "Level");
+	ASSERT_NE(AssetManager::GetAsset<Scene>(handle), nullptr);
+
+	// What the editor's Save does: write a changed scene over the file.
+	Uge::Ref<Scene> edited = Uge::CreateRef<Scene>();
+	edited->CreateEntity("Added in the editor");
+	Uge::SceneSerializer(edited).Serialize(Project::GetAssetFileSystemPath(relative));
+
+	Manager().DeleteAsset(handle);
+	EXPECT_FALSE(Manager().IsAssetLoaded(handle));
+
+	Uge::Ref<Scene> reloaded = AssetManager::GetAsset<Scene>(handle);
+	ASSERT_NE(reloaded, nullptr);
+	EXPECT_TRUE(reloaded->FindEntityByName("Added in the editor"));
 }
 
 TEST_F(AssetRegistryTest, ResolvingAnAssetWhoseFileIsGoneReturnsNull)

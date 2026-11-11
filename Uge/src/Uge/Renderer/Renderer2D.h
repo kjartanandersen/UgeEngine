@@ -275,9 +275,16 @@ namespace Uge
 		static float GetLineWidth();
 
 	private:
-		static void FlushAndReset();
 		static void StartBatch();
 		static void NextBatch();
+
+		/**
+		 * @brief The current batch's slot for a texture, adding the texture if it isn't bound yet.
+		 * @param texture Texture to look up.
+		 * @return The slot index, as the float the vertex format stores. When every slot is
+		 *         taken, the batch is drawn and a new one started first.
+		 */
+		static float GetTextureSlot(const Ref<Texture2D>& texture);
 
 
 	};

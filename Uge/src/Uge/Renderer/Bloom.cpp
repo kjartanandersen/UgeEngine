@@ -95,6 +95,11 @@ namespace Uge
 		}
 	}
 
+	void Bloom::Shutdown()
+	{
+		s_bloomData = BloomData();
+	}
+
 	void Bloom::Render(const Ref<Framebuffer>& scene, const RenderSettings& settings)
 	{
 		UG_PROFILE_FUNCTION();

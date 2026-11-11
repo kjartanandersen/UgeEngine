@@ -58,8 +58,7 @@ namespace Uge
 		shader->Bind();
 
 		Ref<Material> material;
-		if (m_material && AssetManager::IsAssetHandleValid(m_material) &&
-			AssetManager::GetAssetType(m_material) == AssetType::Material)
+		if (m_material)
 		{
 			material = AssetManager::GetAsset<Material>(m_material);
 		}

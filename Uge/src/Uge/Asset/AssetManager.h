@@ -25,11 +25,8 @@ namespace Uge
 	 * asset-related can run before a project is opened.
 	 *
 	 * @code
-	 * if (AssetManager::IsAssetHandleValid(component.Mesh))
-	 * {
-	 *     auto model = AssetManager::GetAsset<Model>(component.Mesh);
+	 * if (auto model = AssetManager::GetAsset<Model>(component.Mesh))
 	 *     model->Draw(transform, (int)entity);
-	 * }
 	 * @endcode
 	 */
 	class AssetManager
@@ -39,21 +36,26 @@ namespace Uge
 
 		/**
 		 * @brief Resolves a handle to a typed asset, loading it if necessary.
-		 * @tparam T Expected asset type, such as Uge::Texture2D or Uge::Model.
+		 * @tparam T Expected asset type, such as Uge::Texture2D or Uge::Model. It must
+		 * provide a static `GetStaticType()`.
 		 * @param handle Asset to fetch.
-		 * @return The asset cast to `T`, or null if the handle is unknown.
+		 * @return The asset, or null if the handle is unknown, its import failed, or it
+		 * names an asset of a type other than `T`.
 		 *
-		 * @warning The cast is unchecked. Passing a `T` that does not match the asset's real
-		 * type yields an invalid pointer rather than null — test with GetAssetType() first
-		 * when the type is not certain.
+		 * There is no need to call IsAssetHandleValid() or GetAssetType() first: test the
+		 * result for null. A handle of another type still loads the asset it names, as its
+		 * own type.
 		 */
 		template<typename T>
 		static Ref<T> GetAsset(AssetHandle handle)
 		{
-			// TODO: Validate asset handle
 			Ref<Asset> asset = Project::GetActive()->GetAssetManager()->GetAsset(handle);
-			return std::static_pointer_cast<T>(asset);
+			if (!asset || asset->GetType() != T::GetStaticType())
+			{
+				return nullptr;
+			}
 
+			return std::static_pointer_cast<T>(asset);
 		}
 
 		/**

@@ -65,9 +65,10 @@ namespace Uge
 	 * @brief Polymorphic base for everything the asset system manages.
 	 * @ingroup group_asset
 	 *
-	 * Subclassed by Uge::Scene, Uge::Texture2D, Uge::Model and Uge::Material. Each
-	 * subclass provides a static `GetStaticType()` alongside the virtual GetType(), which
-	 * is what lets Uge::AssetManager::GetAsset check the type at compile time.
+	 * Subclassed by Uge::Scene, Uge::Texture2D, Uge::Model, Uge::Material and
+	 * Uge::Environment. Each subclass provides a static `GetStaticType()` alongside the
+	 * virtual GetType(); Uge::AssetManager::GetAsset compares the two to reject a handle
+	 * of the wrong type.
 	 */
 	class Asset
 	{

@@ -124,7 +124,12 @@ namespace Uge
 		break;                                         \
 	}
 
-
+	// Whether a script field's value can be written to and read from a scene file. None
+	// and String have no value to store yet.
+	static bool IsSerializableFieldType(ScriptFieldType type)
+	{
+		return type != ScriptFieldType::None && type != ScriptFieldType::String;
+	}
 
 	YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v)
 	{
@@ -145,6 +150,35 @@ namespace Uge
 		out << YAML::Flow;
 		out << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
 		return out;
+	}
+
+	// Reads an optional bool into `out`, leaving it untouched when the key is absent.
+	// Accepts every spelling yaml-cpp understands (true/false, yes/no, on/off, y/n) and also
+	// 1/0, which the first mesh-collider writer (6e51012) emitted through (int) casts.
+	// Anything else keeps the current value and warns: one bad flag is not worth losing
+	// the whole scene over.
+	static void ReadBool(const YAML::Node& node, const char* key, bool& out)
+	{
+		const YAML::Node value = node[key];
+		if (!value)
+		{
+			return;
+		}
+
+		if (YAML::convert<bool>::decode(value, out))
+		{
+			return;
+		}
+
+		int number = 0;
+		if (YAML::convert<int>::decode(value, number))
+		{
+			out = number != 0;
+			return;
+		}
+
+		UG_CORE_WARN("SceneSerializer: '{0}' is not a boolean ({1}); keeping {2}",
+			key, value.IsScalar() ? value.Scalar() : std::string("<not a scalar>"), out);
 	}
 
 	static void SerializeEntity(YAML::Emitter& out, Entity entity)
@@ -221,54 +255,63 @@ namespace Uge
 
 			out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.ClassName;
 
-			// Fields
+			// Fields come from the values stored for the entity rather than from its class,
+			// so they're written even when the class can't be found: a scene opened before its
+			// scripts are built keeps its field values when it's saved.
 			Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(scriptComponent.ClassName);
-			const auto& fields = entityClass->GetFields();
-			if (fields.size() > 0)
+			ScriptFieldMap* entityFields = ScriptEngine::GetScriptFieldMap(entity.GetUUID());
+
+			if (entityFields && !entityFields->empty())
 			{
 				out << YAML::Key << "ScriptFields" << YAML::Value;
-
-				auto& entityFields = ScriptEngine::GetScriptFieldMap(entity.GetUUID());
 				out << YAML::BeginSeq;
-				for (const auto& [name, field] : fields)
+				for (const auto& [name, scriptField] : *entityFields)
 				{
-					if (entityFields.find(name) == entityFields.end())
+					// With the class loaded, a value for a field it no longer declares is
+					// dropped. Without it there's no telling, so every value is kept.
+					if (entityClass && entityClass->GetFields().find(name) == entityClass->GetFields().end())
 					{
 						continue;
 					}
 
+					const ScriptFieldType type = scriptField.Field.Type;
+
+					// A type with no case in the switch below would be written as an empty "Data:".
+					if (!IsSerializableFieldType(type))
+					{
+						continue;
+					}
 
 					out << YAML::BeginMap; // ScriptField
 					out << YAML::Key << "Name" << YAML::Value << name;
-					out << YAML::Key << "Type" << YAML::Value << Utils::ScriptFieldTypeToString(field.Type);
+					out << YAML::Key << "Type" << YAML::Value << Utils::ScriptFieldTypeToString(type);
 
 					out << YAML::Key << "Data" << YAML::Value;
-					ScriptFieldInstance& scriptField = entityFields.at(name);
-
-					switch (field.Type)
+					switch (type)
 					{
-						WRITE_SCRIPT_FIELD(Float,	float		);
-						WRITE_SCRIPT_FIELD(Double,	double		);
-						WRITE_SCRIPT_FIELD(Bool,	bool		);
-						WRITE_SCRIPT_FIELD(Char,	char		);
-						WRITE_SCRIPT_FIELD(Byte,	int8_t		);
-						WRITE_SCRIPT_FIELD(Short,	int16_t		);
-						WRITE_SCRIPT_FIELD(Int,		int32_t		);
-						WRITE_SCRIPT_FIELD(Long,	int64_t		);
-						WRITE_SCRIPT_FIELD(UByte,	uint8_t		);
-						WRITE_SCRIPT_FIELD(UShort,	uint16_t	);
-						WRITE_SCRIPT_FIELD(UInt,	uint32_t	);
-						WRITE_SCRIPT_FIELD(ULong,	uint64_t	);
-						WRITE_SCRIPT_FIELD(Vector2, glm::vec2	);
-						WRITE_SCRIPT_FIELD(Vector3, glm::vec3	);
-						WRITE_SCRIPT_FIELD(Vector4, glm::vec4	);
-						WRITE_SCRIPT_FIELD(Entity,	UUID		);
+						WRITE_SCRIPT_FIELD(Float,	float);
+						WRITE_SCRIPT_FIELD(Double,	double);
+						WRITE_SCRIPT_FIELD(Bool,	bool);
+						WRITE_SCRIPT_FIELD(Char,	char);
+						WRITE_SCRIPT_FIELD(Byte,	int8_t);
+						WRITE_SCRIPT_FIELD(Short,	int16_t);
+						WRITE_SCRIPT_FIELD(Int,		int32_t);
+						WRITE_SCRIPT_FIELD(Long,	int64_t);
+						WRITE_SCRIPT_FIELD(UByte,	uint8_t);
+						WRITE_SCRIPT_FIELD(UShort,	uint16_t);
+						WRITE_SCRIPT_FIELD(UInt,	uint32_t);
+						WRITE_SCRIPT_FIELD(ULong,	uint64_t);
+						WRITE_SCRIPT_FIELD(Vector2, glm::vec2);
+						WRITE_SCRIPT_FIELD(Vector3, glm::vec3);
+						WRITE_SCRIPT_FIELD(Vector4, glm::vec4);
+						WRITE_SCRIPT_FIELD(Entity,	UUID);
 					}
-					out << YAML::EndMap; // ScriptFields
-
+					out << YAML::EndMap; // ScriptField
 				}
 				out << YAML::EndSeq;
 			}
+
+			
 			
 
 			out << YAML::EndMap; // ScriptComponent
@@ -499,7 +542,7 @@ namespace Uge
 	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
 		: m_scene(scene) {}
 
-	void SceneSerializer::Serialize(const std::filesystem::path& filepath)
+	bool SceneSerializer::Serialize(const std::filesystem::path& filepath)
 	{
 
 		YAML::Emitter out;
@@ -512,7 +555,7 @@ namespace Uge
 			Entity entity = { entityID, m_scene.get() };
 			if (!entity)
 			{
-				return;
+				continue;
 			}
 
 			SerializeEntity(out, entity);
@@ -522,8 +565,38 @@ namespace Uge
 		out << YAML::EndSeq;
 		out << YAML::EndMap;
 
-		std::ofstream fout(filepath);
+		if (!out.good())
+		{
+			UG_CORE_ERROR("Failed to save scene '{0}': {1}", filepath.string(), out.GetLastError());
+			return false;
+		}
+
+		// Written beside the scene first and then moved over it, so a save that fails part-way
+		// (a full disk, a crash, the file held open elsewhere) leaves the previous version whole.
+		std::filesystem::path tempPath = filepath;
+		tempPath += ".tmp";
+
+		std::ofstream fout(tempPath);
 		fout << out.c_str();
+		fout.close();
+
+		std::error_code error;
+		if (fout.fail())
+		{
+			UG_CORE_ERROR("Failed to save scene '{0}': couldn't write '{1}'", filepath.string(), tempPath.string());
+			std::filesystem::remove(tempPath, error);
+			return false;
+		}
+
+		std::filesystem::rename(tempPath, filepath, error);
+		if (error)
+		{
+			UG_CORE_ERROR("Failed to save scene '{0}': {1}", filepath.string(), error.message());
+			std::filesystem::remove(tempPath, error);
+			return false;
+		}
+
+		return true;
 
 	}
 
@@ -551,92 +624,99 @@ namespace Uge
 			UG_CORE_ERROR("Failed to load .uge file {0}\n	{1}", filepath.string(), e.what());
 			return false;
 		}
-		if (!data["Scene"])
+		// Which entity was being read when something threw, so the error can name it.
+		uint64_t currentEntityID = 0;
+		std::string currentEntityName;
+
+		try
 		{
-			return false;
-		}
-
-
-		std::string sceneName = data["Scene"].as<std::string>();
-		UG_CORE_TRACE("Deserializing scene '{0}'", sceneName);
-
-		m_scene->SetName(sceneName);
-
-		auto entities = data["Entities"];
-		if (entities)
-		{
-
-			for (auto entity : entities)
+			if (!data["Scene"])
 			{
-				uint64_t uuid = entity["Entity"].as<uint64_t>();
+				return false;
+			}
 
-				std::string name;
-#pragma region TagComponent
-				auto ytgc = entity["TagComponent"];		// Tag Component
-				if (ytgc)
+
+			std::string sceneName = data["Scene"].as<std::string>();
+			UG_CORE_TRACE("Deserializing scene '{0}'", sceneName);
+
+			m_scene->SetName(sceneName);
+
+			auto entities = data["Entities"];
+			if (entities)
+			{
+
+				for (auto entity : entities)
 				{
-					name = ytgc["Tag"].as<std::string>();
-				}
+					uint64_t uuid = entity["Entity"].as<uint64_t>();
+					currentEntityID = uuid;
+
+					std::string name;
+#pragma region TagComponent
+					auto ytgc = entity["TagComponent"];		// Tag Component
+					if (ytgc)
+					{
+						name = ytgc["Tag"].as<std::string>();
+					}
 #pragma endregion
 
-				UG_CORE_TRACE("Deserialized entity with ID {0} and name {1}", uuid, name);
+					UG_CORE_TRACE("Deserialized entity with ID {0} and name {1}", uuid, name);
 
-				Entity deserializedEntity = m_scene->CreateEntityWithUUID(uuid, name);
+					currentEntityName = name;
+					Entity deserializedEntity = m_scene->CreateEntityWithUUID(uuid, name);
 
 #pragma region TransformComponent
-				auto ytc = entity["TransformComponent"];	// Tranform Component
-				if (ytc)
-				{
+					auto ytc = entity["TransformComponent"];	// Tranform Component
+					if (ytc)
+					{
 
-					auto& tc = deserializedEntity.GetComponent<TransformComponent>();
-					tc.Translation = ytc["Translation"].as<glm::vec3>();
-					tc.Rotation = ytc["Rotation"].as<glm::vec3>();
-					tc.Scale = ytc["Scale"].as<glm::vec3>();
+						auto& tc = deserializedEntity.GetComponent<TransformComponent>();
+						tc.Translation = ytc["Translation"].as<glm::vec3>();
+						tc.Rotation = ytc["Rotation"].as<glm::vec3>();
+						tc.Scale = ytc["Scale"].as<glm::vec3>();
 
-				}
+					}
 #pragma endregion
 
 #pragma region CameraComponent
-				auto ycc = entity["CameraComponent"];	// Camera Component
-				if (ycc)
-				{
-					UG_CORE_TRACE("Deserializing Camera Component");
-					auto& cc = deserializedEntity.AddComponent<CameraComponent>();
+					auto ycc = entity["CameraComponent"];	// Camera Component
+					if (ycc)
+					{
+						UG_CORE_TRACE("Deserializing Camera Component");
+						auto& cc = deserializedEntity.AddComponent<CameraComponent>();
 
-					auto& cameraProps = ycc["Camera"];
-					cc.Cam.SetProjectionType((SceneCamera::ProjectionType)cameraProps["ProjectionType"].as<int>());
+						auto& cameraProps = ycc["Camera"];
+						cc.Cam.SetProjectionType((SceneCamera::ProjectionType)cameraProps["ProjectionType"].as<int>());
 
-					cc.Cam.SetPerspVerticalFOV(	cameraProps["PerspectiveFOV"	].as<float>());
-					cc.Cam.SetPerspNearClip(	cameraProps["PerspectiveNear"	].as<float>());
-					cc.Cam.SetPerspFarClip(		cameraProps["PerspectiveFar"	].as<float>());
+						cc.Cam.SetPerspVerticalFOV(cameraProps["PerspectiveFOV"].as<float>());
+						cc.Cam.SetPerspNearClip(cameraProps["PerspectiveNear"].as<float>());
+						cc.Cam.SetPerspFarClip(cameraProps["PerspectiveFar"].as<float>());
 
-					cc.Cam.SetOrthoSize(		cameraProps["OrthographicSize"	].as<float>());
-					cc.Cam.SetOrthoNearClip(	cameraProps["OrthographicNear"	].as<float>());
-					cc.Cam.SetOrthoFarClip(		cameraProps["OrthographicFar"	].as<float>());
+						cc.Cam.SetOrthoSize(cameraProps["OrthographicSize"].as<float>());
+						cc.Cam.SetOrthoNearClip(cameraProps["OrthographicNear"].as<float>());
+						cc.Cam.SetOrthoFarClip(cameraProps["OrthographicFar"].as<float>());
 
-					cc.Primary = ycc["Primary"].as<bool>();
-					cc.FixedAspectRatio = ycc["FixedAspectRatio"].as<bool>();
-				}
+						ReadBool(ycc, "Primary", cc.Primary);
+						ReadBool(ycc, "FixedAspectRatio", cc.FixedAspectRatio);
+					}
 #pragma endregion
 
 #pragma region ScriptComponent
-				auto ysc = entity["ScriptComponent"];
-				if (ysc)
-				{
-					UG_CORE_TRACE("Deserializing Script Component");
-
-					auto& sc = deserializedEntity.AddComponent<ScriptComponent>();
-
-					sc.ClassName = ysc["ClassName"].as<std::string>();
-
-					auto scriptFields = ysc["ScriptFields"];
-					if (scriptFields)
+					auto ysc = entity["ScriptComponent"];
+					if (ysc)
 					{
-						Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(sc.ClassName);
-						if (entityClass)
+						UG_CORE_TRACE("Deserializing Script Component");
+
+						auto& sc = deserializedEntity.AddComponent<ScriptComponent>();
+
+						sc.ClassName = ysc["ClassName"].as<std::string>();
+
+						// Values are kept even when the class can't be found, under the name and
+						// type the file gives, so saving the scene again writes them back.
+						auto scriptFields = ysc["ScriptFields"];
+						ScriptFieldMap* entityFields = scriptFields ? ScriptEngine::GetScriptFieldMap(deserializedEntity.GetUUID()) : nullptr;
+						if (entityFields)
 						{
-							const auto& fields = entityClass->GetFields();
-							auto& entityFields = ScriptEngine::GetScriptFieldMap(deserializedEntity.GetUUID());
+							Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(sc.ClassName);
 
 							for (auto scriptField : scriptFields)
 							{
@@ -644,15 +724,40 @@ namespace Uge
 								std::string typeString = scriptField["Type"].as<std::string>();
 								ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
 
-								ScriptFieldInstance& fieldInstance = entityFields[name];
-
-								// TODO: turn this assert into log warning
-								// UG_CORE_ASSERT(fields.find(name) != fields.end());
-
-								if (fields.find(name) == fields.end())
+								// A type this engine can't keep a value of, such as a string, is skipped.
+								if (!IsSerializableFieldType(type))
+								{
 									continue;
+								}
 
-								fieldInstance.Field = fields.at(name);
+								ScriptField field;
+								field.Name = name;
+								field.Type = type;
+
+								if (entityClass)
+								{
+									// A value the class can no longer take is dropped, and the field starts
+									// from its default: the class doesn't declare it any more, or its type
+									// has changed since the scene was saved.
+									auto it = entityClass->GetFields().find(name);
+									if (it == entityClass->GetFields().end())
+									{
+										UG_CORE_WARN("{0} on '{1}' no longer has a field {2}, so its saved value is dropped",
+											sc.ClassName, deserializedEntity.GetName(), name);
+										continue;
+									}
+									if (it->second.Type != type)
+									{
+										UG_CORE_WARN("{0}.{1} on '{2}' is now {3} but was saved as {4}, so its saved value is dropped",
+											sc.ClassName, name, deserializedEntity.GetName(),
+											Utils::ScriptFieldTypeToString(it->second.Type), typeString);
+										continue;
+									}
+									field = it->second;
+								}
+
+								ScriptFieldInstance& fieldInstance = (*entityFields)[name];
+								fieldInstance.Field = field;
 
 								switch (type)
 								{
@@ -675,221 +780,231 @@ namespace Uge
 								}
 							}
 						}
-						
-					}
 
-				}
+					}
 #pragma endregion
 
 #pragma region SpriteRendererComponent
-				auto ysrc = entity["SpriteRendererComponent"];		// Sprite Renderer Component
-				if (ysrc)
-				{
-					UG_CORE_TRACE("Deserializing Sprite Renderer Component");
-
-					auto& src = deserializedEntity.AddComponent<SpriteRendererComponent>();
-					src.Color = ysrc["Color"].as<glm::vec4>();
-
-					if (ysrc["TextureHandle"])
+					auto ysrc = entity["SpriteRendererComponent"];		// Sprite Renderer Component
+					if (ysrc)
 					{
-						src.Texture = ysrc["TextureHandle"].as<AssetHandle>();
-					}
-					if (ysrc["TilingFactor"])
-					{
-						src.TilingFactor = ysrc["TilingFactor"].as<float>();
+						UG_CORE_TRACE("Deserializing Sprite Renderer Component");
+
+						auto& src = deserializedEntity.AddComponent<SpriteRendererComponent>();
+						src.Color = ysrc["Color"].as<glm::vec4>();
+
+						if (ysrc["TextureHandle"])
+						{
+							src.Texture = ysrc["TextureHandle"].as<AssetHandle>();
+						}
+						if (ysrc["TilingFactor"])
+						{
+							src.TilingFactor = ysrc["TilingFactor"].as<float>();
+
+						}
 
 					}
-
-				}
 #pragma endregion
 
 #pragma region MeshComponent
-				auto ymc = entity["MeshComponent"];		// Mesh Component
-				if (ymc)
-				{
-					UG_CORE_TRACE("Deserializing Mesh Component");
+					auto ymc = entity["MeshComponent"];		// Mesh Component
+					if (ymc)
+					{
+						UG_CORE_TRACE("Deserializing Mesh Component");
 
-					AssetHandle meshAsset = ymc["MeshHandle"] ? ymc["MeshHandle"].as<AssetHandle>() : AssetHandle();
-					// std::filesystem::path path = Project::GetAssetFileSystemPath(meshPath);
-					deserializedEntity.AddComponent<MeshComponent>(meshAsset);
-				}
+						AssetHandle meshAsset = ymc["MeshHandle"] ? ymc["MeshHandle"].as<AssetHandle>() : AssetHandle(0);
+						// std::filesystem::path path = Project::GetAssetFileSystemPath(meshPath);
+						deserializedEntity.AddComponent<MeshComponent>(meshAsset);
+					}
 #pragma endregion
 
 #pragma region SkyLightComponent
-				auto yslc = entity["SkyLightComponent"];	// Sky Light Component
-				if (yslc)
-				{
-					UG_CORE_TRACE("Deserializing Sky Light Component");
-
-					auto& src = deserializedEntity.AddComponent<SkyLightComponent>();
-
-					if (yslc["EnvironmentHandle"])
+					auto yslc = entity["SkyLightComponent"];	// Sky Light Component
+					if (yslc)
 					{
-						src.Environment = yslc["EnvironmentHandle"].as<AssetHandle>();
+						UG_CORE_TRACE("Deserializing Sky Light Component");
+
+						auto& src = deserializedEntity.AddComponent<SkyLightComponent>();
+
+						if (yslc["EnvironmentHandle"])
+						{
+							src.Environment = yslc["EnvironmentHandle"].as<AssetHandle>();
+						}
+						if (yslc["Intensity"])
+						{
+							src.Intensity = yslc["Intensity"].as<float>();
+						}
 					}
-					if (yslc["Intensity"])
-					{
-						src.Intensity = yslc["Intensity"].as<float>();
-					}
-				}
 #pragma endregion
 
 #pragma region DirectionalLightComponent
-				auto ydlc = entity["DirectionalLightComponent"];	// Directional Light Component
-				if (ydlc)
-				{
-					UG_CORE_TRACE("Deserializing Directional Light Component");
-
-					auto& src = deserializedEntity.AddComponent<DirectionalLightComponent>();
-
-					if (ydlc["Color"])
+					auto ydlc = entity["DirectionalLightComponent"];	// Directional Light Component
+					if (ydlc)
 					{
-						src.Color = ydlc["Color"].as<glm::vec3>();
+						UG_CORE_TRACE("Deserializing Directional Light Component");
+
+						auto& src = deserializedEntity.AddComponent<DirectionalLightComponent>();
+
+						if (ydlc["Color"])
+						{
+							src.Color = ydlc["Color"].as<glm::vec3>();
+						}
+						if (ydlc["Intensity"])
+						{
+							src.Intensity = ydlc["Intensity"].as<float>();
+						}
 					}
-					if (ydlc["Intensity"])
-					{
-						src.Intensity = ydlc["Intensity"].as<float>();
-					}
-				}
 #pragma endregion
 
 
 #pragma region RigidbodyComponent
-				auto yrb = entity["RigidbodyComponent"];		// Rigid Body Component
-				if (yrb)
-				{
-					UG_CORE_TRACE("Deserializing Rigidbody Component");
+					auto yrb = entity["RigidbodyComponent"];		// Rigid Body Component
+					if (yrb)
+					{
+						UG_CORE_TRACE("Deserializing Rigidbody Component");
 
-					auto& rb = deserializedEntity.AddComponent<RigidbodyComponent>();
-					if (yrb["BodyType"])			rb.Type = (BodyType)yrb["BodyType"].as<int>();
-					if (yrb["Layer"])				rb.Layer = (PhysicsLayer)yrb["Layer"].as<int>();
-					if (yrb["Mass"])				rb.Mass = yrb["Mass"].as<float>();
-					if (yrb["LinearDamping"])		rb.LinearDamping = yrb["LinearDamping"].as<float>();
-					if (yrb["AngularDamping"])		rb.AngularDamping = yrb["AngularDamping"].as<float>();
-					if (yrb["GravityFactor"])		rb.GravityFactor = yrb["GravityFactor"].as<float>();
-					if (yrb["FixedRotation"])		rb.FixedRotation = yrb["FixedRotation"].as<bool>();
-					
-				}
+						auto& rb = deserializedEntity.AddComponent<RigidbodyComponent>();
+						if (yrb["BodyType"])			rb.Type = (BodyType)yrb["BodyType"].as<int>();
+						if (yrb["Layer"])				rb.Layer = (PhysicsLayer)yrb["Layer"].as<int>();
+						if (yrb["Mass"])				rb.Mass = yrb["Mass"].as<float>();
+						if (yrb["LinearDamping"])		rb.LinearDamping = yrb["LinearDamping"].as<float>();
+						if (yrb["AngularDamping"])		rb.AngularDamping = yrb["AngularDamping"].as<float>();
+						if (yrb["GravityFactor"])		rb.GravityFactor = yrb["GravityFactor"].as<float>();
+
+						ReadBool(yrb, "FixedRotation", rb.FixedRotation);
+
+					}
 #pragma endregion
 
 #pragma region BoxColliderComponent
-				auto ybcc = entity["BoxColliderComponent"];		// Box Collider Component
-				if (ybcc)
-				{
-					auto& bc = deserializedEntity.AddComponent<BoxColliderComponent>();
-					if (ybcc["HalfExtents"])					bc.HalfExtents	= ybcc["HalfExtents"].as<glm::vec3>();
-					if (ybcc["IsTrigger"])						bc.IsTrigger	= ybcc["IsTrigger"].as<bool>();
-					if (ybcc["Offset"])							bc.Offset		= ybcc["Offset"].as<glm::vec3>();
-
-					if (ybcc["Material"])
+					auto ybcc = entity["BoxColliderComponent"];		// Box Collider Component
+					if (ybcc)
 					{
-						PhysicsMaterial material;
-						auto& ybccm = ybcc["Material"];
-						if (ybccm["Density"])					material.Density = ybccm["Density"].as<float>();
-						if (ybccm["Friction"])					material.Friction = ybccm["Friction"].as<float>();
-						if (ybccm["Restitution"])				material.Restitution = ybccm["Restitution"].as<float>();
+						auto& bc = deserializedEntity.AddComponent<BoxColliderComponent>();
+						if (ybcc["HalfExtents"])					bc.HalfExtents = ybcc["HalfExtents"].as<glm::vec3>();
 
-						bc.Material = material;
+						ReadBool(ybcc, "IsTrigger", bc.IsTrigger);
+
+						if (ybcc["Offset"])							bc.Offset = ybcc["Offset"].as<glm::vec3>();
+
+						if (ybcc["Material"])
+						{
+							PhysicsMaterial material;
+							auto& ybccm = ybcc["Material"];
+							if (ybccm["Density"])					material.Density = ybccm["Density"].as<float>();
+							if (ybccm["Friction"])					material.Friction = ybccm["Friction"].as<float>();
+							if (ybccm["Restitution"])				material.Restitution = ybccm["Restitution"].as<float>();
+
+							bc.Material = material;
+						}
+
+
 					}
-
-
-				}
 #pragma endregion
 
 #pragma region SphereColliderComponent
-				auto yscc = entity["SphereColliderComponent"];		// Sphere Collider Component
-				if (yscc)
-				{
-					auto& scc = deserializedEntity.AddComponent<SphereColliderComponent>();
-					if (yscc["IsTrigger"])						scc.IsTrigger = yscc["IsTrigger"].as<bool>();
-					if (yscc["Offset"])							scc.Offset = yscc["Offset"].as<glm::vec3>();
-					if (yscc["Radius"])							scc.Radius = yscc["Radius"].as<float>();
-
-
-					if (yscc["Material"])
+					auto yscc = entity["SphereColliderComponent"];		// Sphere Collider Component
+					if (yscc)
 					{
-						PhysicsMaterial material;
-						auto& ysccm = yscc["Material"];
-						if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
-						if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
-						if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
+						auto& scc = deserializedEntity.AddComponent<SphereColliderComponent>();
+						ReadBool(yscc, "IsTrigger", scc.IsTrigger);
+						if (yscc["Offset"])							scc.Offset = yscc["Offset"].as<glm::vec3>();
+						if (yscc["Radius"])							scc.Radius = yscc["Radius"].as<float>();
 
-						scc.Material = material;
+
+						if (yscc["Material"])
+						{
+							PhysicsMaterial material;
+							auto& ysccm = yscc["Material"];
+							if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
+							if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
+							if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
+
+							scc.Material = material;
+						}
+
 					}
-
-				}
 #pragma endregion
 
 #pragma region CapsuleColliderComponent
-				auto yccc = entity["CapsuleColliderComponent"];		// Capsule Collider Component
-				if (yccc)
-				{
-
-					auto& ccc = deserializedEntity.AddComponent<CapsuleColliderComponent>();
-					if (yccc["HalfHeight"])						ccc.HalfHeight = yccc["HalfHeight"].as<float>();
-					if (yccc["IsTrigger"])						ccc.IsTrigger = yccc["IsTrigger"].as<bool>();
-					if (yccc["Offset"])							ccc.Offset = yccc["Offset"].as<glm::vec3>();
-					if (yccc["Radius"])							ccc.Radius = yccc["Radius"].as<float>();
-
-					if (yccc["Material"])
+					auto yccc = entity["CapsuleColliderComponent"];		// Capsule Collider Component
+					if (yccc)
 					{
-						PhysicsMaterial material;
-						auto& ysccm = yccc["Material"];
-						if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
-						if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
-						if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
 
-						ccc.Material = material;
+						auto& ccc = deserializedEntity.AddComponent<CapsuleColliderComponent>();
+						if (yccc["HalfHeight"])						ccc.HalfHeight = yccc["HalfHeight"].as<float>();
+						ReadBool(yccc, "IsTrigger", ccc.IsTrigger);
+						if (yccc["Offset"])							ccc.Offset = yccc["Offset"].as<glm::vec3>();
+						if (yccc["Radius"])							ccc.Radius = yccc["Radius"].as<float>();
+
+						if (yccc["Material"])
+						{
+							PhysicsMaterial material;
+							auto& ysccm = yccc["Material"];
+							if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
+							if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
+							if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
+
+							ccc.Material = material;
+						}
+
 					}
-
-				}
 #pragma endregion
 
 #pragma region MeshColliderComponent
-				auto ymcc = entity["MeshColliderComponent"];		// Mesh Collider Component
-				if (ymcc)
-				{
-
-					auto& mcc = deserializedEntity.AddComponent<MeshColliderComponent>();
-					if (ymcc["Convex"])							mcc.Convex = ymcc["Convex"].as<bool>();
-					if (ymcc["IsTrigger"])						mcc.IsTrigger = ymcc["IsTrigger"].as<bool>();
-					if (ymcc["MeshHandle"])						mcc.Mesh = ymcc["MeshHandle"].as<AssetHandle>();
-
-					if (ymcc["Material"])
+					auto ymcc = entity["MeshColliderComponent"];		// Mesh Collider Component
+					if (ymcc)
 					{
-						PhysicsMaterial material;
-						auto& ysccm = ymcc["Material"];
-						if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
-						if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
-						if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
 
-						mcc.Material = material;
+						auto& mcc = deserializedEntity.AddComponent<MeshColliderComponent>();
+						ReadBool(ymcc, "Convex", mcc.Convex);
+						ReadBool(ymcc, "IsTrigger", mcc.IsTrigger);
+						if (ymcc["MeshHandle"])						mcc.Mesh = ymcc["MeshHandle"].as<AssetHandle>();
+
+						if (ymcc["Material"])
+						{
+							PhysicsMaterial material;
+							auto& ysccm = ymcc["Material"];
+							if (ysccm["Density"])					material.Density = ysccm["Density"].as<float>();
+							if (ysccm["Friction"])					material.Friction = ysccm["Friction"].as<float>();
+							if (ysccm["Restitution"])				material.Restitution = ysccm["Restitution"].as<float>();
+
+							mcc.Material = material;
+						}
+						if (ymcc["Offset"])							mcc.Offset = ymcc["Offset"].as<glm::vec3>();
+
 					}
-					if (ymcc["Offset"])							mcc.Offset = ymcc["Offset"].as<glm::vec3>();
-
-				}
 #pragma endregion
-				
+
 #pragma region TextComponent
-				auto ytec = entity["TextComponent"];		// Text Component
-				if (ytec)
-				{
-					UG_CORE_TRACE("Deserializing Text Component");
+					auto ytec = entity["TextComponent"];		// Text Component
+					if (ytec)
+					{
+						UG_CORE_TRACE("Deserializing Text Component");
 
-					auto& src = deserializedEntity.AddComponent<TextComponent>();
-					src.TextString = ytec["TextString"].as<std::string>();
+						auto& src = deserializedEntity.AddComponent<TextComponent>();
+						src.TextString = ytec["TextString"].as<std::string>();
 
-					src.Kerning = ytec["Kerning"].as<float>();
-					src.LineSpacing = ytec["LineSpacing"].as<float>();
-					
-					src.Color = ytec["Color"].as<glm::vec4>();
-					// src.Font = ; // TODO
+						src.Kerning = ytec["Kerning"].as<float>();
+						src.LineSpacing = ytec["LineSpacing"].as<float>();
+
+						src.Color = ytec["Color"].as<glm::vec4>();
+						// src.Font = ; // TODO
+
+					}
+#pragma endregion
 
 				}
-#pragma endregion
 
 			}
-
+		}
+		// std::exception covers YAML::Exception (InvalidNode, TypedBadConversion — it derives
+		// from std::runtime_error) as well as anything the component code below the reader throws.
+		catch (const std::exception& e)
+		{
+			UG_CORE_ERROR("Failed to deserialize scene '{0}' at entity {1} ('{2}'):\n    {3}",
+				filepath.string(), currentEntityID, currentEntityName, e.what());
+			return false;
 		}
 
 		return true;

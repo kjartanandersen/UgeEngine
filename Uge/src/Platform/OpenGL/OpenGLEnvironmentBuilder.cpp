@@ -149,12 +149,20 @@ namespace Uge
 		Ref<Shader> prefilterShader = Shader::Create("assets/shaders/PrefilterEnvironment.glsl");
 		Ref<Shader> brdfShader = Shader::Create("assets/shaders/BrdfLut.glsl");
 
+		// This runs mid-frame, while the editor's scene framebuffer is bound: Scene::ApplySkyLight
+		// loads the environment on first use. Put back what was bound, or the rest of that frame
+		// draws into the window and picking reads an attachment it doesn't have.
+		GLint previousFramebuffer = 0;
+		GLint previousViewport[4] = {};
+		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previousFramebuffer);
+		glGetIntegerv(GL_VIEWPORT, previousViewport);
+
 		uint32_t framebuffer = 0;
 		glCreateFramebuffers(1, &framebuffer);
 
-		// The cube is drawn from the inside. Culling is never enabled anywhere in the engine, so
-		// this is a no-op today and only guards against that changing.
-		glDisable(GL_CULL_FACE);
+		// The cube is drawn from the inside, so culling must be off. This runs when a Sky Light's
+		// environment is first loaded, before Model::BeginScene, which forces culling back on.
+		RenderCommand::SetCullMode(CullMode::None);
 		RenderCommand::SetDepthTest(false);
 
 		// ---- 1. Project the equirectangular image onto a cubemap ----
@@ -236,7 +244,9 @@ namespace Uge
 
 		// ---- Restore ----
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)previousFramebuffer);
+		glViewport(previousViewport[0], previousViewport[1], previousViewport[2], previousViewport[3]);
+
 		glDeleteFramebuffers(1, &framebuffer);
 
 		RenderCommand::SetDepthTest(true);

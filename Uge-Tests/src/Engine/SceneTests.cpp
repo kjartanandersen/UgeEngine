@@ -145,3 +145,24 @@ TEST_F(SceneTest, NoPrimaryCameraYieldsAnInvalidEntity)
 
 	EXPECT_FALSE(m_scene->GetPrimaryCameraEntity());
 }
+
+TEST_F(SceneTest, ACopiedSceneHasNoLiveBodies)
+{
+	// Play mode runs on a copy of the scene and builds its own physics world. A body handle
+	// copied over from the editor scene would point into a world the copy doesn't have, so
+	// the copy starts with none; everything else on the rigidbody is copied.
+	Entity entity = m_scene->CreateEntity("Crate");
+	Uge::RigidbodyComponent& body = entity.AddComponent<Uge::RigidbodyComponent>();
+	body.Mass = 3.0f;
+	body.RuntimeBody.Value = 42;
+
+	Uge::Ref<Scene> copy = Scene::Copy(m_scene);
+
+	Entity copied = copy->GetEntityByUUID(entity.GetUUID());
+	ASSERT_TRUE(copied);
+	ASSERT_TRUE(copied.HasComponent<Uge::RigidbodyComponent>());
+
+	const Uge::RigidbodyComponent& result = copied.GetComponent<Uge::RigidbodyComponent>();
+	EXPECT_NEAR(result.Mass, 3.0f, 1e-5f);
+	EXPECT_FALSE(result.RuntimeBody.IsValid());
+}

@@ -226,6 +226,16 @@ void main()
 	}
 
 	vec3 normal = normalize(v_Normal);
+
+	// A double-sided surface seen from behind: its normal points away from the viewer, so flip
+	// it or the back is lit as if it faced the other way. Done before the normal map, so the
+	// cotangent frame flips with it. Single-sided materials never get here: their back faces
+	// are culled.
+	if (!gl_FrontFacing)
+	{
+		normal = -normal;
+	}
+
 	if ((u_MapFlags & MAP_NORMAL) != 0)
 	{
 		vec3 tangentNormal = texture(u_NormalMap, v_TexCoord).xyz * 2.0 - 1.0;

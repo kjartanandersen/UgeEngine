@@ -26,4 +26,7 @@ namespace Uge
 	 */
 	const Ref<VertexArray>& GetFullscreenTriangle();
 
+	/** @brief Releases the shared triangle. */ 
+	void ReleaseFullscreenTriangle();
+
 }

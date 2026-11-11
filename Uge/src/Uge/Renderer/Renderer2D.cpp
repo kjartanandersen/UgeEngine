@@ -220,7 +220,13 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		
+		// The staging buffers are plain new[]; everything else is a Ref. Released here, while
+		// the GL context still exists, not in static destruction after it.
+		delete[] m_data.VertexBufferBase;
+		delete[] m_data.TextVertexBufferBase;
+		delete[] m_data.LineVertexBufferBase;
+
+		m_data = Renderer2DData();
 
 	}
 
@@ -279,12 +285,7 @@ namespace Uge
 	void Renderer2D::EndScene()
 	{
 		UG_PROFILE_FUNCTION();
-
-		uint32_t dataSize = (uint8_t*)m_data.VertexBufferPtr - (uint8_t*)m_data.VertexBufferBase;
-		m_data.QuadVB->SetData(m_data.VertexBufferBase, dataSize);
-
 		Flush();
-
 	}
 
 	void Renderer2D::Flush()
@@ -335,31 +336,11 @@ namespace Uge
 
 		}
 
-		/*
-		m_data.TextureShader->Unbind();
-
-		m_data.VertexBufferPtr = m_data.VertexBufferBase;
-		m_data.QuadIndexCount = 0;
-
-		m_data.TextureSlotIndex = 1;
-		*/
-
 	}
 
 	float Renderer2D::GetLineWidth()
 	{
 		return m_data.LineWidth;
-	}
-
-	void Uge::Renderer2D::FlushAndReset()
-	{
-		EndScene();
-
-		m_data.VertexBufferPtr = m_data.VertexBufferBase;
-		m_data.QuadIndexCount = 0;
-
-		m_data.TextureSlotIndex = 1;
-
 	}
 
 	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
@@ -372,9 +353,6 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
 	{
-		UG_PROFILE_FUNCTION();
-
-
 		
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
@@ -402,8 +380,6 @@ namespace Uge
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor)
 	{
 
-		UG_PROFILE_FUNCTION();
-
 		constexpr glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		const glm::vec2* textureCoords = subTexture->GetTextCoords();
 		const Ref<Texture2D> texture = subTexture->GetTexture();
@@ -411,33 +387,12 @@ namespace Uge
 		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
 		{
 
-			FlushAndReset();
+			NextBatch();
 
 		}
 
 
-		float textureIndex = 0.0f;
-
-		for (uint32_t i = 0; i < m_data.TextureSlotIndex; i++)
-		{
-
-			if (*m_data.TextureSlots[i].get() == *texture.get())
-			{
-
-				textureIndex = (float)i;
-				break;
-
-			}
-
-		}
-
-		if (textureIndex == 0.0f)
-		{
-			textureIndex = (float)m_data.TextureSlotIndex;
-			m_data.TextureSlots[m_data.TextureSlotIndex] = texture;
-			m_data.TextureSlotIndex++;
-
-		}
+		float textureIndex = GetTextureSlot(texture);
 
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
@@ -480,13 +435,11 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID )
 	{
-		UG_PROFILE_FUNCTION();
-
 
 		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
 		{
 
-			FlushAndReset();
+			NextBatch();
 
 		}
 
@@ -521,43 +474,19 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int entityID )
 	{
-
-		UG_PROFILE_FUNCTION();
 		UG_CORE_VERIFY(texture);
 
 		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
 		{
 
-			FlushAndReset();
+			NextBatch();
 
 		}
 
 
 		constexpr size_t VertexCount = 4;
 		constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
-		float texIndex = 0.0f;
-
-
-		for (uint32_t i = 0; i < m_data.TextureSlotIndex; i++)
-		{
-
-			if (*m_data.TextureSlots[i].get() == *texture.get())
-			{
-
-				texIndex = (float)i;
-				break;
-
-			}
-
-		}
-
-		if (texIndex == 0.0f)
-		{
-			texIndex = (float)m_data.TextureSlotIndex;
-			m_data.TextureSlots[m_data.TextureSlotIndex] = texture;
-			m_data.TextureSlotIndex++;
-
-		}
+		float texIndex = GetTextureSlot(texture);
 
 		for (size_t i = 0; i < VertexCount; i++)
 		{
@@ -582,8 +511,6 @@ namespace Uge
 
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
 	{
-		UG_PROFILE_FUNCTION();
-
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
@@ -598,13 +525,10 @@ namespace Uge
 
 	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const glm::vec4& color)
 	{
-
-		UG_PROFILE_FUNCTION();
-
 		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
 		{
 
-			FlushAndReset();
+			NextBatch();
 
 		}
 
@@ -657,40 +581,16 @@ namespace Uge
 
 	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
 	{
-
-		UG_PROFILE_FUNCTION();
-
 		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
 		{
 
-			FlushAndReset();
+			NextBatch();
 
 		}
 
 		constexpr glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-		float textureIndex = 0.0f;
-
-		for (uint32_t i = 0; i < m_data.TextureSlotIndex; i++)
-		{
-
-			if (*m_data.TextureSlots[i].get() == *texture.get())
-			{
-
-				textureIndex = (float)i;
-				break;
-
-			}
-
-		}
-
-		if (textureIndex == 0.0f)
-		{
-			textureIndex = (float)m_data.TextureSlotIndex;
-			m_data.TextureSlots[m_data.TextureSlotIndex] = texture;
-			m_data.TextureSlotIndex++;
-
-		}
+		float textureIndex = GetTextureSlot(texture);
 
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::rotate(glm::mat4(1.0f), rotation, { 0, 0, 1 })
@@ -741,8 +641,6 @@ namespace Uge
 	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor)
 	{
 
-		UG_PROFILE_FUNCTION();
-
 		constexpr glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		const glm::vec2* textureCoords = subTexture->GetTextCoords();
 		const Ref<Texture2D> texture = subTexture->GetTexture();
@@ -750,33 +648,12 @@ namespace Uge
 		if (m_data.QuadIndexCount >= Renderer2DData::MaxIndices)
 		{
 
-			FlushAndReset();
+			NextBatch();
 
 		}
 
 
-		float textureIndex = 0.0f;
-
-		for (uint32_t i = 0; i < m_data.TextureSlotIndex; i++)
-		{
-
-			if (*m_data.TextureSlots[i].get() == *texture.get())
-			{
-
-				textureIndex = (float)i;
-				break;
-
-			}
-
-		}
-
-		if (textureIndex == 0.0f)
-		{
-			textureIndex = (float)m_data.TextureSlotIndex;
-			m_data.TextureSlots[m_data.TextureSlotIndex] = texture;
-			m_data.TextureSlotIndex++;
-
-		}
+		float textureIndex = GetTextureSlot(texture);
 
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::rotate(glm::mat4(1.0f), rotation, { 0, 0, 1 })
@@ -841,24 +718,47 @@ namespace Uge
 
 	}
 
+	float Renderer2D::GetTextureSlot(const Ref<Texture2D>& texture)
+	{
+		// From 0: slot 0 is the white texture, so drawing it explicitly finds it there
+		// instead of taking a second slot.
+		for (uint32_t i = 0; i < m_data.TextureSlotIndex; i++)
+		{
+			if (*m_data.TextureSlots[i] == *texture)
+			{
+				return (float)i;
+			}
+		}
+
+		// Every slot is taken: draw what's batched so far and start again. The texture shader
+		// declares exactly MaxTextureSlots samplers, so no more can join this batch.
+		if (m_data.TextureSlotIndex >= Renderer2DData::MaxTextureSlots)
+		{
+			NextBatch();
+		}
+
+		const uint32_t slot = m_data.TextureSlotIndex++;
+		m_data.TextureSlots[slot] = texture;
+		return (float)slot;
+	}
+
 	void Renderer2D::DrawSprite(const glm::mat4& transform, const SpriteRendererComponent& src, int entityID)
 	{
-
-		UG_PROFILE_FUNCTION();
-
+		Ref<Texture2D> texture;
 		if (src.Texture)
 		{
-			Ref<Texture2D> texture = AssetManager::GetAsset<Texture2D>(src.Texture);
-			DrawQuad(transform, texture, src.Color, entityID);
+			texture = AssetManager::GetAsset<Texture2D>(src.Texture);
+		}
 
+		// A sprite whose texture doesn't resolve is drawn in its plain colour.
+		if (texture)
+		{
+			DrawQuad(transform, texture, src.Color, entityID);
 		}
 		else
 		{
 			DrawQuad(transform, src.Color, entityID);
-
 		}
-
-
 	}
 
 	void Renderer2D::DrawString(const std::string& string, Ref<Font> font, const glm::mat4& transform, const TextParams& textParams, int entityID)

@@ -162,13 +162,15 @@ namespace Uge
 		virtual void Bind() = 0;
 
 		/**
-		 * @brief The shader this material uses.
-		 * @return The shader program.
+		 * @brief The shader this material binds itself.
+		 * @return The shader, or null when the material relies on the caller to bind one.
+		 * Materials created by the mesh importer have none: Uge::Model binds its own shader
+		 * before drawing them.
 		 */
 		virtual Ref<Shader> GetShader() const = 0;
 		/**
-		 * @brief Replaces the shader.
-		 * @param shader New shader program.
+		 * @brief Replaces the shader that Bind() binds.
+		 * @param shader New shader program, or null to leave binding a shader to the caller.
 		 */
 		virtual void SetShader(const Ref<Shader>& shader) = 0;
 
@@ -249,6 +251,9 @@ namespace Uge
 		 */
 		static void BindDefaultProperties();
 
+		/** @brief Releases all resources held by the material system. */
+		static void Shutdown();
+
 		/**
 		 * @brief Records whether an environment is bound, for every material to include.
 		 * @param hasEnvironment `true` once the scene's environment maps are bound.
@@ -277,6 +282,14 @@ namespace Uge
 		 */
 		AssetType GetType() const override { return GetStaticType(); }
 
+		/**
+		* @brief Whether both faces of the material are meant to be seen.
+		* @return `true` for thin surfaces such as foliage, chains and single-sheet panels.
+		*
+		* Set from the imported material's two-sided flag. Uge::Model draws submeshes with
+		* such a material with culling off, and the shader flips a back face's normal so it
+		* is lit like the front.
+		*/
 		bool IsDoubleSided() const { return m_properties.DoubleSided; }
 
 

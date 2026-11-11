@@ -462,6 +462,11 @@ ign/
 bin/
 bin-int/
 
+# The premake binary is committed, because the build scripts depend on this exact build.
+# The directory and the files inside it each need re-including.
+!thirdparty/premake/bin/
+!thirdparty/premake/bin/*
+
 # Intermediates
 UgeEditor/Resources/Scripts/Intermediates
 
@@ -470,7 +475,13 @@ UgeEditor/Resources/Scripts/Uge-ScriptCore.dll
 UgeEditor/Resources/Scripts/Uge-ScriptCore.pdb
 
 # Mono
-UgeEditor/mono/**
+# The editor loads Mono's class libraries from mono/lib/mono/4.5 at runtime. The 4.8-api
+# folder holds reference assemblies, which are only used by compilers.
+UgeEditor/mono/lib/mono/4.8-api/
+
+# Mono's prebuilt static libraries, kept in Debug and Release folders.
+!Uge/thirdparty/mono/lib/Debug/
+!Uge/thirdparty/mono/lib/Release/
 
 
 # .ini files
@@ -486,6 +497,7 @@ Sandbox/UgeProfile*.json
 # LLMs
 /.claude
 CLAUDE.md
+Agents.md
 
 # Doxygen generated documentation
 /docs/html/

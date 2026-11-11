@@ -5,12 +5,11 @@
 
 namespace Uge
 {
+	// Shared fullscreen triangle, created on first use.
+	static Ref<VertexArray> s_triangle;
 
 	const Ref<VertexArray>& GetFullscreenTriangle()
 	{
-		// Created on first use rather than at startup: the graphics context does not exist
-		// when static initializers run.
-		static Ref<VertexArray> s_triangle;
 
 		if (!s_triangle)
 		{
@@ -39,6 +38,13 @@ namespace Uge
 		}
 
 		return s_triangle;
+	}
+
+	void ReleaseFullscreenTriangle()
+	{
+
+		s_triangle.reset();
+	
 	}
 
 }

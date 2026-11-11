@@ -141,16 +141,12 @@ namespace Uge
 
 	void OpenGLTexture2D::Bind(uint32_t slot) const
 	{
-		UG_PROFILE_FUNCTION();
-
 		glBindTextureUnit(slot, m_rendererID);
 
 	}
 
 	void OpenGLTexture2D::UnBind(uint32_t slot) const
 	{
-		UG_PROFILE_FUNCTION();
-
 		glBindTextureUnit(slot, 0);
 	}
 

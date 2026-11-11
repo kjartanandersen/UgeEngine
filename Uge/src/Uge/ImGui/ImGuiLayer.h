@@ -42,7 +42,7 @@ namespace Uge
 		~ImGuiLayer();
 
 		/**
-		 * @brief Creates the ImGui context, loads fonts and initializes the GLFW/OpenGL backends.
+		 * @brief Creates the ImGui context, sets up the style and initializes the GLFW/OpenGL backends.
 		 */
 		virtual void OnAttach() override;
 		/** @brief Shuts down the ImGui backends and destroys the context. */
@@ -100,8 +100,6 @@ namespace Uge
 		bool m_blockEvents = false;
 
 		float m_time = 0.0f;
-		ImFont* mainFont;
-
 
 	};
 

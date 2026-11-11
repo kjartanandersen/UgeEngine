@@ -62,11 +62,6 @@ project "Uge-Tests"
 	filter "system:windows"
 		systemversion "latest"
 
-		defines
-		{
-			"UG_PLATFORM_WINDOWS"
-		}
-		defines(JoltDefines.Common) 
 
 	filter "configurations:Debug"
 		defines { "UG_DEBUG", "UG_PROFILE=1" }
@@ -83,5 +78,6 @@ project "Uge-Tests"
 
 	filter "configurations:Dist"
 		defines "UG_DIST"
+		defines(JoltDefines.Dist)
 		runtime "Release"
 		optimize "on"

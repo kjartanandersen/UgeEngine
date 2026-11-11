@@ -67,9 +67,7 @@ project "Uge"
 		"Jolt",
 		"googletest",
 		"googlemock",
-		"opengl32.lib",
-
-		"%{Library.MONO}"
+		"opengl32.lib"
 	}
 	
 	
@@ -87,12 +85,6 @@ project "Uge"
 
 	filter "system:windows"
 		systemversion "latest"
-
-		defines 
-		{
-			"UG_PLATFORM_WINDOWS",
-			"UG_BUILD_DLL"
-		}
 
 		links
 		{
@@ -118,7 +110,8 @@ project "Uge"
 		{
 			"%{Library.ShaderC_Debug}",
 			"%{Library.SPIRV_Cross_Debug}",
-			"%{Library.SPIRV_Cross_GLSL_Debug}"
+			"%{Library.SPIRV_Cross_GLSL_Debug}",
+			"%{Library.MONO_Debug}"
 		}
 		
 	
@@ -138,12 +131,14 @@ project "Uge"
 		{
 			"%{Library.ShaderC_Release}",
 			"%{Library.SPIRV_Cross_Release}",
-			"%{Library.SPIRV_Cross_GLSL_Release}"
+			"%{Library.SPIRV_Cross_GLSL_Release}",
+			"%{Library.MONO_Release}"
 		}
 
 	
 	filter "configurations:Dist"
 		defines "UG_DIST"
+		defines(JoltDefines.Dist)
 		runtime "Release"
 		optimize "on"
 
@@ -151,7 +146,8 @@ project "Uge"
 		{
 			"%{Library.ShaderC_Release}",
 			"%{Library.SPIRV_Cross_Release}",
-			"%{Library.SPIRV_Cross_GLSL_Release}"
+			"%{Library.SPIRV_Cross_GLSL_Release}",
+			"%{Library.MONO_Release}"
 		}
 
 

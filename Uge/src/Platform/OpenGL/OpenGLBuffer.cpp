@@ -40,29 +40,18 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-
 		glDeleteBuffers(1, &m_rendererID);
-
 
 	}
 
 	void OpenGLVertexBuffer::Bind() const
 	{
-
-		UG_PROFILE_FUNCTION();
-
 		glBindBuffer(GL_ARRAY_BUFFER, m_rendererID);
-
-
 	}
 
 	void OpenGLVertexBuffer::Unbind() const
 	{
-		UG_PROFILE_FUNCTION();
-
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
 	}
 
 	void OpenGLVertexBuffer::SetData(void* data, uint32_t size)
@@ -103,16 +92,12 @@ namespace Uge
 
 	void OpenGLIndexBuffer::Bind() const
 	{
-		UG_PROFILE_FUNCTION();
-
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_rendererID);
 
 	}
 
 	void OpenGLIndexBuffer::Unbind() const
 	{
-		UG_PROFILE_FUNCTION();
-
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 

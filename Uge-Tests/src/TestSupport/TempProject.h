@@ -18,7 +18,7 @@ namespace UgeTests
 	 *
 	 * Most of the asset system reaches the active project through Uge::AssetManager, which
 	 * asserts when there is none, so a test touching assets, the asset registry or scene
-	 * serialization needs one to exist. Pointing tests at the editor's SandboxProject would
+	 * serialization needs one to exist. Pointing tests at a real project would
 	 * make them depend on — and write to — real content, so this builds a fresh empty one
 	 * per test instead.
 	 *

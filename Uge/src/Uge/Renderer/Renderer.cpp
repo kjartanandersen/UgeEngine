@@ -1,6 +1,13 @@
 #include <ugpch.h>
 #include "Renderer.h"
 
+#include "Model.h"
+#include "Bloom.h"
+#include "PostProcess.h"
+#include "Material.h"
+#include "Font.h"
+#include "FullscreenTriangle.h"
+
 #include "Platform/OpenGL/OpenGLShader.h"
 #include "Renderer2D.h"
 #include "Renderer3D.h"
@@ -17,6 +24,7 @@ namespace Uge
 
 
 		Renderer2D::Init();
+		
 
 
 	}
@@ -25,6 +33,12 @@ namespace Uge
 	{
 
 		Renderer2D::Shutdown();
+		Model::Shutdown();
+		Bloom::Shutdown();
+		PostProcess::Shutdown();
+		Material::Shutdown();
+		Font::ResetDefault();
+		ReleaseFullscreenTriangle();
 
 	}
 

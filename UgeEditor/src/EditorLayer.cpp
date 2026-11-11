@@ -42,12 +42,50 @@ namespace Uge
 	};
 
 
-	static Ref<Font> s_font;
+
+	// A handle never resolves when the asset manager doesn't know it (the asset was deleted,
+	// or the handle never pointed anywhere) or when it names the wrong kind of asset (a scene
+	// edited by hand). Say so once, when the scene opens, instead of leaving an entity that
+	// silently draws nothing.
+	static void WarnAboutUnresolvedAssets(const Ref<Scene>& scene, const std::filesystem::path& scenePath)
+	{
+		auto check = [&](entt::entity handle, AssetHandle asset, AssetType expected, const char* what)
+			{
+				if (asset == 0)
+				{
+					return;
+				}
+
+				Entity entity{ handle, scene.get() };
+				if (!AssetManager::IsAssetHandleValid(asset))
+				{
+					UG_WARN("{0}: entity '{1}' has a {2} referencing missing asset {3}",
+						scenePath.generic_string(), entity.GetName(), what, (uint64_t)asset);
+					return;
+				}
+
+				const AssetType type = AssetManager::GetAssetType(asset);
+				if (type != expected)
+				{
+					UG_WARN("{0}: entity '{1}' has a {2} referencing asset {3} of type {4}, where {5} is expected",
+						scenePath.generic_string(), entity.GetName(), what, (uint64_t)asset,
+						AssetTypeToString(type), AssetTypeToString(expected));
+				}
+			};
+
+		for (auto [e, mesh] : scene->GetAllEntitiesWith<MeshComponent>().each())
+			check(e, mesh.Mesh, AssetType::Mesh, "MeshComponent");
+		for (auto [e, collider] : scene->GetAllEntitiesWith<MeshColliderComponent>().each())
+			check(e, collider.Mesh, AssetType::Mesh, "MeshColliderComponent");
+		for (auto [e, sprite] : scene->GetAllEntitiesWith<SpriteRendererComponent>().each())
+			check(e, sprite.Texture, AssetType::Texture2D, "SpriteRendererComponent texture");
+		for (auto [e, sky] : scene->GetAllEntitiesWith<SkyLightComponent>().each())
+			check(e, sky.Environment, AssetType::Environment, "SkyLightComponent environment");
+	}
 
 	EditorLayer::EditorLayer()
 		: Layer("Sandbox2D")
 	{
-		s_font = Font::GetDefault();
 	}
 
 	void EditorLayer::OnUpdate(Timestep ts)
@@ -192,10 +230,25 @@ namespace Uge
 		
 		// Load ImGui Font
 		ImGuiIO& io = ImGui::GetIO();
-		m_mainFontBold = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Bold.ttf", 24.5f);
-		m_mainFont = io.Fonts->AddFontFromFileTTF("C:\\Programming\\c++\\GameEngines\\Uge\\UgeEditor\\assets\\fonts\\Roboto-Regular\\static\\Roboto-Regular.ttf", 24.5f);
+		ImFontConfig fontConfig;
+		fontConfig.Flags |= ImFontFlags_NoLoadError; // return null for a missing file instead of asserting
 
-		IM_ASSERT(m_mainFont != NULL);
+		ImFont* regularFont = io.Fonts->AddFontFromFileTTF("assets/fonts/Roboto-Regular/static/Roboto-Regular.ttf", 24.5f, &fontConfig);
+		if (!regularFont)
+		{
+			UG_WARN("Could not load the editor font Roboto-Regular.ttf; using ImGui's default font");
+			regularFont = io.Fonts->AddFontDefault();
+		}
+
+		ImFont* boldFont = io.Fonts->AddFontFromFileTTF("assets/fonts/Roboto-Regular/static/Roboto-Bold.ttf", 24.5f, &fontConfig);
+		if (!boldFont)
+		{
+			UG_WARN("Could not load the editor font Roboto-Bold.ttf; using the regular font");
+			boldFont = regularFont;
+		}
+
+		io.FontDefault = regularFont;
+		SceneHierarchyPanel::SetBoldFont(boldFont);
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		
 		// RGBA16F, not RGBA8: the scene pass writes linear radiance, which has no upper bound.
@@ -236,6 +289,13 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
+		// Closing the window during Play: stop the runtime the normal way, so its physics world
+		// and script instances are torn down before the subsystems go.
+		if (m_sceneState != SceneState::Edit)
+		{
+			OnSceneStop();
+		}
+
 	}
 
 	void EditorLayer::OnImGuiRender()
@@ -251,11 +311,9 @@ namespace Uge
 		*
 		*****************************/
 
-		ImGui::PushFont(m_mainFont);
-
 		// TL;DR; this demo is more complicated than what most users you would normally use.
-	// If we remove all options we are showcasing, this demo would become a simple call to ImGui::DockSpaceOverViewport() !!
-	// In this specific demo, we are not using DockSpaceOverViewport() because:
+		// If we remove all options we are showcasing, this demo would become a simple call to ImGui::DockSpaceOverViewport() !!
+		// In this specific demo, we are not using DockSpaceOverViewport() because:
 
 		static bool isOpen = true;
 		static bool opt_fullscreen = true;
@@ -430,7 +488,7 @@ namespace Uge
 
 					for (auto& asset : loadedAssetNames)
 					{
-						ImGui::Text(asset.c_str());
+						ImGui::TextUnformatted(asset.c_str());
 					}
 
 				}
@@ -587,10 +645,6 @@ namespace Uge
 		}
 		UI_Toolbar();
 		ImGui::End();
-
-		
-		ImGui::PopFont();
-
 	}
 
 	void EditorLayer::UI_Toolbar()
@@ -891,9 +945,17 @@ namespace Uge
 	void EditorLayer::SaveScene()
 	{
 
+		if (m_sceneState != SceneState::Edit)
+		{
+
+			UG_WARN("Cannot save scene while in play mode.");
+			return;
+
+		}
+
 		if (!m_editorScenePath.empty())
 		{
-			SerializeScene(m_activeScene, m_editorScenePath);
+			SerializeScene(m_editorScene, m_editorScenePath);
 		}
 		else
 		{
@@ -904,28 +966,63 @@ namespace Uge
 
 	void EditorLayer::SaveSceneAs()
 	{
+
+		if (m_sceneState != SceneState::Edit)
+		{
+			UG_WARN("Cannot save scene while in play mode.");
+			return;
+		}
+
 		std::string filepath = FileDialogs::SaveFile("Uge Scene (*.uge)\0*.uge\0\0");
 
-
-		if (!filepath.empty())
+		if (filepath.empty())
 		{
-			SerializeScene(m_activeScene, filepath);
-			m_editorScenePath = filepath;
+			return;
+		}
 
+		// The serializer has logged why. The scene keeps its old path, and nothing is registered.
+		if (!SerializeScene(m_editorScene, filepath))
+		{
+			return;
+		}
+		m_editorScenePath = filepath;
+
+		// Register the file, so it appears in the content browser's Asset view and can be
+		// opened from there. Only a .uge file inside the asset directory can be.
+		const std::filesystem::path relative = Project::GetRelativePath(filepath);
+		if (relative.empty() || *relative.begin() == ".." || relative.extension() != ".uge")
+		{
+			UG_WARN("Saved {0}, but it isn't in the asset registry: it's outside the asset directory or not a .uge file.", filepath);
+			return;
+		}
+
+		const AssetHandle handle = Project::GetActive()->GetEditorAssetManager()->GetOrImportAsset(relative, relative.filename().string());
+		if (AssetManager::IsAssetHandleValid(handle))
+		{
+			m_editorScenePath = relative; // the same form OpenScene uses
+			m_contentBrowserPanel->RefreshAssetTree();
 		}
 
 	}
 
 	void EditorLayer::NewScene()
 	{
+
+		if (m_sceneState != SceneState::Edit)
+		{
+			OnSceneStop();
+		}
+
 		m_activeScene = CreateRef<Scene>();
-		// m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+		m_activeScene->OnViewportResize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
+		m_editorScene = m_activeScene;
 		m_sceneHierarchyPanel.SetContext(m_activeScene);
 		m_debugPanel.SetContext(m_activeScene);
 
 		m_editorScenePath = std::filesystem::path();
 
 		m_colliderEdgeCache.clear();
+		m_hoveredEntity = {};
 
 	}
 
@@ -961,11 +1058,17 @@ namespace Uge
 			OnSceneStop();
 		}
 
-		Ref<Scene> scene = AssetManager::GetAsset<Scene>(handle);
-		Ref<Scene> newScene = Scene::Copy(scene);
+		// Read the file every time. The editor edits a copy and saves to disk, so the asset
+		// cached on first open is stale after any save, and edits made outside the editor would never show
+		AssetManager::DeleteAsset(handle);
 
-		SceneSerializer serializer(newScene);
-		
+		Ref<Scene> scene = AssetManager::GetAsset<Scene>(handle);
+		if (!scene)
+		{
+			UG_ERROR("Could not open scene {0}; see the errors above.", (uint64_t)handle);
+			return;
+		}
+		Ref<Scene> newScene = Scene::Copy(scene);
 		
 		m_editorScene = newScene;
 
@@ -977,6 +1080,8 @@ namespace Uge
 		m_editorScenePath = Project::GetActive()->GetEditorAssetManager()->GetFilePath(handle);
 
 		m_colliderEdgeCache.clear();
+		m_hoveredEntity = {};
+		WarnAboutUnresolvedAssets(m_editorScene, m_editorScenePath);
 
 	}
 
@@ -1023,10 +1128,10 @@ namespace Uge
 		m_activeScene->SetPaused(true);
 	}
 
-	void EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)
+	bool EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)
 	{
 
-		SceneImporter::SaveScene(scene, path);
+		return SceneImporter::SaveScene(scene, path);
 
 
 	}

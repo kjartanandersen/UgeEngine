@@ -31,10 +31,9 @@ namespace Uge
 			{
 				const SkyLightComponent& skyLight = skyLightView.get<SkyLightComponent>(entity);
 
-				if (skyLight.Environment && AssetManager::IsAssetHandleValid(skyLight.Environment))
+				if (Ref<Environment> environment = AssetManager::GetAsset<Environment>(skyLight.Environment))
 				{
-					Model::SetEnvironment(
-						AssetManager::GetAsset<Environment>(skyLight.Environment), skyLight.Intensity);
+					Model::SetEnvironment(environment, skyLight.Intensity);
 					return;
 				}
 			}
@@ -147,7 +146,7 @@ namespace Uge
 
 	Entity Scene::CreateEntity(const std::string& name)
 	{
-		return CreateEntityWithUUID(UUID(), name);
+		return CreateEntityWithUUID(UUID(UUID::Generate()), name);
 	}
 
 	Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name)

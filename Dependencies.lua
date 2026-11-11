@@ -25,25 +25,33 @@ IncludeDir["MSDF_ATLAS_GEN"]		= "%{wks.location}/Uge/thirdparty/ch-msdf-atlas-ge
 IncludeDir["GOOGLETEST"]			= "%{wks.location}/Uge/thirdparty/googletest/googletest/include"
 IncludeDir["GOOGLEMOCK"]			= "%{wks.location}/Uge/thirdparty/googletest/googlemock/include"
 
--- Jolt's compile defines change its ABI. Every project that compiles a TU including a
--- Jolt header must use exactly the same set as the Jolt library itself, or the layouts
--- silently disagree. Applied by Uge/thirdparty/JoltPhysics, Uge and Uge-Tests.
+-- Jolt's compile defines change its ABI. Every project that compiles a file including a
+-- Jolt header must use the same set as the Jolt library, or the two disagree on the layout
+-- of Jolt's classes. Applied by Uge/thirdparty/JoltPhysics, Uge and Uge-Tests, in every
+-- configuration.
+--
+-- NDEBUG is part of the set: without it, Jolt's headers define JPH_DEBUG, which enables
+-- asserts and the members that only exist for them. JPH::RegisterTypes() compares the
+-- ABI-relevant defines with the library's and aborts on a mismatch, naming the define.
 JoltDefines = {}
 JoltDefines["Common"]  = { "JPH_USE_CPU_COMPUTE" }
 JoltDefines["Debug"]   = { "JPH_ENABLE_ASSERTS", "JPH_DEBUG_RENDERER", "JPH_PROFILE_ENABLED" }
-JoltDefines["Release"] = { "JPH_DEBUG_RENDERER", "JPH_PROFILE_ENABLED" }
-JoltDefines["Dist"]    = { }
+JoltDefines["Release"] = { "NDEBUG", "JPH_DEBUG_RENDERER", "JPH_PROFILE_ENABLED" }
+JoltDefines["Dist"]    = { "NDEBUG" }
 
 -- Library Directories
 LibraryDir = {}
 
 LibraryDir["VulkanSDK"]				= "%{VULKAN_SDK}/Lib"
-LibraryDir["MONO"]					= "%{wks.location}//Uge/thirdparty/mono/lib/%{cfg.buildcfg}"
-
+LibraryDir["MONO"] 					= "%{wks.location}/Uge/thirdparty/mono/lib"
 
 -- Libraries
 Library = {}
-Library["MONO"]						= "%{LibraryDir.MONO}/libmono-static-sgen.lib"
+
+-- Mono is prebuilt in Debug and Release only. Dist links the Release build, which uses the
+-- same release C runtime.
+Library["MONO_Debug"]				= "%{LibraryDir.MONO}/Debug/libmono-static-sgen.lib"
+Library["MONO_Release"]				= "%{LibraryDir.MONO}/Release/libmono-static-sgen.lib"
 
 Library["Vulkan"]					= "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 Library["VulkanUtils"]				= "%{LibraryDir.VulkanSDK}/VkLayer_utils.lib"

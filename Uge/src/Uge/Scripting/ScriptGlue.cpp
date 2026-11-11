@@ -22,46 +22,6 @@ namespace Uge
 
 #define UG_ADD_INTERNAL_CALL(Name) mono_add_internal_call("Uge.InternalCalls::" #Name, Name)
 
-	static void CppFunction()
-	{
-
-		std::cout << "This is written in C++\n";
-
-	}
-
-	static void NativeLog(MonoString* text, int parameter)
-	{
-		char* msString = mono_string_to_utf8(text);
-
-		std::cout << "Text: " << msString << std::endl;
-		std::cout << "Parameter: " << parameter << std::endl;
-
-		mono_free(msString);
-
-	}
-
-	static void NativeLogVector3(glm::vec3* parameter, glm::vec3* outResult)
-	{
-		UG_CORE_WARN("NativeLogVec3");
-		UG_CORE_WARN("Value: X: {0}, Y: {1}, Z: {2}", parameter->x, parameter->y, parameter->z);
-
-		*outResult = glm::cross(*parameter, glm::vec3(parameter->x, parameter->y, -parameter->z));
-
-
-
-	}
-
-	static float NativeLogDot(glm::vec3* vec1, glm::vec3* vec2)
-	{
-		UG_CORE_WARN("NativeLogDot");
-		UG_CORE_WARN("Value of vector 1: X: {0}, Y: {1}, Z: {2}", vec1->x, vec1->y, vec1->z);
-		UG_CORE_WARN("Value of vector 2: X: {0}, Y: {1}, Z: {2}", vec2->x, vec2->y, vec2->z);
-
-		return glm::dot(*vec1, *vec2);
-
-
-
-	}
 
 	static MonoObject* GetScriptInstance(UUID entityID)
 	{
@@ -129,10 +89,6 @@ namespace Uge
 
 	void ScriptGlue::RegisterFunctions()
 	{
-		UG_ADD_INTERNAL_CALL(CppFunction);
-		UG_ADD_INTERNAL_CALL(NativeLog);
-		UG_ADD_INTERNAL_CALL(NativeLogVector3);
-		UG_ADD_INTERNAL_CALL(NativeLogDot);
 
 		UG_ADD_INTERNAL_CALL(GetScriptInstance);
 		UG_ADD_INTERNAL_CALL(Entity_HasComponent);
@@ -146,37 +102,28 @@ namespace Uge
 
 	}
 
-	template<typename... Component>
-	static void RegisterComponent()
+	// Lets Entity.HasComponent<T>() work for a component that has a C# class in Uge-ScriptCore.
+	// Names are explicit: typeid(T).name() is compiler-specific.
+	template<typename Component>
+	static void RegisterComponent(std::string managedTypeName)
 	{
-		([]()
-			{
-				std::string_view typeName = typeid(Component).name();
-				size_t pos = typeName.find_last_of(':');
-				std::string_view structName = typeName.substr(pos + 1);
-				std::string managedTypename = fmt::format("Uge.{}", structName);
+		MonoType* managedType = mono_reflection_type_from_name(managedTypeName.data(), ScriptEngine::GetCoreAssemblyImage());
+		if (!managedType)
+		{
+			UG_CORE_ERROR("Component type {0} is not in Uge-ScriptCore", managedTypeName);
+			return;
+		}
 
-				MonoType* managedType = mono_reflection_type_from_name(managedTypename.data(), ScriptEngine::GetCoreAssemblyImage());
-				if (!managedType)
-				{
-					UG_CORE_ERROR("Could not find component type {}", managedTypename);
-					return;
-				}
-				UG_CORE_TRACE("Found component type {}", managedTypename);
-				s_entityHasComponentFuncs[managedType] = [](Entity entity) { return entity.HasComponent<Component>(); };
-			}(), ...);
-	}
-
-	template<typename... Component>
-	static void RegisterComponent(ComponentGroup<Component...>)
-	{
-		RegisterComponent<Component...>();
+		s_entityHasComponentFuncs[managedType] = [](Entity entity) { return entity.HasComponent<Component>(); };
 	}
 
 	void ScriptGlue::RegisterComponents()
 	{
 		s_entityHasComponentFuncs.clear();
-		RegisterComponent(AllComponents{});
+
+		// One line per component class in Uge-ScriptCore/Source/Uge/Scene/Components.cs. Most
+		// components have no C# counterpart, so they aren't listed.
+		RegisterComponent<TransformComponent>("Uge.TransformComponent");
 	}
 
 }

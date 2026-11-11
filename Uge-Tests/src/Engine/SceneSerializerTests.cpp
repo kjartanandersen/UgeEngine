@@ -12,6 +12,7 @@
 #include "Uge/Scene/Entity.h"
 #include "Uge/Scene/Scene.h"
 #include "Uge/Scene/SceneSerializer.h"
+#include "Uge/Scripting/ScriptEngine.h"
 
 #include <gtest/gtest.h>
 
@@ -277,3 +278,394 @@ TEST_F(SceneSerializerTest, DeserializingMalformedYamlFails)
 
 	EXPECT_FALSE(SceneSerializer(loaded).DeSerialize(path));
 }
+
+TEST_F(SceneSerializerTest, AcceptsBooleansWrittenAsIntegers)
+{
+	// FirstGame's physicsScene.uge was written by 6e51012, whose mesh-collider writer
+	// emitted its flags through (int) casts. yaml-cpp's bool conversion rejects "1".
+	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/IntBools.uge",
+		"Scene: IntBools\n"
+		"Entities:\n"
+		"  - Entity: 42\n"
+		"    TagComponent:\n"
+		"      Tag: Collider\n"
+		"    MeshColliderComponent:\n"
+		"      Convex: 0\n"
+		"      IsTrigger: 1\n");
+
+	Uge::Ref<Scene> loaded = Uge::CreateRef<Scene>();
+	ASSERT_TRUE(SceneSerializer(loaded).DeSerialize(path));
+
+	Entity restored = loaded->FindEntityByName("Collider");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::MeshColliderComponent>());
+
+	// Both differ from the component's defaults (Convex = true, IsTrigger = false), so a
+	// pass means the values were actually read rather than left alone.
+	const Uge::MeshColliderComponent& collider = restored.GetComponent<Uge::MeshColliderComponent>();
+	EXPECT_FALSE(collider.Convex);
+	EXPECT_TRUE(collider.IsTrigger);
+}
+
+TEST_F(SceneSerializerTest, AMistypedValueFailsTheLoadWithoutThrowing)
+{
+	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/Mistyped.uge",
+		"Scene: Mistyped\n"
+		"Entities:\n"
+		"  - Entity: 7\n"
+		"    TagComponent:\n"
+		"      Tag: Light\n"
+		"    DirectionalLightComponent:\n"
+		"      Intensity: bright\n");
+
+	Uge::Ref<Scene> loaded = Uge::CreateRef<Scene>();
+
+	bool result = true;
+	EXPECT_NO_THROW({ result = SceneSerializer(loaded).DeSerialize(path); });
+	EXPECT_FALSE(result);
+}
+
+TEST_F(SceneSerializerTest, AScriptComponentWithAnUnknownClassStillSaves)
+{
+	// This test doesn't start the script engine, so no script class is known at all. Saving
+	// still keeps the component and its class name; it just writes no fields.
+	Entity entity = m_scene->CreateEntity("Scripted");
+	entity.AddComponent<Uge::ScriptComponent>().ClassName = "Game.DoesNotExist";
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	EXPECT_TRUE(m_deserialized);
+	Entity restored = loaded->FindEntityByName("Scripted");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::ScriptComponent>());
+	EXPECT_EQ(restored.GetComponent<Uge::ScriptComponent>().ClassName, "Game.DoesNotExist");
+}
+
+TEST_F(SceneSerializerTest, AMeshComponentWithoutAHandleHasNoMesh)
+{
+	// Scenes from before asset handles describe a mesh by path, with no MeshHandle key. The
+	// component is kept with no mesh; 0 means "none".
+	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/OldMesh.uge",
+		"Scene: OldMesh\n"
+		"Entities:\n"
+		"  - Entity: 5\n"
+		"    TagComponent:\n"
+		"      Tag: Backpack\n"
+		"    MeshComponent:\n"
+		"      Path: Mesh/backpack/scene.gltf\n");
+
+	Uge::Ref<Scene> loaded = Uge::CreateRef<Scene>();
+	ASSERT_TRUE(SceneSerializer(loaded).DeSerialize(path));
+
+	Entity restored = loaded->FindEntityByName("Backpack");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::MeshComponent>());
+	EXPECT_EQ((uint64_t)restored.GetComponent<Uge::MeshComponent>().Mesh, 0ull);
+}
+
+namespace
+{
+	/** @brief A material with no default values, so one that isn't read back shows up. */
+	Uge::PhysicsMaterial DistinctMaterial()
+	{
+		Uge::PhysicsMaterial material;
+		material.Friction = 0.7f;
+		material.Restitution = 0.25f;
+		material.Density = 500.0f;
+		return material;
+	}
+
+	void ExpectDistinctMaterial(const Uge::PhysicsMaterial& material)
+	{
+		EXPECT_NEAR(material.Friction, 0.7f, 1e-5f);
+		EXPECT_NEAR(material.Restitution, 0.25f, 1e-5f);
+		EXPECT_NEAR(material.Density, 500.0f, 1e-3f);
+	}
+
+	void ExpectSameVector(const glm::vec3& actual, const glm::vec3& expected)
+	{
+		EXPECT_NEAR(actual.x, expected.x, 1e-5f);
+		EXPECT_NEAR(actual.y, expected.y, 1e-5f);
+		EXPECT_NEAR(actual.z, expected.z, 1e-5f);
+	}
+}
+
+TEST_F(SceneSerializerTest, PreservesRigidbodies)
+{
+	Entity entity = m_scene->CreateEntity("Crate");
+	Uge::RigidbodyComponent& body = entity.AddComponent<Uge::RigidbodyComponent>();
+	body.Type = Uge::BodyType::Kinematic;
+	body.Layer = Uge::PhysicsLayer::Static;
+	body.Mass = 3.5f;
+	body.LinearDamping = 0.2f;
+	body.AngularDamping = 0.3f;
+	body.GravityFactor = 0.5f;
+	body.FixedRotation = true;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Crate");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::RigidbodyComponent>());
+
+	const Uge::RigidbodyComponent& result = restored.GetComponent<Uge::RigidbodyComponent>();
+	EXPECT_EQ(result.Type, Uge::BodyType::Kinematic);
+	EXPECT_EQ(result.Layer, Uge::PhysicsLayer::Static);
+	EXPECT_NEAR(result.Mass, 3.5f, 1e-5f);
+	EXPECT_NEAR(result.LinearDamping, 0.2f, 1e-5f);
+	EXPECT_NEAR(result.AngularDamping, 0.3f, 1e-5f);
+	EXPECT_NEAR(result.GravityFactor, 0.5f, 1e-5f);
+	EXPECT_TRUE(result.FixedRotation);
+}
+
+TEST_F(SceneSerializerTest, PreservesBoxColliders)
+{
+	Entity entity = m_scene->CreateEntity("Wall");
+	Uge::BoxColliderComponent& box = entity.AddComponent<Uge::BoxColliderComponent>();
+	box.Offset = { 1.0f, 2.0f, 3.0f };
+	box.HalfExtents = { 0.5f, 1.5f, 2.5f };
+	box.Material = DistinctMaterial();
+	box.IsTrigger = true;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Wall");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::BoxColliderComponent>());
+
+	const Uge::BoxColliderComponent& result = restored.GetComponent<Uge::BoxColliderComponent>();
+	ExpectSameVector(result.Offset, { 1.0f, 2.0f, 3.0f });
+	ExpectSameVector(result.HalfExtents, { 0.5f, 1.5f, 2.5f });
+	ExpectDistinctMaterial(result.Material);
+	EXPECT_TRUE(result.IsTrigger);
+}
+
+TEST_F(SceneSerializerTest, PreservesSphereColliders)
+{
+	Entity entity = m_scene->CreateEntity("Ball");
+	Uge::SphereColliderComponent& sphere = entity.AddComponent<Uge::SphereColliderComponent>();
+	sphere.Offset = { -1.0f, 0.5f, 2.0f };
+	sphere.Radius = 1.25f;
+	sphere.Material = DistinctMaterial();
+	sphere.IsTrigger = true;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Ball");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::SphereColliderComponent>());
+
+	const Uge::SphereColliderComponent& result = restored.GetComponent<Uge::SphereColliderComponent>();
+	ExpectSameVector(result.Offset, { -1.0f, 0.5f, 2.0f });
+	EXPECT_NEAR(result.Radius, 1.25f, 1e-5f);
+	ExpectDistinctMaterial(result.Material);
+	EXPECT_TRUE(result.IsTrigger);
+}
+
+TEST_F(SceneSerializerTest, PreservesCapsuleColliders)
+{
+	Entity entity = m_scene->CreateEntity("Pill");
+	Uge::CapsuleColliderComponent& capsule = entity.AddComponent<Uge::CapsuleColliderComponent>();
+	capsule.Offset = { 0.0f, 1.0f, 0.0f };
+	capsule.Radius = 0.4f;
+	capsule.HalfHeight = 1.75f; // not a whole number, so any rounding on the way shows
+	capsule.Material = DistinctMaterial();
+	capsule.IsTrigger = true;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Pill");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::CapsuleColliderComponent>());
+
+	const Uge::CapsuleColliderComponent& result = restored.GetComponent<Uge::CapsuleColliderComponent>();
+	ExpectSameVector(result.Offset, { 0.0f, 1.0f, 0.0f });
+	EXPECT_NEAR(result.Radius, 0.4f, 1e-5f);
+	EXPECT_NEAR(result.HalfHeight, 1.75f, 1e-5f);
+	ExpectDistinctMaterial(result.Material);
+	EXPECT_TRUE(result.IsTrigger);
+}
+
+TEST_F(SceneSerializerTest, PreservesMeshColliders)
+{
+	// The mesh is a handle; the model behind it doesn't need to exist for the handle to be
+	// saved and loaded.
+	Entity entity = m_scene->CreateEntity("Rock");
+	Uge::MeshColliderComponent& collider = entity.AddComponent<Uge::MeshColliderComponent>();
+	collider.Mesh = Uge::AssetHandle(1234567ull);
+	collider.Convex = false;
+	collider.Offset = { 2.0f, 0.0f, -1.0f };
+	collider.Material = DistinctMaterial();
+	collider.IsTrigger = true;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Rock");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::MeshColliderComponent>());
+
+	const Uge::MeshColliderComponent& result = restored.GetComponent<Uge::MeshColliderComponent>();
+	EXPECT_EQ((uint64_t)result.Mesh, 1234567ull);
+	EXPECT_FALSE(result.Convex);
+	ExpectSameVector(result.Offset, { 2.0f, 0.0f, -1.0f });
+	ExpectDistinctMaterial(result.Material);
+	EXPECT_TRUE(result.IsTrigger);
+}
+
+TEST_F(SceneSerializerTest, PreservesSkyLights)
+{
+	Entity entity = m_scene->CreateEntity("Sky");
+	Uge::SkyLightComponent& sky = entity.AddComponent<Uge::SkyLightComponent>();
+	sky.Environment = Uge::AssetHandle(7654321ull);
+	sky.Intensity = 2.5f;
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+
+	Entity restored = loaded->FindEntityByName("Sky");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::SkyLightComponent>());
+
+	const Uge::SkyLightComponent& result = restored.GetComponent<Uge::SkyLightComponent>();
+	EXPECT_EQ((uint64_t)result.Environment, 7654321ull);
+	EXPECT_NEAR(result.Intensity, 2.5f, 1e-5f);
+}
+
+TEST_F(SceneSerializerTest, AScriptComponentWithNoClassKeepsItsEmptyName)
+{
+	// A Script component just added in the editor has no class yet. Saving and loading
+	// keeps the component, with the class still empty.
+	Entity entity = m_scene->CreateEntity("Unassigned");
+	entity.AddComponent<Uge::ScriptComponent>();
+
+	Uge::Ref<Scene> loaded = RoundTrip();
+	ASSERT_TRUE(m_deserialized);
+
+	Entity restored = loaded->FindEntityByName("Unassigned");
+	ASSERT_TRUE(restored);
+	ASSERT_TRUE(restored.HasComponent<Uge::ScriptComponent>());
+	EXPECT_TRUE(restored.GetComponent<Uge::ScriptComponent>().ClassName.empty());
+}
+
+namespace
+{
+	/** @brief Starts the script engine for one test, and shuts it down however the test ends. */
+	struct ScopedScriptEngine
+	{
+		ScopedScriptEngine() { Uge::ScriptEngine::Init(); }
+		~ScopedScriptEngine() { Uge::ScriptEngine::Shutdown(); }
+	};
+}
+
+TEST_F(SceneSerializerTest, AScriptWhoseClassIsMissingKeepsItsFieldValues)
+{
+	// From the repo root, where the tests run, Init() finds no Mono runtime. It stops after
+	// creating the field storage and knows no script classes, like an editor whose project
+	// scripts haven't been built. Anywhere else it would start Mono, which can't be started
+	// twice in one process.
+	if (std::filesystem::exists("mono/lib"))
+	{
+		GTEST_SKIP() << "Mono's runtime is in the working directory; run the tests from the repo root.";
+	}
+	ScopedScriptEngine scriptEngine;
+
+	const std::filesystem::path original = m_project.WriteAssetFile("Scenes/Scripted.uge",
+		"Scene: Scripted\n"
+		"Entities:\n"
+		"  - Entity: 42\n"
+		"    TagComponent:\n"
+		"      Tag: Player\n"
+		"    ScriptComponent:\n"
+		"      ClassName: Game.Player\n"
+		"      ScriptFields:\n"
+		"        - Name: Speed\n"
+		"          Type: Float\n"
+		"          Data: 2.5\n");
+
+	Uge::Ref<Scene> opened = Uge::CreateRef<Scene>();
+	ASSERT_TRUE(SceneSerializer(opened).DeSerialize(original));
+
+	const std::filesystem::path resaved = Project::GetAssetFileSystemPath("Scenes/Resaved.uge");
+	SceneSerializer(opened).Serialize(resaved);
+
+	// Restart the engine, so the value can only come from the resaved file.
+	Uge::ScriptEngine::Shutdown();
+	Uge::ScriptEngine::Init();
+
+	Uge::Ref<Scene> reopened = Uge::CreateRef<Scene>();
+	ASSERT_TRUE(SceneSerializer(reopened).DeSerialize(resaved));
+
+	Uge::ScriptFieldMap* fields = Uge::ScriptEngine::GetScriptFieldMap(Uge::UUID(42));
+	ASSERT_NE(fields, nullptr);
+	auto speed = fields->find("Speed");
+	ASSERT_NE(speed, fields->end());
+	EXPECT_EQ(speed->second.Field.Type, Uge::ScriptFieldType::Float);
+	EXPECT_FLOAT_EQ(speed->second.GetValue<float>(), 2.5f);
+}
+
+TEST_F(SceneSerializerTest, AFieldValueOfATypeThatCantBeSavedIsLeftOut)
+{
+	if (std::filesystem::exists("mono/lib"))
+	{
+		GTEST_SKIP() << "Mono's runtime is in the working directory; run the tests from the repo root.";
+	}
+	ScopedScriptEngine scriptEngine;
+
+	Entity entity = m_scene->CreateEntityWithUUID(Uge::UUID(42), "Player");
+	entity.AddComponent<Uge::ScriptComponent>().ClassName = "Game.Player";
+
+	Uge::ScriptFieldMap* fields = Uge::ScriptEngine::GetScriptFieldMap(Uge::UUID(42));
+	ASSERT_NE(fields, nullptr);
+
+	Uge::ScriptFieldInstance& speed = (*fields)["Speed"];
+	speed.Field.Name = "Speed";
+	speed.Field.Type = Uge::ScriptFieldType::Float;
+	speed.SetValue(2.5f);
+
+	// Strings have nowhere to keep a value yet, so this one can't be saved.
+	Uge::ScriptFieldInstance& title = (*fields)["Title"];
+	title.Field.Name = "Title";
+	title.Field.Type = Uge::ScriptFieldType::String;
+
+	const std::filesystem::path path = Project::GetAssetFileSystemPath("Scenes/Fields.uge");
+	std::filesystem::create_directories(path.parent_path());
+	SceneSerializer(m_scene).Serialize(path);
+
+	std::ifstream in(path);
+	const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	EXPECT_NE(text.find("Speed"), std::string::npos);
+	EXPECT_EQ(text.find("Title"), std::string::npos);
+}
+
+TEST_F(SceneSerializerTest, SavingIntoAMissingFolderFails)
+{
+	m_scene->CreateEntity("Crate");
+	const std::filesystem::path path = Project::GetAssetFileSystemPath("NoSuchFolder/Level.uge");
+
+	EXPECT_FALSE(SceneSerializer(m_scene).Serialize(path));
+	EXPECT_FALSE(std::filesystem::exists(path));
+}
+
+TEST_F(SceneSerializerTest, AFailedSaveLeavesThePreviousFileIntact)
+{
+	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/Level.uge", "previous contents\n");
+	m_scene->CreateEntity("Crate");
+
+	// A file held open by std::ifstream can't be replaced on Windows, because the handle doesn't
+	// share delete access. So the save gets as far as its last step, the rename, and fails there.
+	bool saved = true;
+	{
+		std::ifstream held(path);
+		ASSERT_TRUE(held.is_open());
+		saved = SceneSerializer(m_scene).Serialize(path);
+	}
+	EXPECT_FALSE(saved);
+
+	std::ifstream in(path);
+	const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	EXPECT_EQ(text, "previous contents\n");
+
+	std::filesystem::path temp = path;
+	temp += ".tmp";
+	EXPECT_FALSE(std::filesystem::exists(temp));
+}
+

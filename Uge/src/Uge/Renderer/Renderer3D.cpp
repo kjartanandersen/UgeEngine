@@ -158,8 +158,6 @@ namespace Uge
 
 	void Renderer3D::DrawCube(const glm::vec3& position, float rotation, const glm::vec3& size, const glm::vec4& color)
 	{
-		UG_PROFILE_FUNCTION();
-
 		m_data.TextureShader->SetFloat4(
 			"u_Color", color);
 
@@ -180,8 +178,6 @@ namespace Uge
 
 	void Renderer3D::DrawCube(const glm::vec3& position, float rotation, const glm::vec3& size, Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
 	{
-
-		UG_PROFILE_FUNCTION();
 
 		m_data.CheckerboardTexture->Bind();
 

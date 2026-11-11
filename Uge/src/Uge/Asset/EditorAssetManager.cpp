@@ -61,6 +61,12 @@ namespace Uge
             return memoryIt->second;
         }
 
+		// If the asset failed to import previously, don't try again.
+        if (m_failedImports.count(handle))
+        {
+			return nullptr;
+        }
+
         Ref<Asset> asset;
         if (IsAssetLoaded(handle))
         {
@@ -77,7 +83,9 @@ namespace Uge
             if (!asset)
             {
 
-                UG_CORE_ERROR("EditorAssetManager::GetAsset - asset import failed!");
+                UG_CORE_ERROR("EditorAssetManager::GetAsset - asset {0} import failed!", metadata.FilePath.string());
+				m_failedImports.insert(handle);
+				return nullptr;
 
             }
             m_loadedAssets[handle] = asset;
@@ -131,7 +139,7 @@ namespace Uge
 
     AssetHandle EditorAssetManager::ImportAsset(const std::filesystem::path& filepath, const std::string& name)
     {
-        AssetHandle handle; // TODO: Generate new handle
+        AssetHandle handle = AssetHandle::Generate();
         AssetMetadata metadata;
         metadata.FilePath = filepath;
 
@@ -200,7 +208,7 @@ namespace Uge
 
     AssetHandle EditorAssetManager::AddMemoryOnlyAsset(const Ref<Asset>& asset)
     {
-        AssetHandle handle; // Generates a new random handle
+        AssetHandle handle = AssetHandle::Generate();
 
         if (asset)
         {
@@ -329,6 +337,7 @@ namespace Uge
             DeleteModel(handle);
             break;
         case AssetType::Scene:
+			DeleteScene(handle);
             break;
         case AssetType::None:
             break;
@@ -372,6 +381,16 @@ namespace Uge
     void EditorAssetManager::DeleteMaterial(AssetHandle handle)
     {
         m_loadedAssets.erase(handle);
+    }
+
+    void EditorAssetManager::DeleteScene(AssetHandle handle)
+    {
+        // Only unload: the registry entry is the file's identity, and erasing it would invalidate 
+        // the handle that scenes, the content browser and the registry file refer to.
+
+		m_loadedAssets.erase(handle);
+		m_failedImports.erase(handle);
+
     }
 
     bool EditorAssetManager::IsDependencyOfAnyModel(AssetHandle dependency) const

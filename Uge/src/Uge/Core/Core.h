@@ -22,7 +22,8 @@
 		 * @ingroup group_core
 		 *
 		 * Every other platform branch in this header raises `#error`; 32-bit Windows is
-		 * rejected explicitly.
+		 * rejected explicitly. This header is the only place it's defined, so a file that
+		 * tests it must include `Uge/Core/Core.h` first. The precompiled header does.
 		 */
 		#define UG_PLATFORM_WINDOWS
 	#else
