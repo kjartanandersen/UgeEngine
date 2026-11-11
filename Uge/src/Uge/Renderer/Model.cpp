@@ -98,9 +98,7 @@ namespace Uge
 		// without a reimport.
 		static Ref<Material> ResolveMaterial(AssetHandle materialHandle)
 		{
-			if (!materialHandle
-				|| !AssetManager::IsAssetHandleValid(materialHandle)
-				|| AssetManager::GetAssetType(materialHandle) != AssetType::Material)
+			if (!materialHandle)
 			{
 				return nullptr;
 			}
@@ -360,8 +358,7 @@ namespace Uge
 		outIndices.clear();
 
 		// Validate handle
-		if (!mesh || !AssetManager::IsAssetHandleValid(mesh)
-			|| AssetManager::GetAssetType(mesh) != AssetType::Mesh)
+		if (!mesh)
 		{
 			return false;
 

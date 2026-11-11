@@ -43,29 +43,44 @@ namespace Uge
 
 
 
-	// A handle the asset manager doesn't know can never resolve: the asset was deleted, or the
-	// handle never pointed anywhere. Say so once, when the scene opens, instead of
-	// leaving an entity that silently draws nothing.
-	static void WarnAboutMissingAssets(const Ref<Scene>& scene, const std::filesystem::path& scenePath)
+	// A handle never resolves when the asset manager doesn't know it (the asset was deleted,
+	// or the handle never pointed anywhere) or when it names the wrong kind of asset (a scene
+	// edited by hand). Say so once, when the scene opens, instead of leaving an entity that
+	// silently draws nothing.
+	static void WarnAboutUnresolvedAssets(const Ref<Scene>& scene, const std::filesystem::path& scenePath)
 	{
-		auto check = [&](entt::entity handle, AssetHandle asset, const char* what)
+		auto check = [&](entt::entity handle, AssetHandle asset, AssetType expected, const char* what)
 			{
-				if (asset != 0 && !AssetManager::IsAssetHandleValid(asset))
+				if (asset == 0)
 				{
-					Entity entity{ handle, scene.get() };
+					return;
+				}
+
+				Entity entity{ handle, scene.get() };
+				if (!AssetManager::IsAssetHandleValid(asset))
+				{
 					UG_WARN("{0}: entity '{1}' has a {2} referencing missing asset {3}",
 						scenePath.generic_string(), entity.GetName(), what, (uint64_t)asset);
+					return;
+				}
+
+				const AssetType type = AssetManager::GetAssetType(asset);
+				if (type != expected)
+				{
+					UG_WARN("{0}: entity '{1}' has a {2} referencing asset {3} of type {4}, where {5} is expected",
+						scenePath.generic_string(), entity.GetName(), what, (uint64_t)asset,
+						AssetTypeToString(type), AssetTypeToString(expected));
 				}
 			};
 
 		for (auto [e, mesh] : scene->GetAllEntitiesWith<MeshComponent>().each())
-			check(e, mesh.Mesh, "MeshComponent");
+			check(e, mesh.Mesh, AssetType::Mesh, "MeshComponent");
 		for (auto [e, collider] : scene->GetAllEntitiesWith<MeshColliderComponent>().each())
-			check(e, collider.Mesh, "MeshColliderComponent");
+			check(e, collider.Mesh, AssetType::Mesh, "MeshColliderComponent");
 		for (auto [e, sprite] : scene->GetAllEntitiesWith<SpriteRendererComponent>().each())
-			check(e, sprite.Texture, "SpriteRendererComponent texture");
+			check(e, sprite.Texture, AssetType::Texture2D, "SpriteRendererComponent texture");
 		for (auto [e, sky] : scene->GetAllEntitiesWith<SkyLightComponent>().each())
-			check(e, sky.Environment, "SkyLightComponent environment");
+			check(e, sky.Environment, AssetType::Environment, "SkyLightComponent environment");
 	}
 
 	EditorLayer::EditorLayer()
@@ -1066,7 +1081,7 @@ namespace Uge
 
 		m_colliderEdgeCache.clear();
 		m_hoveredEntity = {};
-		WarnAboutMissingAssets(m_editorScene, m_editorScenePath);
+		WarnAboutUnresolvedAssets(m_editorScene, m_editorScenePath);
 
 	}
 

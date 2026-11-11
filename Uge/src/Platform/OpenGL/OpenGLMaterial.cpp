@@ -48,7 +48,7 @@ namespace Uge
 	}
 	void OpenGLMaterial::BindTexture(AssetHandle handle, uint32_t slot)
 	{
-		if (!handle || !AssetManager::IsAssetHandleValid(handle))
+		if (!handle)
 		{
 			return;
 		}

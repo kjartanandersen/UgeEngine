@@ -202,6 +202,27 @@ TEST_F(AssetRegistryTest, MemoryOnlyAssetsAreUsableButNotRegistered)
 	EXPECT_FALSE(Manager().GetMetadata(handle));
 }
 
+TEST_F(AssetRegistryTest, LoadedAssetOfAnotherTypeResolvesToNull)
+{
+	// A scene edited by hand can hold a handle to the wrong kind of asset. Asking for it as
+	// another type gives null rather than a pointer to the wrong object.
+	Uge::Ref<UgeTests::MockTexture2D> texture = Uge::CreateRef<UgeTests::MockTexture2D>();
+	const AssetHandle handle = Manager().AddMemoryOnlyAsset(texture);
+
+	EXPECT_EQ(AssetManager::GetAsset<Scene>(handle), nullptr);
+	EXPECT_EQ(AssetManager::GetAsset<Uge::Texture2D>(handle), texture);
+}
+
+TEST_F(AssetRegistryTest, RegisteredAssetOfAnotherTypeResolvesToNull)
+{
+	// The same for an asset that isn't loaded yet. Asking for the wrong type first leaves
+	// the asset usable as its own type.
+	const AssetHandle handle = Manager().ImportAsset(WriteScene("Scenes/NotATexture.uge"), "NotATexture");
+
+	EXPECT_EQ(AssetManager::GetAsset<Uge::Texture2D>(handle), nullptr);
+	EXPECT_NE(AssetManager::GetAsset<Scene>(handle), nullptr);
+}
+
 TEST_F(AssetRegistryTest, MemoryOnlyAssetsAreNotWrittenToTheRegistryFile)
 {
 	Manager().AddMemoryOnlyAsset(Uge::CreateRef<UgeTests::MockTexture2D>());

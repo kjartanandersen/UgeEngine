@@ -744,20 +744,21 @@ namespace Uge
 
 	void Renderer2D::DrawSprite(const glm::mat4& transform, const SpriteRendererComponent& src, int entityID)
 	{
-
+		Ref<Texture2D> texture;
 		if (src.Texture)
 		{
-			Ref<Texture2D> texture = AssetManager::GetAsset<Texture2D>(src.Texture);
-			DrawQuad(transform, texture, src.Color, entityID);
+			texture = AssetManager::GetAsset<Texture2D>(src.Texture);
+		}
 
+		// A sprite whose texture doesn't resolve is drawn in its plain colour.
+		if (texture)
+		{
+			DrawQuad(transform, texture, src.Color, entityID);
 		}
 		else
 		{
 			DrawQuad(transform, src.Color, entityID);
-
 		}
-
-
 	}
 
 	void Renderer2D::DrawString(const std::string& string, Ref<Font> font, const glm::mat4& transform, const TextParams& textParams, int entityID)
