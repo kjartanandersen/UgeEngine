@@ -39,12 +39,6 @@ project "Uge-Editor"
 	filter "system:windows"
 		systemversion "latest"
 
-		defines 
-		{
-			"UG_PLATFORM_WINDOWS"
-		}
-
-
 	filter "configurations:Debug"
 		defines { "UG_DEBUG", "UG_PROFILE=1" }
 		runtime "Debug"

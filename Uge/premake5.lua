@@ -86,12 +86,6 @@ project "Uge"
 	filter "system:windows"
 		systemversion "latest"
 
-		defines 
-		{
-			"UG_PLATFORM_WINDOWS",
-			"UG_BUILD_DLL"
-		}
-
 		links
 		{
 			"%{Library.WINSOCK}",
