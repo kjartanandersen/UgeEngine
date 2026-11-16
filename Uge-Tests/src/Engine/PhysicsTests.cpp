@@ -1,7 +1,7 @@
 /**
 
     @file      PhysicsTests.cpp
-    @brief     Tests for the physics System
+    @brief     Tests for the physics system.
 
 
 **/
@@ -16,7 +16,7 @@
 namespace
 {
 
-	/** @brief Physics initialized for the duration of each test. */
+	/** @brief Physics, started for each test. */
 	class PhysicsTest : public UgeTests::PhysicsFixture
 	{
 
@@ -31,7 +31,7 @@ namespace
 
     }
 
-	// A query that excludes the static layer must not report a static body.
+	// A query without the static layer doesn't report a static body.
 	TEST_F(PhysicsTest, OverlapSphereHonoursTheLayerMask)
 	{
 		auto scene = MakeScene();
@@ -61,7 +61,7 @@ namespace
 		EXPECT_EQ(hits[0], movingBody);
 	}
 
-	// Triggers aren't reported, matching CastRay.
+	// Triggers aren't reported, as with CastRay.
 	TEST_F(PhysicsTest, OverlapSphereSkipsTriggers)
 	{
 		auto scene = MakeScene();
@@ -81,7 +81,7 @@ namespace
 		EXPECT_TRUE(hits.empty());
 	}
 
-	// A compound body touched through two colliders is still reported once.
+	// A body touched through two colliders is reported once.
 	TEST_F(PhysicsTest, OverlapSphereReportsEachBodyOnce)
 	{
 		auto scene = MakeScene();
@@ -103,8 +103,7 @@ namespace
 		EXPECT_EQ(hits[0], id);
 	}
 
-	// Points on one line can't make a hull at any tolerance. That has to come back as "no
-	// body", not a crash or an assert.
+	// Points on one line can't make a hull, so there is no body, and no crash or assert.
 	TEST_F(PhysicsTest, AConvexHullFromPointsOnALineCreatesNoBody)
 	{
 		auto scene = MakeScene();

@@ -14,18 +14,15 @@ namespace Uge
 {
 
 	/**
-	 * @brief An immutable-storage OpenGL cubemap.
+	 * @brief An OpenGL cubemap with immutable storage.
 	 * @ingroup group_platform
-	 *
-	 * Uses direct state access, so no binding is needed to configure the texture.
-	 * Faces are filled by rendering into them; see Uge::OpenGLEnvironmentBuilder.
 	 */
 	class OpenGLTextureCube : public TextureCube
 	{
 	public:
 		/**
-		 * @brief Allocates the cubemap's storage.
-		 * @param specification Face size, format and mip settings.
+		 * @brief Allocates the cubemap.
+		 * @param specification Size, format and mipmaps.
 		 */
 		explicit OpenGLTextureCube(const TextureCubeSpecification& specification);
 

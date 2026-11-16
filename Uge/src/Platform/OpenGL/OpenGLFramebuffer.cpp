@@ -240,7 +240,7 @@ namespace Uge
 		}
 		else if (m_colorAttachments.empty())
 		{
-			// Only depth pass (for shadow mapping)
+			// Depth only.
 			glDrawBuffer(GL_NONE);
 		}
 

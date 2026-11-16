@@ -1,9 +1,7 @@
--- GoogleTest runner covering both the engine and the editor.
+-- The GoogleTest runner for the engine and the editor.
 --
--- The editor is a ConsoleApp, so it cannot be linked into another executable. Its
--- sources are compiled into this project instead, which is why the include and define
--- set below mirrors UgeEditor/premake5.lua. UgeEditorApp.cpp is the one file left out:
--- it pulls in EntryPoint.h, whose main() would clash with the test runner's.
+-- The editor is an executable, so its sources are compiled in here, with the includes and
+-- defines of UgeEditor/premake5.lua. UgeEditorApp.cpp is left out, as it defines main().
 
 project "Uge-Tests"
 	kind "ConsoleApp"

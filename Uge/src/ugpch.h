@@ -1,16 +1,11 @@
 /**
  * @file ugpch.h
- * @brief Precompiled header for the engine library.
+ * @brief The engine's precompiled header.
  * @ingroup group_core
  *
- * Every `.cpp` under `Uge/src/` must begin with `#include <ugpch.h>`. The one exception
- * is `thirdparty/ImGuizmo/**.cpp`, for which premake disables the PCH.
- *
- * It provides the common STL headers, the engine's Log.h, Core.h, Buffer.h and
- * Instrumentor.h, and `<Windows.h>` on Windows — so those never need including again.
- *
- * @warning Because this is compiled as a PCH, it must be the *first* include in a
- * translation unit; MSVC ignores anything preceding it.
+ * Every `.cpp` under `Uge/src/` includes it first, except `thirdparty/ImGuizmo/**.cpp`.
+ * It has the common STL headers, Log.h, Core.h, Buffer.h, Instrumentor.h and
+ * `<Windows.h>`.
  */
 
 #pragma once

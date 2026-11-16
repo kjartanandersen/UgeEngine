@@ -8,10 +8,8 @@ namespace Uge
 
 	namespace
 	{
-		// Keyed by the label's address, so Submit() does no string work. Every UG_PROFILE_*
-		// label is a string literal or __FUNCSIG__, which last for the whole program, so the
-		// address is stable. The same text can sit at more than one address, one copy per
-		// translation unit, so BeginFrame() merges entries by their text into the rows it shows.
+		// Keyed by the label's address, so Submit() does no string work. The same text can
+		// have one address per translation unit; BeginFrame() merges them by text.
 		struct ProfilerState
 		{
 			std::mutex Mutex;
@@ -24,12 +22,10 @@ namespace Uge
 		};
 
 		/**
-		* @brief Returns the process-wide profiler state.
+		* @brief The profiler's state.
 		*
-		* Deliberately leaked. Scope timers still fire from destructors that run after
-		* `main` returns — a static `Ref<Font>` in the editor keeps an `OpenGLTexture2D`
-		* alive, and `~OpenGLTexture2D` is profiled. A namespace-scope object would
-		* already have been destroyed by then, so Submit() would touch freed memory.
+		* Never freed: profiled destructors still run after `main` returns, when a static
+		* object would already be destroyed.
 		*/
 		ProfilerState& State()
 		{
@@ -40,14 +36,11 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Reduces a `__FUNCSIG__` to a readable qualified name.
-		 * @param name The raw scope label.
-		 * @return `Uge::EditorLayer::OnUpdate` rather than
-		 *         `void __cdecl Uge::EditorLayer::OnUpdate(class Uge::Timestep)`.
-		 *
-		 * `UG_PROFILE_FUNCTION` labels its scope with the full signature, which is right
-		 * for a trace viewer but far too wide for a table column. Literal labels passed to
-		 * `UG_PROFILE_SCOPE` contain no parenthesis and are returned unchanged.
+		 * @brief Shortens a `__FUNCSIG__` to the qualified function name.
+		 * @param name The scope label.
+		 * @return `Uge::EditorLayer::OnUpdate` for
+		 *         `void __cdecl Uge::EditorLayer::OnUpdate(class Uge::Timestep)`. A label
+		 *         without parentheses is returned unchanged.
 		 */
 		std::string ShortenScopeName(const char* name)
 		{
@@ -74,8 +67,7 @@ namespace Uge
 		ProfilerState& state = State();
 		std::lock_guard<std::mutex> lock(state.Mutex);
 
-		// One row per label text, since the same label can arrive from several addresses.
-		// This is the profiler's only string work, once per scope per frame.
+		// One row per label text. The profiler's only string work, once per scope per frame.
 		std::unordered_map<std::string, ProfileEntry> rows;
 		for (const auto& [label, entry] : state.Accumulating)
 		{
@@ -139,7 +131,7 @@ namespace Uge
 
 		std::lock_guard<std::mutex> lock(state.Mutex);
 
-		// Unroll the ring so the caller always gets oldest-first, ready to plot.
+		// Oldest first.
 		std::vector<float> history;
 		history.reserve(state.FrameTimes.size());
 		for (size_t i = 0; i < state.FrameTimes.size(); i++)

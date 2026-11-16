@@ -5,14 +5,14 @@ namespace Uge::Math
 {
     namespace
     {
-        // GLM indexes [column][row], so a mathematical row is gathered across the columns.
+        // GLM indexes [column][row].
         glm::vec4 MatrixRow(const glm::mat4& matrix, int row)
         {
             return glm::vec4(matrix[0][row], matrix[1][row], matrix[2][row], matrix[3][row]);
         }
 
-        // Normalizes so SignedDistance returns world units. A degenerate matrix leaves the
-        // plane zeroed, which reads as "everything is inside" rather than culling the scene.
+        // Normalized, so SignedDistance is in world units. A degenerate row leaves the plane
+        // zeroed, which accepts everything.
         Plane MakePlane(const glm::vec4& coefficients)
         {
             Plane plane;
@@ -51,8 +51,7 @@ namespace Uge::Math
 
     bool Frustum::Intersects(const AABB& bounds) const
     {
-        // Fail open: an empty-geometry submesh leaves its bounds at the inverted default,
-        // and a vanished mesh is far harder to diagnose than a redundant draw call.
+        // Empty bounds count as visible: a missing mesh is harder to spot than an extra draw.
         if (!bounds.IsValid())
         {
             return true;
@@ -60,8 +59,7 @@ namespace Uge::Math
 
         for (const Plane& plane : m_planes)
         {
-            // The corner furthest along the normal. If even it is behind the plane,
-            // all eight are, and the box cannot intersect the frustum.
+            // The corner furthest along the normal. If it is behind the plane, so is the box.
             const glm::vec3 positiveVertex(
                 plane.Normal.x >= 0.0f ? bounds.Max.x : bounds.Min.x,
                 plane.Normal.y >= 0.0f ? bounds.Max.y : bounds.Min.y,

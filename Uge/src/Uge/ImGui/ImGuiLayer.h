@@ -1,6 +1,6 @@
 /**
  * @file ImGuiLayer.h
- * @brief The overlay that hosts Dear ImGui and brackets every frame's UI.
+ * @brief The Dear ImGui overlay.
  * @ingroup group_core
  */
 
@@ -18,78 +18,49 @@ namespace Uge
 {
 
 	/**
-	 * @brief Owns the Dear ImGui context and drives its per-frame begin/end.
+	 * @brief Owns the Dear ImGui context and starts and ends its frames.
 	 * @ingroup group_core
 	 *
-	 * Uge::Application creates one during construction and pushes it as an overlay, so it
-	 * sits above every other layer and sees input first. Each frame the application calls
-	 * Begin(), lets every layer emit widgets from Uge::Layer::OnImGuiRender, then calls
-	 * End() to render the draw data.
-	 *
-	 * Docking and viewports are enabled, which is what allows the editor's panels to be
-	 * rearranged and torn off.
-	 *
-	 * @note Clients do not create this layer themselves; reach it through
-	 * Uge::Application::GetImGuiLayer.
+	 * Docking and viewports are on.
 	 */
 	class ImGuiLayer : public Layer
 	{
 
 	public:
-		/** @brief Constructs the layer. The ImGui context is created later, in OnAttach(). */
+		/** @brief Creates the layer. The ImGui context is created in OnAttach(). */
 		ImGuiLayer();
 		/** @brief Destroys the layer. */
 		~ImGuiLayer();
 
-		/**
-		 * @brief Creates the ImGui context, sets up the style and initializes the GLFW/OpenGL backends.
-		 */
+		/** @brief Creates the ImGui context, sets the style and starts the GLFW and OpenGL backends. */
 		virtual void OnAttach() override;
 		/** @brief Shuts down the ImGui backends and destroys the context. */
 		virtual void OnDetach() override;
-		/** @brief Emits this layer's own UI; unused by default. */
+		/** @brief Draws nothing. */
 		virtual void OnImGuiRender() override;
 		/**
-		 * @brief Optionally consumes events that ImGui wants.
-		 * @param event Event being propagated.
-		 *
-		 * When event blocking is on, mouse and keyboard events are marked handled whenever
-		 * ImGui has captured the corresponding device, which stops them reaching the scene
-		 * below. @see BlockEvents
+		 * @brief With blocking on, marks mouse and keyboard events handled while ImGui uses them.
+		 * @param event The event.
 		 */
 		virtual void OnEvent(Event& event) override;
 
-		/**
-		 * @brief Starts a new ImGui frame.
-		 *
-		 * Called by Uge::Application::Run before any layer's Uge::Layer::OnImGuiRender.
-		 */
+		/** @brief Starts an ImGui frame. */
 		void Begin();
-		/**
-		 * @brief Ends the ImGui frame and renders its draw data.
-		 *
-		 * Also updates and renders the additional platform windows when viewports are on.
-		 */
+		/** @brief Ends the ImGui frame and renders it, including any extra platform windows. */
 		void End();
 
 		/**
-		 * @brief Controls whether events ImGui captures are hidden from lower layers.
-		 * @param block `true` to let ImGui swallow input it is using.
-		 *
-		 * The editor turns blocking off while the viewport is focused, so camera controls keep
-		 * working over the scene image, and back on elsewhere so typing in a field does not
-		 * also trigger scene shortcuts.
+		 * @brief Sets whether ImGui keeps the input it uses from lower layers.
+		 * @param block `true` to keep it.
 		 */
 		void BlockEvents(bool block) { m_blockEvents = block; };
 
-		/** @brief Applies the engine's dark colour scheme to the current ImGui style. */
+		/** @brief Applies the dark colour scheme. */
 		void SetDarkThemeColors();
 
 		/**
-		 * @brief Returns the ImGui ID of the widget currently being interacted with.
-		 * @return The active widget's ID, or `0` when none is active.
-		 *
-		 * Used to suppress global keyboard shortcuts while a text field has focus.
+		 * @brief The ImGui ID of the widget in use.
+		 * @return The ID, or `0` if none.
 		 */
 		uint32_t GetActiveWidgetID() const;
 	private:

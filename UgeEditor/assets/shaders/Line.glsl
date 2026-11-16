@@ -45,14 +45,7 @@ layout (location = 1) in flat int v_EntityID;
 
 
 
-// The scene target is linear RGBA16F and the resolve pass sRGB-encodes it once for the whole
-// frame, so this shader has to hand it linear values. Sprite textures and the vertex colours
-// they are tinted by are both authored in sRGB; without this decode they would be encoded a
-// second time at resolve and the 2D layer would come out washed out.
-//
-// The decode is applied to the finished colour rather than to each factor. That is the exact
-// inverse of what the resolve does, which is what keeps the 2D path pixel-identical to how it
-// looked before the HDR target existed. @see Uge::PostProcess
+// The scene target is linear and line colours are sRGB, so they are decoded here.
 vec3 SrgbToLinear(vec3 color)
 {
 	vec3 low = color / 12.92;

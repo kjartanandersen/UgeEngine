@@ -1,7 +1,7 @@
 #type vertex
 #version 450 core
 
-// Same fullscreen triangle as Tonemap.glsl; see the comment there for why it overshoots.
+// The fullscreen triangle, as in Tonemap.glsl.
 layout(location = 0) in vec2 a_Position;
 layout(location = 1) in vec2 a_TexCoord;
 
@@ -31,12 +31,8 @@ layout(std140, binding = 8) uniform BloomData
 	int u_IsFirstPass;
 };
 
-// A 3x3 tent filter, blended additively onto the level below. Widening the kernel by a fixed
-// radius in texture space at each level is what turns a stack of downsamples into a smooth,
-// wide glow rather than a stack of visible boxes - the radius is in the target's units, so
-// the same number spreads further at coarse levels.
-//
-// The caller sets additive blending; this shader only produces the contribution to add.
+// A 3x3 tent filter, added to the level below by the caller's additive blending. The radius
+// is in the source's texels, so it spreads further at coarser levels.
 void main()
 {
 	float x = u_FilterRadius * u_TexelSize.x;

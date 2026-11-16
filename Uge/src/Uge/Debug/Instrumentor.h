@@ -3,15 +3,9 @@
  * @brief Chrome-tracing profiler and the `UG_PROFILE_*` macros.
  * @ingroup group_debug
  *
- * Scope timings feed two consumers. Uge::FrameProfiler always receives them and keeps a
- * live per-frame aggregate for the editor's Debug panel. Uge::Instrumentor additionally
- * writes them as a JSON trace — but only while a session is open, so tracing costs
- * nothing until it is deliberately started.
- *
- * The trace can be opened in `chrome://tracing` or at https://ui.perfetto.dev.
- *
- * @note `UG_PROFILE` is defined to `1` by premake in the Debug and Release
- * configurations and to `0` in Dist, where every macro compiles to nothing.
+ * Every scope timing goes to Uge::FrameProfiler. Uge::Instrumentor also writes it to a
+ * JSON trace while a session is open; open the trace in `chrome://tracing` or
+ * https://ui.perfetto.dev.
  */
 
 
@@ -31,19 +25,19 @@ namespace Uge
 {
 
     /**
-     * @brief One completed timing, as written to the trace file.
+     * @brief One timing, as written to the trace.
      * @ingroup group_debug
      */
     struct ProfileResult
     {
-        std::string Name; ///< Label of the timed scope.
-        /** @brief Start and end timestamps, in microseconds. */
-        long long Start, End; ///< Start and end timestamps, in microseconds.
-        uint32_t ThreadID; ///< Hash of the thread that produced the timing.
+        std::string Name; ///< Scope label.
+        /** @brief Start and end, in microseconds. */
+        long long Start, End; ///< Start and end, in microseconds.
+        uint32_t ThreadID; ///< Hash of the thread's ID.
     };
 
     /**
-     * @brief A named profiling session, corresponding to one output file.
+     * @brief A profiling session, written to one file.
      * @ingroup group_debug
      */
     struct InstrumentationSession
@@ -52,26 +46,10 @@ namespace Uge
     };
 
     /**
-     * @brief Singleton that writes timing results to a Chrome-tracing JSON file.
+     * @brief Writes scope timings to a Chrome-tracing JSON file while a session is open.
      * @ingroup group_debug
      *
-     * Use the macros rather than this class directly. `main` in EntryPoint.h opens a
-     * session per phase, producing `UgeProfile-Startup.json`, `UgeProfile-Runtime.json`
-     * and `UgeProfile-Shutdown.json`.
-     *
-     * @code
-     * void Scene::OnUpdateRuntime(Timestep ts)
-     * {
-     *     UG_PROFILE_FUNCTION();          // times the whole function
-     *     {
-     *         UG_PROFILE_SCOPE("Physics");
-     *         StepPhysics(ts);
-     *     }
-     * }
-     * @endcode
-     *
-     * Thread-safe: every entry point takes an internal lock, so scopes timed on asset
-     * loading threads interleave correctly with the main thread's.
+     * Thread-safe.
      */
     class Instrumentor
     {
@@ -81,17 +59,16 @@ namespace Uge
         int m_ProfileCount;
         std::mutex m_Mutex;
     public:
-        /** @brief Constructs the profiler with no active session. */
+        /** @brief A profiler with no session open. */
         Instrumentor()
             : m_CurrentSession(nullptr), m_ProfileCount(0)
         {
         }
 
         /**
-         * @brief Opens a trace file and starts a session.
+         * @brief Opens a trace file and starts a session. Does nothing while one is open.
          * @param name Session name.
-         * @param filepath Output path for the JSON trace; overwritten if it exists.
-         * @note Call EndSession() before starting another; sessions do not nest.
+         * @param filepath The JSON trace file; overwritten if it exists.
          */
         void BeginSession(const std::string& name, const std::string& filepath = "results.json")
         {
@@ -105,7 +82,7 @@ namespace Uge
             m_CurrentSession = new InstrumentationSession{ name };
         }
 
-        /** @brief Closes the trace file, completing the JSON document. */
+        /** @brief Finishes the trace file and ends the session. */
         void EndSession()
         {
             std::lock_guard<std::mutex> lock(m_Mutex);
@@ -121,11 +98,8 @@ namespace Uge
         }
 
         /**
-         * @brief Reports whether a trace is currently being written.
+         * @brief Whether a trace is being written.
          * @return `true` between BeginSession() and EndSession().
-         *
-         * Uge::InstrumentationTimer checks this so that, with no session open, timing a
-         * scope costs only the FrameProfiler aggregation.
          */
         bool IsSessionActive()
         {
@@ -134,9 +108,8 @@ namespace Uge
         }
 
         /**
-         * @brief Appends one timing entry to the open trace.
-         * @param result The timing to record.
-         * @note Does nothing when no session is open.
+         * @brief Adds a timing to the trace. Does nothing without an open session.
+         * @param result The timing.
          */
         void WriteProfile(const ProfileResult& result)
         {
@@ -161,13 +134,13 @@ namespace Uge
             m_OutputStream << "\"ts\":" << result.Start;
             m_OutputStream << "}";
 
-            // Deliberately not flushed: a flush per event would cost more than the scopes
-            // being measured. WriteFooter() flushes once, when the session closes.
+            // Not flushed per event, which would cost more than the scopes being measured.
+            // WriteFooter() flushes.
         }
 
         /**
-         * @brief Writes the opening JSON object of the trace document.
-         * @note Caller must hold the internal lock.
+         * @brief Writes the start of the trace document.
+         * @note The caller must hold the lock.
          */
         void WriteHeader()
         {
@@ -175,8 +148,8 @@ namespace Uge
         }
 
         /**
-         * @brief Writes the closing JSON of the trace document and flushes it to disk.
-         * @note Caller must hold the internal lock.
+         * @brief Writes the end of the trace document and flushes the file.
+         * @note The caller must hold the lock.
          */
         void WriteFooter()
         {
@@ -185,8 +158,8 @@ namespace Uge
         }
 
         /**
-         * @brief Returns the singleton profiler.
-         * @return Reference to the process-wide instance.
+         * @brief The profiler.
+         * @return The instance.
          */
         static Instrumentor& Get()
         {
@@ -196,17 +169,15 @@ namespace Uge
     };
 
     /**
-     * @brief RAII scope timer that reports its duration on destruction.
+     * @brief Times a scope and records the duration when destroyed.
      * @ingroup group_debug
-     *
-     * Created by `UG_PROFILE_SCOPE` and `UG_PROFILE_FUNCTION` rather than by hand.
      */
     class InstrumentationTimer
     {
     public:
         /**
          * @brief Starts timing.
-         * @param name Label for this scope; must outlive the timer, so use a literal.
+         * @param name Scope label: a string literal or `__FUNCSIG__`.
          */
         InstrumentationTimer(const char* name)
             : m_Name(name), m_Stopped(false)
@@ -214,19 +185,14 @@ namespace Uge
             m_StartTimepoint = std::chrono::high_resolution_clock::now();
         }
 
-        /** @brief Stops the timer if Stop() has not already been called. */
+        /** @brief Stops the timer unless Stop() already did. */
         ~InstrumentationTimer()
         {
             if (!m_Stopped)
                 Stop();
         }
 
-        /**
-         * @brief Ends the measurement and records it.
-         *
-         * Safe to call early to end a measurement before the scope closes; the destructor
-         * will then do nothing.
-         */
+        /** @brief Ends the measurement and records it. The destructor then does nothing. */
         void Stop()
         {
             auto endTimepoint = std::chrono::high_resolution_clock::now();
@@ -234,10 +200,9 @@ namespace Uge
             long long start = std::chrono::time_point_cast<std::chrono::microseconds>(m_StartTimepoint).time_since_epoch().count();
             long long end = std::chrono::time_point_cast<std::chrono::microseconds>(endTimepoint).time_since_epoch().count();
 
-            // Always aggregated, so the editor's Debug panel has live numbers.
             FrameProfiler::Submit(m_Name, (end - start) / 1000.0f);
 
-            // Only serialised when a trace is actually being captured.
+            // Written to the trace only while a session is open.
             if (Instrumentor::Get().IsSessionActive())
             {
                 uint32_t threadID = static_cast<uint32_t>(std::hash<std::thread::id>{}(std::this_thread::get_id()));
@@ -259,11 +224,10 @@ namespace Uge
 
 /**
  * @def UG_PROFILE
- * @brief Master switch: `1` enables profiling, `0` compiles every macro to nothing.
+ * @brief `1` turns profiling on. At `0`, the default, every profiling macro is empty.
  * @ingroup group_debug
  *
- * Set per configuration by premake — `1` in Debug and Release, absent in Dist, where the
- * fallback below turns profiling off.
+ * Premake defines it as `1` in Debug and Release.
  */
 #ifndef UG_PROFILE
 	#define UG_PROFILE 0
@@ -271,55 +235,45 @@ namespace Uge
 
 /**
  * @def UG_PROFILE_SCOPE_TIMER_NAME
- * @brief Builds a unique timer variable name from a line number.
- * @param line The line number to append.
+ * @brief A timer variable name ending in @p line.
+ * @param line Line number.
  * @ingroup group_debug
- * @note Implementation detail of #UG_PROFILE_SCOPE.
  */
 #define UG_PROFILE_SCOPE_TIMER_NAME(line) ugProfileTimer##line
 
 /**
  * @def UG_PROFILE_SCOPE_TIMER_NAME_EXPAND
- * @brief Expands @p line before pasting it, which `##` would otherwise prevent.
- * @param line The line number to append.
+ * @brief Expands @p line before pasting it.
+ * @param line Line number.
  * @ingroup group_debug
- * @note Implementation detail of #UG_PROFILE_SCOPE.
  */
 #define UG_PROFILE_SCOPE_TIMER_NAME_EXPAND(line) UG_PROFILE_SCOPE_TIMER_NAME(line)
 
 /**
  * @def UG_PROFILE_BEGIN_SESSION
- * @brief Opens a profiling session writing to @p filepath.
+ * @brief Opens a trace session.
  * @param name Session name.
- * @param filepath Output trace path.
+ * @param filepath Trace file.
  * @ingroup group_debug
- * @note Expands to nothing unless #UG_PROFILE is `1`.
  */
 
 /**
  * @def UG_PROFILE_END_SESSION
- * @brief Closes the current profiling session.
+ * @brief Closes the trace session.
  * @ingroup group_debug
- * @note Expands to nothing unless #UG_PROFILE is `1`.
  */
 
 /**
  * @def UG_PROFILE_SCOPE
- * @brief Times the enclosing scope under the label @p name.
- * @param name Literal label shown in the trace viewer and the editor's Debug panel.
+ * @brief Times the rest of the enclosing scope.
+ * @param name Label, a string literal.
  * @ingroup group_debug
- *
- * The timer variable is named after the source line, so several scopes may be timed
- * within one function without colliding.
- *
- * @note Expands to nothing unless #UG_PROFILE is `1`.
  */
 
 /**
  * @def UG_PROFILE_FUNCTION
- * @brief Times the enclosing function, labelling it with its full signature.
+ * @brief Times the enclosing function, labelled with its signature.
  * @ingroup group_debug
- * @note Expands to nothing unless #UG_PROFILE is `1`.
  */
 
 #if UG_PROFILE

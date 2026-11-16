@@ -1,6 +1,6 @@
 /**
  * @file ContentBrowserPanel.h
- * @brief Browses the project's asset directory.
+ * @brief The content browser panel.
  * @ingroup group_editor
  */
 
@@ -16,27 +16,22 @@ namespace Uge
 {
 
 	/**
-	 * @brief Browses the project's content, as either registered assets or raw files.
+	 * @brief Lists the project's registered assets, or every file in the asset directory.
 	 * @ingroup group_editor
 	 *
-	 * Two modes. **Asset** mode shows a tree built from the asset registry, so only
-	 * imported content appears. **FileSystem** mode walks the asset directory directly,
-	 * showing files that have not been imported yet.
-	 *
-	 * Entries can be dragged onto the viewport or into the properties panel to assign the
-	 * asset, which is carried as an Uge::AssetHandle in the ImGui drag-and-drop payload.
+	 * An asset can be dragged out; the payload is its Uge::AssetHandle.
 	 */
 	class ContentBrowserPanel
 	{
 
 	public:
-		/** @brief Constructs the panel, loads its icons and builds the asset tree. */
+		/** @brief Loads the icons and builds the asset tree. Needs an active project. */
 		ContentBrowserPanel();
 
-		/** @brief Draws the breadcrumb bar and the item grid for the current directory. */
+		/** @brief Draws the current directory. */
 		void OnImGuiRender();
 		
-		/** @brief Rebuilds the directory tree from the current asset registry. */
+		/** @brief Rebuilds the asset tree from the registry. */
 		void RefreshAssetTree();
 
 	private:
@@ -47,26 +42,23 @@ namespace Uge
 		Ref<Texture2D> m_fileIcon;
 
 		/**
-		 * @brief One directory or asset in the browser's tree.
-		 *
-		 * Nodes live in a flat vector and refer to each other by index rather than by pointer,
-		 * so rebuilding the tree cannot leave dangling references.
+		 * @brief A directory or asset in the tree. Nodes refer to each other by index.
 		 */
 		struct TreeNode
 		{
-			std::filesystem::path Path; ///< Path this node represents.
-			AssetHandle Handle = 0; ///< Asset handle; `0` for a directory.
+			std::filesystem::path Path; ///< The path's last component.
+			AssetHandle Handle = 0; ///< The asset; `0` for a directory.
 
-			uint32_t Parent = (uint32_t)-1; ///< Index of the parent node; `-1` at the root.
-			std::map<std::filesystem::path, uint32_t> Children; ///< Child nodes, by name, as indices into the node vector.
+			uint32_t Parent = (uint32_t)-1; ///< The parent's index; `-1` at the root.
+			std::map<std::filesystem::path, uint32_t> Children; ///< Child indices, by name.
 
-			/** @brief Constructs an empty node. */
+			/** @brief An empty node. */
 			TreeNode() = default;
 
 			/**
-			 * @brief Constructs a node for a path.
-			 * @param path Path this node represents.
-			 * @param handle Asset handle, or `0` for a directory.
+			 * @brief A node for a path.
+			 * @param path The path.
+			 * @param handle The asset, or `0` for a directory.
 			 */
 			TreeNode(const std::filesystem::path& path, AssetHandle handle)
 				: Path(path), Handle(handle) { }
@@ -77,10 +69,10 @@ namespace Uge
 
 		std::map<std::filesystem::path, std::vector<std::filesystem::path>> m_assetTree;
 
-		/** @brief What the browser lists. */
+		/** @brief What the browser lists: registered assets, or every file. */
 		enum class Mode
 		{
-			Asset = 0, FileSystem = 1 ///< Registered assets only, or every file on disk.
+			Asset = 0, FileSystem = 1
 		};
 
 		Mode m_mode = Mode::Asset;

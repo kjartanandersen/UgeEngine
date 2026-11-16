@@ -49,7 +49,7 @@ namespace Uge
 			return extension;
 		}
 
-		// Pulls a glTF file apart into its JSON document and, for .glb, the binary chunk.
+		// Reads a glTF file's JSON and, for .glb, its binary chunk.
 		static bool ReadGltfContents(const std::filesystem::path& path, GltfContents& contents)
 		{
 			std::ifstream in(path, std::ios::binary);
@@ -69,8 +69,7 @@ namespace Uge
 			if (!in || header[0] != k_glbMagic)
 				return false;
 
-			// Chunks run to the end of the file. The spec allows chunk types we do not know
-			// about, which are skipped here - only JSON and BIN carry anything we can use.
+			// Chunk types other than JSON and BIN are skipped.
 			const uint32_t fileLength = header[2];
 			uint32_t offset = sizeof(header);
 			while (offset + 8 <= fileLength)
@@ -107,7 +106,7 @@ namespace Uge
 			return !contents.Json.empty();
 		}
 
-		// Writes `json` back out in the format `source` came from, reusing its binary chunk.
+		// Writes json in source's format (.gltf or .glb), reusing its binary chunk.
 		static bool WriteGltfContents(const std::filesystem::path& path, const std::string& json, const GltfContents& source)
 		{
 			std::ofstream out(path, std::ios::binary);
@@ -167,10 +166,8 @@ namespace Uge
 		std::filesystem::path modelPath = Project::GetAssetDirectory() / metadata.FilePath;
 		auto assetManager = Project::GetActive()->GetEditorAssetManager();
 
-		// A glTF file can hold more than one scene and assimp only ever walks the default
-		// one, so the others would import as geometry no node reaches. Split them into a
-		// file per scene, register the extra scenes as assets of their own, and import
-		// scene 0 under the handle we were asked for.
+		// assimp only reads a glTF file's default scene, so each scene gets its own file.
+		// Scene 0 is imported under this handle; the others are registered as new assets.
 		std::vector<std::filesystem::path> scenePaths = SplitGltfScenes(modelPath);
 		if (!scenePaths.empty())
 		{
@@ -186,15 +183,11 @@ namespace Uge
 
 		Assimp::Importer importer;
 
-		// The mesh path only knows how to build triangle index buffers, so have
-		// aiProcess_SortByPType discard line/point primitives instead of splitting
-		// them out into meshes we would then draw as garbage triangles.
+		// Only triangles can be drawn, so aiProcess_SortByPType drops points and lines.
 		importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
 
-		// No aiProcess_CalcTangentSpace: MeshVertex carries no tangent/bitangent, so the
-		// result is discarded. It is also by far the most expensive step on dense meshes
-		// (430s -> 6s on a 5.7M vertex FBX in Debug). Re-add it alongside tangent fields
-		// on MeshVertex if normal mapping is ever wired up.
+		// No aiProcess_CalcTangentSpace: MeshVertex has no tangents, and it is the slowest
+		// step on dense meshes. Add it back with tangent fields for normal mapping.
 		const aiScene* scene = importer.ReadFile(
 			modelPath.string(),
 			aiProcess_Triangulate |
@@ -246,12 +239,11 @@ namespace Uge
 
 		const rapidjson::SizeType sceneCount = scenesMember->value.Size();
 		if (sceneCount < 2)
-			return {};	// assimp already reaches everything through the single scene
+			return {};	// one scene needs no split
 
 		rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
 
-		// Deep copy the scenes out before touching the array: each output file keeps exactly
-		// one of them and the array is rewritten in place below.
+		// Copied out first, because the array is rewritten for each output file.
 		std::vector<rapidjson::Value> scenes;
 		scenes.reserve(sceneCount);
 		for (rapidjson::SizeType i = 0; i < sceneCount; i++)
@@ -269,15 +261,12 @@ namespace Uge
 			if (std::filesystem::exists(scenePath))
 				continue;
 
-			// Only "scenes" and "scene" change. Every node, mesh, accessor and bufferView
-			// index in the rest of the document stays valid and the binary chunk is copied
-			// through untouched, so the nodes the dropped scenes used simply become
-			// unreachable - which is exactly what makes assimp ignore them.
+			// Only "scenes" and "scene" change, so every other index stays valid. The other
+			// scenes' nodes become unreachable, and assimp ignores them.
 			document["scenes"].SetArray();
 			document["scenes"].PushBack(scenes[i], allocator);
 
-			// A one element "scenes" array makes 0 the right default, so an absent "scene"
-			// member needs no fixing up.
+			// With one scene, an absent "scene" member already means 0.
 			auto sceneMember = document.FindMember("scene");
 			if (sceneMember != document.MemberEnd())
 				sceneMember->value.SetInt(0);
@@ -288,7 +277,7 @@ namespace Uge
 
 			if (!WriteGltfContents(scenePath, std::string(buffer.GetString(), buffer.GetSize()), contents))
 			{
-				// Leave the caller to import the original file rather than a half written set.
+				// The caller then imports the original file instead of a partial set.
 				UG_CORE_ERROR("Failed to write split glTF scene to '{0}'", scenePath.string());
 				return {};
 			}
@@ -311,8 +300,7 @@ namespace Uge
 		{
 			aiMaterial* aiMat = scene->mMaterials[i];
 
-			// Imported materials share the Model's shader (bound during Mesh::Draw), so
-			// they are created without one of their own.
+			// No shader of its own: imported materials use the model shader.
 			Ref<Material> material = Material::Create(nullptr);
 
 			aiString materialName;
@@ -383,8 +371,8 @@ namespace Uge
 
 			}
 
-			// Where KHR_materials_emissive_strength lands. glTF's default is 1, so a material
-			// that emits at all but omits the extension must not be left at 0.
+			// KHR_materials_emissive_strength defaults to 1, so an emissive material without
+			// it gets 1, not 0.
 			ai_real emissiveIntensity;
 			if (aiMat->Get(AI_MATKEY_EMISSIVE_INTENSITY, emissiveIntensity) == AI_SUCCESS)
 			{
@@ -436,8 +424,8 @@ namespace Uge
 		}
 		else
 		{
-			// Formats other than glTF have no alphaMode, so fall back to the opacity factor.
-			// FBX in particular expresses a transparent material only this way.
+			// Without a glTF alpha mode, an opacity below 1 means blending. FBX marks
+			// transparency this way.
 			ai_real opacity;
 			if (material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS && opacity < 1.0f)
 			{
@@ -521,7 +509,7 @@ namespace Uge
 		if (!scene)
 			return {};
 
-		// reference is of the form "*N" where N is an index into scene->mTextures.
+		// reference is "*N", where N indexes scene->mTextures.
 		char* end = nullptr;
 		long index = std::strtol(reference.c_str() + 1, &end, 10);
 		if (end == reference.c_str() + 1 || *end != '\0' || index < 0 || index >= static_cast<long>(scene->mNumTextures))
@@ -539,13 +527,12 @@ namespace Uge
 
 		if (embedded->mHeight != 0)
 		{
-			// Raw, uncompressed pixel data would need re-encoding before it can be written
-			// as a standalone image file. Not handled yet.
+			// Uncompressed pixels would need encoding into an image file. Not supported.
 			UG_CORE_WARN("Uncompressed embedded texture '{0}' is not supported yet", reference);
 			return {};
 		}
 
-		// Compressed: pcData holds the raw encoded file bytes (PNG/JPG/...), mWidth = byte count.
+		// Compressed: pcData holds the encoded file (PNG, JPG...) and mWidth its byte count.
 		std::string extension = embedded->achFormatHint[0] != '\0' ? embedded->achFormatHint : "png";
 		std::string fileName = modelPath.stem().string() + "_embedded_" + std::to_string(index) + "." + extension;
 		std::filesystem::path outputPath = (modelDirectory / fileName).lexically_normal();

@@ -73,7 +73,7 @@ vec4 getTexColor()
 }
 
 float screenPxRange() {
-	const float pxRange = 2.0; // set to distance field's pixel range
+	const float pxRange = 2.0; // The distance field's pixel range.
     vec2 unitRange = vec2(pxRange)/vec2(textureSize(u_FontAtlas, 0));
     vec2 screenTexSize = vec2(1.0)/fwidth(Input.TexCoord);
     return max(0.5*dot(unitRange, screenTexSize), 1.0);
@@ -83,9 +83,7 @@ float median(float r, float g, float b) {
     return max(min(r, g), min(max(r, g), b));
 }
 
-// The scene target is linear RGBA16F and the resolve pass sRGB-encodes it once for the whole
-// frame, so text colours have to be decoded here or they are encoded twice and come out
-// washed out. @see Uge::PostProcess
+// The scene target is linear and text colours are sRGB, so they are decoded here.
 vec3 SrgbToLinear(vec3 color)
 {
 	vec3 low = color / 12.92;
@@ -110,7 +108,7 @@ void main()
 	if (fragColor.a == 0.0)
 		discard;
 
-	// Alpha carries the glyph coverage and is not gamma encoded, so only rgb is decoded.
+	// Alpha is the glyph's coverage, which isn't sRGB.
 	fragColor.rgb = SrgbToLinear(fragColor.rgb);
 	
 	entityID = v_EntityID;

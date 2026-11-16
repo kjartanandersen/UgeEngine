@@ -1,6 +1,6 @@
 /**
  * @file AABB.h
- * @brief File detailing the implementation of Axis Aligned Bounding Box.
+ * @brief Axis-aligned bounding box.
  * @ingroup group_math
  */
 
@@ -11,28 +11,27 @@
 namespace Uge::Math
 {
 	/**
-	 * @brief Implementation of Axis Aligned Bounding Box, currently used for frustrum culling. 
-	 * Based on James Arvo's algorithm
+	 * @brief An axis-aligned bounding box.
 	 * @ingroup group_math
 	 *
-	 * On initialization Min is set to floating point maximum and Max is set to floating point minimum so that Grow() can accumulate
+	 * Starts empty, with Min at `FLT_MAX` and Max at `-FLT_MAX`, so Grow() can build it up.
 	 */
 	struct AABB
 	{
 
-		glm::vec3 Min = glm::vec3( FLT_MAX); ///< The Minimum, XYZ set to floating point maximum on start
-		glm::vec3 Max = glm::vec3(-FLT_MAX); ///< The Maximum, XYZ set to floating point minimum on start
+		glm::vec3 Min = glm::vec3( FLT_MAX); ///< Smallest corner.
+		glm::vec3 Max = glm::vec3(-FLT_MAX); ///< Largest corner.
 
-  /**
-      @brief  Checks if the AABB minimums and maximums are valid
-      @retval bool - True if valid, otherwise false
-  **/
+		/**
+		 * @brief Whether the box contains anything.
+		 * @return `true` unless Min is above Max on some axis.
+		 */
 		bool IsValid() const { return Min.x <= Max.x && Min.y <= Max.y && Min.z <= Max.z; }
 
-  /**
-      @brief Grow the AABB minimums and maximums so that the point fits into the AABB
-      @param point - The point added into the AABB
-  **/
+		/**
+		 * @brief Grows the box to contain a point.
+		 * @param point The point.
+		 */
 		void Grow(const glm::vec3& point)
 		{
 
@@ -41,10 +40,10 @@ namespace Uge::Math
 
 		}
 
-  /**
-      @brief Grow the AABB minimums and maximums so that the AABB fits into the AABB
-      @param other - The AABB added into the AABB
-  **/
+		/**
+		 * @brief Grows the box to contain another box. An empty box is ignored.
+		 * @param other The other box.
+		 */
 		void Grow(const AABB& other)
 		{
 			if (!other.IsValid())
@@ -52,26 +51,26 @@ namespace Uge::Math
 				return;
 			}
 
-			Min = glm::min(Min, other.Min);	
+			Min = glm::min(Min, other.Min);
 			Max = glm::max(Max, other.Max);
 		}
 
-  /**
-      @brief  Get the center of the AABB
-      @retval  - The center
-  **/
+		/**
+		 * @brief The center.
+		 * @return The center.
+		 */
 		glm::vec3 GetCenter()  const { return (Min + Max) * 0.5f; }
-  /**
-      @brief  Get the extents of the AABB
-      @retval  - The extents
-  **/
+		/**
+		 * @brief Half the size on each axis.
+		 * @return The extents.
+		 */
 		glm::vec3 GetExtents() const { return (Max - Min) * 0.5f; }
 
-  /**
-      @brief  James Arvo's implementation for transforming on AABB
-      @param  matrix - The transformation matrix
-      @retval	- A transformed AABB
-  **/
+		/**
+		 * @brief The box around this one after a transform, by James Arvo's method.
+		 * @param matrix The transform.
+		 * @return The new box. An empty box is returned unchanged.
+		 */
 		AABB AABB::Transform(const glm::mat4& matrix) const
 		{
 			if (!IsValid())

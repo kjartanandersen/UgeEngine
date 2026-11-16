@@ -1,6 +1,6 @@
 /**
  * @file Renderer2D.h
- * @brief The batched 2D draw path: quads, sprites and MSDF text.
+ * @brief The batched 2D renderer.
  * @ingroup group_renderer
  */
 
@@ -20,257 +20,219 @@ namespace Uge
 {
 
 	/**
-	 * @brief Batched renderer for quads, sprites and text.
+	 * @brief Draws quads, sprites, text and lines in batches.
 	 * @ingroup group_renderer
 	 *
-	 * Accumulates geometry into a large vertex buffer and issues a single draw call per
-	 * batch, so drawing a thousand sprites costs roughly one draw call rather than a
-	 * thousand. A batch is flushed automatically when the vertex buffer fills up or when
-	 * more distinct textures are used than there are texture slots.
-	 *
-	 * Every draw takes an optional `entityID` written to the framebuffer's integer
-	 * attachment, which is what lets the editor resolve a click to an entity.
-	 *
-	 * @code
-	 * Renderer2D::BeginScene(camera, transform);
-	 * Renderer2D::DrawQuad({ 0.0f, 0.0f }, { 1.0f, 1.0f }, { 1, 0, 0, 1 });
-	 * Renderer2D::DrawSprite(transform, spriteComponent, (int)entity);
-	 * Renderer2D::EndScene();       // flushes the final batch
-	 * @endcode
-	 *
-	 * @warning State is entirely separate from Uge::Renderer3D and Uge::Model. Do not
-	 * interleave their begin/end pairs — close one before opening another.
-	 *
-	 * @note All rotation parameters are in **radians**.
+	 * A batch is drawn when it fills, when its texture slots run out, and at EndScene().
+	 * Rotations are in radians. Its state is separate from Uge::Model's.
 	 */
 	class Renderer2D
 	{
 
 		
 	public:
-		// Per-frame counters live in Uge::RenderStats, which every draw path shares.
-
 		/**
-		 * @brief Allocates the batch buffers, shaders and the default white texture.
-		 *
-		 * Called by Uge::Renderer::Init; clients do not call it themselves.
+		 * @brief Creates the batch buffers, shaders and white texture.
 		 */
 		static void Init();
-		/** @brief Releases the batching resources. */
+		/** @brief Releases the buffers, shaders and textures. */
 		static void Shutdown();
 
 
 		/**
-		 * @brief Begins a batch using a scene camera and its entity transform.
-		 * @param camera Camera supplying the projection.
-		 * @param transform The camera entity's world transform; its inverse becomes the view.
-		 *
-		 * The runtime form, used when playing a scene through a Uge::CameraComponent.
+		 * @brief Uploads the camera and starts a batch.
+		 * @param camera The camera.
+		 * @param transform The camera's world transform.
 		 */
 		static void BeginScene(const Camera& camera, const glm::mat4& transform);
 		/**
-		 * @brief Begins a batch using the editor's orbit camera.
-		 * @param camera Editor camera supplying the view-projection matrix.
+		 * @brief Uploads the editor camera and starts a batch.
+		 * @param camera The camera.
 		 */
 		static void BeginScene(const EditorCamera& camera);
 		/**
-		 * @brief Begins a batch using a standalone orthographic camera.
-		 * @param camera Camera supplying the projection.
-		 * @deprecated Kept for the Sandbox samples; prefer the Uge::Camera overload.
+		 * @brief Restarts the quad batch without uploading the camera.
+		 * @param camera Unused.
+		 * @deprecated Used by the Sandbox; use the Uge::Camera overload.
 		 */
 		static void BeginScene(const OrthographicCamera& camera); // TODO: Remove
-		/** @brief Ends the batch and flushes any remaining geometry. */
+		/** @brief Draws what is batched. */
 		static void EndScene();
-		/** @brief Issues a draw call for the geometry accumulated so far. */
+		/** @brief Draws what is batched, without starting a new batch. */
 		static void Flush();
 
 
 
 		// Primitives
 		/**
-		 * @brief Draws a solid-colour quad from a full transform matrix.
-		 * @param transform Model matrix positioning and sizing the unit quad.
-		 * @param color RGBA tint, components in `[0, 1]`.
-		 * @param entityID ID written to the picking attachment; `-1` for none.
+		 * @brief Draws a unit quad in a colour.
+		 * @param transform Model matrix.
+		 * @param color RGBA colour.
+		 * @param entityID The entity, for mouse picking; `-1` for none.
 		 */
 		static void DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID = -1);
 		/**
-		 * @brief Draws a textured quad from a full transform matrix.
-		 * @param transform Model matrix positioning and sizing the unit quad.
-		 * @param texture Texture to sample.
-		 * @param tintColor Multiplied with the sampled colour; white leaves it unchanged.
-		 * @param entityID ID written to the picking attachment; `-1` for none.
+		 * @brief Draws a textured unit quad.
+		 * @param transform Model matrix.
+		 * @param texture The texture.
+		 * @param tintColor Multiplied with the texture.
+		 * @param entityID The entity, for mouse picking; `-1` for none.
 		 */
 		static void DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f), int entityID = -1);
 
 		/**
-		 * @brief Draws a solid-colour quad at a 2D position.
-		 * @param position Centre position; z is `0`.
-		 * @param size Width and height in world units.
+		 * @brief Draws a quad in a colour.
+		 * @param position Centre; z is `0`.
+		 * @param size Width and height.
 		 * @param color RGBA colour.
 		 */
 		static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
 		/**
-		 * @brief Draws a solid-colour quad at a 3D position.
-		 * @param position Centre position; z orders it against other quads.
-		 * @param size Width and height in world units.
+		 * @brief Draws a quad in a colour.
+		 * @param position Centre; z orders it against other quads.
+		 * @param size Width and height.
 		 * @param color RGBA colour.
 		 */
 		static void DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color);
 		/**
-		 * @brief Draws a textured quad at a 2D position.
-		 * @param position Centre position; z is `0`.
-		 * @param size Width and height in world units.
-		 * @param texture Texture to sample.
-		 * @param tintColor Multiplied with the sampled colour.
+		 * @brief Draws a textured quad.
+		 * @param position Centre; z is `0`.
+		 * @param size Width and height.
+		 * @param texture The texture.
+		 * @param tintColor Multiplied with the texture.
 		 */
 		static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
 		/**
-		 * @brief Draws a textured quad at a 3D position.
-		 * @param position Centre position; z orders it against other quads.
-		 * @param size Width and height in world units.
-		 * @param texture Texture to sample.
-		 * @param tintColor Multiplied with the sampled colour.
+		 * @brief Draws a textured quad.
+		 * @param position Centre; z orders it against other quads.
+		 * @param size Width and height.
+		 * @param texture The texture.
+		 * @param tintColor Multiplied with the texture.
 		 */
 		static void DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
 		/**
-		 * @brief Draws an atlas region at a 2D position.
-		 * @param position Centre position; z is `0`.
-		 * @param size Width and height in world units.
-		 * @param subTexture Atlas region supplying the texture coordinates.
-		 * @param tintColor Multiplied with the sampled colour.
+		 * @brief Draws a quad with part of a texture atlas.
+		 * @param position Centre; z is `0`.
+		 * @param size Width and height.
+		 * @param subTexture The atlas region.
+		 * @param tintColor Multiplied with the texture.
 		 */
 		static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor = glm::vec4(1.0f));
 		/**
-		 * @brief Draws an atlas region at a 3D position.
-		 * @param position Centre position; z orders it against other quads.
-		 * @param size Width and height in world units.
-		 * @param subTexture Atlas region supplying the texture coordinates.
-		 * @param tintColor Multiplied with the sampled colour.
+		 * @brief Draws a quad with part of a texture atlas.
+		 * @param position Centre; z orders it against other quads.
+		 * @param size Width and height.
+		 * @param subTexture The atlas region.
+		 * @param tintColor Multiplied with the texture.
 		 */
 		static void DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor = glm::vec4(1.0f));
 
-		// Rotations is in radians
 		/**
-		 * @brief Draws a rotated solid-colour quad at a 2D position.
-		 * @param position Centre position; z is `0`.
-		 * @param rotation Rotation about the z axis, in **radians**.
-		 * @param size Width and height in world units.
+		 * @brief Draws a rotated quad in a colour.
+		 * @param position Centre; z is `0`.
+		 * @param rotation Rotation about z, in radians.
+		 * @param size Width and height.
 		 * @param color RGBA colour.
 		 */
 		static void DrawRotatedQuad(const glm::vec2& position, float rotation, const glm::vec2& size, const glm::vec4& color);
 		/**
-		 * @brief Draws a rotated solid-colour quad at a 3D position.
-		 * @param position Centre position; z orders it against other quads.
-		 * @param rotation Rotation about the z axis, in **radians**.
-		 * @param size Width and height in world units.
+		 * @brief Draws a rotated quad in a colour.
+		 * @param position Centre; z orders it against other quads.
+		 * @param rotation Rotation about z, in radians.
+		 * @param size Width and height.
 		 * @param color RGBA colour.
 		 */
 		static void DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const glm::vec4& color);
 		/**
-		 * @brief Draws a rotated textured quad at a 2D position.
-		 * @param position Centre position; z is `0`.
-		 * @param rotation Rotation about the z axis, in **radians**.
-		 * @param size Width and height in world units.
-		 * @param texture Texture to sample.
-		 * @param tintColor Multiplied with the sampled colour.
+		 * @brief Draws a rotated textured quad.
+		 * @param position Centre; z is `0`.
+		 * @param rotation Rotation about z, in radians.
+		 * @param size Width and height.
+		 * @param texture The texture.
+		 * @param tintColor Multiplied with the texture.
 		 */
 		static void DrawRotatedQuad(const glm::vec2& position, float rotation, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
 		/**
-		 * @brief Draws a rotated textured quad at a 3D position.
-		 * @param position Centre position; z orders it against other quads.
-		 * @param rotation Rotation about the z axis, in **radians**.
-		 * @param size Width and height in world units.
-		 * @param texture Texture to sample.
-		 * @param tintColor Multiplied with the sampled colour.
+		 * @brief Draws a rotated textured quad.
+		 * @param position Centre; z orders it against other quads.
+		 * @param rotation Rotation about z, in radians.
+		 * @param size Width and height.
+		 * @param texture The texture.
+		 * @param tintColor Multiplied with the texture.
 		 */
 		static void DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
 		/**
-		 * @brief Draws a rotated atlas region at a 2D position.
-		 * @param position Centre position; z is `0`.
-		 * @param rotation Rotation about the z axis, in **radians**.
-		 * @param size Width and height in world units.
-		 * @param subTexture Atlas region supplying the texture coordinates.
-		 * @param tintColor Multiplied with the sampled colour.
+		 * @brief Draws a rotated quad with part of a texture atlas.
+		 * @param position Centre; z is `0`.
+		 * @param rotation Rotation about z, in radians.
+		 * @param size Width and height.
+		 * @param subTexture The atlas region.
+		 * @param tintColor Multiplied with the texture.
 		 */
 		static void DrawRotatedQuad(const glm::vec2& position, float rotation, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor = glm::vec4(1.0f));
 		/**
-		 * @brief Draws a rotated atlas region at a 3D position.
-		 * @param position Centre position; z orders it against other quads.
-		 * @param rotation Rotation about the z axis, in **radians**.
-		 * @param size Width and height in world units.
-		 * @param subTexture Atlas region supplying the texture coordinates.
-		 * @param tintColor Multiplied with the sampled colour.
+		 * @brief Draws a rotated quad with part of a texture atlas.
+		 * @param position Centre; z orders it against other quads.
+		 * @param rotation Rotation about z, in radians.
+		 * @param size Width and height.
+		 * @param subTexture The atlas region.
+		 * @param tintColor Multiplied with the texture.
 		 */
 		static void DrawRotatedQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const Ref<SubTexture2D>& subTexture, const glm::vec4& tintColor = glm::vec4(1.0f));
 
 		/**
-		 * @brief Draws an entity's sprite component.
-		 * @param transform The entity's world transform.
-		 * @param src Sprite component supplying the texture, tint and tiling factor.
-		 * @param entityID ID written to the picking attachment; `-1` for none.
-		 *
-		 * The bridge between the ECS and this renderer: Uge::Scene calls it for every entity
-		 * holding a Uge::SpriteRendererComponent.
+		 * @brief Draws a sprite. Without a texture that resolves, it is drawn in its colour.
+		 * @param transform World transform.
+		 * @param src The sprite.
+		 * @param entityID The entity, for mouse picking; `-1` for none.
 		 */
 		static void DrawSprite(const glm::mat4& transform, const SpriteRendererComponent& src, int entityID = -1);
 
-		/** @brief Colour and spacing options for a text draw. */
+		/** @brief Text colour and spacing. */
 		struct TextParams
 		{
-			glm::vec4 Color{ 1.0f }; ///< Text colour, RGBA.
-			float Kerning = 0.0f; ///< Extra spacing between glyphs, in world units.
-			float LineSpacing = 0.0f; ///< Extra spacing between lines, in world units.
+			glm::vec4 Color{ 1.0f }; ///< RGBA colour.
+			float Kerning = 0.0f; ///< Extra space between glyphs.
+			float LineSpacing = 0.0f; ///< Extra space between lines.
 
 
 		};
 		/**
-		 * @brief Draws a string using a multi-channel signed distance field font.
-		 * @param string Text to draw; interpreted as UTF-8.
-		 * @param font Font supplying the glyph atlas and metrics.
-		 * @param transform Model matrix positioning the text; the baseline starts at the origin.
-		 * @param textParams Colour, kerning and line spacing.
-		 * @param entityID ID written to the picking attachment; `-1` for none.
-		 *
-		 * MSDF glyphs stay sharp at any scale, unlike a conventional bitmap font atlas.
+		 * @brief Draws a string.
+		 * @param string UTF-8 text.
+		 * @param font The font.
+		 * @param transform Model matrix; the baseline starts at the origin.
+		 * @param textParams Colour and spacing.
+		 * @param entityID The entity, for mouse picking; `-1` for none.
 		 */
 		static void DrawString(const std::string& string, Ref<Font> font, const glm::mat4& transform, const TextParams& textParams, int entityID = -1);
 		/**
-		 * @brief Draws an entity's text component.
-		 * @param string Text to draw.
-		 * @param transform The entity's world transform.
-		 * @param component Text component supplying the font, colour and spacing.
-		 * @param entityID ID written to the picking attachment; `-1` for none.
+		 * @brief Draws a string with a text component's font, colour and spacing.
+		 * @param string UTF-8 text.
+		 * @param transform World transform.
+		 * @param component The text component.
+		 * @param entityID The entity, for mouse picking; `-1` for none.
 		 */
 		static void DrawString(const std::string& string, const glm::mat4& transform, const TextComponent& component, int entityID = -1);
 		
 		/**
-		 * @brief Draws a single line segment.
-		 * @param p0 Start point in world space.
-		 * @param p1 End point in world space.
-		 * @param color RGBA colour, components in `[0, 1]`.
-		 * @param entityID ID written to the picking attachment; `-1` for none.
-		 *
-		 * Lines are batched separately from quads and text and drawn with their own shader,
-		 * so they cost one extra draw call per flush rather than one per line. The batch is
-		 * flushed automatically when it fills up.
-		 *
-		 * This is the sink Uge::PhysicsDebugRenderer implementations forward into.
+		 * @brief Draws a line, in a batch of its own.
+		 * @param p0 Start, in world space.
+		 * @param p1 End, in world space.
+		 * @param color RGBA colour.
+		 * @param entityID The entity, for mouse picking; `-1` for none.
 		 */
 		static void DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color, int entityID = -1);
 
 		/**
-		 * @brief Sets the width used for subsequent line batches.
-		 * @param width Line width in pixels.
-		 *
-		 * @note Applied once per flush, so it affects a whole batch rather than individual
-		 * lines. Most core-profile drivers clamp anything above `1.0` back to `1.0`.
+		 * @brief Sets the line width, which applies to a whole batch.
+		 * @param width Width in pixels. Most drivers clamp it to 1.
 		 */
 		static void SetLineWidth(float width);
 
 		/**
-		 * @brief Returns the width subsequent line batches are drawn with.
-		 * @return Line width in pixels.
+		 * @brief The line width.
+		 * @return Width in pixels.
 		 */
 		static float GetLineWidth();
 
@@ -279,10 +241,10 @@ namespace Uge
 		static void NextBatch();
 
 		/**
-		 * @brief The current batch's slot for a texture, adding the texture if it isn't bound yet.
-		 * @param texture Texture to look up.
-		 * @return The slot index, as the float the vertex format stores. When every slot is
-		 *         taken, the batch is drawn and a new one started first.
+		 * @brief A texture's slot in the batch. Adds the texture, drawing the batch first if
+		 * the slots are full.
+		 * @param texture The texture.
+		 * @return The slot, as a float.
 		 */
 		static float GetTextureSlot(const Ref<Texture2D>& texture);
 

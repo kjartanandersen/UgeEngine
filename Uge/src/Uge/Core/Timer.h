@@ -1,6 +1,6 @@
 /**
  * @file Timer.h
- * @brief Small high-resolution stopwatch.
+ * @brief A stopwatch.
  * @ingroup group_core
  */
 
@@ -12,27 +12,19 @@ namespace Uge
 {
 
 	/**
-	 * @brief A stopwatch over `std::chrono::high_resolution_clock`.
+	 * @brief A high-resolution stopwatch that starts when it is created.
 	 * @ingroup group_core
-	 *
-	 * Starts on construction; call Reset() to restart it.
-	 *
-	 * @code
-	 * Timer timer;
-	 * LoadScene(path);
-	 * UG_CORE_INFO("Scene loaded in {0}ms", timer.ElapsedMillis());
-	 * @endcode
 	 */
 	class Timer
 	{
 	public:
-		/** @brief Constructs the timer and starts it. */
+		/** @brief Creates and starts the timer. */
 		Timer()
 		{
 			Reset();
 		}
 
-		/** @brief Restarts the measurement from now. */
+		/** @brief Restarts the timer. */
 		void Timer::Reset()
 		{
 			m_Start = std::chrono::high_resolution_clock::now();

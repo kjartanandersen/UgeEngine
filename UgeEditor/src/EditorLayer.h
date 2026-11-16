@@ -1,6 +1,6 @@
 /**
  * @file EditorLayer.h
- * @brief The layer implementing essentially all of the editor's behaviour.
+ * @brief The editor layer.
  * @ingroup group_editor
  */
 
@@ -17,145 +17,125 @@ namespace Uge
 {
 
 	/**
-	 * @brief The editor: viewport, gizmos, mouse picking, play controls and scene commands.
+	 * @brief The editor: viewport, gizmos, mouse picking, play mode, menus and panels.
 	 * @ingroup group_editor
 	 *
-	 * Renders the scene into an off-screen Uge::Framebuffer and displays its colour
-	 * attachment as an ImGui image, which is what makes the viewport a dockable panel.
-	 * A second `RED_INTEGER` attachment stores a per-pixel entity ID, read back on click
-	 * to resolve the entity under the cursor.
-	 *
-	 * Play mode runs on a **copy** of the scene, so entering and leaving it leaves the
-	 * edited scene untouched:
-	 *
-	 * @code
-	 * m_editorScene = m_activeScene;              // keep the edited scene
-	 * m_activeScene = Scene::Copy(m_editorScene); // play on a copy
-	 * m_activeScene->OnRuntimeStart();
-	 * @endcode
-	 *
-	 * @see Uge::SceneHierarchyPanel, Uge::ContentBrowserPanel
+	 * Play mode runs on a copy of the edited scene.
 	 */
 	class EditorLayer : public Layer
 	{
 
 	public:
-		/** @brief Constructs the layer; resources are created in OnAttach(). */
+		/** @brief Does nothing; resources are created in OnAttach(). */
 		EditorLayer();
 		/** @brief Default destructor. */
 		virtual ~EditorLayer() = default;
 
-		/** @brief Creates the framebuffer, loads editor icons and opens the startup project. */
+		/**
+		 * @brief Opens the project named on the command line, or asks for one and closes the
+		 * program if none is picked. Then creates the framebuffers and loads the icons and fonts.
+		 */
 		virtual void OnAttach() override;
-		/** @brief Releases the editor's resources. */
+		/** @brief Stops play mode if it is running. */
 		virtual void OnDetach() override;
 
 		/**
-		 * @brief Resizes the framebuffer if needed, renders the scene and reads back the
-		 *        hovered entity.
-		 * @param ts Frame delta time.
-		 *
-		 * Dispatches to Uge::Scene::OnUpdateEditor or Uge::Scene::OnUpdateRuntime depending on
-		 * the current scene state.
+		 * @brief Renders the scene, finds the hovered entity, and runs bloom and tonemapping.
+		 * @param ts Frame time.
 		 */
 		virtual void OnUpdate(Timestep ts) override;
 		/**
-		 * @brief Forwards events to the editor camera and handles editor shortcuts.
-		 * @param e Event to handle.
+		 * @brief Passes events to the editor camera and handles shortcuts and clicks.
+		 * @param e The event.
 		 */
 		virtual void OnEvent(Event& e) override;
 		/**
-		 * @brief Emits the dockspace, menu bar, viewport, gizmos, stats and every panel.
+		 * @brief Draws the dockspace, menus, viewport, gizmo, toolbar and panels.
 		 */
 		virtual void OnImGuiRender() override;
 
 	private:
 		/**
-		 * @brief Handles editor keyboard shortcuts.
-		 * @param e The key event.
-		 * @return `true` if the shortcut was consumed.
+		 * @brief Handles shortcuts, except while the editor camera is turning.
 		 *
-		 * Covers new/open/save, entity duplication and delete, and the Q/W/E/R gizmo modes.
+		 * Ctrl+N, Ctrl+O, Ctrl+S and Ctrl+Shift+S for scenes, Ctrl+P to open a project,
+		 * Ctrl+D to duplicate, Delete, Ctrl+R to reload scripts, and Q, W, E, R and T for the
+		 * gizmo.
+		 *
+		 * @param e The key event.
+		 * @return `false`, so the event goes on to other handlers.
 		 */
 		bool OnKeyPressed(KeyPressedEvent& e);
 		/**
-		 * @brief Selects the entity under the cursor on a left click in the viewport.
+		 * @brief Selects the hovered entity on a left click in the viewport, unless the cursor
+		 * is over the gizmo or Alt is held.
 		 * @param e The mouse event.
-		 * @return `true` if the click was consumed.
-		 *
-		 * Ignored while a gizmo is being manipulated or the Alt camera modifier is held.
+		 * @return `false`, so the event goes on to other handlers.
 		 */
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
-		/** @brief Writes the active project and its asset registry to disk. */
+		/** @brief Does nothing; its body is commented out. */
 		void SaveProject();
-		/** @brief Creates a new empty project and makes it active. */
+		/** @brief Makes a new, unsaved project active. */
 		void NewProject();
 		/**
-		 * @brief Prompts for a `.ugproj` file and opens it.
-		 * @return `true` if a project was opened; `false` if the dialog was cancelled.
+		 * @brief Asks for a `.ugproj` file and opens it.
+		 * @return `false` if the dialog was cancelled.
 		 */
 		bool OpenProject();
 		/**
-		 * @brief Opens a project and loads its start scene.
-		 * @param path Path to the `.ugproj` file.
+		 * @brief Opens a project, starts scripting, and opens its start scene if it has one.
+		 * @param path The `.ugproj` file.
 		 */
 		void OpenProject(const std::filesystem::path& path);
 
-		/** @brief Prompts for a path and saves the current scene to it. */
+		/**
+		 * @brief Asks for a path and saves the scene there. Registers it if it is a `.uge` file
+		 * in the asset directory. Refused in play mode.
+		 */
 		void SaveSceneAs();
-		/** @brief Saves the current scene to its existing path, or prompts if it has none. */
+		/** @brief Saves the scene to its path, or calls SaveSceneAs() if it has none. Refused in play mode. */
 		void SaveScene();
-		/** @brief Replaces the current scene with an empty one. */
+		/** @brief Stops play mode and opens an empty scene. */
 		void NewScene();
-		/** @brief Prompts for a `.uge` file and opens it as the current scene. */
+		/** @brief Does nothing; its body is commented out. */
 		void OpenScene();
 		/**
-		 * @brief Opens a scene asset by handle.
-		 * @param handle Handle of the scene to open.
-		 * @note Stops play mode first if it is running.
+		 * @brief Stops play mode and opens a copy of a scene asset, reloaded from disk.
+		 * @param handle The scene's handle.
 		 */
 		void OpenScene(AssetHandle handle);
 
 		/**
-		 * @brief Enters play mode on a copy of the edited scene.
-		 *
-		 * The edited scene is kept aside so OnSceneStop() can restore it unchanged.
+		 * @brief Starts play mode on a copy of the edited scene.
 		 */
 		void OnScenePlay();
-		/** @brief Leaves play mode and restores the edited scene. */
+		/** @brief Stops play mode and goes back to the edited scene. */
 		void OnSceneStop();
-		/** @brief Toggles the paused state of the running scene. */
+		/** @brief Pauses the running scene. Does nothing in Edit mode. */
 		void OnScenePause();
 
 		/**
-		 * @brief Writes a scene to a path via Uge::SceneSerializer.
-		 * @param scene Scene to save.
-		 * @param path Destination `.uge` path.
-		 * @return `true` if the scene was written; the serializer logs why not.
+		 * @brief Saves a scene.
+		 * @param scene The scene.
+		 * @param path The `.uge` file.
+		 * @return `true` if it was written; otherwise the serializer has logged why.
 		 */
 		bool SerializeScene(Ref<Scene> scene, const std::filesystem::path& path);
 
 		// UI panels
-		/** @brief Draws the play/pause/step/stop toolbar above the viewport. */
+		/** @brief Draws the play, pause, step and stop toolbar. */
 		void UI_Toolbar();
 
-		/** @brief Duplicates the selected entity and selects the copy. */
+		/** @brief Duplicates the selected entity and selects the copy. Edit mode only. */
 		void OnDuplicateEntry();
 
 		/**
-		 * @brief Draws the physics collider wireframes over the rendered scene.
+		 * @brief Draws the collider wireframes from the collider components, if View >
+		 * Physics Colliders is on.
 		 *
-		 * Opens its own Uge::Renderer2D scene: the one Uge::Scene opened has already been
-		 * closed and flushed by the time this runs. It uses the editor camera in Edit and the
-		 * scene's primary camera in Play, so the wireframes always match the image behind
-		 * them.
-		 *
-		 * Geometry comes from the collider components through Uge::ColliderWireframe rather
-		 * than from the simulation, because no Uge::PhysicsScene exists outside play mode.
-		 *
-		 * @note Called after the entity-picking readback, so the `-1` entity IDs the line
-		 * shader writes cannot affect what the cursor resolves to.
+		 * Uses the editor camera in Edit mode and the primary camera in Play. Runs after the
+		 * picking readback, so the lines don't affect picking.
 		 */
 		void OnOverlayRender();
 
@@ -197,9 +177,9 @@ namespace Uge
 		bool m_showDebug = true;
 		bool m_showLoadedAssets = false;
 
-		// Physics collider overlay, driven by the View menu. @see OnOverlayRender
-		bool m_showPhysicsColliders = false; ///< Whether collider wireframes are drawn at all.
-		bool m_colliderXRay = true; ///< Draws them with depth testing off, so a collider buried in its own mesh stays visible.
+		// Collider overlay, set from the View menu.
+		bool m_showPhysicsColliders = false; ///< Whether collider wireframes are drawn.
+		bool m_colliderXRay = true; ///< Whether they are drawn without the depth test.
 
 		Entity m_hoveredEntity;
 
@@ -210,11 +190,11 @@ namespace Uge
 		bool m_viewportHovered = false;
 
 		// Editor Resources
-		/** @brief Whether the editor is editing or playing the scene. */
+		/** @brief Whether the scene is being edited or played. */
 		enum class SceneState
 		{
-			Edit = 0, ///< Editing; the scene renders from the editor camera.
-			Play = 1 ///< Playing; scripts run and the scene renders from its primary camera.
+			Edit = 0, ///< Rendered from the editor camera.
+			Play = 1 ///< Running, and rendered from the primary camera.
 		};
 
 		SceneState m_sceneState = SceneState::Edit;

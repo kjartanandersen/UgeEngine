@@ -1,6 +1,6 @@
 /**
  * @file SceneCameraTests.cpp
- * @brief Tests for Uge::SceneCamera's projection maintenance.
+ * @brief Tests for Uge::SceneCamera.
  */
 
 #include <ugpch.h>
@@ -26,8 +26,7 @@ TEST(SceneCameraTest, DefaultsToOrthographic)
 
 TEST(SceneCameraTest, OrthographicProjectionMatchesTheViewportExtents)
 {
-	// Size is the vertical extent and the horizontal one follows the aspect ratio, so a
-	// 2:1 viewport with size 10 sees 20 units across and 10 down.
+	// Size is the visible height, so a 2:1 viewport with size 10 sees 20 across.
 	SceneCamera camera;
 	camera.SetOrtho(10.0f, -1.0f, 1.0f);
 	camera.SetViewportSize(1600, 800);
@@ -49,7 +48,7 @@ TEST(SceneCameraTest, OrthographicSizeScalesTheProjection)
 	camera.SetOrthoSize(5.0f);
 	const float narrow = camera.GetProjection()[1][1];
 
-	// Halving the visible extent doubles the scale factor: zooming in, not out.
+	// Half the size doubles the scale.
 	EXPECT_NEAR(narrow, wide * 2.0f, s_tolerance);
 }
 
@@ -61,16 +60,14 @@ TEST(SceneCameraTest, PerspectiveProjectionFollowsTheFieldOfView)
 
 	const glm::mat4& projection = camera.GetProjection();
 
-	// At 90 degrees vertical, the vertical scale is exactly 1, and the horizontal one is
-	// that divided by the aspect ratio.
+	// At 90 degrees the vertical scale is 1, and the horizontal one is 1 over the aspect ratio.
 	EXPECT_NEAR(projection[1][1], 1.0f, 1e-5f);
 	EXPECT_NEAR(projection[0][0], 0.5f, 1e-5f);
 }
 
 TEST(SceneCameraTest, FieldOfViewIsStoredInRadiansAndReportedInDegrees)
 {
-	// SetPersp takes radians while the getter and the property panel's setter use degrees;
-	// mixing them up gives a camera that looks either fully zoomed in or inside-out.
+	// SetPersp takes radians; the field of view getter and setter use degrees.
 	SceneCamera camera;
 	camera.SetPersp(glm::radians(60.0f), 0.1f, 100.0f);
 
@@ -107,8 +104,7 @@ TEST(SceneCameraTest, SetOrthoAndSetPerspSwitchTheProjectionType)
 
 TEST(SceneCameraTest, SwitchingTypeKeepsBothParameterSets)
 {
-	// Documented behaviour, and what makes the projection dropdown in the properties panel
-	// safe to flip back and forth while experimenting.
+	// Each projection keeps its settings while the other is in use.
 	SceneCamera camera;
 	camera.SetOrtho(7.0f, -3.0f, 9.0f);
 	camera.SetPersp(glm::radians(70.0f), 0.25f, 500.0f);
@@ -128,8 +124,7 @@ TEST(SceneCameraTest, SwitchingTypeKeepsBothParameterSets)
 
 TEST(SceneCameraTest, EverySetterRebuildsTheProjectionImmediately)
 {
-	// The properties panel edits these live and never asks for a recalculation, so a
-	// setter that only stored its value would show a stale viewport.
+	// Each setter rebuilds the projection.
 	SceneCamera camera;
 	camera.SetViewportSize(800, 600);
 

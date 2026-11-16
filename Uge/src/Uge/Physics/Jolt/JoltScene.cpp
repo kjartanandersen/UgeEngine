@@ -30,7 +30,7 @@
 namespace Uge
 {
 
-    /// Builds the primitive shape for one collider. Returns an empty ref on failure.
+    /// Builds one collider's shape. Returns an empty ref on failure.
     static JPH::ShapeRefC BuildColliderShape(const ColliderDesc& collider, BodyType bodyType)
     {
         JPH::Ref<JPH::ShapeSettings> settings;
@@ -49,7 +49,7 @@ namespace Uge
         }
         else if (const auto* capsule = std::get_if<CapsuleShapeDesc>(&collider.Shape))
         {
-            // Jolt's argument order is (halfHeightOfCylinder, radius) — the reverse of ours.
+            // Jolt takes (halfHeightOfCylinder, radius), the reverse of our order.
             auto* s = new JPH::CapsuleShapeSettings(capsule->HalfHeight, capsule->Radius);
             s->SetDensity(collider.Material.Density);
             settings = s;
@@ -62,10 +62,9 @@ namespace Uge
                 return {};
             }
 
-            // JPH::MeshShape::MustBeStatic() is true, and both CompoundShape and DecoratedShape
-            // propagate it, so one triangle mesh makes the whole body static-only. A triangle
-            // soup also has no volume, so Jolt cannot derive mass from it. Downgrade rather than
-            // drop the collider: a moving body with a hull is far more useful than no body.
+            // A triangle mesh makes the whole body static-only (MustBeStatic carries through
+            // compound and decorated shapes) and has no volume to derive mass from. A moving
+            // body falls back to a convex hull instead of losing the collider.
             bool convex = mesh->Convex;
             if (!convex && bodyType != BodyType::Static)
             {
@@ -105,9 +104,8 @@ namespace Uge
                     triangles.push_back(JPH::IndexedTriangle(
                         mesh->Indices[i], mesh->Indices[i + 1], mesh->Indices[i + 2], 0));
 
-                // MeshShapeSettings derives from ShapeSettings, not ConvexShapeSettings: there is
-                // no SetDensity, because a triangle soup has no volume. Density is ignored here.
-                // The constructor calls Sanitize(), dropping duplicate and degenerate triangles.
+                // A triangle soup has no volume, so there is no SetDensity. The constructor
+                // drops duplicate and degenerate triangles.
                 settings = new JPH::MeshShapeSettings(std::move(vertices), std::move(triangles));
             }
         }
@@ -129,7 +127,7 @@ namespace Uge
 
     namespace
     {
-        /// Excludes sensors from queries: a trigger volume should not block a line-of-sight ray.
+        /// Skips sensors, so a trigger doesn't block a ray.
         class IgnoreSensorsBodyFilter : public JPH::BodyFilter
         {
         public:
@@ -141,19 +139,17 @@ namespace Uge
     }
 
     /**
-     * @brief Buffers Jolt contact callbacks for the main thread to drain.
+     * @brief Buffers Jolt's contact callbacks for the main thread.
      *
-     * @warning Every method except the sensor bookkeeping runs on Jolt's worker threads,
-     * concurrently, while PhysicsSystem::Update is in flight and all bodies are locked.
-     * Nothing here may touch entt::registry, resolve an asset, or call into Mono — buffer
-     * only, and dispatch after Step() returns.
+     * The callbacks run on Jolt's worker threads during Update, with every body locked, so
+     * they only buffer. Nothing here may touch the registry, assets or Mono.
      */
     class JoltContactListener : public JPH::ContactListener
     {
     public:
         /**
-         * @brief Binds the listener to the system whose contacts it buffers.
-         * @param physicsSystem System queried for WereBodiesInContact during callbacks.
+         * @brief Creates the listener.
+         * @param physicsSystem System asked whether two bodies were already touching.
          */
         explicit JoltContactListener(JPH::PhysicsSystem& physicsSystem)
             : m_physicsSystem(physicsSystem)
@@ -161,18 +157,17 @@ namespace Uge
         }
 
         /**
-         * @brief Buffers a ContactType::Begin the first step two bodies touch.
-         * @param body1 First body of the pair, in Jolt's sorted order.
-         * @param body2 Second body of the pair, in Jolt's sorted order.
-         * @param manifold Contact manifold for this sub-shape pair; unused.
-         * @param settings Mutable contact response; deliberately left untouched.
+         * @brief Buffers a ContactType::Begin when two bodies first touch.
+         * @param body1 First body.
+         * @param body2 Second body.
+         * @param manifold Unused.
+         * @param settings Left unchanged.
          */
         void OnContactAdded(const JPH::Body& body1, const JPH::Body& body2,
             const JPH::ContactManifold& manifold,
             JPH::ContactSettings& settings) override
         {
-            // One callback per sub-shape pair: a compound body fires several for a single
-            // body pair. False here means this is the step the two bodies first touched.
+            // Called per sub-shape pair. False means the bodies weren't touching before.
             if (m_physicsSystem.WereBodiesInContact(body1.GetID(), body2.GetID()))
             {
                 return;
@@ -186,13 +181,12 @@ namespace Uge
         }
 
         /**
-         * @brief Buffers a ContactType::End once the last sub-shape contact disappears.
-         * @param pair Sub-shape pair that stopped touching.
+         * @brief Buffers a ContactType::End when the last sub-shape contact ends.
+         * @param pair Sub-shape pair that separated.
          */
         void OnContactRemoved(const JPH::SubShapeIDPair& pair) override
         {
-            // Symmetric: true means other sub-shape contacts survive, so the bodies have
-            // not actually separated yet.
+            // True means other sub-shape contacts remain, so the bodies still touch.
             if (m_physicsSystem.WereBodiesInContact(pair.GetBody1ID(), pair.GetBody2ID()))
             {
                 return;
@@ -202,15 +196,14 @@ namespace Uge
             const PhysicsBodyID a = FromJoltBodyID(pair.GetBody1ID());
             const PhysicsBodyID b = FromJoltBodyID(pair.GetBody2ID());
 
-            // The bodies cannot be read here — they may already be destroyed — so the
-            // sensor flag comes from the set instead.
+            // The bodies may already be destroyed, so the sensor flag comes from the set.
             Push(ContactEvent{ a, b, ContactType::End,
                                IsSensorBody(a) || IsSensorBody(b) });
         }
 
         /**
-         * @brief Moves the buffered events into @p out, keeping the buffer's capacity.
-         * @param out Receives the pending events; its previous contents are discarded.
+         * @brief Moves the buffered events into @p out.
+         * @param out Receives the events; its contents are replaced.
          */
         void Drain(std::vector<ContactEvent>& out)
         {
@@ -219,9 +212,9 @@ namespace Uge
             m_pending.clear();
         }
 
-        /** @brief Records a sensor body. Main thread only; never during Step(). @param body Sensor body. */
+        /** @brief Records a sensor body. Main thread, outside Step(). @param body Sensor body. */
         void MarkSensor(PhysicsBodyID body) { m_sensorBodies.insert(body.Value); }
-        /** @brief Drops a destroyed body. Main thread only; never during Step(). @param body Body being destroyed. */
+        /** @brief Forgets a destroyed body. Main thread, outside Step(). @param body The body. */
         void ForgetBody(PhysicsBodyID body) { m_sensorBodies.erase(body.Value); }
 
     private:
@@ -241,8 +234,7 @@ namespace Uge
         std::mutex m_mutex;
         std::vector<ContactEvent> m_pending;
 
-        // Written only by CreateBody/DestroyBody on the main thread and read lock-free from
-        // the callbacks. Sound because body creation never overlaps PhysicsSystem::Update.
+        // Written on the main thread outside Update, so the callbacks read it without a lock.
         std::unordered_set<uint32_t> m_sensorBodies;
     };
 
@@ -264,8 +256,7 @@ namespace Uge
     JoltScene::~JoltScene()
     {
 
-        // m_contactListener is declared after m_physicsSystem, so it is destroyed first.
-        // Detaching explicitly means the PhysicsSystem never holds a dangling listener.
+        // The listener is destroyed before the system, so it is detached first.
         m_physicsSystem.SetContactListener(nullptr);
 
     }
@@ -304,7 +295,7 @@ namespace Uge
             return {};
         }
 
-        // --- 1. Bake each collider, then combine ------------------------------------
+        // 1. Build each collider's shape, then combine them.
 
         JPH::ShapeRefC shape;
 
@@ -316,8 +307,7 @@ namespace Uge
             if (shape == nullptr)
                 return {};
 
-            // A single collider carries its offset in a decorator; a compound would
-            // add a level of indirection for nothing.
+            // A single collider's offset goes in a decorator; no compound is needed.
             if (collider.Offset != glm::vec3(0.0f))
             {
                 JPH::Ref<JPH::ShapeSettings> offsetSettings =
@@ -336,8 +326,7 @@ namespace Uge
         }
         else
         {
-            // CompoundShapeSettings::AddShape already takes a local transform, so the
-            // per-collider offset goes there — no RotatedTranslated wrapper needed.
+            // AddShape takes each collider's offset directly.
 
             JPH::Ref<JPH::StaticCompoundShapeSettings> compound =
                 new JPH::StaticCompoundShapeSettings();
@@ -374,8 +363,7 @@ namespace Uge
             return {};
         }
 
-        // --- 2. Bake the entity's scale into the shape ------------------------------
-        // Jolt bodies have no scale of their own; this is baked once, at creation.
+        // 2. Apply the entity's scale. Jolt bodies have no scale, so it is fixed at creation.
         if (desc.Scale != glm::vec3(1.0f))
         {
 
@@ -388,7 +376,7 @@ namespace Uge
             shape = result.Get();
         }
 
-        // --- 3. Describe the body ---------------------------------------------------
+        // 3. Describe the body.
 
         JPH::EMotionType motionType = JPH::EMotionType::Dynamic;
         switch (desc.Type)
@@ -406,8 +394,8 @@ namespace Uge
             motionType,
             objectLayer);
 
-        // Jolt stores friction/restitution on the body, not the shape, so a multi-collider
-        // body gets one surface response: the first collider's. Same for the sensor flag.
+        // Friction, restitution and the sensor flag are per body in Jolt: the first
+        // collider's apply.
         settings.mFriction = desc.Colliders[0].Material.Friction;
         settings.mRestitution = desc.Colliders[0].Material.Restitution;
         settings.mIsSensor = desc.Colliders[0].IsTrigger;
@@ -424,14 +412,14 @@ namespace Uge
                 | JPH::EAllowedDOFs::TranslationZ;
         }
 
-        // Mass == 0 means "derive it from shape volume and density", which is Jolt's default.
+        // Mass 0 leaves Jolt to derive it from volume and density.
         if (desc.Mass > 0.0f && motionType == JPH::EMotionType::Dynamic)
         {
             settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
             settings.mMassPropertiesOverride.mMass = desc.Mass;
         }
 
-        // --- 4. Create and add ------------------------------------------------------
+        // 4. Create the body and add it.
 
         JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
 
@@ -561,15 +549,14 @@ namespace Uge
             return false;
         }
 
-        // JPH::RRayCast stores direction and length in one vector: the ray ends at
-        // mOrigin + mDirection. Our contract keeps them separate, so combine here.
+        // RRayCast's direction includes the length: the ray ends at mOrigin + mDirection.
 
         JPH::RRayCast ray(
             ToJolt(origin),
             ToJolt(direction * (maxDistance / directionLength))
         );
 
-        // mFraction defaults to 1.0f + FLT_EPSILON, i.e. "consider the whole ray".
+        // mFraction starts just above 1, so the whole ray is considered.
 
         JPH::RayCastResult hit;
 
@@ -581,8 +568,7 @@ namespace Uge
             return false;
         }
         
-        // mFraction is along the scaled direction vector, so it is already normalized
-        // against maxDistance.
+        // mFraction is a fraction of maxDistance.
 
         const JPH::RVec3 hitPosition = ray.GetPointOnRay(hit.mFraction);
 
@@ -591,7 +577,7 @@ namespace Uge
         outHit.Distance = hit.mFraction * maxDistance;
         outHit.Normal = glm::vec3(0.0f);
 
-        // RayCastResult has no normal; deriving it needs the body and the sub-shape it hit.
+        // RayCastResult has no normal; the hit sub-shape gives it.
         const JPH::BodyLockRead lock(m_physicsSystem.GetBodyLockInterface(), hit.mBodyID);
         if (lock.Succeeded())
         {
@@ -622,15 +608,13 @@ namespace Uge
         const IgnoreSensorsBodyFilter bodyFilter;
         JPH::AllHitCollisionCollector<JPH::CollideShapeCollector> collector;
 
-        // The {} is the broad-phase filter; the layer mask and the sensor filter come after it.
-        // Passing only {} left those two at their defaults, so every layer and every trigger
-        // was reported.
+        // {} is the broad-phase filter; the layer and sensor filters follow it.
         m_physicsSystem.GetNarrowPhaseQuery().CollideShape(&shape, JPH::Vec3::sOne(),
             JPH::Mat44::sTranslation(ToJolt(center)), settings, JPH::Vec3::sZero(), collector,
             {}, layerFilters, bodyFilter);
 
-        // One hit per sub-shape touched, so a compound body can appear several times. Sort and
-        // drop repeats rather than searching outBodies for each hit, which is quadratic.
+        // One hit per sub-shape, so a compound body can appear more than once. Sorting
+        // removes the repeats.
         std::vector<JPH::BodyID> ids;
         ids.reserve(collector.mHits.size());
         for (const auto& hit : collector.mHits)

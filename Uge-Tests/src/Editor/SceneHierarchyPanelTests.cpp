@@ -1,6 +1,6 @@
 /**
  * @file SceneHierarchyPanelTests.cpp
- * @brief Tests for the editor's hierarchy and properties panel, drawn headlessly.
+ * @brief Tests for the scene hierarchy and properties panel.
  */
 
 #include <ugpch.h>
@@ -29,11 +29,7 @@ namespace
 {
 
 	/**
-	 * @brief An ImGui context and an active project, which the panel needs both of.
-	 *
-	 * Every asset-backed component the properties inspector draws asks
-	 * Uge::AssetManager whether its handle is valid, and that facade asserts when no
-	 * project is loaded — so the panel cannot be drawn without one.
+	 * @brief An ImGui context and an active project, which the asset fields need.
 	 */
 	class SceneHierarchyPanelTest : public UgeTests::HeadlessImGuiTest
 	{
@@ -88,8 +84,7 @@ TEST_F(SceneHierarchyPanelTest, SetContextClearsTheSelection)
 	m_panel.SetSelectedEntity(entity);
 	ASSERT_TRUE(m_panel.GetSelectedEntity());
 
-	// Opening another scene must drop the handle: it points into the old registry, and
-	// dereferencing it once that scene is gone is undefined.
+	// A new scene clears the selection, which belongs to the old one.
 	m_panel.SetContext(Uge::CreateRef<Scene>());
 
 	EXPECT_FALSE(m_panel.GetSelectedEntity());
@@ -109,8 +104,7 @@ TEST_F(SceneHierarchyPanelTest, RendersThePropertiesOfASelectedEntity)
 
 TEST_F(SceneHierarchyPanelTest, RendersEveryComponentInspector)
 {
-	// One entity carrying everything: each component has its own DrawComponent block with
-	// its own ImGui id scope and style pushes, and this is what walks all of them.
+	// One entity with every component, so every DrawComponent block runs.
 	Entity entity = m_scene->CreateEntity("Everything");
 	entity.AddComponent<Uge::CameraComponent>();
 	entity.AddComponent<Uge::SpriteRendererComponent>();
@@ -127,7 +121,7 @@ TEST_F(SceneHierarchyPanelTest, RendersEveryComponentInspector)
 
 TEST_F(SceneHierarchyPanelTest, RendersAnOrthographicCameraInspector)
 {
-	// The projection dropdown draws a different set of widgets per type.
+	// Each projection type draws different widgets.
 	Entity entity = m_scene->CreateEntity("Camera");
 	entity.AddComponent<Uge::CameraComponent>().Cam.SetProjectionType(
 		Uge::SceneCamera::ProjectionType::Orthographic);
@@ -163,8 +157,7 @@ TEST_F(SceneHierarchyPanelTest, RendersAnUnassignedAssetSlotAsNone)
 
 TEST_F(SceneHierarchyPanelTest, RendersADanglingAssetHandleWithoutResolvingIt)
 {
-	// A scene saved against content that has since been deleted still has to open, showing
-	// the slot as invalid rather than asserting on the missing asset.
+	// Handles to deleted assets show as invalid instead of asserting.
 	Entity entity = m_scene->CreateEntity("Broken");
 	entity.AddComponent<Uge::SpriteRendererComponent>().Texture = Uge::AssetHandle(0xDEAD);
 	entity.AddComponent<Uge::MeshComponent>().Mesh = Uge::AssetHandle(0xBEEF);
@@ -175,14 +168,13 @@ TEST_F(SceneHierarchyPanelTest, RendersADanglingAssetHandleWithoutResolvingIt)
 
 	DrawFrames(2, [this]() { m_panel.OnImGuiRender(); });
 
-	// Drawing must not have registered anything to make those handles resolve.
+	// Drawing registered nothing.
 	EXPECT_FALSE(Manager()->IsAssetHandleValid(Uge::AssetHandle(0xDEAD)));
 }
 
 TEST_F(SceneHierarchyPanelTest, RendersAnAssignedTextureSlot)
 {
-	// The valid-asset branch reads the registry rather than loading the texture, which is
-	// what makes a mock enough to reach it without a GPU.
+	// The valid-asset branch only reads the registry, so a mock texture reaches it.
 	Uge::Ref<UgeTests::MockTexture2D> texture = Uge::CreateRef<UgeTests::MockTexture2D>();
 	const Uge::AssetHandle handle = Manager()->AddMemoryOnlyAsset(texture);
 
@@ -199,8 +191,7 @@ TEST_F(SceneHierarchyPanelTest, RendersAnAssignedTextureSlot)
 
 TEST_F(SceneHierarchyPanelTest, RendersEntitiesWithAwkwardNames)
 {
-	// Tags are user text and reach ImGui as labels; one used as a format string, or one
-	// that collides in the id stack, shows up here.
+	// Tags with format characters, and duplicate tags.
 	m_scene->CreateEntity("100% of %s");
 	m_scene->CreateEntity("##hidden");
 	m_scene->CreateEntity("");
@@ -220,7 +211,6 @@ TEST_F(SceneHierarchyPanelTest, RendersAfterTheSelectedEntityIsDestroyed)
 
 	m_scene->DestroyEntity(entity);
 
-	// The panel's selection is now a stale handle; the frame has to notice it is no longer
-	// valid instead of reading components off it.
+	// The selection is now a destroyed entity, which the panel must not read.
 	DrawFrames(2, [this]() { m_panel.OnImGuiRender(); });
 }

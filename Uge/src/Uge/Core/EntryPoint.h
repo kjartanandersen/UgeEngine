@@ -1,29 +1,9 @@
 /**
  * @file EntryPoint.h
- * @brief Defines the program `main`; include it in exactly one client translation unit.
+ * @brief Defines `main`. Include it in exactly one client source file.
  * @ingroup group_core
  *
- * The engine, not the client, owns startup. A client application includes this header
- * once and implements Uge::CreateApplication; `main` then initializes logging, builds
- * the application, runs it to completion and destroys it, wrapping each phase in its own
- * profiling session.
- *
- * @code
- * // UgeEditorApp.cpp
- * #include <Uge.h>
- * #include <Uge/Core/EntryPoint.h>
- *
- * Uge::Application* Uge::CreateApplication(ApplicationCommandLineArgs args)
- * {
- *     ApplicationSpecification spec;
- *     spec.Name = "Uge-Editor";
- *     spec.CommandLineArgs = args;
- *     return new UgeEditor(spec);
- * }
- * @endcode
- *
- * @warning Including this header in more than one translation unit produces duplicate
- * definitions of `main`.
+ * The client implements Uge::CreateApplication.
  */
 
 #pragma once
@@ -37,31 +17,28 @@
 extern Uge::Application* Uge::CreateApplication(ApplicationCommandLineArgs args);
 
 /**
- * @brief Program entry point supplied by the engine.
+ * @brief The program entry point.
  * @param argc Argument count.
- * @param argv Argument vector.
- * @return `0` on normal shutdown.
+ * @param argv Arguments.
+ * @return `0`.
  * @ingroup group_core
  *
- * Writes `UgeProfile-Startup.json`, `UgeProfile-Runtime.json` and
- * `UgeProfile-Shutdown.json` next to the executable when profiling is enabled.
+ * With profiling on, writes `UgeProfile-Startup.json` and `UgeProfile-Shutdown.json`.
  */
 int main(int argc, char** argv)
 {
 
-	// Initialize the logger
 	Uge::Log::Init();
 
-	// Must come after the logger: the handler reports through it.
+	// After the logger, which the handler reports through.
 	Uge::CrashHandler::Init();
 
 	UG_PROFILE_BEGIN_SESSION("Startup", "UgeProfile-Startup.json");
 	auto app = Uge::CreateApplication({ argc, argv });
 	UG_PROFILE_END_SESSION();
 
-	// The runtime is not traced by default — a trace event per scope per frame would
-	// swamp both the frame time and the disk. Capture one on demand from the editor's
-	// Debug panel instead.
+	// No trace session for the frame loop: tracing every frame is too slow. Traces are
+	// captured on demand instead.
 	app->Run();
 
 	UG_PROFILE_BEGIN_SESSION("Shutdown", "UgeProfile-Shutdown.json");

@@ -1,6 +1,6 @@
 /**
  * @file UUIDTests.cpp
- * @brief Tests for Uge::UUID: the null identifier and generation.
+ * @brief Tests for Uge::UUID.
  */
 
 #include <ugpch.h>
@@ -14,7 +14,7 @@
 
 TEST(UUIDTest, DefaultConstructedIsTheNullIdentifier)
 {
-	// A default-constructed identifier is the null identifier, 0: "no entity", "no asset".
+	// A default UUID is 0, the null identifier.
 	EXPECT_EQ((uint64_t)Uge::UUID(), 0ull);
 	EXPECT_EQ((uint64_t)Uge::AssetHandle(), 0ull);
 }

@@ -1,6 +1,6 @@
 /**
  * @file Bloom.h
- * @brief The light-bleed pass that makes bright surfaces read as emitting light.
+ * @brief Bloom: light bleeding from bright pixels.
  * @ingroup group_renderer
  */
 
@@ -19,71 +19,45 @@ namespace Uge
 	struct RenderSettings;
 
 	/**
-	 * @brief Spreads light from bright pixels into their surroundings.
+	 * @brief Spreads light from pixels brighter than white into their surroundings.
 	 * @ingroup group_renderer
 	 *
-	 * A surface brighter than white cannot be shown as brighter than white — the display has
-	 * no headroom left. Bloom conveys that extra intensity by bleeding it outwards instead,
-	 * which is why an emissive headlight only reads as *emitting* once this pass runs rather
-	 * than merely as a white shape.
-	 *
-	 * The chain thresholds the scene, halves it repeatedly, then accumulates back up, each
-	 * level adding a wider and softer contribution:
-	 *
-	 * @code
-	 * scene --threshold+downsample--> [0] --> [1] --> ... --> [n-1]
-	 *                                  ^-------^-------^--------'   (additive upsample)
-	 * @endcode
-	 *
-	 * @note Each level is its own Uge::Framebuffer rather than a mip of one texture. Mip
-	 * levels would be marginally cheaper, but rendering into individual levels sits outside
-	 * what Uge::Framebuffer expresses, and allocating a different number of levels than are
-	 * written is a mistake that produces plausible-looking output rather than an error.
-	 *
-	 * @warning Requires the scene to have been rendered into a floating-point target. Against
-	 * an `RGBA8` target nothing exceeds `1.0`, so no pixel ever passes the threshold.
+	 * The bright parts of the scene are halved repeatedly, then added back up level by
+	 * level, each one wider and softer. The scene must be in a floating-point target;
+	 * in `RGBA8`, nothing passes the threshold.
 	 */
 	class Bloom
 	{
 	public:
 		/**
-		 * @brief Resizes the chain to match a new scene resolution.
+		 * @brief Resizes the levels for a scene size. Does nothing if the size is unchanged.
 		 * @param width Scene width in pixels.
 		 * @param height Scene height in pixels.
-		 *
-		 * Rebuilds the levels only when the size actually changes, so it is safe to call
-		 * every frame.
 		 */
 		static void Resize(uint32_t width, uint32_t height);
 
-		/**
-		 * @brief Releases the shared shaders, uniform buffer and framebuffers.
-		 *
-		 * Call at shutdown to avoid leaking GPU resources. The chain is rebuilt on first use
-		 * after this call.
-		 */
+		/** @brief Releases the shaders, uniform buffer and framebuffers. */
 		static void Shutdown();
 
 		/**
-		 * @brief Runs the threshold, downsample and upsample chain.
+		 * @brief Runs the bloom passes.
 		 * @param scene Framebuffer whose colour attachment 0 holds the linear HDR scene.
-		 * @param settings Threshold, knee and whether bloom is enabled at all.
+		 * @param settings Whether bloom is on, its threshold and knee.
 		 *
-		 * Does nothing when bloom is disabled or the chain has no levels. Leaves no
-		 * framebuffer bound and restores alpha blending and depth testing.
+		 * Leaves no framebuffer bound, and turns alpha blending and depth testing back on.
 		 */
 		static void Render(const Ref<Framebuffer>& scene, const RenderSettings& settings);
 
 		/**
-		 * @brief Binds the accumulated bloom to a sampler slot.
-		 * @param slot Texture unit to bind to.
-		 * @pre HasResult() must be true.
+		 * @brief Binds the bloom result to a texture slot.
+		 * @param slot Texture unit.
+		 * @pre HasResult() is true.
 		 */
 		static void BindResult(uint32_t slot);
 
 		/**
-		 * @brief Whether a bloom result is available to sample.
-		 * @return `true` if Render() has produced a usable texture this frame.
+		 * @brief Whether Render() produced a result this frame.
+		 * @return `true` if it did.
 		 */
 		static bool HasResult();
 
@@ -91,19 +65,19 @@ namespace Uge
 		static void EnsureResources();
 
 	private:
-		/** @brief Shaders, geometry and the level chain shared by every bloom pass. */
+		/** @brief The shaders, uniform buffer and levels. */
 		struct BloomData
 		{
 			Ref<Shader> DownsampleShader; ///< Threshold and halve.
-			Ref<Shader> UpsampleShader; ///< Tent filter, accumulated additively.
-			Ref<UniformBuffer> SettingsUniformBuffer; ///< Per-pass texel size and threshold.
+			Ref<Shader> UpsampleShader; ///< Tent filter, added up.
+			Ref<UniformBuffer> SettingsUniformBuffer; ///< Texel size and threshold, per pass.
 
-			std::vector<Ref<Framebuffer>> Levels; ///< Progressively halved targets.
-			uint32_t Width = 0; ///< Scene width the chain was built for.
-			uint32_t Height = 0; ///< Scene height the chain was built for.
+			std::vector<Ref<Framebuffer>> Levels; ///< Each half the size of the last.
+			uint32_t Width = 0; ///< Scene width the levels were built for.
+			uint32_t Height = 0; ///< Scene height the levels were built for.
 
-			bool Initialized = false; ///< Whether the shared resources have been created.
-			bool HasResult = false; ///< Whether the last Render() produced output.
+			bool Initialized = false; ///< Whether the shaders and buffer exist.
+			bool HasResult = false; ///< Whether the last Render() produced a result.
 		};
 
 		static BloomData s_bloomData;

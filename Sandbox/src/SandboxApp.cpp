@@ -1,6 +1,6 @@
 /**
  * @file SandboxApp.cpp
- * @brief Entry point of the Sandbox sample application.
+ * @brief The Sandbox application.
  */
 
 #include <Uge.h>
@@ -13,17 +13,14 @@
 
 
 /**
- * @brief The Sandbox client application.
- *
- * Pushes the sample layer that exercises the engine's renderers.
- * @see Uge::CreateApplication
+ * @brief The Sandbox application, which runs Sandbox2D.
  */
 class Sandbox : public Uge::Application
 {
 public:
 	/**
-	 * @brief Constructs the application and pushes the sample layer.
-	 * @param spec Startup configuration from Uge::CreateApplication.
+	 * @brief Creates the application and pushes Sandbox2D.
+	 * @param spec The startup settings.
 	 */
 	Sandbox(Uge::ApplicationSpecification spec)
 		: Uge::Application(spec)

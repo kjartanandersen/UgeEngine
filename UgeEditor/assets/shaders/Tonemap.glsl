@@ -1,10 +1,7 @@
 #type vertex
 #version 450 core
 
-// A fullscreen triangle, not a quad: one primitive instead of two, and no seam along the
-// diagonal where the two halves of a quad meet. The vertex data deliberately overshoots the
-// screen - positions reach 3.0 and texture coordinates reach 2.0 - so the visible [-1, 1]
-// region is the inscribed portion of a triangle twice its size.
+// A fullscreen triangle. Its corners reach 3, so the screen is the part from -1 to 1.
 layout(location = 0) in vec2 a_Position;
 layout(location = 1) in vec2 a_TexCoord;
 
@@ -23,15 +20,13 @@ layout(location = 0) out vec4 fragColor;
 
 layout(location = 0) in vec2 v_TexCoord;
 
-// The scene's HDR colour attachment. Holds linear radiance, which is unbounded above -
-// an emissive car headlight lands well past 1.0.
+// The linear HDR scene.
 layout(binding = 0) uniform sampler2D u_SceneColor;
 
-// The accumulated bloom chain, at half the scene's resolution. @see Uge::Bloom
+// The bloom result, at half the scene's resolution.
 layout(binding = 1) uniform sampler2D u_BloomColor;
 
-// Mirrors Uge::TonemapUniformData. Keep the two in step: a layout mismatch shows up as
-// wrong values, not as an error.
+// Matches TonemapUniformData in PostProcess.cpp.
 layout(std140, binding = 5) uniform TonemapData
 {
 	float u_Exposure;
@@ -51,9 +46,7 @@ vec3 LinearToSrgb(vec3 color)
 	return mix(low, high, step(vec3(0.0031308), color));
 }
 
-// Narkowicz's fit to the ACES filmic curve. Cheap, and it rolls highlights off towards white
-// instead of clipping them to a flat colour, which is what stops a bright specular reading as
-// a solid saturated blob.
+// Narkowicz's fit to the ACES filmic curve.
 vec3 TonemapAces(vec3 color)
 {
 	const float a = 2.51;
@@ -68,9 +61,7 @@ void main()
 {
 	vec3 color = texture(u_SceneColor, v_TexCoord).rgb;
 
-	// Added before exposure and the curve, so the glow is tonemapped along with everything
-	// else. Adding it afterwards would let it survive the highlight roll-off untouched and
-	// read as a flat overlay pasted on top of the image.
+	// Added before exposure and the curve, so bloom is tonemapped too.
 	color += texture(u_BloomColor, v_TexCoord).rgb * u_BloomIntensity;
 
 	color *= u_Exposure;
@@ -84,10 +75,8 @@ void main()
 			color = TonemapAces(color);
 			break;
 		default:
-			// TONEMAP_NONE. Not "no processing" - the encode below still runs. This is the
-			// mode that reproduces what the pipeline did before the HDR target existed, when
-			// Model.glsl encoded to sRGB itself and the RGBA8 attachment clamped the result.
-			// Values above 1.0 are clipped by the RGBA8 target rather than rolled off.
+			// TONEMAP_NONE: no curve, but the sRGB encode still runs. The RGBA8 target clips
+			// values above 1.
 			break;
 	}
 

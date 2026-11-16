@@ -13,8 +13,7 @@ namespace Uge
 
 	UUID UUID::Generate()
 	{
-		// 0 is the null identifier, so it is never handed out. The odds are 2^-64 per call,
-		// but the loop costs nothing.
+		// 0 means none, so it is never generated.
 		uint64_t value;
 		do
 		{

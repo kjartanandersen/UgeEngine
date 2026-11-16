@@ -1,6 +1,6 @@
 /**
  * @file ConsolePanelTests.cpp
- * @brief Tests for the editor's console panel, drawn headlessly.
+ * @brief Tests for the console panel.
  */
 
 #include <ugpch.h>
@@ -25,7 +25,7 @@ namespace
 		LogBuffer::Push(LogEntry{ level, "12:00:00", "UGE", message });
 	}
 
-	/** @brief Console panel over a buffer that starts and ends empty. */
+	/** @brief A console panel, with the log buffer emptied before and after. */
 	class ConsolePanelTest : public UgeTests::HeadlessImGuiTest
 	{
 	protected:
@@ -68,8 +68,7 @@ TEST_F(ConsolePanelTest, RendersEverySeverity)
 
 TEST_F(ConsolePanelTest, PicksUpRecordsPushedBetweenFrames)
 {
-	// The panel caches a snapshot and re-copies on a version change. A stale cache would
-	// show as an empty console while records keep arriving, so drive the transition.
+	// The panel copies the buffer again when its version changes.
 	DrawFrame([this]() { m_panel.OnImGuiRender(); });
 
 	PushEntry(spdlog::level::info, "arrived later");
@@ -81,8 +80,7 @@ TEST_F(ConsolePanelTest, PicksUpRecordsPushedBetweenFrames)
 
 TEST_F(ConsolePanelTest, RendersABufferLargeEnoughToClip)
 {
-	// The row list is built through an ImGuiListClipper, which behaves differently once
-	// the content is taller than the window.
+	// More rows than fit in the window, so the list clipper skips some.
 	for (int i = 0; i < 2000; i++)
 	{
 		PushEntry(spdlog::level::info, "record " + std::to_string(i));
@@ -95,7 +93,7 @@ TEST_F(ConsolePanelTest, RendersABufferLargeEnoughToClip)
 
 TEST_F(ConsolePanelTest, RendersRecordsWithFormattingSpecifiersInThem)
 {
-	// Log text reaches ImGui as user data. Passing it as a format string would crash here.
+	// Log text must not be used as a format string.
 	PushEntry(spdlog::level::err, "failed to open %s at 0x%p (%d%% done)");
 	PushEntry(spdlog::level::warn, "shader has {0} uniforms");
 

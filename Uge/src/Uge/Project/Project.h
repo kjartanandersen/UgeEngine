@@ -1,6 +1,6 @@
 /**
  * @file Project.h
- * @brief The active project: its configuration, paths and asset manager.
+ * @brief The active project: its settings, paths and asset manager.
  * @ingroup group_project
  */
 
@@ -18,39 +18,26 @@ namespace Uge
 {
 
 	/**
-	 * @brief Settings stored in a `.ugproj` file.
+	 * @brief The settings in a `.ugproj` file. Its paths are relative, so a project can move.
 	 * @ingroup group_project
-	 *
-	 * All paths are relative to the project directory — the folder containing the
-	 * `.ugproj` — so a project can be moved or checked out anywhere.
 	 */
 	struct ProjectConfig
 	{
-		std::string Name = "Untitled"; ///< Display name of the project.
+		std::string Name = "Untitled"; ///< Project name.
 
-		AssetHandle StartScene; ///< Scene opened when the project loads.
+		AssetHandle StartScene; ///< Scene opened on load.
 
-		std::filesystem::path AssetDirectory; ///< Content root, relative to the project directory.
-		std::filesystem::path AssetRegistryPath; ///< Asset registry file, relative to the asset directory.
-		std::filesystem::path ScriptModulePath; ///< C# script assembly loaded by Uge::ScriptEngine.
+		std::filesystem::path AssetDirectory; ///< Relative to the project directory.
+		std::filesystem::path AssetRegistryPath; ///< Relative to the asset directory.
+		std::filesystem::path ScriptModulePath; ///< The C# script assembly.
 
 	};
 
 	/**
-	 * @brief The loaded project: a content root, its asset manager and its settings.
+	 * @brief The loaded project.
 	 * @ingroup group_project
 	 *
-	 * A global singleton, since the engine works with one project at a time. Most members
-	 * are static and assert that a project is active, so the whole asset system depends on
-	 * one having been loaded first.
-	 *
-	 * @code
-	 * Ref<Project> project = Project::Load("MyGame/MyGame.ugproj");
-	 * auto scene = AssetManager::GetAsset<Scene>(project->GetConfig().StartScene);
-	 * @endcode
-	 *
-	 * @warning Compose content paths with the `GetAsset*Path*` helpers rather than by hand,
-	 * so relative and absolute forms stay consistent.
+	 * One project is active at a time. The static functions assert when none is.
 	 */
 	class Project
 	{
@@ -58,8 +45,8 @@ namespace Uge
 	public:
 
 		/**
-		 * @brief The project's content root.
-		 * @return Absolute path to the asset directory.
+		 * @brief The asset directory.
+		 * @return Its path.
 		 */
 		static std::filesystem::path GetAssetDirectory()
 		{
@@ -70,8 +57,8 @@ namespace Uge
 		}
 
 		/**
-		 * @brief The directory containing the `.ugproj` file.
-		 * @return Const reference to the project directory.
+		 * @brief The folder holding the `.ugproj` file.
+		 * @return The folder.
 		 */
 		static const std::filesystem::path& GetProjectDirectory() 
 		{
@@ -81,8 +68,8 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Where the asset registry is serialized.
-		 * @return Path to the registry file, inside the asset directory.
+		 * @brief The asset registry file.
+		 * @return Its path.
 		 */
 		static std::filesystem::path GetAssetRegistryPath()
 		{
@@ -93,9 +80,9 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Resolves an asset-relative path against the content root.
+		 * @brief Where an asset path is on disk.
 		 * @param path Path relative to the asset directory.
-		 * @return The corresponding filesystem path.
+		 * @return The path on disk.
 		 */
 		static std::filesystem::path GetAssetFileSystemPath(const std::filesystem::path& path)
 		{
@@ -106,9 +93,9 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Makes a filesystem path relative to the content root.
-		 * @param path Absolute or working-directory-relative path.
-		 * @return The path relative to the asset directory, as stored in the registry.
+		 * @brief A path relative to the asset directory.
+		 * @param path Path on disk.
+		 * @return The relative path.
 		 */
 		static std::filesystem::path GetRelativePath(const std::string& path)
 		{
@@ -119,8 +106,8 @@ namespace Uge
 
 		/**
 		 * @brief GetRelativePath() as a string.
-		 * @param path Path to convert.
-		 * @return The relative path in string form.
+		 * @param path Path on disk.
+		 * @return The relative path.
 		 */
 		static std::string GetRelativePathString(const std::string& path)
 		{
@@ -130,8 +117,8 @@ namespace Uge
 		}
 
 		/**
-		 * @brief The content root as an absolute path.
-		 * @return Absolute path to the asset directory.
+		 * @brief The asset directory as an absolute path.
+		 * @return The path.
 		 */
 		static std::filesystem::path GetAssetAbsolutePath()
 		{
@@ -144,9 +131,9 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Resolves an asset-relative path against the content root.
+		 * @brief Where an asset path is on disk.
 		 * @param path Path relative to the asset directory.
-		 * @return The combined path.
+		 * @return The path on disk.
 		 */
 		static std::filesystem::path GetAssetAbsolutePath(const std::string& path)
 		{
@@ -160,7 +147,7 @@ namespace Uge
 		/**
 		 * @brief GetAssetAbsolutePath() as a string.
 		 * @param path Path relative to the asset directory.
-		 * @return The combined path in string form.
+		 * @return The path on disk.
 		 */
 		static std::string GetAssetAbsolutePathString(const std::string& path)
 		{
@@ -172,66 +159,60 @@ namespace Uge
 		}
 
 		/**
-		 * @brief The project's settings.
-		 * @return Mutable reference to the configuration.
+		 * @brief The settings.
+		 * @return The settings.
 		 */
 		ProjectConfig& GetConfig() { return m_config; }
 
 		/**
-		 * @brief The currently loaded project.
-		 * @return The active project, or null if none has been loaded.
+		 * @brief The active project.
+		 * @return The project, or null if none is loaded.
 		 */
 		static Ref<Project> GetActive() { return s_activeProject; }
 		/**
-		 * @brief The project's asset manager.
-		 * @return The manager, as the common base interface.
+		 * @brief The asset manager.
+		 * @return The manager.
 		 */
 		Ref<AssetManagerBase> GetAssetManager() { return m_assetManager; }
 		/**
-		 * @brief The asset manager as a runtime manager.
-		 * @return The manager downcast to Uge::RuntimeAssetManager.
-		 * @warning Unchecked cast; only valid in a packaged build.
+		 * @brief The asset manager as a Uge::RuntimeAssetManager. Unchecked; packaged builds only.
+		 * @return The manager.
 		 */
 		Ref<RuntimeAssetManager> GetRuntimeAssetManager() { return std::static_pointer_cast<RuntimeAssetManager>(m_assetManager); }
 		/**
-		 * @brief The asset manager as an editor manager.
-		 * @return The manager downcast to Uge::EditorAssetManager.
-		 * @warning Unchecked cast; only valid when running in the editor.
+		 * @brief The asset manager as a Uge::EditorAssetManager. Unchecked; editor only.
+		 * @return The manager.
 		 */
 		Ref<EditorAssetManager> GetEditorAssetManager() { return std::static_pointer_cast<EditorAssetManager>(m_assetManager); }
 
 		/**
 		 * @brief Creates an empty project and makes it active.
-		 * @return The new project.
-		 * @warning The project has no directory and no asset manager. Save it with
-		 * SaveActive() and open it with Load() before using Uge::AssetManager.
+		 * @return The project.
+		 *
+		 * It has no directory or asset manager until it is saved with SaveActive() and
+		 * opened with Load().
 		 */
 		static Ref<Project> New();
 		/**
-		 * @brief Loads a `.ugproj` file and makes it the active project.
-		 * @param path Path to the project file.
-		 * @return The loaded project, or null if it could not be read. The project that was active stays active then.
+		 * @brief Opens a `.ugproj` file and makes it the active project.
+		 * @param path The project file.
+		 * @return The project, or null if it can't be read; the previous project then stays
+		 * active.
 		 *
-		 * Also creates the asset manager and deserializes the asset registry.
+		 * Creates the asset manager and reads the asset registry.
 		 */
 		static Ref<Project> Load(const std::filesystem::path& path);
 		/**
-		 * @brief Writes the active project to a `.ugproj` file.
-		 * @param path Destination path.
-		 * @return `true` on success. On failure the project directory is unchanged.
+		 * @brief Saves the active project.
+		 * @param path The `.ugproj` file.
+		 * @return `true` on success. On failure nothing is changed.
 		 */
 		static bool SaveActive(const std::filesystem::path& path);
 
 		/**
-		 * @brief Releases the active project, returning to the no-project state.
+		 * @brief Closes the active project; GetActive() is null afterwards.
 		 *
-		 * Afterwards GetActive() is null and the static path helpers assert again, exactly as
-		 * before the first Load(). Nothing else clears the singleton, so this is the only way
-		 * back to the state the editor is in before a project is opened.
-		 *
-		 * @warning Anything still holding assets from the project — an open scene, the content
-		 * browser — is left pointing at a manager that is no longer reachable through the
-		 * facade. Drop those first.
+		 * Release anything that holds its assets first.
 		 */
 		static void Unload();
 

@@ -1,6 +1,6 @@
 /**
  * @file BufferLayoutTests.cpp
- * @brief Tests for the vertex layout description in Uge/Renderer/Buffer.h.
+ * @brief Tests for Uge::BufferLayout.
  */
 
 #include <ugpch.h>
@@ -23,9 +23,7 @@ TEST(BufferLayoutTest, EmptyLayoutHasNoStride)
 
 TEST(BufferLayoutTest, ComputesOffsetsAndStrideInDeclarationOrder)
 {
-	// The layout Renderer2D uses, minus the parts that vary: if these offsets drift, the
-	// attribute pointers no longer match the vertex struct and geometry comes out
-	// scrambled rather than failing loudly.
+	// Renderer2D's layout. Wrong offsets would scramble the geometry without an error.
 	BufferLayout layout = {
 		{ ShaderDataType::Float3, "a_Position" },
 		{ ShaderDataType::Float4, "a_Color" },
@@ -98,7 +96,7 @@ TEST(BufferElementTest, DefaultsToNotNormalized)
 
 TEST(BufferElementTest, ComponentCountsMatchTheTypes)
 {
-	// The OpenGL vertex array passes this straight to glVertexAttribPointer.
+	// Passed to glVertexAttribPointer.
 	EXPECT_EQ(BufferElement(ShaderDataType::Float, "f").GetComponentCount(), 1u);
 	EXPECT_EQ(BufferElement(ShaderDataType::Float2, "f").GetComponentCount(), 2u);
 	EXPECT_EQ(BufferElement(ShaderDataType::Float3, "f").GetComponentCount(), 3u);
@@ -122,7 +120,6 @@ TEST(BufferElementTest, SizesMatchTheTypes)
 	EXPECT_EQ(BufferElement(ShaderDataType::Mat4x4, "f").size, 64u);
 	EXPECT_EQ(BufferElement(ShaderDataType::Int4, "i").size, 16u);
 
-	// The one type whose size is not a multiple of four, and the reason a layout ending
-	// in a Bool has an odd stride.
+	// The only type whose size isn't a multiple of four.
 	EXPECT_EQ(BufferElement(ShaderDataType::Bool, "b").size, 1u);
 }

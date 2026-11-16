@@ -1,6 +1,6 @@
 /**
  * @file ColorSpace.h
- * @brief Conversions between display-referred sRGB and the linear values the renderer works in.
+ * @brief Conversions between sRGB and linear colour.
  * @ingroup group_renderer
  */
 
@@ -14,8 +14,8 @@ namespace Uge
 {
 
 	/**
-	 * @brief Converts one sRGB-encoded channel to linear.
-	 * @param channel Encoded value, normally in `[0, 1]`.
+	 * @brief Converts an sRGB channel to linear.
+	 * @param channel sRGB value in `[0, 1]`.
 	 * @return The linear value.
 	 * @ingroup group_renderer
 	 */
@@ -27,18 +27,12 @@ namespace Uge
 	}
 
 	/**
-	 * @brief Converts an sRGB-encoded colour to linear.
-	 * @param color Encoded RGB, normally in `[0, 1]`.
+	 * @brief Converts an sRGB colour to linear.
+	 * @param color sRGB colour in `[0, 1]`.
 	 * @return The linear colour.
 	 * @ingroup group_renderer
 	 *
-	 * Colours picked by eye — a viewport background, a light tint in the property panel — are
-	 * chosen for how they look on screen, which makes them sRGB. The scene renders into a
-	 * linear target and is encoded once in Uge::PostProcess, so such a value has to be
-	 * decoded before it is handed to the renderer, or it is encoded twice and comes out too
-	 * bright.
-	 *
-	 * @note Alpha is never gamma encoded; the four-component overload leaves it alone.
+	 * Colours picked on screen are sRGB; convert them before giving them to the renderer.
 	 */
 	inline glm::vec3 SrgbToLinear(const glm::vec3& color)
 	{
@@ -46,9 +40,9 @@ namespace Uge
 	}
 
 	/**
-	 * @brief Converts an sRGB-encoded colour to linear, preserving alpha.
-	 * @param color Encoded RGBA; alpha is passed through untouched.
-	 * @return The linear colour with the original alpha.
+	 * @brief Converts an sRGB colour to linear, keeping alpha as it is.
+	 * @param color sRGB colour.
+	 * @return The linear colour.
 	 * @ingroup group_renderer
 	 */
 	inline glm::vec4 SrgbToLinear(const glm::vec4& color)
@@ -57,9 +51,9 @@ namespace Uge
 	}
 
 	/**
-	 * @brief Converts a linear channel to sRGB encoding.
-	 * @param channel Linear value, normally in `[0, 1]`.
-	 * @return The encoded value.
+	 * @brief Converts a linear channel to sRGB.
+	 * @param channel Linear value in `[0, 1]`.
+	 * @return The sRGB value.
 	 * @ingroup group_renderer
 	 */
 	inline float LinearToSrgb(float channel)
@@ -70,13 +64,10 @@ namespace Uge
 	}
 
 	/**
-	 * @brief Converts a linear colour to sRGB encoding.
-	 * @param color Linear RGB, normally in `[0, 1]`.
-	 * @return The encoded colour.
+	 * @brief Converts a linear colour to sRGB.
+	 * @param color Linear colour in `[0, 1]`.
+	 * @return The sRGB colour.
 	 * @ingroup group_renderer
-	 *
-	 * The inverse of SrgbToLinear(const glm::vec3&), for showing a linear value back to the
-	 * user in a colour picker.
 	 */
 	inline glm::vec3 LinearToSrgb(const glm::vec3& color)
 	{

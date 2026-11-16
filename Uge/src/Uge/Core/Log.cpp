@@ -15,17 +15,15 @@ namespace Uge
 	{
 		std::vector<spdlog::sink_ptr> sinks;
 
-		// Console: the terse pattern, since a terminal is only ever a development aid.
+		// Console: time, logger and message.
 		sinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
 		sinks.back()->set_pattern("%^[%T] %n: %v%$");
 
-		// File: truncated each run, and carries the date and level so a log can be read
-		// on its own after the fact.
+		// File: truncated each run, with the date and level on every line.
 		sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(s_logFilePath, true));
 		sinks.back()->set_pattern("[%Y-%m-%d %T.%e] [%n] [%l] %v");
 
-		// In-memory: backs the editor's console panel. Level and logger name are stored
-		// as fields, so the pattern is the bare message.
+		// In memory: the message only, since level and logger are stored separately.
 		sinks.emplace_back(LogBuffer::CreateSink());
 		sinks.back()->set_pattern("%v");
 

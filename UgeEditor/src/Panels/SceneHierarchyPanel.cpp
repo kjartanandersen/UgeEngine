@@ -23,7 +23,7 @@ namespace Uge
 {
 	constexpr float dragSpeed = 0.1f;
 
-	// The font for the X, Y and Z buttons of the vector fields. Null until the editor sets one.
+	// The X, Y and Z button font; null until the editor sets one.
 	static ImFont* s_boldFont = nullptr;
 	
 	static bool DrawVec3Control(const std::string& label, glm::vec3& values,
@@ -296,9 +296,7 @@ namespace Uge
 		ImGuiTreeNodeFlags flags = ((m_selectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
 		flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
-		// "%s", not the tag directly: the tag is user text, and TreeNodeEx treats its last
-		// argument as a format string — an entity renamed to something containing a "%s"
-		// otherwise reads a vararg that was never passed.
+		// The tag is user text, so it goes through "%s" rather than as the format.
 		bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, "%s", tag.c_str());
 
 		if (ImGui::IsItemClicked())
@@ -540,7 +538,6 @@ namespace Uge
 				// Fields
 
 				bool isSceneRunning = scene->IsRunning();
-				// If Scene Running
 				if (isSceneRunning)
 				{
 					Ref<ScriptInstance> scriptInstance = ScriptEngine::GetEntityScriptInstance(entity.GetUUID());
@@ -568,8 +565,7 @@ namespace Uge
 					}
 					else
 					{
-						// Nothing is running: the class is missing (OnCreateEntity warned), or the
-						// component was added during this Play session.
+						// No instance: the class is missing, or the component was added during Play.
 						ImGui::TextDisabled(scriptClassExists ? "Not running: added during Play; starts on the next Play"
 							: "Not running: class not found");
 					}
@@ -584,12 +580,12 @@ namespace Uge
 						Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(component.ClassName);
 						const auto& fields = entityClass->GetFields();
 
-						ScriptFieldMap& entityFields = *ScriptEngine::GetScriptFieldMap(entity.GetUUID()); // the class exists, so the engine does
+						ScriptFieldMap& entityFields = *ScriptEngine::GetScriptFieldMap(entity.GetUUID()); // Not null: a class exists, so the engine is initialized.
 
 
 						for (const auto& [name, field] : fields)
 						{
-							// Field has been set in editor
+							// A value stored for the field.
 							if (entityFields.find(name) != entityFields.end())
 							{
 								ScriptFieldInstance& scriptField = entityFields[name];
@@ -748,8 +744,7 @@ namespace Uge
 
 							if (AssetManager::GetAssetType(handle) == AssetType::Mesh)
 							{
-								// Dropping onto a slot that already held a model drops
-								// that model's last reference.
+								// The previous model is released if nothing else uses it.
 								AssetHandle previous = component.Mesh;
 								component.Mesh = handle;
 								if (previous != handle)
@@ -859,8 +854,7 @@ namespace Uge
 				{
 					ImGui::ColorEdit3("Color", glm::value_ptr(component.Color));
 
-					// Uncapped at the top: this is radiance, and the diffuse term divides albedo
-					// by pi, so plausible sunlight sits well above 1.
+					// Up to 100: sunlight is well above 1, as the diffuse term divides by pi.
 					ImGui::DragFloat("Intensity", &component.Intensity, 0.05f, 0.0f, 100.0f);
 
 					ImGui::TextWrapped(

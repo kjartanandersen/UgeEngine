@@ -1,6 +1,6 @@
 /**
  * @file SceneTests.cpp
- * @brief Tests for the entity operations the editor's hierarchy panel drives.
+ * @brief Tests for Uge::Scene's entity operations.
  */
 
 #include <ugpch.h>
@@ -19,7 +19,7 @@ using Uge::Scene;
 namespace
 {
 
-	/** @brief Gives each test an empty scene. */
+	/** @brief An empty scene for each test. */
 	class SceneTest : public ::testing::Test
 	{
 	protected:
@@ -78,8 +78,7 @@ TEST_F(SceneTest, LookupOfAMissingEntityReturnsAnInvalidHandle)
 
 TEST_F(SceneTest, CreateEntityWithUUIDKeepsTheGivenId)
 {
-	// Deserialization takes this path: the id in the .uge file has to survive, or every
-	// entity reference in the scene breaks on load.
+	// Loading a scene creates entities with their saved UUIDs.
 	const Uge::UUID id(0xABCDEF12);
 	Entity entity = m_scene->CreateEntityWithUUID(id, "Restored");
 
@@ -148,9 +147,8 @@ TEST_F(SceneTest, NoPrimaryCameraYieldsAnInvalidEntity)
 
 TEST_F(SceneTest, ACopiedSceneHasNoLiveBodies)
 {
-	// Play mode runs on a copy of the scene and builds its own physics world. A body handle
-	// copied over from the editor scene would point into a world the copy doesn't have, so
-	// the copy starts with none; everything else on the rigidbody is copied.
+	// The copy has no body, as it builds its own physics world. The rest of the rigidbody is
+	// copied.
 	Entity entity = m_scene->CreateEntity("Crate");
 	Uge::RigidbodyComponent& body = entity.AddComponent<Uge::RigidbodyComponent>();
 	body.Mass = 3.0f;

@@ -18,10 +18,7 @@ namespace Uge
 	namespace
 	{
 		/**
-		 * @brief spdlog sink that forwards every record into Uge::LogBuffer.
-		 *
-		 * Locking is handled by `base_sink<std::mutex>`; LogBuffer takes its own lock as
-		 * well so that direct Push() calls stay safe.
+		 * @brief spdlog sink that adds every record to Uge::LogBuffer.
 		 */
 		class LogBufferSink : public spdlog::sinks::base_sink<std::mutex>
 		{

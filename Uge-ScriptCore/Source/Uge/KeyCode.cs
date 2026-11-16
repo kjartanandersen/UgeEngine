@@ -1,6 +1,6 @@
 ﻿/**
  * @file KeyCode.cs
- * @brief Managed keyboard key identifiers.
+ * @brief Key codes for scripts.
  * @ingroup group_scripting
  */
 using System;
@@ -13,11 +13,8 @@ namespace Uge
 {
 
     /**
-     * @brief Keyboard key identifiers, as seen from C#.
+     * @brief Key codes, with the same values as GLFW's and the native Uge::KeyCode.
      * @ingroup group_scripting
-     *
-     * Values mirror the GLFW key codes and the native Uge::KeyCode, so the two sides agree
-     * without translation.
      */
     public enum KeyCode
     {

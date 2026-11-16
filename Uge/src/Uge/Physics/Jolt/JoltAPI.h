@@ -5,20 +5,18 @@
 namespace Uge
 {
 	/**
-	 * @brief Uge::PhysicsAPI implementation backed by Jolt Physics.
+	 * @brief Uge::PhysicsAPI backed by Jolt.
 	 * @ingroup group_physics
 	 *
-	 * Owns the process-wide Jolt state: the allocator, the type factory, the temporary
-	 * allocator and the job system thread pool. No Jolt type appears in this header, so
-	 * the rest of the engine never needs Jolt's compile defines.
+	 * Owns the process-wide Jolt state. No Jolt type appears in this header.
 	 */
 	class JoltAPI : public PhysicsAPI
 	{
 
 	public:
-		/** @brief Constructs the backend without booting it; Init() does that. */
+		/** @brief Creates the backend; Init() starts it. */
 		JoltAPI();
-		/** @brief Shuts the backend down if Init() ran and Shutdown() did not. */
+		/** @brief Shuts the backend down if it is still running. */
 		~JoltAPI() override;
 
 		virtual void Init() override;

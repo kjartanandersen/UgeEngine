@@ -1,6 +1,6 @@
 /**
  * @file Application.h
- * @brief The engine's root object: owns the window, the layer stack and the frame loop.
+ * @brief The application: window, layer stack and frame loop.
  * @ingroup group_core
  */
 
@@ -23,22 +23,18 @@ namespace Uge
 {
 
 	/**
-	 * @brief The `argc`/`argv` pair forwarded from `main`.
+	 * @brief The `argc` and `argv` from `main`.
 	 * @ingroup group_core
-	 *
-	 * Passed to Uge::CreateApplication so a client can react to command-line arguments,
-	 * for example to open a specific project on startup.
 	 */
 	struct ApplicationCommandLineArgs
 	{
-		int Count = 0; ///< Number of entries in #Args.
-		char** Args = nullptr; ///< Argument vector, owned by the C runtime.
+		int Count = 0; ///< Number of arguments.
+		char** Args = nullptr; ///< The arguments, owned by the C runtime.
 
 		/**
-		 * @brief Returns the argument at @p index.
-		 * @param index Zero-based argument index; must be less than #Count.
-		 * @return The argument string, owned by the C runtime.
-		 * @note Asserts in Debug when @p index is out of range.
+		 * @brief The argument at @p index.
+		 * @param index Must be less than #Count; asserts otherwise.
+		 * @return The argument.
 		 */
 		const char* operator[](int index) const
 		{
@@ -48,14 +44,14 @@ namespace Uge
 	};
 
 	/**
-	 * @brief Startup configuration supplied by the client application.
+	 * @brief Startup settings, supplied by the client.
 	 * @ingroup group_core
 	 */
 	struct ApplicationSpecification
 	{
 		std::string Name = "Uge Application"; ///< Window title and application name.
 		std::string WorkingDirectory; ///< Directory to switch to on startup; empty leaves it unchanged.
-		ApplicationCommandLineArgs CommandLineArgs; ///< Arguments forwarded from `main`.
+		ApplicationCommandLineArgs CommandLineArgs; ///< Arguments from `main`.
 	};
 
 
@@ -63,96 +59,83 @@ namespace Uge
 	 * @brief Owns the window, the ImGui overlay and the layer stack, and runs the frame loop.
 	 * @ingroup group_core
 	 *
-	 * Exactly one instance may exist; the constructor asserts otherwise and installs it as
-	 * the singleton returned by Get(). Clients derive from this class and return an
-	 * instance from Uge::CreateApplication.
-	 *
-	 * Construction switches to ApplicationSpecification::WorkingDirectory when one is set,
-	 * creates the window, initializes the renderer, and pushes an Uge::ImGuiLayer overlay.
-	 *
-	 * @par Frame loop
-	 * Each iteration of Run() computes a Uge::Timestep from the elapsed wall time, drains
-	 * the main-thread queue, calls Layer::OnUpdate on every layer bottom-to-top (skipped
-	 * while minimized), then brackets Layer::OnImGuiRender with the ImGui layer's
-	 * begin/end, and finally swaps buffers via Window::OnUpdate.
-	 *
-	 * @see Layer, LayerStack, Window
+	 * A client derives from it and returns an instance from Uge::CreateApplication.
 	 */
 	class Application
 	{
 	public:
 		/**
-		 * @brief Creates the window and renderer and installs the singleton instance.
-		 * @param spec Startup configuration: name, working directory and command-line arguments.
-		 * @note Asserts if an Application already exists.
+		 * @brief Creates the window and starts the renderer and physics.
+		 * @param spec Startup settings.
+		 *
+		 * Asserts if an Application already exists.
 		 */
 		Application(const ApplicationSpecification& spec);
-		
-		
-		/** @brief Shuts down the script engine and the renderer. */
+
+
+		/** @brief Destroys the layers, then shuts the subsystems down. */
 		virtual ~Application();
 
 		/**
-		 * @brief Runs the frame loop until CloseProgram() is called or the window is closed.
+		 * @brief Runs the frame loop until CloseProgram() is called or the window closes.
 		 *
-		 * Blocks for the lifetime of the program; called by the `main` in EntryPoint.h.
+		 * Each frame runs the queued main-thread work, updates the layers (not while
+		 * minimized), draws ImGui and swaps buffers.
 		 */
 		void Run();
 
 		/**
-		 * @brief Routes an event to the application and then through the layer stack.
-		 * @param e The event, mutated as it is handled.
+		 * @brief Handles window close and resize, then passes the event to the layers.
+		 * @param e The event.
 		 *
-		 * Window close and resize are handled first, then the event is offered to layers from
-		 * top to bottom, stopping as soon as one sets Event::m_handled.
+		 * Layers get it from top to bottom, until one marks it handled.
 		 */
 		void OnEvent(Event& e);
 
 		/**
-		 * @brief Adds a normal layer and calls its Layer::OnAttach.
-		 * @param layer Layer to insert; the stack takes ownership and deletes it at shutdown.
+		 * @brief Adds a layer and attaches it.
+		 * @param layer Layer to add; the stack owns it.
 		 */
 		void PushLayer(Layer* layer);
 		/**
-		 * @brief Adds an overlay above every normal layer and calls its Layer::OnAttach.
-		 * @param overlay Layer to insert; the stack takes ownership and deletes it at shutdown.
+		 * @brief Adds an overlay above every layer and attaches it.
+		 * @param overlay Layer to add; the stack owns it.
 		 *
-		 * Overlays update last but receive events first, which is why the ImGui layer is one.
+		 * Overlays update last and get events first.
 		 */
 		void PushOverlay(Layer* overlay);
 
 		/**
-		 * @brief Returns the singleton application instance.
-		 * @return Reference to the running application.
+		 * @brief The application.
+		 * @return The running instance.
 		 */
 		inline static Application& Get() { return *s_instance; }
 		/**
-		 * @brief Returns the platform window.
-		 * @return Reference to the window owned by this application.
+		 * @brief The window.
+		 * @return The window.
 		 */
 		inline Window& GetWindow() { return *m_window; }
-		/** @brief Requests shutdown; Run() returns after the current frame completes. */
+		/** @brief Ends Run() after the current frame. */
 		inline void CloseProgram() { m_running = false; }
 
 		/**
-		 * @brief Returns the ImGui overlay pushed during construction.
-		 * @return Non-owning pointer to the ImGui layer.
+		 * @brief The ImGui overlay.
+		 * @return The layer, owned by the layer stack.
 		 */
 		ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
 
 
 		/**
-		 * @brief Returns the specification this application was constructed with.
-		 * @return Const reference to the stored specification.
+		 * @brief The startup settings.
+		 * @return The settings.
 		 */
 		const ApplicationSpecification& GetSpecifications() const { return m_specification; }
 
 		/**
-		 * @brief Queues a callable to run on the main thread at the start of the next frame.
-		 * @param func Work to execute; invoked once and then discarded.
+		 * @brief Queues work to run on the main thread at the start of the next frame.
+		 * @param func Work to run once.
 		 *
-		 * Thread-safe. Use it to marshal work off worker threads onto the thread that owns the
-		 * OpenGL context, since renderer calls are only valid there.
+		 * Thread-safe.
 		 */
 		void SubmitToMainThreadQueue(const std::function<void()> func);
 
@@ -183,14 +166,11 @@ namespace Uge
 
 	};
 
-	// To be defined in a client
 	/**
-	 * @brief Creates the client application; **implemented by the client, not the engine**.
-	 * @param args Command-line arguments forwarded from `main`.
-	 * @return A heap-allocated application; `main` deletes it after Run() returns.
+	 * @brief Creates the application. Implemented by the client.
+	 * @param args Command-line arguments.
+	 * @return The application; `main` deletes it after Run() returns.
 	 * @ingroup group_core
-	 *
-	 * @see UgeEditor/src/UgeEditorApp.cpp for the editor's implementation.
 	 */
 	Application* CreateApplication(ApplicationCommandLineArgs args);
 

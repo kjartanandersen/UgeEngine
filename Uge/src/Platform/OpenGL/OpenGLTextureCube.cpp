@@ -56,15 +56,12 @@ namespace Uge
 			Utils::UgeImageFormatToGLInternalFormatCube(m_specification.Format),
 			m_specification.Size, m_specification.Size);
 
-		// Trilinear when there is a chain, because the prefiltered map interpolates between
-		// levels to reach a roughness that falls between two of them.
+		// Trilinear with mipmaps, so the prefiltered map blends between roughness levels.
 		glTextureParameteri(m_rendererID, GL_TEXTURE_MIN_FILTER,
 			m_mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 		glTextureParameteri(m_rendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-		// Clamping every axis, plus seamless filtering enabled once in OpenGLRendererAPI::Init,
-		// is what stops a visible crease along the cube's edges where a filter kernel would
-		// otherwise wrap around to the opposite side of the face.
+		// Clamped on every axis, which with seamless filtering leaves no creases at the edges.
 		glTextureParameteri(m_rendererID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(m_rendererID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(m_rendererID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);

@@ -1,6 +1,6 @@
 /**
  * @file ScriptFieldTypeTests.cpp
- * @brief Tests for how C# field types map onto Uge::ScriptFieldType.
+ * @brief Tests for mapping C# field types to Uge::ScriptFieldType.
  */
 
 #include <ugpch.h>
@@ -16,8 +16,7 @@ using Uge::Utils::ScriptFieldTypeFromManagedName;
 
 TEST(ScriptFieldTypeTest, MapsTheNamesMonoGivesCSharpTypes)
 {
-	// Mono names a field's type the .NET way, not by its C# keyword: an `int` is
-	// System.Int32 and a `float` is System.Single.
+	// Mono uses .NET names: `int` is System.Int32 and `float` is System.Single.
 	const std::pair<const char*, ScriptFieldType> names[] = {
 		{ "System.Single",  ScriptFieldType::Float },
 		{ "System.Double",  ScriptFieldType::Double },
@@ -46,13 +45,13 @@ TEST(ScriptFieldTypeTest, MapsTheNamesMonoGivesCSharpTypes)
 
 TEST(ScriptFieldTypeTest, AnUnsupportedTypeIsNone)
 {
-	// A generic list is a valid field type in C#, but not one the engine can store.
+	// The engine can't store a generic list.
 	EXPECT_EQ(ScriptFieldTypeFromManagedName("System.Collections.Generic.List`1<System.Int32>"), ScriptFieldType::None);
 }
 
 TEST(ScriptFieldTypeTest, EverySerializedNameReadsBack)
 {
-	// Scene files store a field's type by these names, so each must parse back to its type.
+	// Scene files store these names, so each parses back to its type.
 	const ScriptFieldType types[] = {
 		ScriptFieldType::Float, ScriptFieldType::Double,
 		ScriptFieldType::Vector2, ScriptFieldType::Vector3, ScriptFieldType::Vector4,
@@ -71,6 +70,6 @@ TEST(ScriptFieldTypeTest, EverySerializedNameReadsBack)
 
 TEST(ScriptFieldTypeTest, AnUnknownSerializedNameIsNone)
 {
-	// A scene file can name a type this engine doesn't know, from a newer version for example.
+	// A scene file can name a type the engine doesn't know.
 	EXPECT_EQ(Uge::Utils::ScriptFieldTypeFromString("Quaternion"), ScriptFieldType::None);
 }

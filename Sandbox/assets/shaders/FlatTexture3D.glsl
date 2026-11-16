@@ -1,4 +1,4 @@
-// Texture Shader
+// Texture shader for Renderer3D
 #type vertex
 #version 330 core
 				

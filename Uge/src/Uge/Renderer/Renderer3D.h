@@ -1,6 +1,6 @@
 /**
  * @file Renderer3D.h
- * @brief Standalone textured-cube draw path.
+ * @brief A cube renderer.
  * @ingroup group_renderer
  */
 
@@ -13,53 +13,46 @@ namespace Uge
 {
 
 	/**
-	 * @brief Draws textured cube primitives.
+	 * @brief Draws cubes, one draw call each. Used by the Sandbox.
 	 * @ingroup group_renderer
 	 *
-	 * The narrowest of the three draw paths: cubes only, unbatched, with a fixed shader.
-	 * It is useful for quick visualization and for the Sandbox samples.
-	 *
-	 * @note For actual 3D content use Uge::Model, which handles imported meshes,
-	 * materials and the scene's mesh components.
-	 *
-	 * @warning Keeps its own scene state, independent of Uge::Renderer2D and Uge::Model.
-	 * Do not interleave their begin/end pairs.
+	 * Init()'s body is commented out, so there is no shader or geometry to draw with.
 	 */
 	class Renderer3D
 	{
 
 	public:
-		/** @brief Allocates the cube geometry and shader. */
+		/** @brief Does nothing; its body is commented out. */
 		static void Init();
-		/** @brief Releases the cube resources. */
+		/** @brief Does nothing. */
 		static void Shutdown();
 
 
 		/**
-		 * @brief Begins a frame with the given camera.
-		 * @param camera Camera supplying the view-projection matrix.
+		 * @brief Binds the shader. The camera isn't uploaded.
+		 * @param camera The camera.
 		 */
 		static void BeginScene(const PerspectiveCamera& camera);
-		/** @brief Ends the frame opened by BeginScene(). */
+		/** @brief Does nothing. */
 		static void EndScene();
 
 		// Primitives
 		/**
-		 * @brief Draws a solid-colour cube.
-		 * @param position Centre position in world space.
-		 * @param rotation Rotation about the y axis, in radians.
-		 * @param size Extents along each axis, in world units.
-		 * @param color RGBA colour.
+		 * @brief Draws a cube with the checkerboard texture, tinted.
+		 * @param position Centre, in world space.
+		 * @param rotation Rotation about z, in degrees.
+		 * @param size Size along each axis.
+		 * @param color RGBA tint.
 		 */
 		static void DrawCube(const glm::vec3& position, float rotation, const glm::vec3& size, const glm::vec4& color);
 		/**
 		 * @brief Draws a textured cube.
-		 * @param position Centre position in world space.
-		 * @param rotation Rotation about the y axis, in radians.
-		 * @param size Extents along each axis, in world units.
-		 * @param texture Texture applied to every face.
-		 * @param tilingFactor How many times the texture repeats across a face.
-		 * @param tintColor Multiplied with the sampled colour.
+		 * @param position Centre, in world space.
+		 * @param rotation Rotation about z, in degrees.
+		 * @param size Size along each axis.
+		 * @param texture The texture, on every face.
+		 * @param tilingFactor How many times the texture repeats on a face.
+		 * @param tintColor Multiplied with the texture.
 		 */
 		static void DrawCube(const glm::vec3& position, float rotation, const glm::vec3& size, Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor = glm::vec4(1.0f));
 

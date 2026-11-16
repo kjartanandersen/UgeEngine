@@ -14,21 +14,17 @@ namespace Uge
 	}
 	void OpenGLMaterial::Bind()
 	{
-		// Imported materials share the Model's shader, which is bound by the caller
-		// (Mesh::Draw). A material only owns a shader when one is explicitly assigned.
+		// Imported materials have no shader; the caller binds Model's.
 		if (m_shader)
 		{
 			m_shader->Bind();
 		}
 
-		// Uploaded per material rather than per frame: without it the shader has no way to
-		// tell a black plastic from a silver paint, since neither has a base colour map.
 		const MaterialUniformData uniformData = BuildUniformData();
 		PropertiesUniformBuffer()->SetData(&uniformData, sizeof(uniformData));
 
-		// Slot order matches the sampler bindings in assets/shaders/Model.glsl. A slot whose
-		// handle is 0 keeps whatever the previous material left there, which is safe only
-		// because the shader gates every read on MaterialData::u_MapFlags.
+		// Slots match the samplers in assets/shaders/Model.glsl. An empty slot keeps the last
+		// material's texture; the shader reads only the maps u_MapFlags marks.
 		BindTexture(m_textureMaps.Albedo, 0);
 		BindTexture(m_textureMaps.Normal, 1);
 		BindTexture(m_textureMaps.Roughness, 2);

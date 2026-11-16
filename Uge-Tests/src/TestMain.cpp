@@ -1,6 +1,6 @@
 /**
  * @file TestMain.cpp
- * @brief Entry point of the Uge test runner.
+ * @brief The test runner's entry point.
  */
 
 #include <ugpch.h>
@@ -12,8 +12,7 @@
 
 int main(int argc, char** argv)
 {
-	// Engine code logs freely, and UG_CORE_* dereferences the logger unconditionally,
-	// so the loggers have to exist before the first test runs.
+	// The log macros need the loggers to exist.
 	Uge::Log::Init();
 
 	::testing::InitGoogleMock(&argc, argv);

@@ -1,7 +1,7 @@
 #type vertex
 #version 450 core
 
-// Same fullscreen triangle as Tonemap.glsl; see the comment there for why it overshoots.
+// The fullscreen triangle, as in Tonemap.glsl.
 layout(location = 0) in vec2 a_Position;
 layout(location = 1) in vec2 a_TexCoord;
 
@@ -22,12 +22,7 @@ layout(location = 0) in vec2 v_TexCoord;
 
 const float k_pi = 3.14159265359;
 
-// The second half of Karis' split-sum approximation: a scale and bias applied to the
-// surface's F0, tabulated against view angle (x) and roughness (y).
-//
-// It depends on nothing but the BRDF, so it is the same for every scene and could be shipped
-// as a file. It is generated at startup instead because the pass costs a fraction of a
-// millisecond and a generated table cannot fall out of step with the BRDF in Model.glsl.
+// The split sum's second half: a scale and bias on F0, by view angle (x) and roughness (y).
 
 float RadicalInverseVdC(uint bits)
 {
@@ -61,8 +56,7 @@ vec3 ImportanceSampleGGX(vec2 xi, vec3 normal, float roughness)
 	return normalize(tangent * halfway.x + bitangent * halfway.y + normal * halfway.z);
 }
 
-// Note the k used here is roughness^2/2, the IBL form. Direct lighting uses (r+1)^2/8 - the
-// same function with a different k, which is a standard and easily missed distinction.
+// k = roughness^2 / 2, the image-based form. Model.glsl uses (roughness + 1)^2 / 8.
 float GeometrySchlickGGX(float normalDotVector, float roughness)
 {
 	float a = roughness;
@@ -114,7 +108,7 @@ vec2 IntegrateBRDF(float normalDotView, float roughness)
 
 void main()
 {
-	// x is cos(view angle), y is roughness. Both are clamped away from zero: a zero view angle
-	// divides by zero in the visibility term above.
+	// x is cos(view angle), y is roughness. Both stay above zero, as a zero view angle
+	// divides by zero.
 	fragColor = IntegrateBRDF(max(v_TexCoord.x, 0.001), max(v_TexCoord.y, 0.001));
 }

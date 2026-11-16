@@ -1,6 +1,6 @@
 /**
  * @file Random.h
- * @brief Small random-number helper used by the Sandbox particle sample.
+ * @brief Random floats for the Sandbox.
  */
 
 #pragma once
@@ -8,10 +8,7 @@
 #include <random>
 
 /**
- * @brief A shared Mersenne Twister engine producing normalized floats.
- *
- * @warning Call Init() once at startup to seed the engine, and note that the shared
- * engine is not thread-safe.
+ * @brief Random floats from a shared Mersenne Twister. Call Init() first. Not thread-safe.
  */
 class Random
 {
@@ -23,7 +20,7 @@ public:
 	}
 
 	/**
-	 * @brief Draws a uniform random float.
+	 * @brief A uniform random float.
 	 * @return A value in `[0, 1]`.
 	 */
 	static float Float()

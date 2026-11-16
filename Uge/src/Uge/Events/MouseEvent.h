@@ -12,38 +12,35 @@
 namespace Uge
 {
 	/**
-	 * @brief Raised when the cursor moves over the window.
+	 * @brief The cursor moved.
 	 * @ingroup group_events
-	 *
-	 * Coordinates are in pixels relative to the window's top-left corner, with y growing
-	 * downward.
 	 */
 	class MouseMovedEvent : public Event
 	{
 
 	public:
 		/**
-		 * @brief Constructs the event.
-		 * @param x Cursor x position in pixels.
-		 * @param y Cursor y position in pixels.
+		 * @brief Creates the event.
+		 * @param x Pixels from the window's left edge.
+		 * @param y Pixels from the window's top edge.
 		 */
 		MouseMovedEvent(float x, float y)
 			: m_mouseX(x), m_mouseY(y) {}
 
 		/**
-		 * @brief Cursor x position.
-		 * @return Pixels from the left edge of the window.
+		 * @brief The cursor's x position.
+		 * @return Pixels from the window's left edge.
 		 */
 		inline float GetX() const { return m_mouseX; };
 		/**
-		 * @brief Cursor y position.
-		 * @return Pixels from the top edge of the window.
+		 * @brief The cursor's y position.
+		 * @return Pixels from the window's top edge.
 		 */
 		inline float GetY() const { return m_mouseY; };
 
 		/**
-		 * @brief Describes the event.
-		 * @return A string with the cursor position.
+		 * @brief A description for logging.
+		 * @return The cursor position.
 		 */
 		std::string ToString() const override
 		{
@@ -62,38 +59,35 @@ namespace Uge
 
 
 	/**
-	 * @brief Raised when the mouse wheel is scrolled.
+	 * @brief The mouse wheel scrolled.
 	 * @ingroup group_events
-	 *
-	 * Offsets are deltas since the last event, not absolute positions. Most mice only
-	 * report the vertical axis.
 	 */
 	class MouseScrolledEvent : public Event
 	{
 
 	public:
 		/**
-		 * @brief Constructs the event.
-		 * @param xOffset Horizontal scroll delta.
-		 * @param yOffset Vertical scroll delta; positive is scrolling up.
+		 * @brief Creates the event.
+		 * @param xOffset Horizontal scroll since the last event.
+		 * @param yOffset Vertical scroll since the last event; positive is up.
 		 */
 		MouseScrolledEvent(float xOffset, float yOffset)
 			: m_xOffset(xOffset), m_yOffset(yOffset) {}
 
 		/**
-		 * @brief Horizontal scroll delta.
-		 * @return Units scrolled since the previous event.
+		 * @brief Horizontal scroll since the last event.
+		 * @return The offset.
 		 */
 		inline float GetXOffset() const { return m_xOffset; };
 		/**
-		 * @brief Vertical scroll delta.
-		 * @return Units scrolled since the previous event; positive is up.
+		 * @brief Vertical scroll since the last event.
+		 * @return The offset; positive is up.
 		 */
 		inline float GetYOffset() const { return m_yOffset; };
 
 		/**
-		 * @brief Describes the event.
-		 * @return A string with both scroll offsets.
+		 * @brief A description for logging.
+		 * @return Both offsets.
 		 */
 		std::string ToString() const override
 		{
@@ -112,11 +106,8 @@ namespace Uge
 
 
 	/**
-	 * @brief Common base for mouse button events.
+	 * @brief Base class of the mouse button events.
 	 * @ingroup group_events
-	 *
-	 * Abstract in practice: the constructor is protected. Dispatch against
-	 * Uge::MouseButtonPressedEvent or Uge::MouseButtonReleasedEvent instead.
 	 */
 	class MouseButtonEvent : public Event
 	{
@@ -124,8 +115,8 @@ namespace Uge
 	public:
 
 		/**
-		 * @brief The button involved.
-		 * @return A `UG_MOUSE_BUTTON_*` value from MouseButtonCodes.h.
+		 * @brief The button.
+		 * @return A `UG_MOUSE_BUTTON_*` code.
 		 */
 		inline int GetMouseButton() const { return m_button; };
 
@@ -134,19 +125,19 @@ namespace Uge
 
 	protected:
 		/**
-		 * @brief Constructs the base event.
-		 * @param button Button code from MouseButtonCodes.h.
+		 * @brief Creates the event.
+		 * @param button Button code.
 		 */
 		MouseButtonEvent(int button)
 			: m_button(button) { }
 
-		int m_button; ///< Button code from MouseButtonCodes.h.
+		int m_button; ///< Button code.
 	};
 
 
 
 	/**
-	 * @brief Raised when a mouse button goes down.
+	 * @brief A mouse button went down.
 	 * @ingroup group_events
 	 */
 	class MouseButtonPressedEvent : public MouseButtonEvent
@@ -154,15 +145,15 @@ namespace Uge
 
 	public:
 		/**
-		 * @brief Constructs the event.
-		 * @param button Button code from MouseButtonCodes.h.
+		 * @brief Creates the event.
+		 * @param button Button code.
 		 */
 		MouseButtonPressedEvent(int button)
 			: MouseButtonEvent(button)  {}
 
 		/**
-		 * @brief Describes the event.
-		 * @return A string with the button code.
+		 * @brief A description for logging.
+		 * @return The button code.
 		 */
 		std::string ToString() const override
 		{
@@ -177,7 +168,7 @@ namespace Uge
 
 
 	/**
-	 * @brief Raised when a mouse button goes up.
+	 * @brief A mouse button went up.
 	 * @ingroup group_events
 	 */
 	class MouseButtonReleasedEvent : public MouseButtonEvent
@@ -185,15 +176,15 @@ namespace Uge
 
 	public:
 		/**
-		 * @brief Constructs the event.
-		 * @param button Button code from MouseButtonCodes.h.
+		 * @brief Creates the event.
+		 * @param button Button code.
 		 */
 		MouseButtonReleasedEvent(int button)
 			: MouseButtonEvent(button) {}
 
 		/**
-		 * @brief Describes the event.
-		 * @return A string with the button code.
+		 * @brief A description for logging.
+		 * @return The button code.
 		 */
 		std::string ToString() const override
 		{

@@ -232,10 +232,8 @@ project "assimp"
 	filter "configurations:Debug"
 		runtime "Debug"
 		symbols "on"
-		-- Importing a multi-million-vertex mesh through an unoptimized assimp takes
-		-- minutes (CalcTangentsProcess dominates). We never step into assimp, so
-		-- optimize it even in Debug; runtime stays "Debug" to match the CRT the rest
-		-- of the solution links against.
+		-- Optimized even in Debug, as an unoptimized import of a dense mesh takes minutes.
+		-- The runtime stays Debug to match the rest of the solution.
 		optimize "on"
 		runtimechecks "off"
 

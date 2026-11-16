@@ -1,6 +1,6 @@
 /**
  * @file OrthographicCamera.h
- * @brief Orthographic projection camera.
+ * @brief Orthographic camera.
  * @ingroup group_renderer
  */
 
@@ -15,12 +15,10 @@ namespace Uge
 
 
 	/**
-	 * @brief A camera with a box-shaped view volume and no perspective foreshortening.
+	 * @brief A camera with an orthographic projection.
 	 * @ingroup group_renderer
 	 *
-	 * The projection for 2D rendering: object size on screen does not vary with distance.
-	 * Bounds are given in world units, so the aspect ratio has to be folded into them by
-	 * the caller — Uge::OrthographicCameraController does that from a zoom level.
+	 * The bounds are in world units, so they have to include the aspect ratio.
 	 */
 	class OrthographicCamera : public Camera
 	{
@@ -28,20 +26,20 @@ namespace Uge
 
 	public:
 		/**
-		 * @brief Constructs the camera from its view-volume bounds.
-		 * @param left Left plane, in world units.
-		 * @param right Right plane, in world units.
-		 * @param bottom Bottom plane, in world units.
-		 * @param top Top plane, in world units.
+		 * @brief A camera with the given bounds.
+		 * @param left Left edge.
+		 * @param right Right edge.
+		 * @param bottom Bottom edge.
+		 * @param top Top edge.
 		 */
 		OrthographicCamera(float left, float right, float bottom, float top);
 
 		/**
-		 * @brief Rebuilds the projection from new bounds.
-		 * @param left Left plane, in world units.
-		 * @param right Right plane, in world units.
-		 * @param bottom Bottom plane, in world units.
-		 * @param top Top plane, in world units.
+		 * @brief Rebuilds the projection with new bounds.
+		 * @param left Left edge.
+		 * @param right Right edge.
+		 * @param bottom Bottom edge.
+		 * @param top Top edge.
 		 */
 		void SetProjection(float left, float right, float bottom, float top);
 

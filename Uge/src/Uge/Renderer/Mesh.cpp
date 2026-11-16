@@ -69,8 +69,7 @@ namespace Uge
 		}
 		else
 		{
-			// The material uniform block survives between draws, so an unmaterialed mesh
-			// would otherwise be shaded with whatever bound last.
+			// Otherwise the mesh would use the last material's block.
 			Material::BindDefaultProperties();
 		}
 

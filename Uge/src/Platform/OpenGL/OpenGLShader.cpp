@@ -69,8 +69,7 @@ namespace Uge
 			}
 		}
 
-		// v3 caches GLSL source rather than SPIR-V. The version bump matters: a leftover v2
-		// blob read back as text would be handed to the driver as garbage source.
+		// v3 files hold GLSL text; v2 held SPIR-V, so the names differ.
 		static const char* GLShaderStageCachedOpenGLFileExtension(uint32_t stage)
 		{
 			switch (stage)
@@ -141,8 +140,7 @@ namespace Uge
 			UG_CORE_WARN("Shader creation took {0} ms", timer.ElapsedMillis());
 		}
 
-		// Extract name from filepath
-		// assets/shaders/Texture.glsl
+		// The name is the file stem: Texture for assets/shaders/Texture.glsl.
 		auto lastSlash = filePath.find_last_of("/\\");
 		lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
 		auto lastDot = filePath.rfind(".");
@@ -238,8 +236,7 @@ namespace Uge
 
 		shaderc::Compiler compiler;
 		shaderc::CompileOptions options;
-		// Keep the intermediate SPIR-V conservative so the bundled SPIRV-Cross can
-		// translate fragment control-flow such as discard/kill reliably.
+		// Vulkan 1.0 and SPIR-V 1.0, which SPIRV-Cross translates reliably, discard included.
 		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_0);
 		options.SetTargetSpirv(shaderc_spirv_version_1_0);
 		const bool optimize = true;
@@ -352,9 +349,8 @@ namespace Uge
 
 	namespace
 	{
-		// Drivers report an info log length of 0 when they have no message. Handing the
-		// resulting empty vector's data() to the logger passes a null pointer, which spdlog
-		// rejects with "string pointer is null" - swallowing the very error being reported.
+		// An empty log returns an empty string: spdlog rejects the null data() of an empty
+		// vector.
 		static std::string GetProgramInfoLog(GLuint program)
 		{
 			GLint length = 0;
@@ -391,18 +387,15 @@ namespace Uge
 		std::vector<GLuint> shaderIDs;
 		for (auto&& [stage, source] : m_openGLSourceCode)
 		{
-			// Compiled from GLSL source rather than loaded as a SPIR-V binary. The driver's
-			// GLSL front end is far better exercised than its GL_ARB_gl_spirv path, which on
-			// Intel rejects valid SPIR-V - spirv-val passes the same modules - and reports an
-			// empty info log when it does. @see CompileOrGetOpenGLSource
+			// GLSL rather than SPIR-V: Intel's GL_ARB_gl_spirv rejects valid modules with an
+			// empty log.
 			GLuint shaderID = shaderIDs.emplace_back(glCreateShader(stage));
 
 			const char* sourceData = source.c_str();
 			glShaderSource(shaderID, 1, &sourceData, nullptr);
 			glCompileShader(shaderID);
 
-			// A stage that fails to compile produces a link error carrying no message of its
-			// own, so report it here where the cause is still known.
+			// The link error that follows has no message, so the stage's error is logged here.
 			GLint isCompiled;
 			glGetShaderiv(shaderID, GL_COMPILE_STATUS, &isCompiled);
 			if (isCompiled == GL_FALSE)
@@ -429,9 +422,7 @@ namespace Uge
 				glDeleteShader(id);
 			}
 
-			// Deliberately not storing the deleted program. Doing so leaves every uniform
-			// block reading as zero, so geometry draws in raw clip space - looking like a
-			// transform bug rather than a shader that never linked.
+			// No program, so binding the shader binds nothing.
 			m_rendererID = 0;
 			return;
 		}

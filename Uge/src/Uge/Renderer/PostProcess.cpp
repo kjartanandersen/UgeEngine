@@ -17,9 +17,7 @@ namespace Uge
 			int32_t Mode;
 			float BloomIntensity;
 
-			// std140 rounds a block up to a multiple of 16 bytes. Binding a range smaller than
-			// the block is invalid, so the padding is what makes the buffer legal rather than
-			// merely tidy.
+			// std140 rounds the block up to 16 bytes.
 			float Padding;
 		};
 	}
@@ -36,8 +34,7 @@ namespace Uge
 
 		s_resolveData.TonemapShader = Shader::Create("assets/shaders/Tonemap.glsl");
 
-		// Binding 5: 0 is Renderer2D's camera, 1 the model transform, 2 the material,
-		// 3 the mesh pass camera, and 4 is reserved for scene lighting.
+		// Binding 5; 0 to 4 are used by Renderer2D and Model.
 		s_resolveData.SettingsUniformBuffer =
 			UniformBuffer::Create(sizeof(TonemapUniformData), 5);
 
@@ -61,8 +58,7 @@ namespace Uge
 		uniformData.Exposure = s_settings.Exposure;
 		uniformData.Mode = static_cast<int32_t>(s_settings.Tonemap);
 
-		// Zeroed when there is no bloom result, so the shader can sample slot 1 unconditionally
-		// rather than needing a branch and a second shader variant.
+		// Zero without a bloom result, so the shader can always sample slot 1.
 		uniformData.BloomIntensity = Bloom::HasResult() ? s_settings.BloomIntensity : 0.0f;
 
 		s_resolveData.SettingsUniformBuffer->SetData(&uniformData, sizeof(uniformData));
@@ -73,9 +69,7 @@ namespace Uge
 		source->BindColorAttachment(0, 0);
 		Bloom::BindResult(1);
 
-		// The triangle covers the target by construction, so there is nothing for a depth test
-		// to decide - and leaving it on would let whatever depth the scene pass left behind
-		// reject the resolve entirely.
+		// The target's depth buffer could reject the triangle.
 		RenderCommand::SetDepthTest(false);
 		RenderCommand::DrawIndexed(GetFullscreenTriangle());
 		RenderCommand::SetDepthTest(true);

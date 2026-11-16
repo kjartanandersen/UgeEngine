@@ -2,13 +2,12 @@ include "./thirdparty/premake/premake_customization/solution_items.lua"
 include "./thirdparty/premake/premake_customization/slnx_platforms.lua"
 include "Dependencies.lua"
 
--- Seven dependency build scripts can't be committed inside their submodules, because those
--- point at the upstream repositories. The versioned copies in premake/thirdparty/ are the
--- source of truth, and are put in place here, before the includes below need them. The same
--- goes for local fixes to dependency sources, kept in patches/. See premake/thirdparty/README.md.
+-- These dependencies' build scripts live in premake/thirdparty/, as their submodules point
+-- upstream, and are copied into the submodules here, before the includes. Fixes to their
+-- sources are in patches/. See premake/thirdparty/README.md.
 local thirdPartyScripts = { "GLFW", "imgui", "glm", "yaml-cpp", "JoltPhysics", "googletest", "assimp" }
 
--- core.autocrlf can give either copy different line endings, which is not a real difference.
+-- Line endings are ignored, as core.autocrlf can change them.
 local function NormalizedText(file)
 	local text = io.readfile(file)
 	return text and (text:gsub("\r\n", "\n"))
@@ -21,13 +20,13 @@ local function SyncThirdPartyScripts()
 		local target = path.join(dir, "premake5.lua")
 
 		if not os.isfile(path.join(dir, ".git")) then
-			-- Copying into an empty, uninitialised submodule would only fail later, and more confusingly.
+			-- Stop now on a submodule that isn't checked out.
 			error(dir .. " is not checked out. Run: git submodule update --init --recursive", 0)
 		elseif not os.isfile(target) then
 			assert(os.copyfile(source, target))
 			print("Restored " .. target)
 		elseif NormalizedText(source) ~= NormalizedText(target) then
-			-- Never overwrite: the submodule copy may hold an edit that hasn't been moved over yet.
+			-- Never overwrite: the submodule copy may hold an edit not yet moved over.
 			error(target .. " differs from " .. source .. ".\n" ..
 				"Make the change in premake/thirdparty/, delete the submodule copy, and re-run.", 0)
 		end

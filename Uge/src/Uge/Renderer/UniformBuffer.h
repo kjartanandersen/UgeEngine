@@ -1,6 +1,6 @@
 /**
  * @file UniformBuffer.h
- * @brief GPU uniform buffer bound to a shader binding point.
+ * @brief Uniform buffers.
  * @ingroup group_renderer
  */
 
@@ -12,40 +12,29 @@ namespace Uge
 {
 
 	/**
-	 * @brief A uniform buffer object shared by every shader that declares its binding.
+	 * @brief A uniform buffer at a binding point, seen by every shader that declares it.
 	 * @ingroup group_renderer
 	 *
-	 * The efficient way to supply per-frame data such as the camera matrices: upload once
-	 * per frame and every shader using the binding point sees it, instead of setting the
-	 * same uniform on each shader by name.
-	 *
-	 * @code
-	 * // matches: layout(std140, binding = 0) uniform Camera { mat4 u_ViewProjection; };
-	 * s_data.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 0);
-	 * s_data.CameraUniformBuffer->SetData(&cameraData, sizeof(CameraData));
-	 * @endcode
-	 *
-	 * @warning The CPU-side struct must match the shader block's `std140` layout, which
-	 * pads `vec3` to 16 bytes. A mismatch silently produces wrong values.
+	 * The C++ struct must match the block's `std140` layout, which pads a `vec3` to 16 bytes.
 	 */
 	class UniformBuffer
 	{
 	public:
-		/** @brief Releases the GPU buffer. */
+		/** @brief Releases the buffer. */
 		virtual ~UniformBuffer() {}
 		/**
-		 * @brief Uploads data into the buffer.
-		 * @param data Source bytes to copy.
-		 * @param size Number of bytes to write.
-		 * @param offset Byte offset within the buffer to write at.
+		 * @brief Writes into the buffer.
+		 * @param data Bytes to copy.
+		 * @param size Number of bytes.
+		 * @param offset Byte offset to write at.
 		 */
 		virtual void SetData(const void* data, uint32_t size, uint32_t offset = 0) = 0;
 
 		/**
-		 * @brief Creates a uniform buffer for the active graphics API.
-		 * @param size Buffer size in bytes.
-		 * @param binding Binding point index, matching the shader's `layout(binding = N)`.
-		 * @return The backend's uniform buffer implementation.
+		 * @brief Creates a uniform buffer and binds it.
+		 * @param size Size in bytes.
+		 * @param binding Binding point, as in the shader's `layout(binding = N)`.
+		 * @return The buffer.
 		 */
 		static Ref<UniformBuffer> Create(uint32_t size, uint32_t binding);
 	};

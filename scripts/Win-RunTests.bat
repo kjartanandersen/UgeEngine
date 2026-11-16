@@ -11,10 +11,8 @@ REM   --brief                Print only failing tests (GoogleTest's --gtest_brie
 REM   GTEST_ARGS             Anything else is passed to the runner, e.g. --gtest_repeat=5.
 REM                          A --gtest_ flag that cmd split at its '=' is rejoined.
 REM
-REM Works from any directory. The runner is always started from the repository root,
-REM which is where the tests expect to run - see CLAUDE.md, Tests. Builds by default so
-REM a stale binary is never mistaken for the current code. Exits with the runner's exit
-REM code, so it can gate a commit hook or a CI job.
+REM Works from any directory, and runs the tests from the repository root. Builds first
+REM unless --no-build is given. Exits with the runner's exit code.
 
 setlocal EnableExtensions
 
@@ -56,11 +54,9 @@ if /i "%~1"=="--brief" (
 if /i "%~1"=="--filter" goto parse_filter
 goto parse_passthrough
 
-REM Not one of ours: hand it to GoogleTest. cmd splits arguments at '=', and PowerShell
-REM drops the quotes that would have prevented it, so "--gtest_repeat=5" can arrive here
-REM as "--gtest_repeat" followed by "5". Join such a pair back together - unless the
-REM next argument is another option (starts with "--"), since boolean flags like
-REM --gtest_also_run_disabled_tests take no value.
+REM Anything else goes to GoogleTest. cmd splits at '=' and PowerShell drops the quotes, so
+REM --gtest_repeat=5 can arrive as two arguments. They are joined again, unless the second
+REM starts with --, which means the first was a flag with no value.
 :parse_passthrough
 set "ARG=%~1"
 set "NEXT=%~2"
@@ -100,8 +96,7 @@ echo [RunTests]        run this from a Developer Command Prompt, or pass --no-bu
 exit /b 1
 
 :build
-REM The project, not Uge.sln: premake now writes Uge.slnx and the .sln on disk is stale.
-REM Uge-Tests references Uge, Jolt and GoogleTest, so MSBuild builds those as needed.
+REM Builds the project, and with it Uge, Jolt and GoogleTest as needed.
 echo [RunTests] Building Uge-Tests (%CONFIG%)...
 "%MSBUILD%" "%ROOT%\Uge-Tests\Uge-Tests.vcxproj" /p:Configuration=%CONFIG% /p:Platform=x64 /m /nologo /v:minimal
 if errorlevel 1 goto build_failed
@@ -137,8 +132,7 @@ echo   --brief                Print only failing tests.
 echo   GTEST_ARGS             Passed to GoogleTest, e.g. --gtest_repeat=5
 exit /b 0
 
-REM Sets MSBUILD to the newest MSBuild.exe: the one on PATH (Developer Command Prompt) if
-REM there is one, otherwise whatever vswhere reports. Leaves it empty if neither works.
+REM Sets MSBUILD to the msbuild on PATH, or else the one vswhere finds. Empty if neither.
 :find_msbuild
 set "MSBUILD="
 where msbuild >nul 2>nul

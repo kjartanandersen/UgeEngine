@@ -9,14 +9,11 @@ namespace Uge
 {
 
     /**
-     * @brief One independent physics world.
+     * @brief One physics world.
      * @ingroup group_physics
      *
-     * Separate from Uge::PhysicsAPI because worlds are per-Uge::Scene, not per-process: the
-     * editor scene and the play-mode copy can both exist at once. Created by
-     * Uge::Physics::CreateScene and owned by the Uge::Scene that requested it.
-     *
-     * @warning Not thread-safe. Call every method from the main thread.
+     * Each Uge::Scene has its own, so the editor scene and its play-mode copy can exist at
+     * once. Not thread-safe: use it from the main thread.
      */
     class PhysicsScene
     {
@@ -24,130 +21,121 @@ namespace Uge
         virtual ~PhysicsScene() = default;
 
         /**
-         * @brief Advances the simulation by a fixed interval.
-         * @param fixedDeltaTime Seconds to advance; keep this constant across calls.
-         * @param collisionSteps Sub-steps within the interval; more is more stable.
-         *
-         * @warning Must be a fixed step. Feeding a variable frame delta makes contacts
-         * jitter and stacks explode. @see Uge::Scene::OnUpdateRuntime for the accumulator.
+         * @brief Advances the simulation.
+         * @param fixedDeltaTime Seconds to advance. It must be the same on every call; a
+         * variable step makes contacts jitter.
+         * @param collisionSteps Collision steps within the interval; more is more stable.
          */
         virtual void Step(float fixedDeltaTime, int collisionSteps = 1) = 0;
 
         /**
          * @brief Creates a body and adds it to the world.
-         * @param desc Body parameters, including at least one collider.
-         * @return A handle to the new body, or an invalid handle on failure.
+         * @param desc Body settings, with at least one collider.
+         * @return The body, or an invalid handle on failure.
          */
         virtual PhysicsBodyID CreateBody(const BodyDesc& desc) = 0;
         /**
-         * @brief Removes a body from the world and destroys it.
-         * @param body Body to destroy; an invalid handle is ignored.
+         * @brief Removes and destroys a body.
+         * @param body The body; an invalid handle is ignored.
          */
         virtual void DestroyBody(PhysicsBodyID body) = 0;
 
         /**
-         * @brief Value stored in Uge::BodyDesc::UserData at creation.
-         * @param body Body to query.
-         * @return The stored value, or `0` for an invalid handle.
+         * @brief The Uge::BodyDesc::UserData a body was created with.
+         * @param body The body.
+         * @return The value, or `0` for an invalid handle.
          */
         virtual uint64_t GetUserData(PhysicsBodyID body) const = 0;
 
         /**
-         * @brief Teleports a body, bypassing collision resolution.
-         * @param body Body to move.
-         * @param position New world position.
-         * @param rotation New world orientation.
+         * @brief Moves a body without resolving collisions.
+         * @param body The body.
+         * @param position World position.
+         * @param rotation World rotation.
          *
-         * The correct way to drive a Uge::BodyType::Kinematic body from game code.
-         * @warning On a Dynamic body this can push it through walls.
+         * For kinematic bodies; it can push a dynamic body into a wall.
          */
         virtual void SetTransform(PhysicsBodyID body, const glm::vec3& position, const glm::quat& rotation) = 0;
 
         /**
-         * @brief Reads a body's current world transform.
-         * @param body Body to query.
-         * @param outPosition Receives the world position.
-         * @param outRotation Receives the world orientation.
+         * @brief A body's world transform.
+         * @param body The body.
+         * @param outPosition Receives the position.
+         * @param outRotation Receives the rotation.
          */
         virtual void GetTransform(PhysicsBodyID body, glm::vec3& outPosition, glm::quat& outRotation) const = 0;
 
-        /** @brief Sets a body's linear velocity in m/s. @param body Body. @param velocity Velocity. */
+        /** @brief Sets a body's linear velocity. @param body Body. @param velocity In m/s. */
         virtual void SetLinearVelocity(PhysicsBodyID body, const glm::vec3& velocity) = 0;
-        /** @brief Reads a body's linear velocity. @param body Body. @return Velocity in m/s. */
+        /** @brief A body's linear velocity. @param body Body. @return In m/s. */
         virtual glm::vec3 GetLinearVelocity(PhysicsBodyID body) const = 0;
-        /** @brief Sets a body's angular velocity. @param body Body. @param velocity Radians/s. */
+        /** @brief Sets a body's angular velocity. @param body Body. @param velocity In radians/s. */
         virtual void SetAngularVelocity(PhysicsBodyID body, const glm::vec3& velocity) = 0;
-        /** @brief Reads a body's angular velocity. @param body Body. @return Radians/s. */
+        /** @brief A body's angular velocity. @param body Body. @return In radians/s. */
         virtual glm::vec3 GetAngularVelocity(PhysicsBodyID body) const = 0;
 
         /**
-         * @brief Applies a continuous force for the next step.
-         * @param body Body to push.
-         * @param force Force in newtons.
-         * @note Cleared after each Step(); apply every frame for a sustained push.
+         * @brief Applies a force for the next step only.
+         * @param body The body.
+         * @param force In newtons.
          */
         virtual void AddForce(PhysicsBodyID body, const glm::vec3& force) = 0;
         /**
-         * @brief Applies an instantaneous change in momentum.
-         * @param body Body to push.
-         * @param impulse Impulse in newton-seconds.
+         * @brief Applies an impulse.
+         * @param body The body.
+         * @param impulse In newton-seconds.
          */
         virtual void AddImpulse(PhysicsBodyID body, const glm::vec3& impulse) = 0;
-        /** @brief Applies an instantaneous angular impulse. @param body Body. @param impulse N*m*s. */
+        /** @brief Applies an angular impulse. @param body Body. @param impulse In N*m*s. */
         virtual void AddTorqueImpulse(PhysicsBodyID body, const glm::vec3& impulse) = 0;
 
         /**
-         * @brief Finds the nearest body along a ray.
-         * @param origin World-space start of the ray.
-         * @param direction Ray direction; need not be normalized.
-         * @param maxDistance Longest distance to consider.
-         * @param mask Layers to test against.
-         * @param outHit Receives the hit, untouched if nothing was hit.
-         * @return `true` if a body was hit.
+         * @brief The nearest body along a ray. Triggers are skipped.
+         * @param origin World-space start.
+         * @param direction Direction; need not be normalized.
+         * @param maxDistance Longest distance.
+         * @param mask Layers to test.
+         * @param outHit Receives the hit; unchanged on a miss.
+         * @return `true` on a hit.
          */
-        virtual bool CastRay(const glm::vec3& origin, const glm::vec3& direction, float maxDistance, 
+        virtual bool CastRay(const glm::vec3& origin, const glm::vec3& direction, float maxDistance,
             PhysicsLayerMask mask, RayHit& outHit) const = 0;
 
         /**
-         * @brief Collects every body overlapping a sphere.
-         *
-         * Triggers are not reported, matching CastRay(). Each body appears once, however many
-         * of its colliders the sphere touches.
-         * @param center World-space centre.
-         * @param radius Sphere radius.
-         * @param mask Layers to test against.
-         * @param outBodies Cleared, then filled with the overlapping bodies.
+         * @brief The bodies overlapping a sphere, each once. Triggers are skipped.
+         * @param center World-space center.
+         * @param radius Radius.
+         * @param mask Layers to test.
+         * @param outBodies Cleared, then filled.
          */
         virtual void OverlapSphere(const glm::vec3& center, float radius, PhysicsLayerMask mask,
             std::vector<PhysicsBodyID>& outBodies) const = 0;
 
         /**
-         * @brief Moves the events produced since the last call into @p out.
-         * @param out Cleared, then filled with the pending events.
+         * @brief Moves the contact events since the last call into @p out.
+         * @param out Cleared, then filled.
          *
-         * @warning The backend generates these on worker threads during Step(). Call this
-         * on the main thread **after** Step() returns; never dispatch from inside the
-         * backend's own callback.
+         * Events are produced on worker threads during Step(). Call this on the main thread,
+         * after Step() returns.
          */
         virtual void ConsumeContactEvents(std::vector<ContactEvent>& out) = 0;
 
-        /** @brief Sets the world's gravity vector. @param gravity Acceleration in m/s^2. */
+        /** @brief Sets gravity. @param gravity In m/s^2. */
         virtual void SetGravity(const glm::vec3& gravity) = 0;
-        /** @brief Reads the world's gravity vector. @return Acceleration in m/s^2. */
+        /** @brief The gravity. @return In m/s^2. */
         virtual glm::vec3 GetGravity() const = 0;
 
         /**
-         * @brief Emits wireframes for every body into @p renderer.
-         * @param renderer Line sink to draw into.
-         * @note Compiled to a no-op in Dist.
+         * @brief Draws every body's wireframe. Does nothing in Dist.
+         * @param renderer Receives the lines.
          */
         virtual void DebugDraw(PhysicsDebugRenderer& renderer) = 0;
 
         /**
-         * @brief Rebuilds the broad-phase acceleration structure.
+         * @brief Rebuilds the broad phase.
          *
-         * Call once after populating a world, before the first Step(). Too slow for
-         * per-frame use.
+         * Call once after adding the bodies, before the first Step(). Too slow for every
+         * frame.
          */
         virtual void OptimizeBroadPhase() = 0;
 

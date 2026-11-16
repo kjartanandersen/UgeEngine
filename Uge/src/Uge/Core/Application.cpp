@@ -22,10 +22,8 @@ namespace Uge
 		: m_specification(spec)
 	{
 		UG_PROFILE_FUNCTION();
-		// Make sure the application has not already loaded
 		UG_CORE_ASSERT(!s_instance, "Application Already Exists!");
 
-		// Set the singleton instance 
 		s_instance = this;
 
 		if (!m_specification.WorkingDirectory.empty())
@@ -52,20 +50,17 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
-		// Layers first, while every subsystem they use still exists: the editor's scenes own
-		// physics worlds, framebuffers and script instances. As a data member, the layer stack
-		// would otherwise be destroyed after this body, after Physics::Shutdown.
+		// Layers go first, while the subsystems they use still exist.
 		m_layerStack.Clear();
 
 		ScriptEngine::Shutdown();
 
-		// The project's asset manager holds every loaded texture, mesh and environment. Left to
-		// static destruction, it would go after the window, with no GL context left.
+		// Unloads every asset while the GL context still exists.
 		Project::Unload();
 
 		Physics::Shutdown();
 
-		// Needs the GL context, which lives until m_window is destroyed after this body.
+		// Needs the GL context, which lasts until m_window is destroyed.
 		Renderer::Shutdown();
 
 	}
@@ -82,8 +77,7 @@ namespace Uge
 			Timestep timestep = time - m_lastFrameTime;
 			m_lastFrameTime = time;
 
-			// Closes off the previous frame's scope timings and records its duration, so
-			// the editor's Debug panel has a stable, complete frame to display.
+			// Ends the previous frame's profiling and records its duration.
 			FrameProfiler::BeginFrame(timestep.GetMilliseconds());
 
 			ExecuteMainThreadQueue();

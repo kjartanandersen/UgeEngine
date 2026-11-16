@@ -1,6 +1,6 @@
 /**
  * @file MSDFData.h
- * @brief Storage for msdf-atlas-gen glyph data.
+ * @brief A font's msdf-atlas-gen data.
  * @ingroup group_renderer
  */
 
@@ -15,17 +15,14 @@ namespace Uge
 {
 
 	/**
-	 * @brief Holds the glyph geometry and font metrics produced by msdf-atlas-gen.
+	 * @brief Glyph geometry and font metrics from msdf-atlas-gen.
 	 * @ingroup group_renderer
-	 *
-	 * Kept in its own header so Font.h can forward-declare it and callers avoid pulling in
-	 * the msdf-atlas-gen headers.
 	 */
 	struct MSDFData
 	{
 
-		std::vector<msdf_atlas::GlyphGeometry> Glyphs; ///< Per-glyph atlas placement and outline data.
-		msdf_atlas::FontGeometry Fonts; ///< Font-wide metrics: line height, kerning pairs, glyph lookup.
+		std::vector<msdf_atlas::GlyphGeometry> Glyphs; ///< Each glyph's outline and place in the atlas.
+		msdf_atlas::FontGeometry Fonts; ///< Line height, kerning and glyph lookup.
 
 
 	};

@@ -1,5 +1,5 @@
 @echo off
-REM Generates the Doxygen API documentation for the Uge engine.
+REM Builds the Doxygen API documentation.
 REM Output: docs\html\index.html   Warnings: docs\doxygen-warnings.log
 
 pushd "%~dp0\..\docs"

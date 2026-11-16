@@ -21,13 +21,13 @@ using UgeTests::TempProject;
 namespace
 {
 
-	/** @brief Gives each test a freshly created project, active for its duration. */
+	/** @brief A new active project for each test. */
 	class ProjectTest : public ::testing::Test
 	{
 	protected:
 		TempProject m_project;
 
-		/** @brief Writes a `.ugproj` file into the project's root and returns its path. */
+		/** @brief Writes a `.ugproj` file in the project root and returns its path. */
 		std::filesystem::path WriteProjectFile(const std::string& name, const std::string& contents) const
 		{
 			const std::filesystem::path path = m_project.Root() / name;
@@ -47,8 +47,7 @@ TEST_F(ProjectTest, LoadingMakesTheProjectActive)
 
 TEST_F(ProjectTest, LoadingCreatesAnEditorAssetManager)
 {
-	// Project::New() alone does not; only the load path builds one, which is why the
-	// fixture goes through a real save and load.
+	// Only Load() creates the asset manager, not New().
 	ASSERT_TRUE(Project::GetActive());
 	EXPECT_NE(Project::GetActive()->GetAssetManager(), nullptr);
 	EXPECT_NE(Project::GetActive()->GetEditorAssetManager(), nullptr);
@@ -77,9 +76,7 @@ TEST_F(ProjectTest, AssetFileSystemPathResolvesAgainstTheContentRoot)
 
 TEST_F(ProjectTest, RelativePathIsTheInverseOfAssetFileSystemPath)
 {
-	// The registry stores relative paths and the content browser hands back absolute ones,
-	// so these two have to compose back to the identity or a dragged asset registers under
-	// a path nothing can resolve.
+	// The two conversions undo each other.
 	const std::filesystem::path absolute = Project::GetAssetFileSystemPath("Textures/Icon.png");
 
 	EXPECT_EQ(Project::GetRelativePath(absolute.string()),
@@ -102,7 +99,7 @@ TEST_F(ProjectTest, UnloadReturnsToTheNoProjectState)
 
 	EXPECT_EQ(Project::GetActive(), nullptr);
 
-	// Restored so the fixture's destructor and any following test see a consistent state.
+	// Loaded again for the fixture's destructor.
 	Project::Load(m_project.ProjectFile());
 	EXPECT_TRUE(Project::GetActive());
 }
@@ -140,8 +137,7 @@ TEST_F(ProjectTest, SavingWritesAReadableProjectFile)
 
 TEST_F(ProjectTest, SavingElsewhereMovesTheProjectDirectory)
 {
-	// Save As has to repoint the content root, or the project keeps resolving assets
-	// against the folder it was opened from.
+	// Saving elsewhere moves the project directory with it.
 	const std::filesystem::path nested = m_project.Root() / "Nested";
 	std::filesystem::create_directories(nested);
 
@@ -166,15 +162,12 @@ TEST_F(ProjectTest, DeserializingAMalformedProjectFails)
 
 TEST_F(ProjectTest, LoadingAMissingFileReturnsNull)
 {
-	// A stale path — a recent-projects entry pointing at something that has been moved —
-	// has to come back as a null return, not as an exception thrown through Load. That
-	// needs the catch in ProjectSerializer::Deserialize to cover YAML::BadFile, which is
-	// not a ParserException.
+	// A missing file fails without throwing YAML::BadFile, which isn't a ParserException.
 	EXPECT_NO_THROW({
 		EXPECT_EQ(Project::Load(m_project.Root() / "DoesNotExist.ugproj"), nullptr);
 		});
 
-	// A failed load must leave the project that was open alone.
+	// The open project stays open.
 	ASSERT_TRUE(Project::GetActive());
 	EXPECT_EQ(Project::GetActive()->GetConfig().Name, "TestProject");
 	EXPECT_EQ(Project::GetProjectDirectory(), m_project.Root());
@@ -182,7 +175,7 @@ TEST_F(ProjectTest, LoadingAMissingFileReturnsNull)
 
 TEST_F(ProjectTest, LoadingADirectoryReturnsNull)
 {
-	// Not a missing file but an unreadable one, which raises YAML::BadFile just the same.
+	// An unreadable file also raises YAML::BadFile.
 	EXPECT_NO_THROW({
 		EXPECT_EQ(Project::Load(m_project.AssetDirectory()), nullptr);
 		});
@@ -192,14 +185,13 @@ TEST_F(ProjectTest, LoadingADirectoryReturnsNull)
 
 TEST_F(ProjectTest, ANewProjectHasNoStartScene)
 {
-	// A new project has no start scene until one is chosen, so it opens on an empty scene.
-	// The fixture saves the project and loads it back, so this also checks that 0 survives.
+	// The fixture saved and loaded the project, so 0 also survives a round trip.
 	EXPECT_EQ((uint64_t)Project::GetActive()->GetConfig().StartScene, 0ull);
 }
 
 TEST_F(ProjectTest, AStartSceneThatIsNotAHandleIsIgnored)
 {
-	// A path where a handle belongs loads the rest of the project, with no start scene.
+	// A path in place of a handle: the rest loads, with no start scene.
 	const std::filesystem::path file = WriteProjectFile("PathStartScene.ugproj",
 		"Project:\n"
 		"  Name: Sample\n"
@@ -248,7 +240,7 @@ TEST_F(ProjectTest, AProjectFileMissingARequiredSettingFails)
 
 TEST_F(ProjectTest, AMistypedSettingFailsWithoutThrowing)
 {
-	// A sequence where the name's string belongs.
+	// A sequence in place of the name.
 	const std::filesystem::path file = WriteProjectFile("Mistyped.ugproj",
 		"Project:\n"
 		"  Name: [a, b]\n"
@@ -266,7 +258,7 @@ TEST_F(ProjectTest, AMistypedSettingFailsWithoutThrowing)
 
 TEST_F(ProjectTest, AFileThatIsNotAMapFailsWithoutThrowing)
 {
-	// Subscripting a scalar document throws in yaml-cpp, so this checks the whole read is guarded.
+	// yaml-cpp throws when a scalar document is subscripted.
 	const std::filesystem::path file = WriteProjectFile("Scalar.ugproj", "just some text\n");
 
 	Uge::Ref<Project> target = Uge::CreateRef<Project>();
@@ -281,7 +273,7 @@ TEST_F(ProjectTest, SavingIntoAMissingFolderFails)
 {
 	EXPECT_FALSE(Project::SaveActive(m_project.Root() / "NoSuchFolder" / "TestProject.ugproj"));
 
-	// A failed save leaves the project where it was.
+	// The project directory doesn't change.
 	EXPECT_EQ(Project::GetProjectDirectory(), m_project.Root());
 }
 

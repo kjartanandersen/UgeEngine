@@ -1,6 +1,6 @@
 /**
  * @file UgeEditorApp.cpp
- * @brief Entry point of the Uge-Editor application.
+ * @brief The editor application.
  * @ingroup group_editor
  */
 
@@ -16,18 +16,15 @@ namespace Uge
 {
 
 	/**
-	 * @brief The editor client application.
+	 * @brief The editor application, which runs Uge::EditorLayer.
 	 * @ingroup group_editor
-	 *
-	 * Pushes Uge::EditorLayer, which holds all of the editor's behaviour.
-	 * @see Uge::CreateApplication
 	 */
 	class UgeEditor : public Uge::Application
 	{
 	public:
 		/**
-		 * @brief Constructs the application and pushes the editor layer.
-		 * @param spec Startup configuration from Uge::CreateApplication.
+		 * @brief Creates the application and pushes the editor layer.
+		 * @param spec The startup settings.
 		 */
 		UgeEditor(const ApplicationSpecification& spec)
 			: Application(spec)

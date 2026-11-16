@@ -1,6 +1,6 @@
 /**
  * @file Sandbox3D.h
- * @brief Sample layer exercising the 3D cube renderer.
+ * @brief The Sandbox's 3D sample layer.
  */
 
 #pragma once
@@ -8,30 +8,30 @@
 #include "Uge.h"
 
 /**
- * @brief Demonstrates Uge::Renderer3D and the perspective camera controller.
+ * @brief Draws cubes with Uge::Renderer3D.
  */
 class Sandbox3D : public Uge::Layer
 {
 
 public:
-	/** @brief Constructs the layer and its perspective camera controller. */
+	/** @brief Creates the layer and its camera controller. */
 	Sandbox3D();
 	/** @brief Default destructor. */
 	virtual ~Sandbox3D() = default;
 
-	/** @brief Loads the sample's texture and shader. */
+	/** @brief Loads the font. */
 	virtual void OnAttach() override;
-	/** @brief Releases the sample's resources. */
+	/** @brief Does nothing. */
 	virtual void OnDetach() override;
 
 	/**
 	 * @brief Updates the camera and draws the cubes.
-	 * @param ts Frame delta time.
+	 * @param ts Frame time.
 	 */
 	virtual void OnUpdate(Uge::Timestep ts) override;
 	/**
-	 * @brief Forwards events to the camera controller.
-	 * @param e Event to handle.
+	 * @brief Passes events to the camera controller.
+	 * @param e The event.
 	 */
 	virtual void OnEvent(Uge::Event& e) override;
 	/** @brief Draws the settings window. */

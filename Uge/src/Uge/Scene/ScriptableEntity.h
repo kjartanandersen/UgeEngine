@@ -14,41 +14,22 @@ namespace Uge
 
 	
 	/**
-	 * @brief Base class for a behaviour written in C++ and bound to an entity.
+	 * @brief Base class of a C++ script on an entity, run by Uge::NativeScriptComponent.
 	 * @ingroup group_scene
 	 *
-	 * The native counterpart to C# scripting: subclass it, override the lifecycle hooks,
-	 * and bind it through an entity's Uge::NativeScriptComponent. Uge::Scene sets the
-	 * entity reference before OnCreate() runs, so GetComponent() is usable from there on.
-	 *
-	 * @code
-	 * class CameraController : public ScriptableEntity
-	 * {
-	 *     void OnUpdate(Timestep ts) override
-	 *     {
-	 *         auto& transform = GetComponent<TransformComponent>();
-	 *         if (Input::IsKeyPressed(UG_KEY_A))
-	 *             transform.Translation.x -= m_speed * ts;
-	 *     }
-	 *     float m_speed = 5.0f;
-	 * };
-	 * entity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-	 * @endcode
-	 *
-	 * @see Uge::ScriptEngine for the C# alternative.
+	 * The entity is set before OnCreate() runs.
 	 */
 	class ScriptableEntity
 	{
 
 	public:
-		/** @brief Virtual destructor; instances are owned by the component that bound them. */
+		/** @brief Virtual destructor. */
 		virtual ~ScriptableEntity() {}
 
 		/**
-		 * @brief Retrieves a component from the entity this script is attached to.
-		 * @tparam T Component type to fetch.
-		 * @return Mutable reference to the component.
-		 * @warning Asserts if the entity does not have a `T`.
+		 * @brief A component of the entity. Asserts if it has no `T`.
+		 * @tparam T Component type.
+		 * @return The component.
 		 */
 		template<typename T>
 		T& GetComponent()
@@ -57,13 +38,13 @@ namespace Uge
 		}
 
 	protected:
-		/** @brief Called once when the script is instantiated, at runtime start. */
+		/** @brief Called once, when the script is created. */
 		virtual void OnCreate() {}
-		/** @brief Called once before the script is destroyed. */
+		/** @brief Called once, before the script is destroyed. */
 		virtual void OnDestroy() {}
 		/**
-		 * @brief Called once per frame while the scene is running.
-		 * @param ts Frame delta time.
+		 * @brief Called every frame in play mode.
+		 * @param ts Frame time.
 		 */
 		virtual void OnUpdate(Timestep ts) {}
 

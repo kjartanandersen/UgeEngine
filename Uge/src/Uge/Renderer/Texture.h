@@ -1,6 +1,6 @@
 /**
  * @file Texture.h
- * @brief GPU textures, which are also assets.
+ * @brief Textures.
  * @ingroup group_renderer
  */
 
@@ -17,34 +17,31 @@ namespace Uge
 {
 
 	/**
-	 * @brief Pixel formats a texture can be created with.
+	 * @brief Texture pixel formats.
 	 * @ingroup group_renderer
 	 */
 	enum class ImageFormat
 	{
-		None = 0, ///< Unset / invalid.
-		R8, ///< Single 8-bit channel; used for font atlases and masks.
-		RGB8, ///< Three 8-bit channels, no alpha.
-		RGBA8, ///< Four 8-bit channels; the usual colour format.
-		RG16F, ///< Two 16-bit float channels; used for the split-sum BRDF lookup table.
-		RGBA16F, ///< Four 16-bit float channels; the working format for environment maps.
-		RGBA32F ///< Four 32-bit float channels, for HDR source images.
+		None = 0,
+		R8,
+		RGB8,
+		RGBA8,
+		RG16F,
+		RGBA16F,
+		RGBA32F
 	};
 
 	/**
-	 * @brief Number of bytes one pixel of @p format occupies.
-	 * @param format Format to measure.
-	 * @return Size in bytes; `0` for an unrecognized format, which also asserts in Debug.
+	 * @brief The size of one pixel.
+	 * @param format The format.
+	 * @return Size in bytes; asserts and returns `0` for an unknown format.
 	 * @ingroup group_renderer
 	 */
 	uint32_t ImageFormatBytesPerPixel(ImageFormat format);
 
 	/**
-	 * @brief Describes the texture to create.
+	 * @brief The settings a texture is created from. The defaults are 1x1 RGBA8.
 	 * @ingroup group_renderer
-	 *
-	 * The defaults describe a 1x1 RGBA8 texture, which is what the renderer uses for its
-	 * white fallback.
 	 */
 	struct TextureSpecification
 	{
@@ -52,75 +49,70 @@ namespace Uge
 		uint32_t Width = 1; ///< Width in pixels.
 		uint32_t Height = 1; ///< Height in pixels.
 		ImageFormat Format = ImageFormat::RGBA8; ///< Pixel format.
-		bool GenerateMips = true; ///< Whether to generate a mip chain.
+		bool GenerateMips = true; ///< Whether to generate mipmaps.
 	};
 
 
 	/**
-	 * @brief Abstract GPU texture; an Uge::Asset, so it is referenced by handle.
+	 * @brief A GPU texture, and an asset.
 	 * @ingroup group_renderer
-	 *
-	 * Components store an Uge::AssetHandle rather than a pointer, and resolve it through
-	 * Uge::AssetManager::GetAsset at draw time. @see group_asset
 	 */
 	class Texture: public Asset
 	{
 
 	public:
-		/** @brief Releases the GPU texture. */
+		/** @brief Releases the texture. */
 		virtual ~Texture() = default;
 
 		/**
-		 * @brief The specification this texture was created from.
-		 * @return Const reference to the specification.
+		 * @brief The specification.
+		 * @return The specification.
 		 */
 		virtual const TextureSpecification& GetSpecification() const = 0;
 
-		/** @brief Texture width. @return Width in pixels. */
+		/** @brief The width. @return Width in pixels. */
 		virtual uint32_t GetWidth() const = 0;
-		/** @brief Texture height. @return Height in pixels. */
+		/** @brief The height. @return Height in pixels. */
 		virtual uint32_t GetHeight() const = 0;
 		/**
-		 * @brief The backend's native handle.
-		 * @return The OpenGL texture name; used to display the texture in ImGui.
+		 * @brief The OpenGL texture name.
+		 * @return The name.
 		 */
 		virtual uint32_t GetRendererID() const = 0;
 
 		/**
-		 * @brief Uploads pixel data.
-		 * @param data Source pixels; size must match width x height x bytes-per-pixel.
+		 * @brief Uploads pixels.
+		 * @param data Width x height x bytes-per-pixel bytes.
 		 */
 		virtual void SetData(Buffer data) = 0;
 
 		/**
-		 * @brief Binds the texture to a sampler slot.
-		 * @param slot Texture unit to bind to.
+		 * @brief Binds the texture to a slot.
+		 * @param slot Texture unit.
 		 */
 		virtual void Bind(uint32_t slot = 0) const = 0;
 		/**
-		 * @brief Unbinds the texture from a sampler slot.
-		 * @param slot Texture unit to clear.
+		 * @brief Unbinds the texture from a slot.
+		 * @param slot Texture unit.
 		 */
 		virtual void UnBind(uint32_t slot = 0) const = 0;
 
 		/**
-		 * @brief Whether the texture holds valid image data.
-		 * @return `false` if the source image failed to load.
+		 * @brief Whether the image loaded.
+		 * @return `false` if it failed to load.
 		 */
 		virtual bool IsLoaded() const = 0;
 
 		/**
-		 * @brief Sets how many times the texture repeats across the surface.
-		 * @param tilingFactor Repeat count; `1.0f` maps the image exactly once.
+		 * @brief Sets how many times the texture repeats.
+		 * @param tilingFactor Repeat count.
 		 */
 		virtual void SetTilingFactor(float tilingFactor) = 0;
 
 		/**
-		 * @brief Compares two textures by their native handle.
-		 * @param other Texture to compare against.
-		 * @return `true` if both refer to the same GPU texture.
-		 *
-		 * The 2D batcher uses this to reuse an already-bound texture slot.
+		 * @brief Whether two textures are the same GPU texture.
+		 * @param other The other texture.
+		 * @return `true` if they are.
 		 */
 		virtual bool operator==(const Texture& other) const = 0;
 
@@ -128,11 +120,8 @@ namespace Uge
 
 
 	/**
-	 * @brief A two-dimensional texture: the concrete texture type used throughout.
+	 * @brief A 2D texture.
 	 * @ingroup group_renderer
-	 *
-	 * Created either from a Uge::TextureSpecification directly, or by
-	 * Uge::TextureImporter when the asset system loads an image from disk.
 	 */
 	class Texture2D : public Texture
 	{
@@ -140,31 +129,31 @@ namespace Uge
 	public:
 
 		/**
-		 * @brief Creates a texture for the active graphics API.
-		 * @param specification Size, format and mip settings.
-		 * @param data Optional initial pixels; an empty buffer leaves the texture uninitialized.
-		 * @return The backend's texture implementation.
+		 * @brief Creates a texture.
+		 * @param specification Size, format and mipmaps.
+		 * @param data Pixels, or an empty buffer to leave the texture uninitialized.
+		 * @return The texture.
 		 */
 		static Ref<Texture2D> Create(const TextureSpecification& specification, Buffer data = Buffer());
 
 		/**
-		 * @brief The asset type this class represents.
+		 * @brief The asset type.
 		 * @return Uge::AssetType::Texture2D.
 		 */
 		static AssetType GetStaticType() { return AssetType::Texture2D; }
 		/**
-		 * @brief This instance's asset type.
+		 * @brief The asset type.
 		 * @return Uge::AssetType::Texture2D.
 		 */
 		virtual AssetType GetType() const override { return GetStaticType(); }
 
 
 	public:
-		std::string m_path; ///< Source file this texture was loaded from, if any.
+		std::string m_path; ///< The source file, if any.
 		uint32_t m_width; ///< Width in pixels.
 		uint32_t m_height; ///< Height in pixels.
 
-		float m_tilingFactor = 1.0f; ///< Texture repeat count; `1.0f` maps the image once.
+		float m_tilingFactor = 1.0f; ///< Repeat count.
 
 
 

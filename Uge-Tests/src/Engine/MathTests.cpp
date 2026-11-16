@@ -1,6 +1,6 @@
 /**
  * @file MathTests.cpp
- * @brief Tests for Uge::Math::DecomposeTransform, the gizmo's write-back path.
+ * @brief Tests for Uge::Math: DecomposeTransform, AABB and Frustum.
  */
 
 #include <ugpch.h>
@@ -30,9 +30,7 @@ namespace
 
 TEST(MathDecomposeTest, RoundTripsATransformComponent)
 {
-	// ImGuizmo hands the editor a matrix, which EditorLayer decomposes straight back into
-	// the entity's TransformComponent. Anything lost here is drift the user sees as the
-	// object sliding while it is dragged.
+	// The gizmo's matrix is decomposed into the TransformComponent, so it must round-trip.
 	Uge::TransformComponent source;
 	source.Translation = glm::vec3(3.0f, -2.0f, 7.5f);
 	source.Rotation = glm::vec3(glm::radians(30.0f), glm::radians(-45.0f), glm::radians(15.0f));
@@ -98,8 +96,7 @@ TEST(AABBTest, TranslationMovesTheBox)
 
 TEST(AABBTest, AQuarterTurnSwapsTheExtents)
 {
-	// Turned 90 degrees about Y, a box that is long in X becomes long in Z. The box fits
-	// its new orientation exactly, so the result is exact rather than merely enclosing.
+	// Turned 90 degrees about Y, a box long in X becomes exactly as long in Z.
 	const Uge::Math::AABB box = MakeBox(glm::vec3(-2.0f, -1.0f, -0.5f), glm::vec3(2.0f, 1.0f, 0.5f));
 	const Uge::Math::AABB turned = box.Transform(
 		glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
@@ -112,8 +109,7 @@ TEST(AABBTest, AQuarterTurnSwapsTheExtents)
 
 TEST(AABBTest, ATransformedBoxContainsEveryTransformedCorner)
 {
-	// An arbitrary rotation, a non-uniform scale and a translation together. The result must
-	// enclose all eight corners of the original box after the same transform.
+	// Rotated, scaled unevenly and moved, the box still encloses all eight moved corners.
 	const Uge::Math::AABB box = MakeBox(glm::vec3(-1.0f, -2.0f, -0.5f), glm::vec3(3.0f, 1.0f, 0.5f));
 	const glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, -1.0f, 4.0f))
 		* glm::rotate(glm::mat4(1.0f), glm::radians(37.0f), glm::normalize(glm::vec3(1.0f, 2.0f, 0.5f)))
@@ -147,8 +143,7 @@ TEST(AABBTest, AnEmptyBoxStaysEmptyWhenTransformed)
 TEST(FrustumTest, ClassifiesBoxesAgainstAPerspectiveView)
 {
 	// A camera at the origin looking down -Z, with a 90 degree field of view and a square
-	// aspect: at distance d, the view reaches d to either side. The view matrix is the
-	// identity, so the projection alone is the view-projection.
+	// aspect, so at distance d the view reaches d to each side.
 	const glm::mat4 projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
 	const Uge::Math::Frustum frustum = Uge::Math::Frustum::FromViewProjection(projection);
 
@@ -158,10 +153,10 @@ TEST(FrustumTest, ClassifiesBoxesAgainstAPerspectiveView)
 	EXPECT_FALSE(frustum.Intersects(MakeBox(glm::vec3(-1.0f, -1.0f, 9.0f), glm::vec3(1.0f, 1.0f, 11.0f))));
 	// Past the far plane.
 	EXPECT_FALSE(frustum.Intersects(MakeBox(glm::vec3(-1.0f, -1.0f, -210.0f), glm::vec3(1.0f, 1.0f, -200.0f))));
-	// Across the left edge: partly visible counts as visible.
+	// Across the left edge, which counts as visible.
 	EXPECT_TRUE(frustum.Intersects(MakeBox(glm::vec3(-12.0f, -1.0f, -11.0f), glm::vec3(-8.0f, 1.0f, -9.0f))));
 	// Wholly to the left.
 	EXPECT_FALSE(frustum.Intersects(MakeBox(glm::vec3(-30.0f, -1.0f, -11.0f), glm::vec3(-20.0f, 1.0f, -9.0f))));
-	// Empty bounds are kept rather than culled, so a mesh with no geometry never vanishes silently.
+	// Empty bounds aren't culled.
 	EXPECT_TRUE(frustum.Intersects(Uge::Math::AABB()));
 }

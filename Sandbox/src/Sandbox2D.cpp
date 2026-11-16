@@ -197,7 +197,6 @@ void Sandbox2D::OnAttach()
 	m_textureMap['W'] = Uge::SubTexture2D::CreateFromCoords(m_spriteSheet, { 11, 11 }, { 128, 128  }, {1, 2});
 	
 
-	// Init here
 	m_particle.ColorBegin = { 254 / 255.0f, 212 / 255.0f, 123 / 255.0f, 1.0f };
 	m_particle.ColorEnd = { 254 / 255.0f, 109 / 255.0f, 41 / 255.0f, 1.0f };
 	m_particle.SizeBegin = 0.5f, m_particle.SizeVariation = 0.3f, m_particle.SizeEnd = 0.0f;

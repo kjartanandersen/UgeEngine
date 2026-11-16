@@ -1,33 +1,30 @@
 ﻿/**
  * @file Components.cs
- * @brief Managed wrappers over the native component types.
+ * @brief Components for scripts.
  * @ingroup group_scripting
  */
 
 namespace Uge
 {
     /**
-     * @brief Base class for the managed component wrappers.
+     * @brief The base class of components. They hold no data; each property calls the engine.
      * @ingroup group_scripting
-     *
-     * Wrappers hold no data of their own: each property forwards to the native component
-     * through an internal call keyed on the owning entity's UUID.
      */
     public abstract class Component
     {
 
-        /** @brief The entity this component belongs to. */
+        /** @brief The component's entity. */
         public Entity Entity { get; internal set; }
 
     }
 
     /**
-     * @brief Managed view of the native Uge::TransformComponent.
+     * @brief The native Uge::TransformComponent.
      * @ingroup group_scripting
      */
     public class TransformComponent : Component
     {
-        /** @brief The entity's world position, read and written through the engine. */
+        /** @brief The translation. */
         public Vector3 Translation
         {
             get

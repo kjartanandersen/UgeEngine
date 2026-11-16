@@ -6,9 +6,8 @@
 
 namespace Uge
 {
-	// Created on first Bind() rather than at startup: the graphics context does not exist yet
-	// when the first materials are constructed during model import. A file static, not a
-	// function static, so Shutdown() can release it while the context exists.
+	// Created on first use, once a GL context exists. A file static so Shutdown() can
+	// release it before the context goes.
 	static Ref<UniformBuffer> s_propertiesUniformBuffer;
 
 	Ref<Material> Material::Create(const Ref<Shader>& shader)
@@ -91,14 +90,13 @@ namespace Uge
 		if (m_textureMaps.AmbientOcclusion)	mapFlags |= MaterialMap_AmbientOcclusion;
 		if (m_textureMaps.Emissive)			mapFlags |= MaterialMap_Emissive;
 
-		// The same handle in both slots means one packed texture, which is how assimp reports
-		// a glTF metallicRoughnessTexture. @see MaterialMap_PackedMetallicRoughness
+		// The same texture in both slots is a packed glTF metallic-roughness map.
 		if (m_textureMaps.Roughness && m_textureMaps.Roughness == m_textureMaps.Metallic)
 		{
 			mapFlags |= MaterialMap_PackedMetallicRoughness;
 		}
 
-		// Per-frame scene state rather than a property of this material. @see SetEnvironmentState
+		// Scene state, set per frame by SetEnvironmentState().
 		if (s_hasEnvironment)
 		{
 			mapFlags |= MaterialMap_Environment;

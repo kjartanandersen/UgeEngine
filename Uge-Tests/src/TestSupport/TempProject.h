@@ -1,6 +1,6 @@
 /**
  * @file TempProject.h
- * @brief A throwaway Uge project on disk, for anything that needs an active project.
+ * @brief A temporary project on disk.
  */
 
 #pragma once
@@ -14,23 +14,15 @@ namespace UgeTests
 {
 
 	/**
-	 * @brief Creates a real project in a temporary directory and makes it active.
-	 *
-	 * Most of the asset system reaches the active project through Uge::AssetManager, which
-	 * asserts when there is none, so a test touching assets, the asset registry or scene
-	 * serialization needs one to exist. Pointing tests at a real project would
-	 * make them depend on — and write to — real content, so this builds a fresh empty one
-	 * per test instead.
-	 *
-	 * The project is unloaded and the directory deleted on destruction, which is what keeps
-	 * a project from leaking into tests that expect the no-project state.
+	 * @brief Creates an empty project in a temporary directory and loads it, for tests that
+	 * use Uge::AssetManager. Unloads and deletes it on destruction.
 	 */
 	class TempProject
 	{
 	public:
 		/**
-		 * @brief Creates the directory tree, writes the `.ugproj` and loads it.
-		 * @param name Project name, also used for the `.ugproj` file stem.
+		 * @brief Creates the directories, saves the `.ugproj` and loads it.
+		 * @param name Project name and `.ugproj` file stem.
 		 */
 		explicit TempProject(const std::string& name = "TestProject");
 
@@ -40,18 +32,18 @@ namespace UgeTests
 		TempProject(const TempProject&) = delete;
 		TempProject& operator=(const TempProject&) = delete;
 
-		/** @brief The project directory. @return Path to the temporary root. */
+		/** @brief The project directory. @return The path. */
 		const std::filesystem::path& Root() const { return m_root; }
-		/** @brief The `.ugproj` file. @return Path to the project file. */
+		/** @brief The `.ugproj` file. @return The path. */
 		const std::filesystem::path& ProjectFile() const { return m_projectFile; }
-		/** @brief The content root. @return Path to the project's asset directory. */
+		/** @brief The asset directory. @return The path. */
 		std::filesystem::path AssetDirectory() const { return m_root / "Assets"; }
 
 		/**
-		 * @brief Writes a file into the asset directory, creating parent directories.
+		 * @brief Writes a file in the asset directory, creating its parent directories.
 		 * @param relativePath Path relative to the asset directory.
-		 * @param contents Text to write.
-		 * @return The absolute path of the file written.
+		 * @param contents The text.
+		 * @return The file's absolute path.
 		 */
 		std::filesystem::path WriteAssetFile(const std::filesystem::path& relativePath,
 			const std::string& contents) const;

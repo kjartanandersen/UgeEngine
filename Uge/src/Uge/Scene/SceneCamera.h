@@ -12,46 +12,42 @@ namespace Uge
 {
 
 	/**
-	 * @brief A camera owned by an entity, switchable between perspective and orthographic.
+	 * @brief An entity's camera projection, perspective or orthographic.
 	 * @ingroup group_scene
 	 *
-	 * Holds only the projection; the view matrix comes from the owning entity's
-	 * Uge::TransformComponent. The parameters of both projection types are kept
-	 * independently, so toggling the type back and forth does not lose settings.
-	 *
-	 * Every setter recalculates the projection immediately, which is what lets the
-	 * property panel edit these values live.
+	 * The view comes from the entity's transform. Both projections keep their settings, so
+	 * switching between them loses nothing.
 	 */
 	class SceneCamera : public Camera
 	{
 
 	public:
-		/** @brief Which projection the camera builds. */
+		/** @brief The projection type. */
 		enum class ProjectionType { Perspective = 0, Orthographic = 1};
 
 	public:
-		/** @brief Constructs an orthographic camera with default settings. */
+		/** @brief An orthographic camera with default settings. */
 		SceneCamera();
 		/** @brief Virtual destructor. */
 		virtual ~SceneCamera() = default;
 
 		/**
-		 * @brief Switches to an orthographic projection and sets its parameters.
-		 * @param size Vertical extent of the visible area, in world units.
-		 * @param nearClip Near plane distance.
-		 * @param farClip Far plane distance.
+		 * @brief Switches to orthographic and sets it up.
+		 * @param size Visible height, in world units.
+		 * @param nearClip Near plane.
+		 * @param farClip Far plane.
 		 */
 		void SetOrtho(float size, float nearClip, float farClip);
 		/**
-		 * @brief Switches to a perspective projection and sets its parameters.
+		 * @brief Switches to perspective and sets it up.
 		 * @param fovy Vertical field of view, in radians.
-		 * @param nearClip Near plane distance; must be greater than zero.
-		 * @param farClip Far plane distance.
+		 * @param nearClip Near plane; above zero.
+		 * @param farClip Far plane.
 		 */
 		void SetPersp(float fovy, float nearClip, float farClip);
 
 		/**
-		 * @brief Updates the aspect ratio from a viewport size.
+		 * @brief Sets the aspect ratio from a viewport size.
 		 * @param width Viewport width in pixels.
 		 * @param height Viewport height in pixels; ignored if zero.
 		 */
@@ -63,29 +59,29 @@ namespace Uge
 		 ************************/
 
 		/**
-		 * @brief Orthographic vertical extent.
-		 * @return Size in world units.
+		 * @brief The orthographic visible height.
+		 * @return Height in world units.
 		 */
 		float GetOrthoSize() const { return m_orthographicSize; };
-		/** @brief Sets the orthographic vertical extent. @param size Size in world units. */
+		/** @brief Sets the orthographic visible height. @param size Height in world units. */
 		void SetOrthoSize(float size) 
 		{
 			m_orthographicSize = size; 
 			RecalculateProjection();
 		};
 
-		/** @brief Orthographic near plane. @return Distance to the near plane. */
+		/** @brief The orthographic near plane. @return Its distance. */
 		float GetOrthoNearClip() const { return m_orthographicNear; };
-		/** @brief Sets the orthographic near plane. @param nearClip New distance. */
+		/** @brief Sets the orthographic near plane. @param nearClip Its distance. */
 		void SetOrthoNearClip(float nearClip) 
 		{  
 			m_orthographicNear = nearClip;
 			RecalculateProjection();
 		}
 
-		/** @brief Orthographic far plane. @return Distance to the far plane. */
+		/** @brief The orthographic far plane. @return Its distance. */
 		float GetOrthoFarClip() const { return m_orthographicFar; };
-		/** @brief Sets the orthographic far plane. @param farClip New distance. */
+		/** @brief Sets the orthographic far plane. @param farClip Its distance. */
 		void SetOrthoFarClip(float farClip)
 		{
 			m_orthographicFar = farClip;
@@ -97,13 +93,13 @@ namespace Uge
 		 ************************/
 
 		/**
-		 * @brief Perspective field of view.
-		 * @return Vertical FOV in **degrees**.
+		 * @brief The perspective vertical field of view.
+		 * @return Degrees.
 		 */
 		float GetPerspVerticalFOV() const { return glm::degrees(m_perspectiveFOV); };
 		/**
-		 * @brief Sets the perspective field of view.
-		 * @param fovy Vertical FOV in **degrees**; stored internally as radians.
+		 * @brief Sets the perspective vertical field of view.
+		 * @param fovy In degrees.
 		 */
 		void SetPerspVerticalFOV(float fovy)
 		{
@@ -111,18 +107,18 @@ namespace Uge
 			RecalculateProjection();
 		};
 
-		/** @brief Perspective near plane. @return Distance to the near plane. */
+		/** @brief The perspective near plane. @return Its distance. */
 		float GetPerspNearClip() const { return m_perspectivecNear; };
-		/** @brief Sets the perspective near plane. @param nearClip New distance. */
+		/** @brief Sets the perspective near plane. @param nearClip Its distance. */
 		void SetPerspNearClip(float nearClip)
 		{
 			m_perspectivecNear = nearClip;
 			RecalculateProjection();
 		}
 
-		/** @brief Perspective far plane. @return Distance to the far plane. */
+		/** @brief The perspective far plane. @return Its distance. */
 		float GetPerspFarClip() const { return m_perspectivecFar; };
-		/** @brief Sets the perspective far plane. @param farClip New distance. */
+		/** @brief Sets the perspective far plane. @param farClip Its distance. */
 		void SetPerspFarClip(float farClip)
 		{
 			m_perspectivecFar = farClip;
@@ -131,12 +127,12 @@ namespace Uge
 
 
 
-		
-		/** @brief The active projection type. @return Perspective or orthographic. */
+
+		/** @brief The projection type. @return The type. */
 		ProjectionType GetProjectionType() const { return m_projectionType; }
 		/**
-		 * @brief Switches projection type, keeping both parameter sets intact.
-		 * @param type Projection to use.
+		 * @brief Switches the projection type.
+		 * @param type The type.
 		 */
 		void SetProjectionType(ProjectionType type) 
 		{ 

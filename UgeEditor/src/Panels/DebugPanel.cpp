@@ -19,7 +19,7 @@ namespace Uge
 	{
 		constexpr const char* s_traceFilePath = "UgeProfile-Capture.json";
 
-		/** @brief Draws a `label: value` row using the table currently being built. */
+		/** @brief Draws a label and value row in the current table. */
 		void StatRow(const char* label, const std::string& value)
 		{
 			ImGui::TableNextRow();
@@ -29,7 +29,7 @@ namespace Uge
 			ImGui::TextUnformatted(value.c_str());
 		}
 
-		/** @brief Draws a `label: value` row for an unsigned counter. */
+		/** @brief Draws a label and counter row in the current table. */
 		void StatRow(const char* label, uint32_t value)
 		{
 			StatRow(label, std::to_string(value));
@@ -65,8 +65,7 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		// Not "Debug": that is the title of ImGui's own internal fallback window, and two
-		// tabs with the same label are indistinguishable once docked.
+		// Not "Debug", which is ImGui's fallback window.
 		ImGui::Begin("Diagnostics");
 
 		if (ImGui::CollapsingHeader("Frame", ImGuiTreeNodeFlags_DefaultOpen))
@@ -125,8 +124,7 @@ namespace Uge
 		{
 			const float peak = *std::max_element(history.begin(), history.end());
 
-			// Scaled to the peak so a spike is visible rather than clipped, but never
-			// below a 33 ms ceiling or an idle scene's noise fills the plot.
+			// Scaled to the peak, and to at least 33 ms.
 			ImGui::PlotLines("##frametimes", history.data(), (int)history.size(), 0,
 				nullptr, 0.0f, std::max(peak * 1.1f, 33.0f), ImVec2(0.0f, 60.0f));
 		}
@@ -178,7 +176,7 @@ namespace Uge
 
 		if (ImGui::BeginTable("##sceneStats", 2, ImGuiTableFlags_SizingStretchProp))
 		{
-			// Every entity carries an IDComponent, so this view is the whole scene.
+			// Every entity has an IDComponent.
 			StatRow("Entities", (uint32_t)m_context->GetAllEntitiesWith<IDComponent>().size());
 			StatRow("Hovered entity", hovered);
 
@@ -242,7 +240,7 @@ namespace Uge
 			ImGui::TableSetupColumn("% frame", ImGuiTableColumnFlags_WidthFixed, 70.0f);
 			ImGui::TableHeadersRow();
 
-			// Already sorted by descending cost when the frame was closed.
+			// Sorted by cost, most first, when the frame ended.
 			for (const ProfileEntry& entry : entries)
 			{
 				ImGui::TableNextRow();

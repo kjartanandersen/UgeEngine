@@ -1,6 +1,6 @@
 /**
  * @file MaterialTests.cpp
- * @brief Tests for Uge::Material's state that needs no GPU.
+ * @brief Tests for Uge::Material, without a GPU.
  */
 
 #include <ugpch.h>
@@ -12,7 +12,7 @@
 
 namespace
 {
-	/** @brief A shader with no GPU program behind it. */
+	/** @brief A shader with no GPU program. */
 	class StubShader : public Uge::Shader
 	{
 	public:
@@ -33,7 +33,7 @@ namespace
 
 TEST(MaterialTest, SetShaderReplacesTheShader)
 {
-	// Like the importer's materials, this one starts with no shader of its own.
+	// No shader, like an imported material.
 	Uge::Ref<Uge::Material> material = Uge::Material::Create(nullptr);
 	EXPECT_EQ(material->GetShader(), nullptr);
 

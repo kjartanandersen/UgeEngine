@@ -46,8 +46,7 @@ namespace Uge
 		spec.Width = width;
 		spec.Height = height;
 
-		// We force STBI_rgb_alpha above, so stb always hands back 4-channel RGBA data
-		// regardless of the source image's channel count.
+		// STBI_rgb_alpha always gives 4 channels.
 		spec.Format = ImageFormat::RGBA8;
 		data.Size = static_cast<uint64_t>(width) * height * 4;
 
@@ -64,9 +63,7 @@ namespace Uge
 
 		int width, height, channels;
 
-		// Flipped, same as LoadTexture2D. The spherical mapping in EquirectToCubemap.glsl puts
-		// straight up at v = 1, and OpenGL's v = 0 is the first row uploaded, so the file's
-		// top-row-first layout has to be reversed or the sky ends up underground.
+		// Flipped, so that straight up is at v = 1, where EquirectToCubemap.glsl expects it.
 		stbi_set_flip_vertically_on_load(1);
 		Buffer data;
 
@@ -91,8 +88,7 @@ namespace Uge
 		spec.Height = height;
 		spec.Format = ImageFormat::RGBA32F;
 
-		// Sampled once per face by the projection pass, never minified, so a chain would be
-		// built and thrown away.
+		// Never minified, so no mips.
 		spec.GenerateMips = false;
 
 		data.Size = static_cast<uint64_t>(width) * height * ImageFormatBytesPerPixel(spec.Format);

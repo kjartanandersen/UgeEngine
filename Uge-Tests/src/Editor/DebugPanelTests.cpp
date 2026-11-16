@@ -1,6 +1,6 @@
 /**
  * @file DebugPanelTests.cpp
- * @brief Tests for the editor's diagnostics panel, drawn headlessly.
+ * @brief Tests for the diagnostics panel.
  */
 
 #include <ugpch.h>
@@ -34,8 +34,7 @@ namespace
 
 TEST_F(DebugPanelTest, RendersWithNoSceneAndNoProject)
 {
-	// This is the editor's state before a project finishes loading. Every section has to
-	// tolerate it: no scene, no asset manager, no device info from a driver.
+	// As before a project loads: no scene, no asset manager and no device info.
 	DrawFrames(2, [this]() { m_panel.OnImGuiRender(); });
 }
 
@@ -69,8 +68,7 @@ TEST_F(DebugPanelTest, ClearingTheContextDropsTheHoveredEntity)
 	m_panel.SetContext(scene);
 	m_panel.SetHoveredEntity(scene->CreateEntity("Hovered"));
 
-	// Opening a different scene must not leave the panel holding a handle into the old
-	// registry; dereferencing one after the scene is gone is undefined.
+	// A new scene clears the hovered entity, which belongs to the old one.
 	m_panel.SetContext(nullptr);
 
 	DrawFrames(2, [this]() { m_panel.OnImGuiRender(); });
@@ -78,8 +76,7 @@ TEST_F(DebugPanelTest, ClearingTheContextDropsTheHoveredEntity)
 
 TEST_F(DebugPanelTest, RendersProfilerTimings)
 {
-	// Close a frame so GetLastFrame() has scopes in it and the profiler table draws rows
-	// rather than the "no timings" placeholder.
+	// A finished frame, so the profiler table has rows.
 	{
 		UG_PROFILE_SCOPE("DebugPanelTests::SyntheticScope");
 	}

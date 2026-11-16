@@ -1,6 +1,6 @@
 /**
  * @file AssetManagerBase.h
- * @brief The interface both asset managers implement.
+ * @brief Interface of the asset managers.
  * @ingroup group_asset
  */
 
@@ -12,21 +12,15 @@
 namespace Uge
 {
 	/**
-	 * @brief Handle-to-asset map used for the loaded-asset cache.
+	 * @brief Loaded assets by handle.
 	 * @ingroup group_asset
 	 */
 	using AssetMap = std::map<AssetHandle, Ref<Asset>>;
 
 
 	/**
-	 * @brief Interface for resolving asset handles into loaded assets.
+	 * @brief Resolves asset handles to assets.
 	 * @ingroup group_asset
-	 *
-	 * Two implementations exist, chosen by the active project:
-	 * Uge::EditorAssetManager, which is registry-backed and imports from disk on demand,
-	 * and Uge::RuntimeAssetManager, which serves pre-packed assets.
-	 *
-	 * Call this through the static Uge::AssetManager facade rather than directly.
 	 */
 	class AssetManagerBase
 	{
@@ -34,47 +28,42 @@ namespace Uge
 
 	public:
 		/**
-		 * @brief Resolves a handle, loading the asset if it is not in memory yet.
+		 * @brief Returns an asset, loading it if needed.
 		 * @param handle Asset to fetch.
-		 * @return The loaded asset, or null if the handle is unknown or loading failed.
-		 * @note May hit the disk, so avoid calling it in a tight per-frame loop.
+		 * @return The asset, or null if the handle is unknown or the import failed.
 		 */
 		virtual Ref<Asset> GetAsset(AssetHandle handle) = 0;
 		/**
-		 * @brief Whether a handle refers to a known asset.
+		 * @brief Whether a handle names a known asset.
 		 * @param handle Handle to test.
-		 * @return `true` if the asset is registered, whether or not it is loaded.
+		 * @return `true` if the asset is registered or in memory.
 		 */
 		virtual bool IsAssetHandleValid(AssetHandle handle) const = 0;
 		/**
-		 * @brief Whether a handle refers to a known mesh asset.
+		 * @brief Whether a handle is in the mesh registry.
 		 * @param handle Handle to test.
-		 * @return `true` if the handle is present in the mesh registry.
+		 * @return `true` if it is.
 		 */
 		virtual bool IsMeshAssetHandleValid(AssetHandle handle) const = 0;
 		/**
-		 * @brief Whether an asset is currently in memory.
-		 * @param handle Handle to test.
-		 * @return `true` if the asset is loaded, so GetAsset() will not hit the disk.
+		 * @brief Whether an asset is in memory.
+		 * @param handle Asset to test.
+		 * @return `true` if it is loaded.
 		 */
 		virtual bool IsAssetLoaded(AssetHandle handle) const = 0;
 		/**
-		 * @brief The type of a registered asset.
-		 * @param handle Handle to query.
-		 * @return The asset type, or Uge::AssetType::None if the handle is unknown.
+		 * @brief An asset's type, without loading it.
+		 * @param handle Asset to query.
+		 * @return The type, or Uge::AssetType::None for an unknown handle.
 		 */
 		virtual AssetType GetAssetType(AssetHandle handle) const = 0;
 
 		/**
-		 * @brief Unloads an asset from memory, along with anything only it depended on.
-		 * @param handle Asset to release.
+		 * @brief Unloads an asset, and any dependency no other model uses.
+		 * @param handle Asset to unload.
 		 *
-		 * Unloads, it does not unregister: the handle stays valid and GetAsset() reimports
-		 * the asset on the next call. Removing an asset from the project is a separate
-		 * operation.
-		 *
-		 * @warning Only drops the manager's own reference. Anything still holding a
-		 * `Ref<Asset>` keeps the asset — and its GPU resources — alive.
+		 * The handle stays valid, and the next GetAsset() imports the asset again. A `Ref`
+		 * held elsewhere keeps the asset alive.
 		 */
 		virtual void DeleteAsset(AssetHandle handle) = 0;
 

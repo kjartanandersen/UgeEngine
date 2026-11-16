@@ -20,9 +20,8 @@ namespace Uge::ColliderWireframe
 	void DrawBox(PhysicsDebugRenderer& out, const glm::mat4& transform, const glm::vec3& halfExtents, const glm::vec4& color)
 	{
 
-        // Corner index bit 0 = x, bit 1 = y, bit 2 = z. Two corners share an edge exactly when
-        // their indices differ in a single bit, which is what the inner loop tests; the j > i
-        // guard emits each of the 12 edges once rather than twice.
+        // Corner index bits are x, y and z. Corners one bit apart share an edge, and j > i
+        // draws each edge once.
         glm::vec3 corners[8];
         for (int i = 0; i < 8; i++)
         {
@@ -51,8 +50,7 @@ namespace Uge::ColliderWireframe
 
         const float step = glm::two_pi<float>() / (float)segments;
 
-        // All three circles start on an axis at angle 0, so the XY and XZ circles share a
-        // starting point and the YZ circle begins a quarter turn round.
+        // The XY and XZ circles start at +x, the YZ circle at +y.
         glm::vec3 prevXY = ToWorld(transform, { radius, 0.0f, 0.0f });
         glm::vec3 prevXZ = prevXY;
         glm::vec3 prevYZ = ToWorld(transform, { 0.0f, radius, 0.0f });
@@ -83,11 +81,11 @@ namespace Uge::ColliderWireframe
         {
             segments = 4;
         }
-        segments += segments & 1u;              // force even, so each cap arc splits cleanly
+        segments += segments & 1u;              // even, so each cap gets half
 
         const float step = glm::two_pi<float>() / (float)segments;
 
-        // --- the two seam circles, in the XZ plane at each end of the cylinder ---
+        // The seam circles at each end of the cylinder, in the XZ plane.
         for (int side = 0; side < 2; side++)
         {
             const float y = (side == 0) ? halfHeight : -halfHeight;
@@ -104,7 +102,7 @@ namespace Uge::ColliderWireframe
             }
         }
 
-        // --- four verticals joining the seams, on the ±x and ±z axes ---
+        // Four lines joining the seams, at +x, -x, +z and -z.
         const glm::vec2 axes[4] = { {  radius, 0.0f }, { -radius, 0.0f },
                                     { 0.0f,  radius }, { 0.0f, -radius } };
         for (const glm::vec2& a : axes)
@@ -113,7 +111,7 @@ namespace Uge::ColliderWireframe
                 ToWorld(transform, { a.x, -halfHeight, a.y }), color);
         }
 
-        // --- the caps: a half-arc in XY and one in ZY at each end ---
+        // The caps: a half-arc in XY and one in ZY at each end.
         const uint32_t half = segments / 2;
         for (int side = 0; side < 2; side++)
         {
@@ -125,7 +123,7 @@ namespace Uge::ColliderWireframe
 
             for (uint32_t i = 1; i <= half; i++)
             {
-                // 0 .. pi: sweeps the seam diameter while the sine lifts it over the pole.
+                // 0 to pi: across the seam and over the pole.
                 const float angle = glm::pi<float>() * (float)i / (float)half;
                 const float c = glm::cos(angle) * radius;
                 const float s = glm::sin(angle) * radius * bulge;
@@ -171,7 +169,7 @@ namespace Uge::ColliderWireframe
                     continue;                                   // already emitted
 
                 if (edgeCount >= maxEdges)
-                    return false;                               // budget exhausted
+                    return false;                               // over maxEdges
 
                 outEdges.push_back(vertices[a]);
                 outEdges.push_back(vertices[b]);
