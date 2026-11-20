@@ -195,13 +195,22 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		auto appSpec = Application::Get().GetSpecifications();
+		// OpenProject() replaces this with the project's start scene, if it has one.
+		m_editorScene = CreateRef<Scene>();
+		m_activeScene = m_editorScene;
+		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		m_debugPanel.SetContext(m_activeScene);
 
+		auto appSpec = Application::Get().GetSpecifications();
 
 		if (appSpec.CommandLineArgs.Count > 1)
 		{
 			auto projectFilePath = appSpec.CommandLineArgs[1];
-			OpenProject(projectFilePath);
+			if (!OpenProject(projectFilePath))
+			{
+				Application::Get().CloseProgram();
+				return;
+			}
 		}
 		else
 		{
@@ -209,6 +218,7 @@ namespace Uge
 			if (!OpenProject())
 			{
 				Application::Get().CloseProgram();
+				return;
 			}
 
 		}
@@ -254,22 +264,8 @@ namespace Uge
 		displaySpec.Attachments = { FramebufferTextureFormat::RGBA8 };
 		m_displayFrameBuffer = Framebuffer::Create(displaySpec);
 
-		m_editorScene = CreateRef<Scene>();
-		m_activeScene = m_editorScene;
-
-
-
-		
-
-
 		m_editorCamera = EditorCamera(60.0f, 16.0f/9.0f, 0.01f, 10000.0f);
 
-
-
-		m_sceneHierarchyPanel.SetContext(m_activeScene);
-		m_debugPanel.SetContext(m_activeScene);
-
-		
 
 	}
 
@@ -893,13 +889,12 @@ namespace Uge
 		}
 		else
 		{
-			OpenProject(filepath);
-			return true;
+			return OpenProject(filepath);
 		}
 
 	}
 
-	void EditorLayer::OpenProject(const std::filesystem::path& path)
+	bool EditorLayer::OpenProject(const std::filesystem::path& path)
 	{
 		if (Project::Load(path))
 		{
@@ -913,11 +908,12 @@ namespace Uge
 				OpenScene(startScene);
 			}
 			m_contentBrowserPanel = CreateScope<ContentBrowserPanel>();
-
+			return true;
 
 
 		}
 
+		return false;
 	}
 
 	void EditorLayer::SaveScene()

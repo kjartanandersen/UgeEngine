@@ -80,14 +80,15 @@ namespace Uge
 		void NewProject();
 		/**
 		 * @brief Asks for a `.ugproj` file and opens it.
-		 * @return `false` if the dialog was cancelled.
+		 * @return false if the dialog was cancelled or the project didn't load.
 		 */
 		bool OpenProject();
 		/**
 		 * @brief Opens a project, starts scripting, and opens its start scene if it has one.
 		 * @param path The `.ugproj` file.
+		 * @return false if the project didn't load; the open project then stays active.
 		 */
-		void OpenProject(const std::filesystem::path& path);
+		bool OpenProject(const std::filesystem::path& path);
 
 		/**
 		 * @brief Asks for a path and saves the scene there. Registers it if it is a `.uge` file
