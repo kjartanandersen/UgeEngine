@@ -168,12 +168,12 @@ namespace Uge
 		 * @brief The active project.
 		 * @return The project, or null if none is loaded.
 		 */
-		static Ref<Project> GetActive() { return s_activeProject; }
+		static const Ref<Project>& GetActive() { return s_activeProject; }
 		/**
 		 * @brief The asset manager.
 		 * @return The manager.
 		 */
-		Ref<AssetManagerBase> GetAssetManager() { return m_assetManager; }
+		const Ref<AssetManagerBase>& GetAssetManager() const { return m_assetManager; }
 		/**
 		 * @brief The asset manager as a Uge::RuntimeAssetManager. Unchecked; packaged builds only.
 		 * @return The manager.

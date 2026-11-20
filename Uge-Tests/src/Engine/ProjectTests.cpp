@@ -13,6 +13,12 @@
 #include <gtest/gtest.h>
 
 #include <fstream>
+#include <type_traits>
+#include <utility>
+
+// The asset facade calls these on every lookup, so they return references.
+static_assert(std::is_reference_v<decltype(Uge::Project::GetActive())>);
+static_assert(std::is_reference_v<decltype(std::declval<const Uge::Project&>().GetAssetManager())>);
 
 using Uge::Project;
 using Uge::ProjectConfig;

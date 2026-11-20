@@ -36,7 +36,7 @@ namespace Uge
 		template<typename T>
 		static Ref<T> GetAsset(AssetHandle handle)
 		{
-			Ref<Asset> asset = Project::GetActive()->GetAssetManager()->GetAsset(handle);
+			Ref<Asset> asset = Manager().GetAsset(handle);
 			if (!asset || asset->GetType() != T::GetStaticType())
 			{
 				return nullptr;
@@ -53,7 +53,7 @@ namespace Uge
 		static bool IsAssetHandleValid(AssetHandle handle) 
 		{
 
-			return Project::GetActive()->GetAssetManager()->IsAssetHandleValid(handle);
+			return Manager().IsAssetHandleValid(handle);
 
 		}
 		/**
@@ -64,7 +64,7 @@ namespace Uge
 		static bool IsAssetLoaded(AssetHandle handle) 
 		{
 
-			return Project::GetActive()->GetAssetManager()->IsAssetLoaded(handle);
+			return Manager().IsAssetLoaded(handle);
 
 
 		}
@@ -76,7 +76,7 @@ namespace Uge
 		static AssetType GetAssetType(AssetHandle handle)
 		{
 
-			return Project::GetActive()->GetAssetManager()->GetAssetType(handle);
+			return Manager().GetAssetType(handle);
 
 
 		}
@@ -91,9 +91,20 @@ namespace Uge
 		static void DeleteAsset(AssetHandle handle)
 		{
 
-			Project::GetActive()->GetAssetManager()->DeleteAsset(handle);
+			Manager().DeleteAsset(handle);
 
 		}
+
+	private:
+
+		/** @brief The active project's asset manager. Asserts if there is none. */
+		static AssetManagerBase& Manager()
+		{
+			const Ref<Project>& project = Project::GetActive();
+			UG_CORE_ASSERT(project && project->GetAssetManager(), "No active project with an asset manager is loaded");
+			return *project->GetAssetManager();
+		}
+
 	};
 
 }
