@@ -10,6 +10,7 @@
 #include "Uge/Renderer/ColorSpace.h"
 #include "Uge/Physics/PhysicsDebugRenderer.h"
 #include "Uge/Physics/ColliderWireframe.h"
+#include "EditorIcons.h"
 
 #include "imgui.h"
 #include <cstdint>
@@ -203,30 +204,18 @@ namespace Uge
 
 		auto appSpec = Application::Get().GetSpecifications();
 
-		if (appSpec.CommandLineArgs.Count > 1)
+		// A project on the command line that doesn't load falls back to the file dialog.
+		bool projectOpen = appSpec.CommandLineArgs.Count > 1 && OpenProject(appSpec.CommandLineArgs[1]);
+		if (!projectOpen && !OpenProject())
 		{
-			auto projectFilePath = appSpec.CommandLineArgs[1];
-			if (!OpenProject(projectFilePath))
-			{
-				Application::Get().CloseProgram();
-				return;
-			}
-		}
-		else
-		{
-
-			if (!OpenProject())
-			{
-				Application::Get().CloseProgram();
-				return;
-			}
-
+			Application::Get().CloseProgram();
+			return;
 		}
 		
-		m_iconPlay = TextureImporter::LoadTexture2D("Resources/Icons/PlayButton.png");
-		m_iconStop = TextureImporter::LoadTexture2D("Resources/Icons/StopButton.png");
-		m_iconPause = TextureImporter::LoadTexture2D("Resources/Icons/PauseButton.png");
-		m_iconStep = TextureImporter::LoadTexture2D("Resources/Icons/StepButton.png");
+		m_iconPlay = LoadEditorIcon("Resources/Icons/PlayButton.png");
+		m_iconStop = LoadEditorIcon("Resources/Icons/StopButton.png");
+		m_iconPause = LoadEditorIcon("Resources/Icons/PauseButton.png");
+		m_iconStep = LoadEditorIcon("Resources/Icons/StepButton.png");
 		
 
 		//m_activeScene = CreateRef<Scene>();

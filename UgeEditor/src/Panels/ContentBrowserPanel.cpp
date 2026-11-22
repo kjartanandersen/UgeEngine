@@ -3,7 +3,7 @@
 
 #include "Uge/Project/Project.h"
 
-#include "Uge/Asset/TextureImporter.h"
+#include "../EditorIcons.h"
 
 #include <imgui.h>
 
@@ -16,8 +16,8 @@ namespace Uge
 	{
 		m_baseDirectory = Project::GetAssetDirectory();
 		m_currentDirectory = m_baseDirectory;
-		m_directoryIcon = TextureImporter::LoadTexture2D("Resources/Icons/ContentBrowser/DirectoryIcon.png");
-		m_fileIcon = TextureImporter::LoadTexture2D("Resources/Icons/ContentBrowser/FileIcon.png");
+		m_directoryIcon = LoadEditorIcon("Resources/Icons/ContentBrowser/DirectoryIcon.png");
+		m_fileIcon = LoadEditorIcon("Resources/Icons/ContentBrowser/FileIcon.png");
 		m_treeNodes.push_back(TreeNode(".", 0));
 		RefreshAssetTree();
 		m_mode = Mode::Asset;
