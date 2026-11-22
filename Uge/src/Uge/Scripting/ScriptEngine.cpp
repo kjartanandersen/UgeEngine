@@ -212,28 +212,64 @@ namespace Uge
 
 		InitMono();
 		ScriptGlue::RegisterFunctions();
+	}
 
-		auto scriptModulePath = Project::GetAssetDirectory() / Project::GetActive()->GetConfig().ScriptModulePath;
+	void ScriptEngine::LoadProject()
+	{
+		// No root domain means Init() disabled scripting.
+		if (!s_data || !s_data->RootDomain)
+		{
+			return;
+		}
 
-		bool status = LoadAssembly(s_coreAssemblyPath);
-		if (!status)
+		if (!LoadAssembly(s_coreAssemblyPath))
 		{
 			UG_CORE_ERROR("ScriptEngine Could not load Uge-ScriptCore assembly!");
 			return;
 		}
 
-		status = LoadAppAssembly(scriptModulePath);
-		if (!status)
+		const std::filesystem::path scriptModulePath =
+			Project::GetAssetDirectory() / Project::GetActive()->GetConfig().ScriptModulePath;
+		if (!LoadAppAssembly(scriptModulePath))
 		{
 			UG_CORE_ERROR("ScriptEngine Could not load app assembly!");
 			return;
 		}
+
 		LoadAssemblyClasses();
-
 		ScriptGlue::RegisterComponents();
-		
-		s_data->EntityMonoClass = ScriptClass("Uge", "Entity" ,true);
+		s_data->EntityMonoClass = ScriptClass("Uge", "Entity", true);
+	}
 
+	void ScriptEngine::UnloadProject()
+	{
+		if (!s_data)
+		{
+			return;
+		}
+
+		// Destroying the watcher joins its threads, so no new reload gets queued.
+		s_data->AppAssemblyFileWatcher.reset();
+		s_data->AppAssemblyReloadPending = false;
+
+		// GC handles belong to the app domain, so the instances go before it does.
+		s_data->EntityInstances.clear();
+		s_data->EntityClasses.clear();
+		s_data->EntityScriptFields.clear();
+		s_data->EntityMonoClass = ScriptClass();
+		s_data->SceneContext = nullptr;
+
+		if (s_data->AppDomain)
+		{
+			mono_domain_set(mono_get_root_domain(), false);
+			mono_domain_unload(s_data->AppDomain);
+			s_data->AppDomain = nullptr;
+		}
+
+		s_data->CoreAssembly = nullptr;
+		s_data->CoreAssemblyImage = nullptr;
+		s_data->AppAssembly = nullptr;
+		s_data->AppAssemblyImage = nullptr;
 	}
 
 	void ScriptEngine::Shutdown()
@@ -243,7 +279,7 @@ namespace Uge
 			return;
 		}
 
-		s_data->EntityInstances.clear(); // closing the editor during Play leaves instances
+		UnloadProject();
 
 		ShutdownMono();
 		delete s_data;
@@ -357,7 +393,7 @@ namespace Uge
 
 	void ScriptEngine::ReloadAssembly()
 	{
-		if (!s_data || !s_data->RootDomain)
+		if (!s_data || !s_data->RootDomain || !s_data->AppDomain)
 		{
 			UG_CORE_WARN("Scripting isn't running; nothing to reload.");
 			return;

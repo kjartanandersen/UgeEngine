@@ -309,13 +309,29 @@ namespace Uge
 
 	public:
 		/**
-		 * @brief Starts Mono, loads the core assembly and registers the internal calls.
+		 * @brief Starts Mono and registers the internal calls. Call once per process.
 		 *
-		 * Without the Mono runtime or the core assembly, scripting is disabled.
+		 * Without the Mono runtime or the core assembly in the working directory, scripting
+		 * is disabled, but field values can still be stored.
 		 */
 		static void Init();
-		/** @brief Shuts Mono down. */
+		/** @brief Unloads the project's scripts and shuts Mono down. */
 		static void Shutdown();
+
+		/**
+		 * @brief Loads the core assembly and the active project's script assembly, finds the
+		 * entity classes, and watches the script assembly for rebuilds.
+		 *
+		 * Does nothing when scripting is disabled. Call UnloadProject() first if another
+		 * project's scripts are loaded.
+		 */
+		static void LoadProject();
+		/**
+		 * @brief Stops watching the script assembly, destroys the script objects, forgets the
+		 * classes and stored field values, and unloads the app domain. Safe when nothing is
+		 * loaded.
+		 */
+		static void UnloadProject();
 
 		/**
 		 * @brief Loads `Uge-ScriptCore`.

@@ -196,6 +196,9 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
+		// Once per process; OpenProject() loads each project's scripts.
+		ScriptEngine::Init();
+
 		// OpenProject() replaces this with the project's start scene, if it has one.
 		m_editorScene = CreateRef<Scene>();
 		m_activeScene = m_editorScene;
@@ -885,24 +888,31 @@ namespace Uge
 
 	bool EditorLayer::OpenProject(const std::filesystem::path& path)
 	{
-		if (Project::Load(path))
+		// Play runs on the open project's scene and scripts.
+		if (m_sceneState != SceneState::Edit)
 		{
-
-			ScriptEngine::Init();
-
-			AssetHandle startScene = Project::GetActive()->GetConfig().StartScene;
-			if (startScene)
-			{
-
-				OpenScene(startScene);
-			}
-			m_contentBrowserPanel = CreateScope<ContentBrowserPanel>();
-			return true;
-
-
+			OnSceneStop();
 		}
 
-		return false;
+		if (!Project::Load(path))
+		{
+			return false;
+		}
+
+		// The open scene belongs to the old project. Its asset handles mean nothing in the
+		// new one, and its saved path would resolve against the new asset directory.
+		NewScene();
+
+		ScriptEngine::UnloadProject();
+		ScriptEngine::LoadProject();
+
+		AssetHandle startScene = Project::GetActive()->GetConfig().StartScene;
+		if (startScene)
+		{
+			OpenScene(startScene);
+		}
+		m_contentBrowserPanel = CreateScope<ContentBrowserPanel>();
+		return true;
 	}
 
 	void EditorLayer::SaveScene()
