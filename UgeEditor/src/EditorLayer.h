@@ -99,7 +99,7 @@ namespace Uge
 		void SaveScene();
 		/** @brief Stops play mode and opens an empty scene. */
 		void NewScene();
-		/** @brief Does nothing; its body is commented out. */
+		/** @brief Asks for a `.uge` file in the asset directory and opens it, importing it if it isn't registered. */
 		void OpenScene();
 		/**
 		 * @brief Stops play mode and opens a copy of a scene asset, reloaded from disk.

@@ -42,7 +42,17 @@ namespace Uge
 		}
 	};
 
-
+	// The file's path relative to the asset directory, or an empty path if it isn't a .uge
+	// file inside the asset directory.
+	static std::filesystem::path SceneAssetPath(const std::string& filepath)
+	{
+		const std::filesystem::path relative = Project::GetRelativePath(filepath);
+		if (relative.empty() || *relative.begin() == ".." || relative.extension() != ".uge")
+		{
+			return {};
+		}
+		return relative;
+	}
 
 	// Warns about each asset reference in the scene that is missing or of the wrong type.
 	static void WarnAboutUnresolvedAssets(const Ref<Scene>& scene, const std::filesystem::path& scenePath)
@@ -962,8 +972,8 @@ namespace Uge
 
 		// Register the file so the content browser lists it. Only a .uge file in the asset
 		// directory can be registered.
-		const std::filesystem::path relative = Project::GetRelativePath(filepath);
-		if (relative.empty() || *relative.begin() == ".." || relative.extension() != ".uge")
+		const std::filesystem::path relative = SceneAssetPath(filepath);
+		if (relative.empty())
 		{
 			UG_WARN("Saved {0}, but it isn't in the asset registry: it's outside the asset directory or not a .uge file.", filepath);
 			return;
@@ -1001,25 +1011,29 @@ namespace Uge
 
 	void EditorLayer::OpenScene()
 	{
-		// std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*.uge\0");
-		// 
-		// std::filesystem::path absPath(filepath);
-		// std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
-		// 
-		// std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
-		// 
-		// 
-		// 
-		// std::filesystem::path path = Project::GetAssetFileSystemPath(relativePath).string();
-		// 
-		// 
-		// if (!path.empty())
-		// {
-		// 	
-		// 	OpenScene(path);
-		// 
-		// }
+		const std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*.uge\0");
+		if (filepath.empty())
+		{
+			return;
+		}
 
+		// Scenes open as assets, so the file has to be in the asset directory.
+		const std::filesystem::path relative = SceneAssetPath(filepath);
+		if (relative.empty())
+		{
+			UG_WARN("Can't open {0}: only a .uge file in the asset directory can be opened.", filepath);
+			return;
+		}
+
+		const AssetHandle handle = Project::GetActive()->GetEditorAssetManager()->GetOrImportAsset(relative, relative.filename().string());
+		if (!AssetManager::IsAssetHandleValid(handle))
+		{
+			// The importer has logged why.
+			return;
+		}
+
+		m_contentBrowserPanel->RefreshAssetTree();
+		OpenScene(handle);
 	}
 
 	void EditorLayer::OpenScene(AssetHandle handle)
