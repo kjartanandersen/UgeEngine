@@ -196,12 +196,11 @@ namespace Uge
 
 		void CreatePhysicsBody(Entity entity);
 
-		// Connected during Play: destroy the body or script object of a component that is
+		// Connected during Play: destroy the body, script object or native script of a component that is
 		// removed, on its own or with its entity.
 		void OnRigidbodyDestroyed(entt::registry& registry, entt::entity entity);
 		void OnScriptDestroyed(entt::registry& registry, entt::entity entity);
-
-
+		void OnNativeScriptDestroyed(entt::registry& registry, entt::entity entity);
 
 	private:
 		entt::registry m_registry;

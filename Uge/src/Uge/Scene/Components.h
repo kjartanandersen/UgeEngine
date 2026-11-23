@@ -194,6 +194,29 @@ namespace Uge
 		ScriptableEntity*(*InstantiateScript)() = nullptr; ///< Creates the script object.
 		void (*DestroyScript)(NativeScriptComponent*) = nullptr; ///< Deletes the script object.
 
+		/** @brief A component with no script type. */
+		NativeScriptComponent() = default;
+		/**
+		 * @brief Copies the script type but not the object, as Scene::Copy does for play mode.
+		 * @param other The component to copy.
+		 */
+		NativeScriptComponent(const NativeScriptComponent& other)
+			: InstantiateScript(other.InstantiateScript), DestroyScript(other.DestroyScript) {}
+		/**
+		 * @brief Moves the component with its object. EnTT moves components when it removes
+		 * others from the same pool.
+		 * @param other The component to move from.
+		 */
+		NativeScriptComponent(NativeScriptComponent&& other) = default;
+		/**
+		 * @brief Moves the component with its object.
+		 * @param other The component to move from.
+		 * @return This component.
+		 */
+		NativeScriptComponent& operator=(NativeScriptComponent&& other) = default;
+		/** @brief Deleted: two components would share one object. */
+		NativeScriptComponent& operator=(const NativeScriptComponent&) = delete;
+
 
 		/**
 		 * @brief Sets the script type. The object is created when play starts.

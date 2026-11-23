@@ -254,6 +254,7 @@ namespace Uge
 		m_isRunning = true;
 		m_registry.on_destroy<RigidbodyComponent>().connect<&Scene::OnRigidbodyDestroyed>(*this);
 		m_registry.on_destroy<ScriptComponent>().connect<&Scene::OnScriptDestroyed>(*this);
+		m_registry.on_destroy<NativeScriptComponent>().connect<&Scene::OnNativeScriptDestroyed>(*this);
 
 		// Physics first, so scripts can use it from OnCreate.
 		{
@@ -287,6 +288,13 @@ namespace Uge
 	{
 		m_registry.on_destroy<RigidbodyComponent>().disconnect<&Scene::OnRigidbodyDestroyed>(*this);
 		m_registry.on_destroy<ScriptComponent>().disconnect<&Scene::OnScriptDestroyed>(*this);
+		m_registry.on_destroy<NativeScriptComponent>().disconnect<&Scene::OnNativeScriptDestroyed>(*this);
+
+		// Native script objects only exist during Play.
+		for (auto e : m_registry.view<NativeScriptComponent>())
+		{
+			OnNativeScriptDestroyed(m_registry, e);
+		}
 		m_isRunning = false;
 		ScriptEngine::OnRuntimeStop();
 
@@ -376,18 +384,20 @@ namespace Uge
 
 			{
 				UG_PROFILE_SCOPE("Scene Scripts (native)");
-				m_registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
+				m_registry.view<NativeScriptComponent>().each([this, ts](auto entity, auto& nsc)
 					{
-						// TODO: Move to Scene::OnScenePlay
-						if (!nsc.Instance)
+						// Created on the first update, so a component added during Play starts too.
+						if (!nsc.Instance && nsc.InstantiateScript)
 						{
 							nsc.Instance = nsc.InstantiateScript();
 							nsc.Instance->m_entity = Entity{ entity, this };
 							nsc.Instance->OnCreate();
 						}
 
-						nsc.Instance->OnUpdate(ts);
-
+						if (nsc.Instance)
+						{
+							nsc.Instance->OnUpdate(ts);
+						}
 					});
 			}
 		}
@@ -607,6 +617,16 @@ namespace Uge
 		if (const IDComponent* id = registry.try_get<IDComponent>(entity))
 		{
 			ScriptEngine::OnDestroyEntity(id->ID);
+		}
+	}
+
+	void Scene::OnNativeScriptDestroyed(entt::registry& registry, entt::entity entity)
+	{
+		NativeScriptComponent& nsc = registry.get<NativeScriptComponent>(entity);
+		if (nsc.Instance)
+		{
+			nsc.Instance->OnDestroy();
+			nsc.DestroyScript(&nsc);
 		}
 	}
 

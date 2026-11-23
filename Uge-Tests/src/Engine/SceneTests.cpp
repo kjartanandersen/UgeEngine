@@ -9,6 +9,7 @@
 #include "Uge/Scene/Entity.h"
 #include "Uge/Scene/Scene.h"
 #include "Uge/Scripting/ScriptEngine.h"
+#include "Uge/Scene/ScriptableEntity.h"
 
 #include "../TestSupport/PhysicsFixture.h"
 
@@ -234,4 +235,65 @@ TEST_F(ScenePlayTest, RemovingARigidbodyDuringPlayRemovesItsBody)
 	EXPECT_TRUE(BodiesAtOrigin(scene).empty());
 
 	scene.OnRuntimeStop();
+}
+
+namespace
+{
+
+	/** @brief A native script that counts its creations and destructions. */
+	struct CountingScript : Uge::ScriptableEntity
+	{
+		static inline int Created = 0;
+		static inline int Destroyed = 0;
+
+		void OnCreate() override { Created++; }
+		void OnDestroy() override { Destroyed++; }
+	};
+
+}
+
+TEST_F(ScenePlayTest, StoppingPlayDestroysNativeScripts)
+{
+	CountingScript::Created = CountingScript::Destroyed = 0;
+
+	Scene scene;
+	scene.CreateEntity("Scripted").AddComponent<Uge::NativeScriptComponent>().Bind<CountingScript>();
+
+	scene.OnRuntimeStart();
+	scene.OnUpdateRuntime(Uge::Timestep(1.0f / 60.0f));
+	EXPECT_EQ(CountingScript::Created, 1);
+
+	scene.OnRuntimeStop();
+	EXPECT_EQ(CountingScript::Destroyed, 1);
+}
+
+TEST_F(ScenePlayTest, DestroyingAnEntityDuringPlayDestroysItsNativeScript)
+{
+	CountingScript::Created = CountingScript::Destroyed = 0;
+
+	Scene scene;
+	Entity entity = scene.CreateEntity("Scripted");
+	entity.AddComponent<Uge::NativeScriptComponent>().Bind<CountingScript>();
+
+	scene.OnRuntimeStart();
+	scene.OnUpdateRuntime(Uge::Timestep(1.0f / 60.0f));
+
+	scene.DestroyEntity(entity);
+	EXPECT_EQ(CountingScript::Destroyed, 1);
+
+	scene.OnRuntimeStop();
+	EXPECT_EQ(CountingScript::Destroyed, 1);
+}
+
+TEST(NativeScriptComponentTest, CopyingLeavesTheObjectBehind)
+{
+	Uge::NativeScriptComponent original;
+	original.Bind<CountingScript>();
+	original.Instance = original.InstantiateScript();
+
+	Uge::NativeScriptComponent copy(original);
+	EXPECT_EQ(copy.Instance, nullptr);
+	EXPECT_EQ(copy.InstantiateScript, original.InstantiateScript);
+
+	original.DestroyScript(&original);
 }
