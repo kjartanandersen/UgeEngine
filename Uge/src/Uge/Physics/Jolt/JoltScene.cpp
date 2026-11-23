@@ -23,6 +23,7 @@
 #include <Jolt/Physics/Collision/ShapeCast.h>
 #include <Jolt/Physics/Collision/ContactListener.h>
 #include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
+#include <Jolt/Physics/Collision/TransformedShape.h>
 
 #include <mutex>
 #include <unordered_set>
@@ -451,10 +452,20 @@ namespace Uge
         m_contactListener->ForgetBody(body);
 
         JPH::BodyInterface& bodyInterface = m_physicsSystem.GetBodyInterface();
-        
+
         const JPH::BodyID joltBody = ToJoltBodyID(body);
+
+        // Jolt doesn't wake the bodies around a removed one, so one resting on it would stay
+        // asleep in the air. The bounds are read before the body goes, and grown a little so
+        // a body only touching it is included.
+        JPH::AABox bounds = bodyInterface.GetTransformedShape(joltBody).GetWorldSpaceBounds();
+        bounds.ExpandBy(JPH::Vec3::sReplicate(0.1f));
+
         bodyInterface.RemoveBody(joltBody);
         bodyInterface.DestroyBody(joltBody);
+
+        bodyInterface.ActivateBodiesInAABox(bounds, JPH::BroadPhaseLayerFilter(), JPH::ObjectLayerFilter());
+
 
     }
 

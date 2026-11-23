@@ -699,6 +699,16 @@ namespace Uge
 		}
 	}
 
+	void ScriptEngine::OnDestroyEntity(UUID entityID)
+	{
+		if (!s_data)
+		{
+			return;
+		}
+
+		s_data->EntityInstances.erase(entityID);
+	}
+
 	void ScriptEngine::OnUpdateEntity(Entity entity, Timestep ts)
 	{
 		// Without an instance, OnCreateEntity has already warned; don't repeat it every frame.

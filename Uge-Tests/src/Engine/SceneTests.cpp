@@ -8,10 +8,15 @@
 #include "Uge/Scene/Components.h"
 #include "Uge/Scene/Entity.h"
 #include "Uge/Scene/Scene.h"
+#include "Uge/Scripting/ScriptEngine.h"
+
+#include "../TestSupport/PhysicsFixture.h"
 
 #include <gtest/gtest.h>
 
 #include <unordered_set>
+#include <filesystem>
+#include <vector>
 
 using Uge::Entity;
 using Uge::Scene;
@@ -163,4 +168,70 @@ TEST_F(SceneTest, ACopiedSceneHasNoLiveBodies)
 	const Uge::RigidbodyComponent& result = copied.GetComponent<Uge::RigidbodyComponent>();
 	EXPECT_NEAR(result.Mass, 3.0f, 1e-5f);
 	EXPECT_FALSE(result.RuntimeBody.IsValid());
+}
+
+namespace
+{
+
+	/** @brief A scene that can run Play: physics, and the script engine without Mono. */
+	class ScenePlayTest : public UgeTests::PhysicsFixture
+	{
+	protected:
+		void SetUp() override
+		{
+			PhysicsFixture::SetUp();
+			if (std::filesystem::exists("mono/lib"))
+			{
+				GTEST_SKIP() << "Mono's runtime is in the working directory; run the tests from the repo root.";
+			}
+			Uge::ScriptEngine::Init();
+		}
+
+		void TearDown() override
+		{
+			Uge::ScriptEngine::Shutdown();
+			PhysicsFixture::TearDown();
+		}
+
+		// The bodies within half a unit of the origin.
+		std::vector<Uge::PhysicsBodyID> BodiesAtOrigin(Scene& scene)
+		{
+			std::vector<Uge::PhysicsBodyID> hits;
+			scene.GetPhysicsScene()->OverlapSphere(glm::vec3(0.0f), 0.5f, Uge::PhysicsLayerMaskAll, hits);
+			return hits;
+		}
+	};
+
+}
+
+TEST_F(ScenePlayTest, DestroyingAnEntityDuringPlayRemovesItsBody)
+{
+	Scene scene;
+	Entity box = scene.CreateEntity("Box");
+	box.AddComponent<Uge::RigidbodyComponent>();
+	box.AddComponent<Uge::BoxColliderComponent>();
+
+	scene.OnRuntimeStart();
+	ASSERT_EQ(BodiesAtOrigin(scene).size(), 1u);
+
+	scene.DestroyEntity(box);
+	EXPECT_TRUE(BodiesAtOrigin(scene).empty());
+
+	scene.OnRuntimeStop();
+}
+
+TEST_F(ScenePlayTest, RemovingARigidbodyDuringPlayRemovesItsBody)
+{
+	Scene scene;
+	Entity box = scene.CreateEntity("Box");
+	box.AddComponent<Uge::RigidbodyComponent>();
+	box.AddComponent<Uge::BoxColliderComponent>();
+
+	scene.OnRuntimeStart();
+	ASSERT_EQ(BodiesAtOrigin(scene).size(), 1u);
+
+	box.RemoveComponent<Uge::RigidbodyComponent>();
+	EXPECT_TRUE(BodiesAtOrigin(scene).empty());
+
+	scene.OnRuntimeStop();
 }

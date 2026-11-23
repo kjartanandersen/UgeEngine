@@ -205,7 +205,11 @@ namespace Uge
 			? entity.GetComponent<MeshColliderComponent>().Mesh
 			: 0;
 
-		
+		// Read here because the IDComponent may go before the ScriptComponent.
+		if (m_isRunning)
+		{
+			ScriptEngine::OnDestroyEntity(entity.GetUUID());
+		}
 
 		m_entityMap.erase(entity.GetUUID());
 		m_registry.destroy(entity);
@@ -248,6 +252,8 @@ namespace Uge
 	void Scene::OnRuntimeStart()
 	{
 		m_isRunning = true;
+		m_registry.on_destroy<RigidbodyComponent>().connect<&Scene::OnRigidbodyDestroyed>(*this);
+		m_registry.on_destroy<ScriptComponent>().connect<&Scene::OnScriptDestroyed>(*this);
 
 		// Physics first, so scripts can use it from OnCreate.
 		{
@@ -279,6 +285,8 @@ namespace Uge
 
 	void Scene::OnRuntimeStop()
 	{
+		m_registry.on_destroy<RigidbodyComponent>().disconnect<&Scene::OnRigidbodyDestroyed>(*this);
+		m_registry.on_destroy<ScriptComponent>().disconnect<&Scene::OnScriptDestroyed>(*this);
 		m_isRunning = false;
 		ScriptEngine::OnRuntimeStop();
 
@@ -580,6 +588,26 @@ namespace Uge
 
 		rc.RuntimeBody =  m_physicsScene->CreateBody(bodyDesc);
 
+	}
+
+	void Scene::OnRigidbodyDestroyed(entt::registry& registry, entt::entity entity)
+	{
+		RigidbodyComponent& rigidbody = registry.get<RigidbodyComponent>(entity);
+		if (m_physicsScene && rigidbody.RuntimeBody.IsValid())
+		{
+			m_physicsScene->DestroyBody(rigidbody.RuntimeBody);
+			rigidbody.RuntimeBody = {};
+		}
+	}
+
+	void Scene::OnScriptDestroyed(entt::registry& registry, entt::entity entity)
+	{
+		// With the whole entity destroyed, the IDComponent may be gone already;
+		// DestroyEntity has removed the script object then.
+		if (const IDComponent* id = registry.try_get<IDComponent>(entity))
+		{
+			ScriptEngine::OnDestroyEntity(id->ID);
+		}
 	}
 
 	void Scene::OnUpdateEditor(Timestep ts, EditorCamera& camera)

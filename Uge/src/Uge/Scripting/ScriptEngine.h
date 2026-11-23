@@ -394,6 +394,14 @@ namespace Uge
 		static void OnCreateEntity(Entity entity);
 
 		/**
+		 * @brief Destroys an entity's script object, if it has one.
+		 * @param entityID The entity.
+		 *
+		 * Its stored field values stay: the editor scene's entity has the same UUID.
+		 */
+		static void OnDestroyEntity(UUID entityID);
+
+		/**
 		 * @brief Calls an entity script's `OnUpdate`. Does nothing without a script object.
 		 * @param entity The entity.
 		 * @param ts Frame time.

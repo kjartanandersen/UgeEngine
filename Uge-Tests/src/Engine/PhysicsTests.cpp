@@ -121,4 +121,48 @@ namespace
 		EXPECT_FALSE(scene->CreateBody(body).IsValid());
 	}
 
+
+	// Jolt doesn't wake a body resting on one that is removed, so DestroyBody does.
+	TEST_F(PhysicsTest, DestroyingABodyWakesTheBodiesRestingOnIt)
+	{
+		auto scene = MakeScene();
+
+		Uge::BodyDesc floor;
+		floor.Type = Uge::BodyType::Static;
+		floor.Layer = Uge::PhysicsLayer::Static;
+		floor.Position = { 0.0f, -0.5f, 0.0f };
+		Uge::ColliderDesc floorCollider;
+		floorCollider.Shape = Uge::BoxShapeDesc{ glm::vec3(5.0f, 0.5f, 5.0f) };
+		floor.Colliders.push_back(floorCollider);
+		const Uge::PhysicsBodyID floorBody = scene->CreateBody(floor);
+
+		Uge::BodyDesc box;
+		box.Position = { 0.0f, 0.5f, 0.0f };
+		Uge::ColliderDesc boxCollider;
+		boxCollider.Shape = Uge::BoxShapeDesc{ glm::vec3(0.5f) };
+		box.Colliders.push_back(boxCollider);
+		const Uge::PhysicsBodyID boxBody = scene->CreateBody(box);
+
+		// Two seconds, well past the half second before Jolt puts a resting body to sleep.
+		for (int i = 0; i < 120; i++)
+		{
+			scene->Step(1.0f / 60.0f);
+		}
+
+		glm::vec3 restingPosition;
+		glm::quat rotation;
+		scene->GetTransform(boxBody, restingPosition, rotation);
+
+		scene->DestroyBody(floorBody);
+		for (int i = 0; i < 30; i++)
+		{
+			scene->Step(1.0f / 60.0f);
+		}
+
+		// Half a second of free fall is over a metre.
+		glm::vec3 position;
+		scene->GetTransform(boxBody, position, rotation);
+		EXPECT_LT(position.y, restingPosition.y - 0.5f);
+	}
+
 }
