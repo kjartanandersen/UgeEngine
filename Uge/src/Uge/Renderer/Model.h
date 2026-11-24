@@ -51,11 +51,13 @@ namespace Uge
 	{
 	public:
 		/**
-		 * @brief Imports a model file and uploads it to the GPU. Check IsLoaded() afterwards.
-		 * @param path Path to the file.
-		 * @param metadata Material handles from an earlier import, which are reused.
+		 * @brief Builds a model from a scene that assimp has read, and uploads it to the GPU.
+		 * Check IsLoaded() afterwards.
+		 * @param scene The scene; it must have a root node. Only read during the call.
+		 * @param path The file the scene was read from.
+		 * @param metadata The material handles, indexed by assimp's material index.
 		 */
-		explicit Model(const std::string& path, const MeshAssetMetadata& metadata = {});
+		Model(const aiScene& scene, const std::string& path, const MeshAssetMetadata& metadata);
 
 		/**
 		 * @brief Releases the pass's shaders, buffers and environment. The next BeginScene()
@@ -156,7 +158,6 @@ namespace Uge
 			std::vector<uint32_t>& outIndices);
 
 	private:
-		void LoadModel(const std::string& path);
 		void ProcessNode(aiNode* node, const aiScene* scene, const aiMatrix4x4t<float>& parentTransform);
 		Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene, const aiMatrix4x4t<float>& transform);
 		std::vector<Ref<Texture2D>> LoadMaterialTextures(aiMaterial* material, const aiScene* scene, int textureType, const std::string& typeName);

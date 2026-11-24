@@ -9,9 +9,6 @@
 #include <cstdlib>
 #include <filesystem>
 
-#include <assimp/Importer.hpp>
-#include <assimp/config.h>
-#include <assimp/postprocess.h>
 #include <assimp/material.h>
 #include <assimp/scene.h>
 
@@ -114,10 +111,13 @@ namespace Uge
 
 	Model::SceneData Model::s_sceneData;
 
-	Model::Model(const std::string& path, const MeshAssetMetadata& metadata)
-		: m_meshMetadata(metadata)
+	Model::Model(const aiScene& scene, const std::string& path, const MeshAssetMetadata& metadata)
+		: m_path(path), m_meshMetadata(metadata)
 	{
-		LoadModel(path);
+		m_directory = std::filesystem::path(path).parent_path().string();
+
+		SetName(scene.mName.C_Str());
+		ProcessNode(scene.mRootNode, &scene, aiMatrix4x4t<float>());
 	}
 
 	void Model::Shutdown()
@@ -402,44 +402,6 @@ namespace Uge
 		}
 
 		return !outVertices.empty() && outIndices.size() >= 3;
-	}
-
-	void Model::LoadModel(const std::string& path)
-	{
-		m_path = path;
-		m_meshes.clear();
-		m_loadedTextures.clear();
-
-		if (path.empty())
-		{
-			UG_CORE_WARN("Model::LoadModel called with an empty path");
-			return;
-		}
-
-		Assimp::Importer importer;
-
-		// Drop points and lines: ProcessMesh() builds a triangle index buffer.
-		importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
-
-		// No aiProcess_CalcTangentSpace: MeshVertex has no tangents.
-		const aiScene* scene = importer.ReadFile(path,
-			aiProcess_Triangulate |
-			aiProcess_JoinIdenticalVertices |
-			aiProcess_SortByPType);
-
-		if (!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)
-		{
-			UG_CORE_ERROR("Failed to load model '{0}': {1}", path, importer.GetErrorString());
-			return;
-		}
-
-		std::filesystem::path modelPath(path);
-		m_directory = modelPath.has_parent_path() ? modelPath.parent_path().string() : std::string();
-
-		SetName(scene->mName.C_Str());
-
-		m_bounds = Math::AABB{};
-		ProcessNode(scene->mRootNode, scene, aiMatrix4x4t<float>());
 	}
 
 	void Model::ProcessNode(aiNode* node, const aiScene* scene, const aiMatrix4x4t<float>& parentTransform)

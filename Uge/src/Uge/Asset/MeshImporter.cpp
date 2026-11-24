@@ -205,7 +205,8 @@ namespace Uge
 
 		assetManager->SetMeshMetadata(handle, meshMetadata);
 
-		auto model = CreateRef<Model>(modelPath.string(), meshMetadata);
+		// Built from the scene read above; the importer owns it until this function returns.
+		auto model = CreateRef<Model>(*scene, modelPath.string(), meshMetadata);
 		model->m_handle = handle;
 		return model;
 	}
