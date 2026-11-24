@@ -8,6 +8,8 @@
 #include "Uge/Renderer/Mesh.h"
 #include "Uge/Renderer/MSDFData.h"
 
+#include "Uge/Core/Utf8.h"
+
 #include "Uge/Asset/AssetManager.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -757,24 +759,48 @@ namespace Uge
 
 	void Renderer2D::DrawString(const std::string& string, Ref<Font> font, const glm::mat4& transform, const TextParams& textParams, int entityID)
 	{
+		// A font that failed to load has no atlas.
+		Ref<Texture2D> fontAtlas = font ? font->GetAtlasTexture() : nullptr;
+		if (!fontAtlas)
+		{
+			return;
+		}
 
 		const auto& fontGeometry = font->GetMSDFData()->Fonts;
 		const auto& metrics = fontGeometry.getMetrics();
-		Ref<Texture2D> fontAtlas = font->GetAtlasTexture();
-		
 
+		// A batch draws its text with one atlas, so text in another font starts a new batch.
+		if (m_data.TextIndexCount && m_data.FontAtlasTexture != fontAtlas)
+		{
+			NextBatch();
+		}
 		m_data.FontAtlasTexture = fontAtlas;
-		
+
 		double x = 0.0;
 		double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
-		double y = 0.0;		
+		double y = 0.0;
 
-		const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
+		// A font without a space glyph advances a quarter of an em for a space.
+		const msdf_atlas::GlyphGeometry* spaceGlyph = fontGeometry.getGlyph(' ');
+		const double spaceGlyphAdvance = spaceGlyph ? spaceGlyph->getAdvance() : metrics.emSize * 0.25;
 
-		for (size_t i = 0; i < string.size(); i++)
+		const float texelWidth = 1.0f / fontAtlas->GetWidth();
+		const float texelHeight = 1.0f / fontAtlas->GetHeight();
+
+		// Decoded one code point ahead, for kerning.
+		size_t offset = 0;
+		bool hasNext = !string.empty();
+		uint32_t nextCharacter = hasNext ? Utf8::DecodeNext(string, offset) : 0;
+
+		while (hasNext)
 		{
+			const uint32_t character = nextCharacter;
+			hasNext = offset < string.size();
+			if (hasNext)
+			{
+				nextCharacter = Utf8::DecodeNext(string, offset);
+			}
 
-			char character = string[i];
 			if (character == '\r')
 			{
 				continue;
@@ -786,9 +812,26 @@ namespace Uge
 				y -= fsScale * metrics.lineHeight + textParams.LineSpacing;
 				continue;
 			}
-			
 
+			if (character == ' ')
+			{
+				// getAdvance leaves the value alone when either glyph is missing.
+				double advance = spaceGlyphAdvance;
+				if (hasNext)
+				{
+					fontGeometry.getAdvance(advance, character, nextCharacter);
+				}
+				x += fsScale * advance + textParams.Kerning;
+				continue;
+			}
 
+			if (character == '\t')
+			{
+				x += (fsScale * spaceGlyphAdvance + textParams.Kerning) * 4.0;
+				continue;
+			}
+
+			// A character the font doesn't have is drawn as '?', or skipped without one.
 			auto glyph = fontGeometry.getGlyph(character);
 			if (!glyph)
 			{
@@ -796,31 +839,6 @@ namespace Uge
 			}
 			if (!glyph)
 			{
-				return;
-			}
-			
-
-
-			if (character == ' ')
-			{
-				float advance = spaceGlyphAdvance;
-				if (i < string.size() - 1)
-				{
-					char nextCharacter = string[i + 1];
-					double dAdvance;
-					fontGeometry.getAdvance(dAdvance, character, nextCharacter);
-					advance = (float)dAdvance;
-
-
-				}
-				x += fsScale * advance + textParams.Kerning;
-				continue;
-
-			}
-
-			if (character == '\t')
-			{
-				x += (fsScale * spaceGlyphAdvance + textParams.Kerning) * 4.0;
 				continue;
 			}
 
@@ -838,10 +856,15 @@ namespace Uge
 			quadMin += glm::vec2(x, y);
 			quadMax += glm::vec2(x, y);
 
-			float texelWidth = 1.0f / fontAtlas->GetWidth();
-			float texelHeight = 1.0f / fontAtlas->GetHeight();
 			texCoordMin *= glm::vec2(texelWidth, texelHeight);
 			texCoordMax *= glm::vec2(texelWidth, texelHeight);
+
+			// A full batch is drawn before the next glyph is written. StartBatch leaves
+			// FontAtlasTexture set, so the rest of the string keeps its atlas.
+			if (m_data.TextIndexCount >= Renderer2DData::MaxIndices)
+			{
+				NextBatch();
+			}
 
 			// The glyph's four corners.
 			m_data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin, 0.0f, 1.0f);
@@ -870,21 +893,14 @@ namespace Uge
 
 			m_data.TextIndexCount += 6;
 
-			if (i < string.size() - 1)
+			if (hasNext)
 			{
 				double advance = glyph->getAdvance();
-
-				char nextCharacter = string[i + 1];
 				fontGeometry.getAdvance(advance, character, nextCharacter);
 
 				x += fsScale * advance + textParams.Kerning;
 			}
-
-
-
 		}
-
-
 	}
 
 	void Renderer2D::DrawString(const std::string& string, const glm::mat4& transform, const TextComponent& component, int entityID)
