@@ -440,6 +440,7 @@ namespace Uge
 			ApplyDirectionalLight(m_registry);
 			Model::BeginScene(viewProjection, glm::vec3(mainTransform[3]));
 			{
+				UG_PROFILE_SCOPE("Scene Meshes");
 				auto meshView = m_registry.view<TransformComponent, MeshComponent>();
 				for (auto [entity, transform, mesh] : meshView.each())
 				{
@@ -638,6 +639,7 @@ namespace Uge
 		ApplyDirectionalLight(m_registry);
 		Model::BeginScene(camera.GetViewProjection(), camera.GetPosition());
 		{
+			UG_PROFILE_SCOPE("Scene Meshes");
 			auto meshView = m_registry.view<TransformComponent, MeshComponent>();
 			for (auto [entity, transform, mesh] : meshView.each())
 			{

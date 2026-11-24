@@ -37,6 +37,7 @@ class aiMatrix4x4t;
 
 namespace Uge
 {
+	class Material;
 
 	/**
 	 * @brief A model imported with assimp: submeshes and their materials.
@@ -163,6 +164,9 @@ namespace Uge
 		static void EnsureSceneResources();
 
 		static void ApplyCullMode(CullMode mode);
+		
+		// Sets the cull mode, binds the material (or the default block) and draws the submesh.
+		static void DrawSubmesh(const Mesh& mesh, Material* material);
 
 	private:
 
@@ -181,6 +185,7 @@ namespace Uge
 		struct BlendedDraw
 		{
 			const Mesh* SubMesh; ///< The submesh.
+			Material* SubMeshMaterial; ///< The submesh's material, or null. Valid as long as SubMesh.
 			glm::mat4 Transform; ///< World transform.
 			int EntityID; ///< The entity, for mouse picking.
 			float SortKey; ///< Squared distance from the camera to the submesh's centre.

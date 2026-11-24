@@ -31,14 +31,6 @@ namespace Uge
 		virtual Ref<Shader> GetShader() const override;
 		virtual void SetShader(const Ref<Shader>& shader) override;
 
-		/**
-		 * @brief Binds a texture to a slot. Binds nothing for `0` or a texture that doesn't
-		 * resolve.
-		 * @param handle The texture's handle.
-		 * @param slot Texture unit.
-		 */
-		void BindTexture(AssetHandle handle, uint32_t slot);
-
 	
 	};
 

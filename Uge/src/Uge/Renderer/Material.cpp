@@ -2,7 +2,9 @@
 #include "Material.h"
 
 #include "Renderer.h"
+#include "Texture.h"
 #include <Platform/OpenGL/OpenGLMaterial.h>
+#include "Uge/Asset/AssetManager.h"
 
 namespace Uge
 {
@@ -107,6 +109,27 @@ namespace Uge
 		data.EnvironmentIntensity = s_environmentIntensity;
 
 		return data;
+	}
+
+	const std::array<Ref<Texture2D>, Material::TextureMapCount>& Material::ResolveTextures()
+	{
+		if (!m_texturesResolved)
+		{
+			const AssetHandle handles[TextureMapCount] =
+			{
+				m_textureMaps.Albedo, m_textureMaps.Normal, m_textureMaps.Roughness,
+				m_textureMaps.Metallic, m_textureMaps.AmbientOcclusion, m_textureMaps.Emissive
+			};
+
+			for (uint32_t slot = 0; slot < TextureMapCount; slot++)
+			{
+				m_textures[slot] = handles[slot] ? AssetManager::GetAsset<Texture2D>(handles[slot]) : nullptr;
+			}
+
+			m_texturesResolved = true;
+		}
+
+		return m_textures;
 	}
 
 }

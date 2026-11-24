@@ -13,11 +13,14 @@
 #include "UniformBuffer.h"
 
 #include <cstdint>
+#include <array>
 
 #include <glm/glm.hpp>
 
+
 namespace Uge
 {
+	class Texture2D;
 
 	/**
 	 * @brief A material's texture maps, by handle. `0` means no texture.
@@ -127,6 +130,8 @@ namespace Uge
 		/**
 		 * @brief Binds the shader if there is one, the textures and the uniform block.
 		 *
+		 * The textures are looked up on the first Bind() after a map changes.
+		 *
 		 * A texture that doesn't resolve isn't bound, and its slot keeps what was there.
 		 */
 		virtual void Bind() = 0;
@@ -145,32 +150,32 @@ namespace Uge
 		/** @brief The albedo map. @return Texture handle, or `0` if unset. */
 		AssetHandle GetAlbedoMap() const { return m_textureMaps.Albedo; }
 		/** @brief Sets the albedo map. @param handle Texture handle, or `0` to clear. */
-		void SetAlbedoMap(AssetHandle handle) { m_textureMaps.Albedo = handle; }
+		void SetAlbedoMap(AssetHandle handle) { m_textureMaps.Albedo = handle; m_texturesResolved = false; }
 
 		/** @brief The normal map. @return Texture handle, or `0` if unset. */
 		AssetHandle GetNormalMap() const { return m_textureMaps.Normal; }
 		/** @brief Sets the normal map. @param handle Texture handle, or `0` to clear. */
-		void SetNormalMap(AssetHandle handle) { m_textureMaps.Normal = handle; }
+		void SetNormalMap(AssetHandle handle) { m_textureMaps.Normal = handle; m_texturesResolved = false; }
 
 		/** @brief The roughness map. @return Texture handle, or `0` if unset. */
 		AssetHandle GetRoughnessMap() const { return m_textureMaps.Roughness; }
 		/** @brief Sets the roughness map. @param handle Texture handle, or `0` to clear. */
-		void SetRoughnessMap(AssetHandle handle) { m_textureMaps.Roughness = handle; }
+		void SetRoughnessMap(AssetHandle handle) { m_textureMaps.Roughness = handle; m_texturesResolved = false; }
 
 		/** @brief The metallic map. @return Texture handle, or `0` if unset. */
 		AssetHandle GetMetallicMap() const { return m_textureMaps.Metallic; }
 		/** @brief Sets the metallic map. @param handle Texture handle, or `0` to clear. */
-		void SetMetallicMap(AssetHandle handle) { m_textureMaps.Metallic = handle; }
+		void SetMetallicMap(AssetHandle handle) { m_textureMaps.Metallic = handle; m_texturesResolved = false; }
 
 		/** @brief The ambient occlusion map. @return Texture handle, or `0` if unset. */
 		AssetHandle GetAmbientOcclusionMap() const { return m_textureMaps.AmbientOcclusion; }
 		/** @brief Sets the ambient occlusion map. @param handle Texture handle, or `0` to clear. */
-		void SetAmbientOcclusionMap(AssetHandle handle) { m_textureMaps.AmbientOcclusion = handle; }
+		void SetAmbientOcclusionMap(AssetHandle handle) { m_textureMaps.AmbientOcclusion = handle; m_texturesResolved = false; }
 
 		/** @brief The emissive map. @return Texture handle, or `0` if unset. */
 		AssetHandle GetEmissiveMap() const { return m_textureMaps.Emissive; }
 		/** @brief Sets the emissive map. @param handle Texture handle, or `0` to clear. */
-		void SetEmissiveMap(AssetHandle handle) { m_textureMaps.Emissive = handle; }
+		void SetEmissiveMap(AssetHandle handle) { m_textureMaps.Emissive = handle; m_texturesResolved = false; }
 
 		/**
 		 * @brief All the texture maps.
@@ -181,7 +186,7 @@ namespace Uge
 		 * @brief Replaces all the texture maps.
 		 * @param textureMaps The maps.
 		 */
-		void SetTextureMaps(const MaterialTextureMap& textureMaps) { m_textureMaps = textureMaps; }
+		void SetTextureMaps(const MaterialTextureMap& textureMaps) { m_textureMaps = textureMaps; m_texturesResolved = false; }
 
 		/**
 		 * @brief The constants.
@@ -242,6 +247,11 @@ namespace Uge
 		*/
 		bool IsDoubleSided() const { return m_properties.DoubleSided; }
 
+	public:
+
+		/** @brief The number of texture maps, bound to slots 0 to 5 in Uge::MaterialTextureMap's order. */
+		static constexpr uint32_t TextureMapCount = 6;
+
 
 	protected:
 		/**
@@ -249,6 +259,16 @@ namespace Uge
 		 * @return The buffer, created on first call; needs a GL context.
 		 */
 		static const Ref<UniformBuffer>& PropertiesUniformBuffer();
+
+		/**
+		 * @brief The maps' textures, in Uge::MaterialTextureMap's order, which is also their slot order.
+		 *
+		 * Looked up in the asset manager on the first call after a map changes, and kept until
+		 * the next change. A map that is `0`, or doesn't resolve, gives null.
+		 *
+		 * @return The textures.
+		 */
+		const std::array<Ref<Texture2D>, TextureMapCount>& ResolveTextures();
 
 	protected:
 		MaterialTextureMap m_textureMaps; ///< The texture maps.
@@ -260,6 +280,9 @@ namespace Uge
 		static bool s_hasEnvironment;
 		static uint32_t s_environmentMipCount;
 		static float s_environmentIntensity;
+
+		std::array<Ref<Texture2D>, TextureMapCount> m_textures; // Filled by ResolveTextures().
+		bool m_texturesResolved = false; // Cleared by the map setters.
 
 	};
 

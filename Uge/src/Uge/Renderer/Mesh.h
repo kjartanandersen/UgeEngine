@@ -84,14 +84,9 @@ namespace Uge
 		);
 
 		/**
-		 * @brief Binds the shader and material and draws the mesh.
-		 *
-		 * Without a material that resolves, the default material block is bound.
-		 *
-		 * @param shader The shader.
-		 * @param entityID The entity, for mouse picking; `-1` for none.
+		 * @brief Draws the mesh with the shader, material and cull mode that are bound.
 		 */
-		void Draw(const Ref<Shader>& shader, int entityID = -1) const;
+		void Draw() const;
 
 		/**
 		 * @brief The material.

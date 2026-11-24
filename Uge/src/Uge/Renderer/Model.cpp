@@ -100,7 +100,7 @@ namespace Uge
 			return AssetManager::GetAsset<Material>(materialHandle);
 		}
 
-		static CullMode CullModeFor(const Ref<Material>& material)
+		static CullMode CullModeFor(const Material* material)
 		{
 			return material && material->IsDoubleSided() ? CullMode::None : CullMode::Back;
 		}
@@ -155,6 +155,29 @@ namespace Uge
 		RenderCommand::SetCullMode(mode);
 		s_sceneData.CurrentCullMode = mode;
 
+	}
+
+	void Model::DrawSubmesh(const Mesh& mesh, Material* material)
+	{
+		ApplyCullMode(CullModeFor(material));
+
+		if (material)
+		{
+			material->Bind();
+		}
+		else
+		{
+			// Otherwise the mesh would use the last material's block.
+			Material::BindDefaultProperties();
+		}
+
+		mesh.Draw();
+
+		// A material with its own shader replaced the model shader.
+		if (material && material->GetShader())
+		{
+			s_sceneData.ModelShader->Bind();
+		}
 	}
 
 	void Model::SetEnvironment(const Ref<Environment>& environment, float intensity)
@@ -269,8 +292,7 @@ namespace Uge
 				modelData.EntityData = blendedDraw.EntityID;
 				s_sceneData.ModelUniformBuffer->SetData(&modelData, sizeof(ModelData));
 
-				ApplyCullMode(CullModeFor(ResolveMaterial(blendedDraw.SubMesh->GetMaterial())));
-				blendedDraw.SubMesh->Draw(s_sceneData.ModelShader, blendedDraw.EntityID);
+				DrawSubmesh(*blendedDraw.SubMesh, blendedDraw.SubMeshMaterial);
 			}
 
 			RenderCommand::SetDepthWrite(true);
@@ -319,12 +341,11 @@ namespace Uge
 				const glm::vec3 worldCenter = glm::vec3(transform * glm::vec4(mesh.GetCenter(), 1.0f));
 				const glm::vec3 toCamera = worldCenter - s_sceneData.CameraPosition;
 
-				s_sceneData.BlendedQueue.push_back({ &mesh, transform, entityID, glm::dot(toCamera, toCamera) });
+				s_sceneData.BlendedQueue.push_back({ &mesh, material.get(), transform, entityID, glm::dot(toCamera, toCamera) });
 				continue;
 			}
 
-			ApplyCullMode(CullModeFor(material));
-			mesh.Draw(s_sceneData.ModelShader, entityID);
+			DrawSubmesh(mesh, material.get());
 		}
 	}
 
