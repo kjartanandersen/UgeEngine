@@ -31,6 +31,12 @@ namespace Uge
 		virtual void SetData(const void* data, uint32_t size, uint32_t offset = 0) = 0;
 
 		/**
+		 * @brief Binds the buffer to its binding point again. Several buffers can share a
+		 * binding point; a shader reads the one bound last.
+		 */
+		virtual void Bind() const = 0;
+
+		/**
 		 * @brief Creates a uniform buffer and binds it.
 		 * @param size Size in bytes.
 		 * @param binding Binding point, as in the shader's `layout(binding = N)`.

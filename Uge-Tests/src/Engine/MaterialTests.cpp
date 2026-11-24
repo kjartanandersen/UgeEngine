@@ -106,3 +106,15 @@ TEST(MaterialTest, KeepsItsTexturesUntilAMapChanges)
 	ASSERT_EQ(Uge::AssetManager::GetAsset<Uge::Texture2D>(handle), nullptr);
 	EXPECT_EQ(material.ResolveTextures()[0], texture);
 }
+
+TEST(MaterialTest, UniformDataFlagsOnlyTheMapsItHas)
+{
+	ProbeMaterial material;
+	material.SetAlbedoMap(1);
+	material.SetRoughnessMap(2);
+	material.SetMetallicMap(2);
+
+	const Uge::MaterialUniformData data = material.BuildUniformData();
+	EXPECT_EQ(data.MapFlags, Uge::MaterialMap_Albedo | Uge::MaterialMap_Roughness
+		| Uge::MaterialMap_Metallic | Uge::MaterialMap_PackedMetallicRoughness);
+}

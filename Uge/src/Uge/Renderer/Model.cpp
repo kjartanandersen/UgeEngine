@@ -38,7 +38,13 @@ namespace Uge
 		{
 			glm::vec4 Direction;
 			glm::vec4 Radiance;
+			int32_t HasEnvironment;
+			int32_t EnvironmentMipCount;
+			float EnvironmentIntensity;
+			float Padding; // Pads the struct to 48 bytes, a multiple of 16, as some drivers round the block up.
 		};
+
+		static_assert(sizeof(LightData) == 48, "LightData must match LightData in Model.glsl");
 
 		// Matches SkyboxData in assets/shaders/Skybox.glsl.
 		struct SkyboxData
@@ -243,10 +249,15 @@ namespace Uge
 		RenderCommand::SetCullMode(CullMode::Back);
 		s_sceneData.CurrentCullMode = CullMode::Back;
 
+		const Ref<Environment>& environment = s_sceneData.SceneEnvironment;
+
 		// The shader takes the direction towards the light.
 		LightData lightData{};
 		lightData.Direction = glm::vec4(-s_sceneData.LightDirection, 0.0f);
 		lightData.Radiance = glm::vec4(s_sceneData.LightRadiance, 0.0f);
+		lightData.HasEnvironment = environment ? 1 : 0;
+		lightData.EnvironmentMipCount = environment ? static_cast<int32_t>(environment->GetPrefilteredMipCount()) : 1;
+		lightData.EnvironmentIntensity = s_sceneData.EnvironmentIntensity;
 		s_sceneData.LightUniformBuffer->SetData(&lightData, sizeof(LightData));
 
 		// Slots 6 to 8, above the material textures.
@@ -256,10 +267,6 @@ namespace Uge
 			s_sceneData.SceneEnvironment->Prefiltered->Bind(7);
 			s_sceneData.SceneEnvironment->BrdfLut->Bind(8);
 		}
-
-		Material::SetEnvironmentState(s_sceneData.SceneEnvironment != nullptr,
-			s_sceneData.SceneEnvironment ? s_sceneData.SceneEnvironment->GetPrefilteredMipCount() : 1,
-			s_sceneData.EnvironmentIntensity);
 
 		// Entries left by a pass that wasn't ended point at submeshes that may be gone.
 		s_sceneData.BlendedQueue.clear();

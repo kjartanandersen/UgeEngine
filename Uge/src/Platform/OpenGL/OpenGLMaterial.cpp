@@ -19,8 +19,7 @@ namespace Uge
 			m_shader->Bind();
 		}
 
-		const MaterialUniformData uniformData = BuildUniformData();
-		PropertiesUniformBuffer()->SetData(&uniformData, sizeof(uniformData));
+		BindProperties();
 
 		// Slots match the samplers in assets/shaders/Model.glsl. An empty slot keeps the last
 		// material's texture; the shader reads only the maps u_MapFlags marks.

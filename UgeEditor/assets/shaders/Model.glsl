@@ -77,15 +77,17 @@ layout(std140, binding = 2) uniform MaterialData
 	float u_AlphaCutoff;
 	int u_MapFlags;
 	int u_BlendMode;
-	int u_EnvironmentMipCount;
-	float u_EnvironmentIntensity;
 };
 
-// The directional light; matches Uge::LightData. Zero radiance means there is none.
+// The directional light and the environment, per frame; matches Uge::LightData. Zero
+// radiance means there is no directional light.
 layout(std140, binding = 4) uniform LightData
 {
 	vec4 u_LightDirection;
 	vec4 u_LightRadiance;
+	int u_HasEnvironment;
+	int u_EnvironmentMipCount;
+	float u_EnvironmentIntensity;
 };
 
 // Uge::MaterialMapFlags. A slot whose flag is clear holds the previous material's texture.
@@ -97,8 +99,6 @@ const int MAP_AMBIENT_OCCLUSION = 1 << 4;
 const int MAP_EMISSIVE = 1 << 5;
 const int MAP_PACKED_METALLIC_ROUGHNESS = 1 << 6;
 
-// Set per frame when the scene has a sky light.
-const int MAP_ENVIRONMENT = 1 << 7;
 
 // Uge::AlphaMode
 const int ALPHA_MODE_MASK = 1;
@@ -275,7 +275,7 @@ void main()
 
 	// ---- Ambient: image-based lighting ----
 
-	if ((u_MapFlags & MAP_ENVIRONMENT) != 0)
+	if (u_HasEnvironment != 0)
 	{
 		// Diffuse: the irradiance map is already convolved.
 		vec3 irradiance = texture(u_IrradianceMap, normal).rgb;
