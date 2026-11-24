@@ -1,6 +1,6 @@
 /**
  * @file FileSystem.h
- * @brief Minimal file helpers used by the importers and the project system.
+ * @brief File helpers.
  * @ingroup group_core
  */
 
@@ -12,12 +12,11 @@
 
 namespace Uge
 {
-	// TODO: Platforms
 	/**
-	 * @brief Static file utilities.
+	 * @brief Static file helpers.
 	 * @ingroup group_core
 	 *
-	 * @todo Currently Windows-only in practice; needs per-platform implementations.
+	 * @todo Windows only.
 	 */
 	class FileSystem
 	{
@@ -25,20 +24,17 @@ namespace Uge
 
 	public:
 		/**
-		 * @brief Reads an entire file into memory.
-		 * @param filepath Path to the file to read.
-		 * @return A buffer owning the file's bytes, or an empty buffer if the file could not
-		 *         be opened. **The caller must Release() it**, or wrap it in a ScopedBuffer.
+		 * @brief Reads a whole file.
+		 * @param filepath File to read.
+		 * @return The bytes, or an empty buffer if the file can't be opened or is empty. The
+		 * caller must Release() it.
 		 */
 		static Buffer ReadFileBinary(const std::filesystem::path& filepath);
 
-		// Ensures an empty file exists at filepath, creating parent directories as needed.
-		// Leaves the file untouched if it already exists. Returns true on success.
 		/**
-		 * @brief Ensures an empty file exists at @p filepath, creating parent directories.
-		 * @param filepath Path of the file to create.
-		 * @return `true` on success.
-		 * @note Leaves the file untouched if it already exists.
+		 * @brief Creates an empty file, and its parent directories, unless it exists.
+		 * @param filepath File to create.
+		 * @return `true` if the file exists afterwards.
 		 */
 		static bool CreateEmptyFile(const std::filesystem::path& filepath);
 

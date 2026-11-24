@@ -124,8 +124,7 @@ namespace Uge
 		break;                                         \
 	}
 
-	// Whether a script field's value can be written to and read from a scene file. None
-	// and String have no value to store yet.
+	// Whether a script field's value can be saved. None and String can't yet.
 	static bool IsSerializableFieldType(ScriptFieldType type)
 	{
 		return type != ScriptFieldType::None && type != ScriptFieldType::String;
@@ -152,11 +151,9 @@ namespace Uge
 		return out;
 	}
 
-	// Reads an optional bool into `out`, leaving it untouched when the key is absent.
-	// Accepts every spelling yaml-cpp understands (true/false, yes/no, on/off, y/n) and also
-	// 1/0, which the first mesh-collider writer (6e51012) emitted through (int) casts.
-	// Anything else keeps the current value and warns: one bad flag is not worth losing
-	// the whole scene over.
+	// Reads an optional bool into `out`, which is unchanged when the key is absent. Takes
+	// any spelling yaml-cpp knows, and 1 or 0. Anything else keeps `out` and warns, rather
+	// than failing the whole scene.
 	static void ReadBool(const YAML::Node& node, const char* key, bool& out)
 	{
 		const YAML::Node value = node[key];
@@ -189,7 +186,6 @@ namespace Uge
 		out << YAML::Key << "Entity" << YAML::Value << entity.GetUUID();
 
 #pragma region TagComponent
-		// Get tag component
 		if (entity.HasComponent<TagComponent>())
 		{
 			out << YAML::Key << "TagComponent";
@@ -255,9 +251,8 @@ namespace Uge
 
 			out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.ClassName;
 
-			// Fields come from the values stored for the entity rather than from its class,
-			// so they're written even when the class can't be found: a scene opened before its
-			// scripts are built keeps its field values when it's saved.
+			// Written from the stored values rather than the class, so they are kept even when
+			// the class isn't loaded.
 			Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(scriptComponent.ClassName);
 			ScriptFieldMap* entityFields = ScriptEngine::GetScriptFieldMap(entity.GetUUID());
 
@@ -267,8 +262,8 @@ namespace Uge
 				out << YAML::BeginSeq;
 				for (const auto& [name, scriptField] : *entityFields)
 				{
-					// With the class loaded, a value for a field it no longer declares is
-					// dropped. Without it there's no telling, so every value is kept.
+					// With the class loaded, a value for a field it no longer has is dropped.
+					// Without the class, every value is kept.
 					if (entityClass && entityClass->GetFields().find(name) == entityClass->GetFields().end())
 					{
 						continue;
@@ -276,7 +271,7 @@ namespace Uge
 
 					const ScriptFieldType type = scriptField.Field.Type;
 
-					// A type with no case in the switch below would be written as an empty "Data:".
+					// The switch below has no case for these types.
 					if (!IsSerializableFieldType(type))
 					{
 						continue;
@@ -326,8 +321,7 @@ namespace Uge
 
 			auto& spriteRendererComponent = entity.GetComponent<SpriteRendererComponent>();
 			out << YAML::Key << "Color" << YAML::Value << spriteRendererComponent.Color;
-			// TODO: Add texture support
-			
+
 			out << YAML::Key << "TextureHandle" << YAML::Value << spriteRendererComponent.Texture;
 
 			
@@ -422,7 +416,7 @@ namespace Uge
 			out << YAML::Key << "Offset" << YAML::Value << bc.Offset;
 
 
-			out << YAML::EndMap; // RigidbodyComponent
+			out << YAML::EndMap; // BoxColliderComponent
 
 		}
 #pragma endregion
@@ -571,8 +565,7 @@ namespace Uge
 			return false;
 		}
 
-		// Written beside the scene first and then moved over it, so a save that fails part-way
-		// (a full disk, a crash, the file held open elsewhere) leaves the previous version whole.
+		// Written beside the scene, then renamed over it, so a failed save leaves the old file.
 		std::filesystem::path tempPath = filepath;
 		tempPath += ".tmp";
 
@@ -616,15 +609,13 @@ namespace Uge
 		{
 			data = YAML::LoadFile(filepath.string());
 		}
-		// YAML::Exception rather than ParserException alone: a scene file that has been
-		// moved or deleted raises YAML::BadFile, which is not a ParserException and would
-		// otherwise be thrown all the way out through AssetManager::GetAsset.
+		// YAML::Exception also covers YAML::BadFile, thrown for a missing file.
 		catch (const YAML::Exception& e)
 		{
 			UG_CORE_ERROR("Failed to load .uge file {0}\n	{1}", filepath.string(), e.what());
 			return false;
 		}
-		// Which entity was being read when something threw, so the error can name it.
+		// The entity being read, so an error can name it.
 		uint64_t currentEntityID = 0;
 		std::string currentEntityName;
 
@@ -652,7 +643,7 @@ namespace Uge
 
 					std::string name;
 #pragma region TagComponent
-					auto ytgc = entity["TagComponent"];		// Tag Component
+					auto ytgc = entity["TagComponent"];
 					if (ytgc)
 					{
 						name = ytgc["Tag"].as<std::string>();
@@ -665,7 +656,7 @@ namespace Uge
 					Entity deserializedEntity = m_scene->CreateEntityWithUUID(uuid, name);
 
 #pragma region TransformComponent
-					auto ytc = entity["TransformComponent"];	// Tranform Component
+					auto ytc = entity["TransformComponent"];
 					if (ytc)
 					{
 
@@ -678,7 +669,7 @@ namespace Uge
 #pragma endregion
 
 #pragma region CameraComponent
-					auto ycc = entity["CameraComponent"];	// Camera Component
+					auto ycc = entity["CameraComponent"];
 					if (ycc)
 					{
 						UG_CORE_TRACE("Deserializing Camera Component");
@@ -710,8 +701,8 @@ namespace Uge
 
 						sc.ClassName = ysc["ClassName"].as<std::string>();
 
-						// Values are kept even when the class can't be found, under the name and
-						// type the file gives, so saving the scene again writes them back.
+						// Kept even without the class, under the file's name and type, so saving
+						// the scene again writes them back.
 						auto scriptFields = ysc["ScriptFields"];
 						ScriptFieldMap* entityFields = scriptFields ? ScriptEngine::GetScriptFieldMap(deserializedEntity.GetUUID()) : nullptr;
 						if (entityFields)
@@ -724,7 +715,7 @@ namespace Uge
 								std::string typeString = scriptField["Type"].as<std::string>();
 								ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
 
-								// A type this engine can't keep a value of, such as a string, is skipped.
+								// A type that can't be saved, such as a string, is skipped.
 								if (!IsSerializableFieldType(type))
 								{
 									continue;
@@ -736,9 +727,8 @@ namespace Uge
 
 								if (entityClass)
 								{
-									// A value the class can no longer take is dropped, and the field starts
-									// from its default: the class doesn't declare it any more, or its type
-									// has changed since the scene was saved.
+									// A value the class can't take any more is dropped, and the field
+									// keeps its default: the field is gone, or its type changed.
 									auto it = entityClass->GetFields().find(name);
 									if (it == entityClass->GetFields().end())
 									{
@@ -785,7 +775,7 @@ namespace Uge
 #pragma endregion
 
 #pragma region SpriteRendererComponent
-					auto ysrc = entity["SpriteRendererComponent"];		// Sprite Renderer Component
+					auto ysrc = entity["SpriteRendererComponent"];
 					if (ysrc)
 					{
 						UG_CORE_TRACE("Deserializing Sprite Renderer Component");
@@ -807,7 +797,7 @@ namespace Uge
 #pragma endregion
 
 #pragma region MeshComponent
-					auto ymc = entity["MeshComponent"];		// Mesh Component
+					auto ymc = entity["MeshComponent"];
 					if (ymc)
 					{
 						UG_CORE_TRACE("Deserializing Mesh Component");
@@ -819,7 +809,7 @@ namespace Uge
 #pragma endregion
 
 #pragma region SkyLightComponent
-					auto yslc = entity["SkyLightComponent"];	// Sky Light Component
+					auto yslc = entity["SkyLightComponent"];
 					if (yslc)
 					{
 						UG_CORE_TRACE("Deserializing Sky Light Component");
@@ -838,7 +828,7 @@ namespace Uge
 #pragma endregion
 
 #pragma region DirectionalLightComponent
-					auto ydlc = entity["DirectionalLightComponent"];	// Directional Light Component
+					auto ydlc = entity["DirectionalLightComponent"];
 					if (ydlc)
 					{
 						UG_CORE_TRACE("Deserializing Directional Light Component");
@@ -858,7 +848,7 @@ namespace Uge
 
 
 #pragma region RigidbodyComponent
-					auto yrb = entity["RigidbodyComponent"];		// Rigid Body Component
+					auto yrb = entity["RigidbodyComponent"];
 					if (yrb)
 					{
 						UG_CORE_TRACE("Deserializing Rigidbody Component");
@@ -877,7 +867,7 @@ namespace Uge
 #pragma endregion
 
 #pragma region BoxColliderComponent
-					auto ybcc = entity["BoxColliderComponent"];		// Box Collider Component
+					auto ybcc = entity["BoxColliderComponent"];
 					if (ybcc)
 					{
 						auto& bc = deserializedEntity.AddComponent<BoxColliderComponent>();
@@ -903,7 +893,7 @@ namespace Uge
 #pragma endregion
 
 #pragma region SphereColliderComponent
-					auto yscc = entity["SphereColliderComponent"];		// Sphere Collider Component
+					auto yscc = entity["SphereColliderComponent"];
 					if (yscc)
 					{
 						auto& scc = deserializedEntity.AddComponent<SphereColliderComponent>();
@@ -927,7 +917,7 @@ namespace Uge
 #pragma endregion
 
 #pragma region CapsuleColliderComponent
-					auto yccc = entity["CapsuleColliderComponent"];		// Capsule Collider Component
+					auto yccc = entity["CapsuleColliderComponent"];
 					if (yccc)
 					{
 
@@ -952,7 +942,7 @@ namespace Uge
 #pragma endregion
 
 #pragma region MeshColliderComponent
-					auto ymcc = entity["MeshColliderComponent"];		// Mesh Collider Component
+					auto ymcc = entity["MeshColliderComponent"];
 					if (ymcc)
 					{
 
@@ -977,7 +967,7 @@ namespace Uge
 #pragma endregion
 
 #pragma region TextComponent
-					auto ytec = entity["TextComponent"];		// Text Component
+					auto ytec = entity["TextComponent"];
 					if (ytec)
 					{
 						UG_CORE_TRACE("Deserializing Text Component");
@@ -998,8 +988,7 @@ namespace Uge
 
 			}
 		}
-		// std::exception covers YAML::Exception (InvalidNode, TypedBadConversion — it derives
-		// from std::runtime_error) as well as anything the component code below the reader throws.
+		// std::exception also covers YAML::Exception and anything the component code throws.
 		catch (const std::exception& e)
 		{
 			UG_CORE_ERROR("Failed to deserialize scene '{0}' at entity {1} ('{2}'):\n    {3}",

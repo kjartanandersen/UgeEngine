@@ -1,6 +1,6 @@
 /**
  * @file Buffer.h
- * @brief Raw byte-buffer types used for file and asset data.
+ * @brief Raw byte buffers.
  * @ingroup group_core
  */
 
@@ -11,34 +11,24 @@
 
 namespace Uge
 {
-	// Non-owning raw buffer struct
 	/**
-	 * @brief A non-owning pointer/size pair over raw bytes.
+	 * @brief A pointer and size over raw bytes.
 	 * @ingroup group_core
 	 *
-	 * Copying a Buffer copies the pointer, not the bytes, and the destructor does nothing.
-	 * Whoever calls Allocate() (or Copy()) is responsible for a matching Release().
-	 *
-	 * @warning Because ownership is manual, prefer ScopedBuffer wherever the lifetime is
-	 * tied to a scope. Use Buffer for views and for data owned elsewhere.
-	 *
-	 * @code
-	 * Buffer data = FileSystem::ReadFileBinary(path);
-	 * auto* words = data.As<uint32_t>();
-	 * data.Release();
-	 * @endcode
+	 * Copies share the bytes, and nothing is freed automatically: memory from Allocate()
+	 * or Copy() needs a Release().
 	 */
 	struct Buffer
 	{
 
 		uint8_t* Data = nullptr; ///< First byte, or `nullptr` when empty.
-		uint64_t Size = 0; ///< Number of bytes addressed by #Data.
+		uint64_t Size = 0; ///< Number of bytes.
 
-		/** @brief Constructs an empty buffer that owns nothing. */
+		/** @brief An empty buffer. */
 		Buffer() = default;
 		/**
-		 * @brief Allocates an uninitialized buffer.
-		 * @param size Number of bytes to allocate.
+		 * @brief Allocates @p size uninitialized bytes.
+		 * @param size Bytes to allocate.
 		 */
 		Buffer(uint64_t size) 
 		{
@@ -47,22 +37,22 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Creates a view over memory owned by someone else.
-		 * @param data Pointer to the first byte; not copied and not freed by this buffer.
-		 * @param size Number of bytes visible through the view.
+		 * @brief A view of memory owned elsewhere.
+		 * @param data First byte; not copied or freed.
+		 * @param size Number of bytes.
 		 */
 		Buffer(const void* data, uint64_t size)
 			: Data((uint8_t*)data), Size(size)
 		{
 		}
 
-		/** @brief Copies the pointer and size; does **not** copy the bytes. @see Copy */
+		/** @brief Copies the pointer and size, not the bytes. */
 		Buffer(const Buffer&) = default;
 
 		/**
-		 * @brief Deep-copies a buffer into freshly allocated memory.
-		 * @param other Source buffer to duplicate.
-		 * @return A new buffer owning its own copy of the bytes; the caller must Release() it.
+		 * @brief Copies the bytes into new memory.
+		 * @param other Buffer to copy.
+		 * @return The copy; the caller must Release() it.
 		 */
 		static Buffer Copy(Buffer other)
 		{
@@ -72,8 +62,8 @@ namespace Uge
 		}
 	
 		/**
-		 * @brief Releases any current allocation and allocates @p size uninitialized bytes.
-		 * @param size Number of bytes to allocate.
+		 * @brief Releases the current memory and allocates @p size uninitialized bytes.
+		 * @param size Bytes to allocate.
 		 */
 		void Allocate(uint64_t size)
 		{
@@ -84,7 +74,7 @@ namespace Uge
 
 		}
 
-		/** @brief Frees the memory and resets the buffer to empty. Safe to call twice. */
+		/** @brief Frees the memory and empties the buffer. Safe to call twice. */
 		void Release()
 		{
 			free(Data);
@@ -93,9 +83,9 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Reinterprets the bytes as a pointer to `T`.
-		 * @tparam T Type to view the data as.
-		 * @return The data pointer cast to `T*`; `nullptr` if the buffer is empty.
+		 * @brief The bytes as a `T*`.
+		 * @tparam T Type to view them as.
+		 * @return The pointer; null if the buffer is empty.
 		 */
 		template <typename T>
 		T* As()
@@ -104,8 +94,8 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Tests whether the buffer holds data.
-		 * @return `true` if the data pointer is non-null.
+		 * @brief Whether the buffer holds data.
+		 * @return `true` if #Data is set.
 		 */
 		operator bool() const
 		{
@@ -115,23 +105,17 @@ namespace Uge
 	};
 
 	/**
-	 * @brief RAII wrapper that releases its Buffer when it goes out of scope.
+	 * @brief Owns a Buffer and releases it on destruction.
 	 * @ingroup group_core
 	 *
-	 * @code
-	 * ScopedBuffer data = FileSystem::ReadFileBinary(path);
-	 * if (data)
-	 *     Process(data.Data(), data.Size());   // freed automatically
-	 * @endcode
-	 *
-	 * @warning Non-copyable in intent: copying one would free the same memory twice.
+	 * Don't copy one: both copies would free the memory.
 	 */
 	struct ScopedBuffer
 	{
 
 		/**
-		 * @brief Takes ownership of an existing buffer.
-		 * @param buffer Buffer whose memory this object will release.
+		 * @brief Takes ownership of a buffer.
+		 * @param buffer Buffer to release on destruction.
 		 */
 		ScopedBuffer(Buffer buffer)
 			: m_buffer(buffer)
@@ -139,35 +123,35 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Allocates an uninitialized buffer of @p size bytes.
-		 * @param size Number of bytes to allocate.
+		 * @brief Allocates @p size uninitialized bytes.
+		 * @param size Bytes to allocate.
 		 */
 		ScopedBuffer(uint64_t size)
 			: m_buffer(size)
 		{
 		}
 
-		/** @brief Releases the owned buffer. */
+		/** @brief Releases the buffer. */
 		~ScopedBuffer()
 		{
 			m_buffer.Release();
 		}
 
 		/**
-		 * @brief Pointer to the first byte.
-		 * @return The owned buffer's data pointer.
+		 * @brief The first byte.
+		 * @return The data pointer.
 		 */
 		uint8_t*  Data() { return m_buffer.Data; }
 		/**
-		 * @brief Size of the owned buffer.
+		 * @brief The size.
 		 * @return Size in bytes.
 		 */
 		uint64_t  Size() { return m_buffer.Size; }
 
 		/**
-		 * @brief Reinterprets the bytes as a pointer to `T`.
-		 * @tparam T Type to view the data as.
-		 * @return The data pointer cast to `T*`.
+		 * @brief The bytes as a `T*`.
+		 * @tparam T Type to view them as.
+		 * @return The pointer.
 		 */
 		template<typename T>
 		T* As()
@@ -176,8 +160,8 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Tests whether the owned buffer holds data.
-		 * @return `true` if the buffer is non-empty.
+		 * @brief Whether the buffer holds data.
+		 * @return `true` if it does.
 		 */
 		operator bool() const
 		{

@@ -1,6 +1,6 @@
 /**
  * @file RendererSettingsPanelTests.cpp
- * @brief Tests for the editor's renderer settings panel, drawn headlessly.
+ * @brief Tests for the renderer settings panel.
  */
 
 #include <ugpch.h>
@@ -21,7 +21,7 @@ using Uge::TonemapMode;
 namespace
 {
 
-	/** @brief Restores the process-wide render settings after each test. */
+	/** @brief Restores the render settings after each test. */
 	class RendererSettingsPanelTest : public UgeTests::HeadlessImGuiTest
 	{
 	protected:
@@ -54,9 +54,7 @@ TEST_F(RendererSettingsPanelTest, RendersWithDefaultSettings)
 
 TEST_F(RendererSettingsPanelTest, LeavesSettingsUntouchedWhenNothingIsEdited)
 {
-	// The panel reads the settings into a local, edits it with widgets, then writes the
-	// whole struct back every frame. A field the panel forgot to draw would be written
-	// back as a default and silently reset itself here.
+	// The panel writes the whole struct back every frame, so every field must survive it.
 	RenderSettings settings;
 	settings.Exposure = 2.5f;
 	settings.Tonemap = TonemapMode::Reinhard;
@@ -80,7 +78,7 @@ TEST_F(RendererSettingsPanelTest, LeavesSettingsUntouchedWhenNothingIsEdited)
 
 TEST_F(RendererSettingsPanelTest, RendersEveryTonemapMode)
 {
-	// The None branch draws an extra explanatory paragraph the others do not.
+	// None draws an extra paragraph.
 	for (TonemapMode mode : { TonemapMode::None, TonemapMode::Reinhard, TonemapMode::ACES })
 	{
 		RenderSettings settings;
@@ -95,8 +93,7 @@ TEST_F(RendererSettingsPanelTest, RendersEveryTonemapMode)
 
 TEST_F(RendererSettingsPanelTest, RendersWithBloomEnabledAndDisabled)
 {
-	// Disabled bloom wraps its widgets in BeginDisabled/EndDisabled; an unbalanced pair
-	// would assert inside ImGui.
+	// With bloom off, its widgets are inside BeginDisabled/EndDisabled.
 	for (bool enabled : { true, false })
 	{
 		RenderSettings settings;

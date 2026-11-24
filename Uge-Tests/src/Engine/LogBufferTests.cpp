@@ -1,6 +1,6 @@
 /**
  * @file LogBufferTests.cpp
- * @brief Tests for Uge::LogBuffer, the ring behind the editor's console panel.
+ * @brief Tests for Uge::LogBuffer.
  */
 
 #include <ugpch.h>
@@ -20,7 +20,7 @@ namespace
 		return LogEntry{ level, "12:00:00", "UGE", message };
 	}
 
-	/** @brief Clears the process-wide buffer around each test so they cannot interfere. */
+	/** @brief Clears the buffer before and after each test. */
 	class LogBufferTest : public ::testing::Test
 	{
 	protected:
@@ -75,8 +75,7 @@ TEST_F(LogBufferTest, VersionChangesOnPushAndClear)
 	const uint64_t afterPush = LogBuffer::GetVersion();
 	EXPECT_NE(afterPush, initial);
 
-	// The console panel only re-copies the buffer when this changes, so a Clear() that
-	// left the version alone would leave the panel showing records that are gone.
+	// The console panel copies the buffer again only when the version changes.
 	LogBuffer::Clear();
 	EXPECT_NE(LogBuffer::GetVersion(), afterPush);
 }
@@ -108,9 +107,7 @@ TEST_F(LogBufferTest, EvictsOldestOnceFull)
 
 TEST_F(LogBufferTest, EvictionDecrementsTheEvictedLevelsCount)
 {
-	// Fill with warnings, then push enough errors to evict some of them. If eviction did
-	// not decrement, the console's "Warn (n)" button would keep counting records that the
-	// ring has already dropped.
+	// Errors push out some warnings, and the warning count drops with them.
 	for (size_t i = 0; i < LogBuffer::s_capacity; i++)
 	{
 		LogBuffer::Push(MakeEntry(spdlog::level::warn, "warn"));

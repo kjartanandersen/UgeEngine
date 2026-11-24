@@ -1,6 +1,6 @@
 /**
  * @file PerspectiveCameraController.h
- * @brief First-person style controller for a perspective camera.
+ * @brief Input controller for a perspective camera.
  * @ingroup group_renderer
  */
 
@@ -19,46 +19,46 @@ namespace Uge
 {
 
 	/**
-	 * @brief Drives an Uge::PerspectiveCamera with mouse-look and keyboard movement.
+	 * @brief Owns an Uge::PerspectiveCamera and tracks keyboard movement and mouse look.
 	 * @ingroup group_renderer
-	 *
-	 * Orientation is stored as a quaternion, which avoids the gimbal-lock problems of
-	 * accumulating Euler angles. For editing rather than in-game movement, use
-	 * Uge::EditorCamera, which orbits a focal point instead.
 	 */
 	class PerspectiveCameraController
 	{
 
 	public:
 		/**
-		 * @brief Constructs the controller and its camera.
-		 * @param fovYRadians Vertical field of view, in radians.
-		 * @param aspectRatio Viewport width divided by height.
-		 * @param rotation `true` to enable mouse-look.
+		 * @brief A controller for the application's window, which must be a Uge::WindowsWindow.
+		 * @param fovYRadians Vertical field of view in radians.
+		 * @param aspectRatio Width divided by height.
+		 * @param rotation Whether the mouse turns the camera.
 		 * @param nearClip Near plane distance.
 		 * @param farClip Far plane distance.
 		 */
 		PerspectiveCameraController(float fovYRadians, float aspectRatio, bool rotation, float nearClip = 0.1f, float farClip = 1000.0f);
 
 		/**
-		 * @brief Applies movement and mouse-look for this frame.
-		 * @param ts Frame delta time.
+		 * @brief Moves with W, A, S and D, and turns with the mouse while the right button is
+		 * held.
+		 *
+		 * The position and rotation aren't passed to the camera, which has only a projection.
+		 *
+		 * @param ts Frame time.
 		 */
 		void OnUpdate(Timestep ts);
 		/**
-		 * @brief Handles scroll-wheel and window resize events.
-		 * @param e Event to inspect.
+		 * @brief Rebuilds the projection on a resize. Scrolling does nothing.
+		 * @param e The event.
 		 */
 		void OnEvent(Event& e);
 
 		/**
-		 * @brief The controlled camera.
-		 * @return Mutable reference to the camera.
+		 * @brief The camera.
+		 * @return The camera.
 		 */
 		PerspectiveCamera& GetCamera() { return m_camera; }
 		/**
-		 * @brief The controlled camera.
-		 * @return Const reference to the camera.
+		 * @brief The camera.
+		 * @return The camera.
 		 */
 		const PerspectiveCamera& GetCamera() const { return m_camera; }
 
@@ -67,7 +67,7 @@ namespace Uge
 		bool OnWindowResized(WindowResizeEvent& e);
 
 	private:
-		float m_fovY = 0.785398f; // 45 deg in radians
+		float m_fovY = 0.785398f; // 45 degrees
 		float m_aspectRatio = 16.0f / 9.0f;
 		float m_nearClip = 0.1f;
 		float m_farClip = 1000.0f;

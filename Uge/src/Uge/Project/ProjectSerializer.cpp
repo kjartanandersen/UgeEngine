@@ -40,8 +40,7 @@ namespace Uge
 		fout << out.c_str();
 		fout.close();
 
-		// The stream's state covers a file that couldn't be opened as well as a write or
-		// flush that failed.
+		// Covers a file that couldn't be opened, and a failed write or flush.
 		if (fout.fail())
 		{
 			UG_CORE_ERROR("Failed to write .ugproj file {0}", filepath.string());
@@ -53,10 +52,8 @@ namespace Uge
 
 	bool ProjectSerializer::Deserialize(const std::filesystem::path& filepath)
 	{
-		// yaml-cpp throws for a file that is missing or
-		// unreadable (YAML::BadFile), for malformed YAML, for a subscript into a scalar and
-		// for a value of the wrong type. All of them derive from YAML::Exception, and all of
-		// them come back as a false return, which is what Project::Load promises.
+		// yaml-cpp throws a YAML::Exception for a missing or unreadable file, malformed
+		// YAML, a subscript into a scalar or a value of the wrong type. Each returns false.
 		try
 		{
 			YAML::Node data = YAML::LoadFile(filepath.string());
@@ -77,7 +74,7 @@ namespace Uge
 				}
 			}
 
-			// Read into a copy, so a file that fails halfway leaves the project's settings alone.
+			// Read into a copy, so a file that fails halfway changes nothing.
 			ProjectConfig config;
 			config.Name = projectNode["Name"].as<std::string>();
 			config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
@@ -87,8 +84,8 @@ namespace Uge
 				config.AssetRegistryPath = projectNode["AssetRegistryPath"].as<std::string>();
 			}
 
-			// StartScene is optional and must be a scene handle. Anything else, such as a
-			// path, can't be resolved, so the project opens on an empty scene.
+			// StartScene is optional. Anything but a scene handle, such as a path, is
+			// ignored, and the project opens on an empty scene.
 			if (YAML::Node startScene = projectNode["StartScene"])
 			{
 				uint64_t handle = 0;

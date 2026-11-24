@@ -12,31 +12,31 @@ namespace Uge
 {
 
 
-	/** @brief Vertex format for the cube faces drawn by Uge::Renderer3D. */
+	/** @brief A vertex of a cube face. */
 	struct QuadVertex
 	{
 		glm::vec3 Position; ///< Position in model space.
-		glm::vec4 Color; ///< Vertex colour, RGBA.
+		glm::vec4 Color; ///< RGBA colour.
 		glm::vec2 TexCoord; ///< Texture coordinates.
 	};
 
-	/** @brief Geometry, shader and texture state backing Uge::Renderer3D. */
+	/** @brief Uge::Renderer3D's state. */
 	struct Renderer3DData
 	{
-		const uint32_t MaxQuads = 10000; ///< Maximum cube faces per batch.
-		const uint32_t MaxVertices = MaxQuads * 4; ///< Vertex capacity implied by #MaxQuads.
-		const uint32_t MaxIndices = MaxQuads * 6; ///< Index capacity implied by #MaxQuads.
+		const uint32_t MaxQuads = 10000; ///< Faces per batch.
+		const uint32_t MaxVertices = MaxQuads * 4; ///< Vertices per batch.
+		const uint32_t MaxIndices = MaxQuads * 6; ///< Indices per batch.
 
 
-		Ref<VertexArray> QuadVA; ///< Vertex array for the cube geometry.
-		Ref<VertexBuffer> QuadVB; ///< Vertex buffer for the cube geometry.
-		Ref<Shader> TextureShader; ///< Shader used for every cube draw.
-		Ref<Texture2D> WhiteTexture; ///< 1x1 white fallback for untextured draws.
-		Ref<Texture2D> CheckerboardTexture; ///< Debug checkerboard texture.
+		Ref<VertexArray> QuadVA; ///< The cube's vertex array.
+		Ref<VertexBuffer> QuadVB; ///< The cube's vertex buffer.
+		Ref<Shader> TextureShader; ///< The cube shader.
+		Ref<Texture2D> WhiteTexture; ///< 1x1 white texture.
+		Ref<Texture2D> CheckerboardTexture; ///< Checkerboard texture.
 
-		uint32_t QuadIndexCount = 0; ///< Indices accumulated in the current batch.
-		QuadVertex* QuadVertexBufferBase = nullptr; ///< Start of the CPU-side staging buffer.
-		QuadVertex* QuadVertexBufferPtr = nullptr; ///< Write cursor into the staging buffer.
+		uint32_t QuadIndexCount = 0; ///< Indices in the batch.
+		QuadVertex* QuadVertexBufferBase = nullptr; ///< Start of the vertex array.
+		QuadVertex* QuadVertexBufferPtr = nullptr; ///< Next vertex to write.
 
 
 	};

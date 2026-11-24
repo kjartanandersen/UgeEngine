@@ -1,6 +1,6 @@
 ﻿/**
  * @file Entity.cs
- * @brief The managed base class every C# entity script derives from.
+ * @brief The base class of entity scripts.
  * @ingroup group_scripting
  */
 using System;
@@ -8,44 +8,27 @@ using System;
 namespace Uge
 {
     /**
-     * @brief The base class for entity scripts; the managed view of a native entity.
+     * @brief A native entity, and the base class of entity scripts.
      * @ingroup group_scripting
-     *
-     * Uge::ScriptEngine instantiates a subclass of this for every entity carrying a
-     * Uge::ScriptComponent, passing the entity's UUID to the internal constructor.
-     *
-     * @code
-     * public class Player : Entity
-     * {
-     *     void OnUpdate(float ts)
-     *     {
-     *         if (Input.IsKeyDown(KeyCode.W))
-     *             Translation += new Vector3(0.0f, ts, 0.0f);
-     *     }
-     * }
-     * @endcode
      */
     public class Entity
     {
 
-        /** @brief Constructor used when a script subclass is created by the engine. */
+        /** @brief An entity with ID 0. */
         protected Entity() { ID = 0; }
 
         /**
-         * @brief Wraps an existing native entity.
+         * @brief Wraps a native entity.
          * @param id The entity's UUID.
          */
         internal Entity(ulong id) { ID = id; }
 
 
-        /** @brief The entity's UUID, matching its native Uge::IDComponent. */
+        /** @brief The entity's UUID. */
         public readonly ulong ID;
 
         /**
-         * @brief The entity's world position.
-         *
-         * Reads and writes go straight through to the native Uge::TransformComponent, so
-         * assigning to this moves the entity immediately.
+         * @brief The Uge::TransformComponent's translation, read and written directly.
          */
         public Vector3 Translation
         {
@@ -65,9 +48,9 @@ namespace Uge
         }
 
         /**
-         * @brief Tests whether the entity carries a component.
-         * @tparam T Component type to test for.
-         * @return `true` if the native entity has the corresponding component.
+         * @brief Whether the entity has a component.
+         * @tparam T The component type.
+         * @return `true` if it has one.
          */
         public bool HasComponent<T>() where T : Component, new()
         {
@@ -76,9 +59,9 @@ namespace Uge
         }
 
         /**
-         * @brief Retrieves a component wrapper bound to this entity.
-         * @tparam T Component type to fetch.
-         * @return The component, or `null` if the entity does not have one.
+         * @brief A component of the entity.
+         * @tparam T The component type.
+         * @return The component, or `null` if the entity has none.
          */
         public T GetComponent<T>() where T : Component, new()
         {
@@ -90,9 +73,9 @@ namespace Uge
         }
 
         /**
-         * @brief Finds another entity in the scene by name.
-         * @param name Tag to search for.
-         * @return The entity, or `null` if no entity has that name.
+         * @brief An entity in the scene with a given tag.
+         * @param name The tag.
+         * @return The entity, or `null` if there is none.
          */
         public Entity FindEntityByName(string name)
         {
@@ -105,9 +88,9 @@ namespace Uge
         }
 
         /**
-         * @brief Casts this entity to its concrete script class.
-         * @tparam T The script type expected.
-         * @return The script instance, or `null` if the entity's script is not a `T`.
+         * @brief The entity's script instance, as a `T`.
+         * @tparam T The script class.
+         * @return The instance, or `null` if it isn't a `T`.
          */
         public T As<T>() where T : Entity, new()
         {

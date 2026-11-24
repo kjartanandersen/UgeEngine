@@ -62,7 +62,7 @@ namespace Uge
 		if (!s_glfwInitialized)
 		{
 
-			// TODO: GLFW Terminate on system shutdown
+			// TODO: call glfwTerminate at shutdown.
 			{
 				UG_PROFILE_SCOPE("glfwInit - WindowsWindow::Init");
 				int success = glfwInit();
@@ -77,8 +77,7 @@ namespace Uge
 		}
 
 #ifdef UG_DEBUG
-		// A debug context is what makes glDebugMessageCallback work; OpenGLContext::Init
-		// installs the callback once it sees the flag come back set.
+		// OpenGLContext::Init installs the debug callback in a debug context.
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
 

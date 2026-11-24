@@ -1,6 +1,6 @@
 /**
  * @file SceneSerializerTests.cpp
- * @brief Round-trip tests for Uge::SceneSerializer and the `.uge` scene format.
+ * @brief Tests for Uge::SceneSerializer.
  */
 
 #include <ugpch.h>
@@ -27,13 +27,13 @@ using UgeTests::TempProject;
 namespace
 {
 
-	/** @brief A project to serialize into, plus a scene to serialize. */
+	/** @brief A project and a scene to save in it. */
 	class SceneSerializerTest : public ::testing::Test
 	{
 	protected:
 		void SetUp() override { m_scene = Uge::CreateRef<Scene>(); }
 
-		/** @brief Writes m_scene out and reads it back into a fresh scene. */
+		/** @brief Saves m_scene and loads it into a new scene. */
 		Uge::Ref<Scene> RoundTrip(const std::filesystem::path& relativePath = "Scenes/Test.uge")
 		{
 			const std::filesystem::path path = Project::GetAssetFileSystemPath(relativePath);
@@ -74,8 +74,7 @@ TEST_F(SceneSerializerTest, AnEmptySceneRoundTrips)
 
 TEST_F(SceneSerializerTest, PreservesEntityIdentity)
 {
-	// Everything that refers to an entity across a save — the editor's selection, a script
-	// holding a handle — goes through the UUID, so a regenerated id breaks all of it.
+	// Entity references across a save go through the UUID.
 	Entity original = m_scene->CreateEntity("Player");
 	const Uge::UUID id = original.GetUUID();
 
@@ -153,8 +152,7 @@ TEST_F(SceneSerializerTest, PreservesSpriteRenderers)
 	EXPECT_NEAR(result.Color.a, 0.4f, 1e-5f);
 	EXPECT_NEAR(result.TilingFactor, 3.5f, 1e-5f);
 
-	// Asset references are stored as handles, so they survive without the asset itself
-	// being present.
+	// Handles are saved whether or not the asset exists.
 	EXPECT_EQ((uint64_t)result.Texture, 0xABCDEFull);
 }
 
@@ -257,8 +255,7 @@ TEST_F(SceneSerializerTest, DeserializingAFileThatIsNotASceneFails)
 
 TEST_F(SceneSerializerTest, DeserializingAMissingFileFailsWithoutThrowing)
 {
-	// YAML::BadFile, not a ParserException — the catch has to be wide enough to cover it
-	// or this escapes every caller.
+	// A missing file raises YAML::BadFile, which isn't a ParserException.
 	Uge::Ref<Scene> loaded = Uge::CreateRef<Scene>();
 
 	bool result = true;
@@ -281,8 +278,7 @@ TEST_F(SceneSerializerTest, DeserializingMalformedYamlFails)
 
 TEST_F(SceneSerializerTest, AcceptsBooleansWrittenAsIntegers)
 {
-	// FirstGame's physicsScene.uge was written by 6e51012, whose mesh-collider writer
-	// emitted its flags through (int) casts. yaml-cpp's bool conversion rejects "1".
+	// Flags written as 0 and 1, which yaml-cpp's bool conversion rejects, still load.
 	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/IntBools.uge",
 		"Scene: IntBools\n"
 		"Entities:\n"
@@ -300,8 +296,7 @@ TEST_F(SceneSerializerTest, AcceptsBooleansWrittenAsIntegers)
 	ASSERT_TRUE(restored);
 	ASSERT_TRUE(restored.HasComponent<Uge::MeshColliderComponent>());
 
-	// Both differ from the component's defaults (Convex = true, IsTrigger = false), so a
-	// pass means the values were actually read rather than left alone.
+	// Both differ from the defaults, so they were read.
 	const Uge::MeshColliderComponent& collider = restored.GetComponent<Uge::MeshColliderComponent>();
 	EXPECT_FALSE(collider.Convex);
 	EXPECT_TRUE(collider.IsTrigger);
@@ -327,8 +322,8 @@ TEST_F(SceneSerializerTest, AMistypedValueFailsTheLoadWithoutThrowing)
 
 TEST_F(SceneSerializerTest, AScriptComponentWithAnUnknownClassStillSaves)
 {
-	// This test doesn't start the script engine, so no script class is known at all. Saving
-	// still keeps the component and its class name; it just writes no fields.
+	// The script engine isn't started, so no class is known. The component and class name
+	// are saved, with no fields.
 	Entity entity = m_scene->CreateEntity("Scripted");
 	entity.AddComponent<Uge::ScriptComponent>().ClassName = "Game.DoesNotExist";
 
@@ -343,8 +338,8 @@ TEST_F(SceneSerializerTest, AScriptComponentWithAnUnknownClassStillSaves)
 
 TEST_F(SceneSerializerTest, AMeshComponentWithoutAHandleHasNoMesh)
 {
-	// Scenes from before asset handles describe a mesh by path, with no MeshHandle key. The
-	// component is kept with no mesh; 0 means "none".
+	// An old scene names the mesh by path, with no MeshHandle key. The component loads with
+	// no mesh.
 	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/OldMesh.uge",
 		"Scene: OldMesh\n"
 		"Entities:\n"
@@ -365,7 +360,7 @@ TEST_F(SceneSerializerTest, AMeshComponentWithoutAHandleHasNoMesh)
 
 namespace
 {
-	/** @brief A material with no default values, so one that isn't read back shows up. */
+	/** @brief A physics material with no default values. */
 	Uge::PhysicsMaterial DistinctMaterial()
 	{
 		Uge::PhysicsMaterial material;
@@ -468,7 +463,7 @@ TEST_F(SceneSerializerTest, PreservesCapsuleColliders)
 	Uge::CapsuleColliderComponent& capsule = entity.AddComponent<Uge::CapsuleColliderComponent>();
 	capsule.Offset = { 0.0f, 1.0f, 0.0f };
 	capsule.Radius = 0.4f;
-	capsule.HalfHeight = 1.75f; // not a whole number, so any rounding on the way shows
+	capsule.HalfHeight = 1.75f; // Not whole, so rounding would show.
 	capsule.Material = DistinctMaterial();
 	capsule.IsTrigger = true;
 
@@ -488,8 +483,7 @@ TEST_F(SceneSerializerTest, PreservesCapsuleColliders)
 
 TEST_F(SceneSerializerTest, PreservesMeshColliders)
 {
-	// The mesh is a handle; the model behind it doesn't need to exist for the handle to be
-	// saved and loaded.
+	// The handle is saved and loaded without the model existing.
 	Entity entity = m_scene->CreateEntity("Rock");
 	Uge::MeshColliderComponent& collider = entity.AddComponent<Uge::MeshColliderComponent>();
 	collider.Mesh = Uge::AssetHandle(1234567ull);
@@ -532,8 +526,7 @@ TEST_F(SceneSerializerTest, PreservesSkyLights)
 
 TEST_F(SceneSerializerTest, AScriptComponentWithNoClassKeepsItsEmptyName)
 {
-	// A Script component just added in the editor has no class yet. Saving and loading
-	// keeps the component, with the class still empty.
+	// A script component with no class yet survives a round trip.
 	Entity entity = m_scene->CreateEntity("Unassigned");
 	entity.AddComponent<Uge::ScriptComponent>();
 
@@ -548,7 +541,7 @@ TEST_F(SceneSerializerTest, AScriptComponentWithNoClassKeepsItsEmptyName)
 
 namespace
 {
-	/** @brief Starts the script engine for one test, and shuts it down however the test ends. */
+	/** @brief Starts the script engine for one test, and shuts it down at the end. */
 	struct ScopedScriptEngine
 	{
 		ScopedScriptEngine() { Uge::ScriptEngine::Init(); }
@@ -558,10 +551,8 @@ namespace
 
 TEST_F(SceneSerializerTest, AScriptWhoseClassIsMissingKeepsItsFieldValues)
 {
-	// From the repo root, where the tests run, Init() finds no Mono runtime. It stops after
-	// creating the field storage and knows no script classes, like an editor whose project
-	// scripts haven't been built. Anywhere else it would start Mono, which can't be started
-	// twice in one process.
+	// From the repo root, Init() finds no Mono runtime, so it only creates the field
+	// storage. Elsewhere it would start Mono, which can't start twice in one process.
 	if (std::filesystem::exists("mono/lib"))
 	{
 		GTEST_SKIP() << "Mono's runtime is in the working directory; run the tests from the repo root.";
@@ -587,7 +578,7 @@ TEST_F(SceneSerializerTest, AScriptWhoseClassIsMissingKeepsItsFieldValues)
 	const std::filesystem::path resaved = Project::GetAssetFileSystemPath("Scenes/Resaved.uge");
 	SceneSerializer(opened).Serialize(resaved);
 
-	// Restart the engine, so the value can only come from the resaved file.
+	// Restart the engine, so the value comes from the saved file.
 	Uge::ScriptEngine::Shutdown();
 	Uge::ScriptEngine::Init();
 
@@ -621,7 +612,7 @@ TEST_F(SceneSerializerTest, AFieldValueOfATypeThatCantBeSavedIsLeftOut)
 	speed.Field.Type = Uge::ScriptFieldType::Float;
 	speed.SetValue(2.5f);
 
-	// Strings have nowhere to keep a value yet, so this one can't be saved.
+	// String values can't be saved yet.
 	Uge::ScriptFieldInstance& title = (*fields)["Title"];
 	title.Field.Name = "Title";
 	title.Field.Type = Uge::ScriptFieldType::String;
@@ -650,8 +641,7 @@ TEST_F(SceneSerializerTest, AFailedSaveLeavesThePreviousFileIntact)
 	const std::filesystem::path path = m_project.WriteAssetFile("Scenes/Level.uge", "previous contents\n");
 	m_scene->CreateEntity("Crate");
 
-	// A file held open by std::ifstream can't be replaced on Windows, because the handle doesn't
-	// share delete access. So the save gets as far as its last step, the rename, and fails there.
+	// On Windows a file open in std::ifstream can't be replaced, so the final rename fails.
 	bool saved = true;
 	{
 		std::ifstream held(path);

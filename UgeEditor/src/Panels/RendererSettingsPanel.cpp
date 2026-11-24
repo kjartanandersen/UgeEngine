@@ -36,14 +36,12 @@ namespace Uge
 
 		ImGui::Checkbox("Enabled", &settings.BloomEnabled);
 
-		// Disabling the widgets rather than hiding them keeps the panel from jumping around
-		// as bloom is toggled.
+		// Disabled rather than hidden, so the layout doesn't jump.
 		ImGui::BeginDisabled(!settings.BloomEnabled);
 		{
 			ImGui::DragFloat("Intensity", &settings.BloomIntensity, 0.01f, 0.0f, 5.0f);
 
-			// Above 1.0 by default: 1.0 is white, so a lower threshold makes ordinary lit
-			// surfaces glow and the whole image turns hazy.
+			// 1.0 is white; below it, ordinary lit surfaces glow.
 			ImGui::DragFloat("Threshold", &settings.BloomThreshold, 0.01f, 0.0f, 10.0f);
 			ImGui::DragFloat("Knee", &settings.BloomKnee, 0.01f, 0.0f, 2.0f);
 

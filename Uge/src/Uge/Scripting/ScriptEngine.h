@@ -15,17 +15,17 @@
 
 extern "C"
 {
-	/** @brief Opaque Mono type handle; forward-declared to avoid including the Mono headers. */
+	/** @brief A managed class. */
 	typedef struct _MonoClass MonoClass;
-	/** @brief Opaque handle to a managed object instance. */
+	/** @brief A managed object. */
 	typedef struct _MonoObject MonoObject;
-	/** @brief Opaque handle to a managed method. */
+	/** @brief A managed method. */
 	typedef struct _MonoMethod MonoMethod;
-	/** @brief Opaque handle to a loaded managed assembly. */
+	/** @brief A loaded assembly. */
 	typedef struct _MonoAssembly MonoAssembly;
-	/** @brief Opaque handle to an assembly's metadata image. */
+	/** @brief An assembly's metadata image. */
 	typedef struct _MonoImage MonoImage;
-	/** @brief Opaque handle to a field on a managed class. */
+	/** @brief A field of a managed class. */
 	typedef struct _MonoClassField MonoClassField;
 }
 
@@ -33,15 +33,12 @@ namespace Uge
 {
 
 	/**
-	 * @brief The C# field types the editor can inspect and serialize.
+	 * @brief The C# field types the engine can show and save. Other fields are ignored.
 	 * @ingroup group_scripting
-	 *
-	 * Anything not listed here is invisible to the property panel and is not persisted,
-	 * even if the managed field exists.
 	 */
 	enum class ScriptFieldType
 	{
-		None = 0, ///< Unset / unsupported field type.
+		None = 0, ///< Unsupported.
 		Float, ///< `float`
 		Double, ///< `double`
 
@@ -68,49 +65,40 @@ namespace Uge
 	};
 
 	/**
-	 * @brief Describes a public field on a C# class.
+	 * @brief A public field of a C# class.
 	 * @ingroup group_scripting
-	 *
-	 * Reflected out of the assembly when it is loaded; carries the type information but
-	 * not a value. @see ScriptFieldInstance
 	 */
 	struct ScriptField
 	{
-		std::string Name; ///< Field name as declared in C#.
-		ScriptFieldType Type; ///< Field type.
-		MonoClassField* ClassField = nullptr; ///< Mono handle used to read and write the field.
+		std::string Name; ///< Name in C#.
+		ScriptFieldType Type; ///< Type.
+		MonoClassField* ClassField = nullptr; ///< Mono handle for reading and writing it.
 
 
 	};
 
 
-	// Script Field + data storage
 	/**
-	 * @brief A script field together with a value, stored outside the managed heap.
+	 * @brief A script field and its value, kept outside the managed heap.
 	 * @ingroup group_scripting
 	 *
-	 * Field values set in the editor have to survive when no managed object exists — before
-	 * play begins, and across an assembly reload. They are kept here in a fixed 16-byte
-	 * buffer and pushed into the managed instance when the scene starts.
-	 *
-	 * @warning The buffer is 16 bytes; GetValue() and SetValue() static-assert on larger
-	 * types.
+	 * The value survives without a managed object: before play starts and across an
+	 * assembly reload. Values of up to 16 bytes fit.
 	 */
 	struct ScriptFieldInstance
 	{
-		ScriptField Field; ///< Which field this value belongs to.
+		ScriptField Field; ///< The field.
 
-		/** @brief Constructs the instance with a zeroed value buffer. */
+		/** @brief Creates the instance with a zeroed value. */
 		ScriptFieldInstance()
 		{
 			memset(m_dataBuffer, 0, sizeof(m_dataBuffer));
 		}
 
 		/**
-		 * @brief Reads the stored value.
-		 * @tparam T Type to read as; must be at most 16 bytes.
-		 * @return The stored value reinterpreted as `T`.
-		 * @warning No type checking: reading as the wrong `T` reinterprets the raw bytes.
+		 * @brief The stored value.
+		 * @tparam T Type to read as, at most 16 bytes. Not checked against the field type.
+		 * @return The value.
 		 */
 		template<typename T>
 		T GetValue() const
@@ -123,8 +111,8 @@ namespace Uge
 
 		/**
 		 * @brief Stores a value.
-		 * @tparam T Type to store; must be at most 16 bytes.
-		 * @param value Value to copy into the buffer.
+		 * @tparam T Its type, at most 16 bytes.
+		 * @param value The value.
 		 */
 		template<typename T>
 		void SetValue(T value)
@@ -143,60 +131,55 @@ namespace Uge
 	};
 
 	/**
-	 * @brief Field name to stored value, for one entity's script.
+	 * @brief One entity's stored field values, by field name.
 	 * @ingroup group_scripting
 	 */
 	using ScriptFieldMap = std::unordered_map<std::string, ScriptFieldInstance>;
 
 
 	/**
-	 * @brief A C# class reflected out of a loaded assembly.
+	 * @brief A C# class from a loaded assembly, with its public fields.
 	 * @ingroup group_scripting
-	 *
-	 * Wraps a `MonoClass` and caches its public fields, so the editor can show them without
-	 * re-reflecting each frame. One of these exists per script class; each entity using it
-	 * gets its own Uge::ScriptInstance.
 	 */
 	class ScriptClass
 	{
 	public:
-		/** @brief Constructs an empty wrapper bound to no class. */
+		/** @brief A wrapper bound to no class. */
 		ScriptClass() = default;
 
 		/**
-		 * @brief Looks a class up in a loaded assembly.
-		 * @param classNamespace C# namespace, e.g. `Sandbox`.
-		 * @param className Class name without the namespace.
-		 * @param isCore `true` to search the engine's `Uge-ScriptCore` assembly instead of the
-		 *        project's script assembly.
+		 * @brief Looks a class up.
+		 * @param classNamespace C# namespace, such as `Sandbox`.
+		 * @param className Class name.
+		 * @param isCore `true` to look in `Uge-ScriptCore` instead of the project's assembly.
 		 */
 		ScriptClass(const std::string& classNamespace, const std::string& className, bool isCore = false);
 
 		/**
-		 * @brief Allocates a managed object of this class.
-		 * @return The new managed object; its constructor has not run yet.
+		 * @brief Allocates an object of the class, without running its constructor.
+		 * @return The object.
 		 */
 		MonoObject* Instantiate();
 
 		/**
-		 * @brief Looks up a method by name and arity.
+		 * @brief A method, by name and parameter count.
 		 * @param name Method name.
-		 * @param parameterCount Number of parameters, used to pick between overloads.
-		 * @return The method, or null if no match exists.
+		 * @param parameterCount Number of parameters.
+		 * @return The method, or null.
 		 */
 		MonoMethod* GetMethod(const std::string& name, int parameterCount);
 		/**
-		 * @brief Calls a managed method.
+		 * @brief Calls a method.
 		 * @param instance Object to call on; null for a static method.
-		 * @param method Method to invoke.
-		 * @param params Array of pointers to the arguments, or null when there are none.
-		 * @return The boxed return value, or null for a `void` method.
+		 * @param method The method.
+		 * @param params Pointers to the arguments, or null.
+		 * @return The boxed result, or null for `void`.
 		 */
 		MonoObject* InvokeMethod(MonoObject* instance, MonoMethod* method, void** params = nullptr);
 
 		/**
-		 * @brief The class's public fields.
-		 * @return Const reference to the field map, keyed by field name.
+		 * @brief The public fields.
+		 * @return Fields by name.
 		 */
 		const std::unordered_map<std::string, ScriptField>& GetFields() const { return m_fields; }
 
@@ -214,53 +197,50 @@ namespace Uge
 
 
 	/**
-	 * @brief A live managed object bound to one entity.
+	 * @brief A script object attached to one entity.
 	 * @ingroup group_scripting
 	 *
-	 * Created by Uge::ScriptEngine::OnCreateEntity when the scene starts running. It caches
-	 * the `OnCreate` and `OnUpdate` method pointers up front so the per-frame call does not
-	 * pay for a method lookup.
-	 * The managed object is held through a strong GC handle. Mono doesn't scan native memory,
-	 * so a plain pointer would neither keep the object alive nor follow it when the collector moves it.
+	 * Holds the managed object through a strong GC handle. Mono doesn't scan native memory,
+	 * so a raw pointer would neither keep the object alive nor follow it when it moves.
 	 */
 	class ScriptInstance
 	{
 
 	public:
 		/**
-		 * @brief Instantiates the class and runs its constructor with the entity's UUID.
-		 * @param scriptClass Class to instantiate.
-		 * @param entity Entity this script is attached to.
+		 * @brief Creates the object and runs its constructor with the entity's UUID.
+		 * @param scriptClass Class to create.
+		 * @param entity The entity.
 		 */
 		ScriptInstance(Ref<ScriptClass> scriptClass, Entity entity);
 
-		/** @brief Releases the GC handle, so Mono can collect the managed object. */
+		/** @brief Releases the GC handle, so Mono can collect the object. */
 		~ScriptInstance();
 
-		/** @brief Not copyable: both copies would free the same GC handle. */
+		/** @brief Not copyable; both copies would free the GC handle. */
 		ScriptInstance(const ScriptInstance&) = delete;
-		/** @brief Not copyable: both copies would free the same GC handle. */
+		/** @brief Not copyable; both copies would free the GC handle. */
 		ScriptInstance& operator=(const ScriptInstance&) = delete;
 
-		/** @brief Calls the script's `OnCreate`, once, when the scene starts. */
+		/** @brief Calls the script's `OnCreate`. */
 		void InvokeOnCreate();
 		/**
 		 * @brief Calls the script's `OnUpdate`.
-		 * @param ts Frame delta time in seconds.
+		 * @param ts Seconds since the last frame.
 		 */
 		void InvokeOnUpdate(float ts);
 
 		/**
-		 * @brief The class this instance was created from.
-		 * @return The script class.
+		 * @brief The script's class.
+		 * @return The class.
 		 */
 		Ref<ScriptClass> GetScriptClass() { return m_scriptClass; }
 
 		/**
-		 * @brief Reads a field from the managed object.
-		 * @tparam T Field type; must be at most 8 bytes.
+		 * @brief Reads a field of the object.
+		 * @tparam T Field type, at most 8 bytes.
 		 * @param name Field name.
-		 * @return The field's value, or a default-constructed `T` if the field does not exist.
+		 * @return The value, or `T()` if there is no such field.
 		 */
 		template<typename T>
 		T GetFieldValue(const std::string& name)
@@ -277,10 +257,10 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Writes a field on the managed object.
-		 * @tparam T Field type; must be at most 8 bytes.
+		 * @brief Writes a field of the object.
+		 * @tparam T Field type, at most 8 bytes.
 		 * @param name Field name.
-		 * @param value Value to write.
+		 * @param value The value.
 		 */
 		template<typename T>
 		void SetFieldValue(const std::string& name, T value)
@@ -292,9 +272,8 @@ namespace Uge
 		}
 
 		/**
-		 * @brief The underlying managed object.
-		 * @return The `MonoObject` this instance wraps. Don't keep it: the collector can move the object,
-		 * so ask again each time.
+		 * @brief The managed object.
+		 * @return The object. Don't keep the pointer: the collector can move the object.
 		 */
 		MonoObject* GetManagedMonoObject();
 	
@@ -306,7 +285,7 @@ namespace Uge
 
 	private:
 		Ref<ScriptClass> m_scriptClass;
-		uint32_t m_gcHandle = 0;				///< Strong GC handle that keeps the managed object alive.
+		uint32_t m_gcHandle = 0;				///< Strong GC handle that keeps the object alive.
 		MonoMethod* m_constructor = nullptr;
 		MonoMethod* m_onCreateMethod = nullptr;
 		MonoMethod* m_onUpdateMethod = nullptr;
@@ -319,132 +298,145 @@ namespace Uge
 	};
 
 	/**
-	 * @brief Hosts the Mono runtime and drives every entity script.
+	 * @brief Runs the Mono runtime and the entity scripts.
 	 * @ingroup group_scripting
 	 *
-	 * Loads two assemblies: the engine's `Uge-ScriptCore`, which defines the `Entity` base
-	 * class and the internal-call declarations, and the project's script assembly named by
+	 * Loads `Uge-ScriptCore` and the project's script assembly,
 	 * Uge::ProjectConfig::ScriptModulePath.
-	 *
-	 * At runtime start it creates a Uge::ScriptInstance for every entity carrying a
-	 * Uge::ScriptComponent, then calls `OnCreate` on each and `OnUpdate` every frame.
-	 *
-	 * @note Native functions callable from C# are registered by Uge::ScriptGlue. Adding one
-	 * requires matching changes in `ScriptGlue.cpp` and `InternalCalls.cs`; a mismatch
-	 * fails at runtime, not at compile time.
 	 */
 	class ScriptEngine
 	{
 
 	public:
 		/**
-		 * @brief Starts the Mono runtime, loads the core assembly and registers the glue.
+		 * @brief Starts Mono and registers the internal calls. Call once per process.
+		 *
+		 * Without the Mono runtime or the core assembly in the working directory, scripting
+		 * is disabled, but field values can still be stored.
 		 */
 		static void Init();
-		/** @brief Tears down the Mono runtime. Called from ~Application. */
+		/** @brief Unloads the project's scripts and shuts Mono down. */
 		static void Shutdown();
 
 		/**
-		 * @brief Loads the engine's `Uge-ScriptCore` assembly.
-		 * @param filePath Path to the core assembly DLL.
+		 * @brief Loads the core assembly and the active project's script assembly, finds the
+		 * entity classes, and watches the script assembly for rebuilds.
+		 *
+		 * Does nothing when scripting is disabled. Call UnloadProject() first if another
+		 * project's scripts are loaded.
+		 */
+		static void LoadProject();
+		/**
+		 * @brief Stops watching the script assembly, destroys the script objects, forgets the
+		 * classes and stored field values, and unloads the app domain. Safe when nothing is
+		 * loaded.
+		 */
+		static void UnloadProject();
+
+		/**
+		 * @brief Loads `Uge-ScriptCore`.
+		 * @param filePath The DLL.
 		 * @return `true` on success.
 		 */
 		static bool LoadAssembly(const std::filesystem::path& filePath);
 
 		/**
-		 * @brief Loads the project's script assembly and reflects its entity classes.
-		 * @param filePath Path to the project's script DLL.
+		 * @brief Loads the project's script assembly and finds its entity classes.
+		 * @param filePath The DLL.
 		 * @return `true` on success.
 		 */
 		static bool LoadAppAssembly(const std::filesystem::path& filePath);
 
 		/**
-		 * @brief Unloads and reloads both assemblies, picking up a recompiled script DLL.
+		 * @brief Reloads both assemblies, to pick up rebuilt scripts.
 		 *
-		 * Lets scripts be rebuilt without restarting the editor. Field values stored in the
-		 * script field maps survive the reload; live managed objects do not.
+		 * Stored field values survive; script objects don't.
 		 */
 		static void ReloadAssembly();
 
 		/**
-		 * @brief Looks up a reflected entity class.
-		 * @param name Fully qualified class name, e.g. `Sandbox.Player`.
-		 * @return The class, or null if it is not in the loaded assembly.
+		 * @brief An entity class.
+		 * @param name Full class name, such as `Sandbox.Player`.
+		 * @return The class, or null.
 		 */
 		static Ref<ScriptClass> GetEntityClass(const std::string& name);
 
 		/**
-		 * @brief Every class deriving from the script core's `Entity`.
-		 * @return Map from fully qualified name to class; populates the editor's script picker.
+		 * @brief Every class deriving from `Entity`.
+		 * @return Classes by full name.
 		 */
 		static std::unordered_map<std::string, Ref<ScriptClass>> GetEntityClasses();
 
 		/**
-		* @brief The stored field values for an entity's script.
-		* @param entityID Entity to look up.
-		* @return Its field map, created empty if it does not exist. Null before Init() or
-		* after Shutdown(), when there is nowhere to store values.
-		*
-		* Values are kept by name and type even while their class isn't loaded, so a scene
-		* saved before its scripts are built keeps them.
-		*/
+		 * @brief An entity's stored field values.
+		 * @param entityID The entity.
+		 * @return The values, created empty if needed; null before Init() and after Shutdown().
+		 *
+		 * Values are kept even while their class isn't loaded.
+		 */
 		static ScriptFieldMap* GetScriptFieldMap(UUID entityID);
 
 		/**
-		 * @brief Binds the engine to a scene entering play mode.
-		 * @param scene Scene that is starting; borrowed, not owned.
+		 * @brief Starts scripting for a scene entering play mode.
+		 * @param scene The scene; not owned.
 		 */
 		static void OnRuntimeStart(Scene* scene);
-		/** @brief Destroys every script instance and clears the scene context. */
+		/** @brief Destroys every script object and forgets the scene. */
 		static void OnRuntimeStop();
 
 		/**
-		 * @brief Instantiates an entity's script and calls its `OnCreate`. If the class doesn't exist,
-		 * logs one warning naming the entity and class, and creates nothing.
-		 * @param entity Entity carrying a Uge::ScriptComponent.
+		 * @brief Creates an entity's script object and calls `OnCreate`.
+		 * @param entity An entity with a Uge::ScriptComponent.
+		 *
+		 * A missing class gets one warning and no object. A stored value whose type no longer
+		 * matches its field is skipped, with a warning.
 		 */
 		static void OnCreateEntity(Entity entity);
 
 		/**
-		 * @brief Calls an entity script's `OnUpdate`. Does nothing for an entity without an instance.
-		 * @param entity Entity whose script should tick.
-		 * @param ts Frame delta time.
+		 * @brief Destroys an entity's script object, if it has one.
+		 * @param entityID The entity.
+		 *
+		 * Its stored field values stay: the editor scene's entity has the same UUID.
+		 */
+		static void OnDestroyEntity(UUID entityID);
+
+		/**
+		 * @brief Calls an entity script's `OnUpdate`. Does nothing without a script object.
+		 * @param entity The entity.
+		 * @param ts Frame time.
 		 */
 		static void OnUpdateEntity(Entity entity, Timestep ts);
 
 		/**
-		 * @brief The scene currently running scripts.
-		 * @return The scene, or null outside play mode. Used by the internal calls to resolve
-		 *         entity handles.
+		 * @brief The scene running scripts.
+		 * @return The scene, or null outside play mode.
 		 */
 		static Scene* GetSceneContext();
 		/**
-		 * @brief The live script instance for an entity.
-		 * @param entityID Entity to look up.
-		 * @return The instance, or null if the entity has no running script.
+		 * @brief An entity's script object.
+		 * @param entityID The entity.
+		 * @return The instance, or null.
 		 */
 		static Ref<ScriptInstance> GetEntityScriptInstance(UUID entityID);
 
 		/**
-		 * @brief The core assembly's Mono image.
-		 * @return The image, used to look up the script core's built-in types.
+		 * @brief The core assembly's image.
+		 * @return The image.
 		 */
 		static MonoImage* GetCoreAssemblyImage();
 
 		/**
-		 * @brief The managed object backing an entity's script.
-		 * @param entityID Entity to look up.
-		 * @return The `MonoObject`, or null if the entity has no running script.
+		 * @brief The managed object of an entity's script.
+		 * @param entityID The entity.
+		 * @return The object, or null.
 		 */
 		static MonoObject* GetManagedInstance(UUID entityID);
 
 		/**
-		 * @brief Whether a script class is present in the loaded assembly.
-		 * @param fullClassName Fully qualified class name.
-		 * @return `true` if the class exists.
-		 *
-		 * The editor uses this to flag a Uge::ScriptComponent naming a class that no longer
-		 * exists after a reload.
+		 * @brief Whether a class is in the loaded assembly.
+		 * @param fullClassName Full class name.
+		 * @return `true` if it is.
 		 */
 		static bool EntityClassExists(const std::string& fullClassName);
 
@@ -460,30 +452,25 @@ namespace Uge
 	};
 
 	/**
-	 * @brief Conversions between Uge::ScriptFieldType and its serialized name.
+	 * @brief Script field type conversions.
 	 * @ingroup group_scripting
 	 */
 	namespace Utils
 	{
 
 		/**
-		* @brief Maps the name Mono gives a managed type onto the engine's field types.
-		* @param typeName A type name as `mono_type_get_name` returns it, such as `System.Int32`.
-		* @return The matching type, or `None` for a type the engine can't store; that case
-		* is logged as a warning.
-		*
-		* The names are .NET's, not C#'s keywords: `int` is `System.Int32`, and `float` is
-		* `System.Single`.
-		*/
+		 * @brief The field type for a managed type name.
+		 * @param typeName A name from `mono_type_get_name`, such as `System.Int32`.
+		 * @return The type, or `None` with a warning for an unsupported one.
+		 *
+		 * The names are .NET's: `int` is `System.Int32` and `float` is `System.Single`.
+		 */
 		ScriptFieldType ScriptFieldTypeFromManagedName(const std::string& typeName);
 
 		/**
-		 * @brief Parses a field type from its serialized name.
-		 * @param fieldType String produced by Uge::Utils::ScriptFieldTypeToString.
-		 * @return The matching type, or `None` if the name isn't recognized.
-		 *
-		 * The name comes from a scene file, which can hold one this engine doesn't know, from a
-		 * newer version for example. That's data to skip rather than a programming error.
+		 * @brief Parses a name written by Uge::Utils::ScriptFieldTypeToString.
+		 * @param fieldType The name.
+		 * @return The type, or `None` for an unknown name.
 		 */
 		inline ScriptFieldType ScriptFieldTypeFromString(std::string_view fieldType)
 		{
@@ -510,9 +497,9 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Converts a field type to its serialized name.
-		 * @param fieldtype Type to convert.
-		 * @return A static string such as `"Vector3"`, or `"<invalid>"` if unrecognized.
+		 * @brief The serialized name of a field type.
+		 * @param fieldtype The type.
+		 * @return A name such as `"Vector3"`, or `"<invalid>"`.
 		 */
 		inline const char* ScriptFieldTypeToString(ScriptFieldType fieldtype)
 		{

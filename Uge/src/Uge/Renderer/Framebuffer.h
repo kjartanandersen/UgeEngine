@@ -1,6 +1,6 @@
 /**
  * @file Framebuffer.h
- * @brief Off-screen render targets and their attachment description.
+ * @brief Off-screen render targets.
  * @ingroup group_renderer
  */
 
@@ -11,117 +11,87 @@
 namespace Uge
 {
 	/**
-	 * @brief Formats available for a framebuffer attachment.
+	 * @brief Framebuffer attachment formats.
 	 * @ingroup group_renderer
-	 *
-	 * `RED_INTEGER` is what makes mouse picking work: the scene is drawn a second time with
-	 * each fragment writing its entity ID, and Uge::Framebuffer::ReadPixel reads it back.
-	 *
-	 * `RGBA16F` is what makes the scene target able to hold light: an `RGBA8` attachment
-	 * clamps at `1.0` on write, so a bright emissive surface is already clipped by the time
-	 * a tonemap or bloom pass could do anything with it.
 	 */
 	enum class FramebufferTextureFormat
 	{
 
-		None = 0, ///< Unset / invalid.
+		None = 0,
 
 		// Color
-		RGBA8, ///< Standard 8-bit-per-channel colour attachment.
-		RGBA16F, ///< Half-float colour attachment, for linear values above `1.0`.
-		RED_INTEGER, ///< Single integer channel; used for per-pixel entity IDs.
+		RGBA8,
+		RGBA16F, ///< Half float; holds values above `1.0`, which `RGBA8` clamps.
+		RED_INTEGER, ///< One integer channel, for entity IDs.
 
 		// Depth/Stencil
-		DEPTH24STENCIL8, ///< Combined 24-bit depth and 8-bit stencil.
+		DEPTH24STENCIL8,
 
 		// Defaults
-		Depth = DEPTH24STENCIL8 ///< Alias for the default depth format.
+		Depth = DEPTH24STENCIL8 ///< The default depth format.
 
 	};
 
 	/**
-	 * @brief Describes a single framebuffer attachment.
+	 * @brief One framebuffer attachment.
 	 * @ingroup group_renderer
-	 * @todo Filtering and wrap modes are not configurable yet.
 	 */
 	struct FramebufferTextureSpecification
 	{
 
-		/** @brief Constructs an unset attachment specification. */
+		/** @brief An attachment with no format. */
 		FramebufferTextureSpecification() = default;
 		/**
-		 * @brief Constructs an attachment specification.
-		 * @param format Attachment format. Implicit, so a format can be written directly in an
-		 *        attachment list.
+		 * @brief An attachment of a format. Implicit, so a list can hold bare formats.
+		 * @param format The format.
 		 */
 		FramebufferTextureSpecification(FramebufferTextureFormat format)
 			: TextureFormat(format) {}
 
 
-		FramebufferTextureFormat TextureFormat = FramebufferTextureFormat::None; ///< Format of this attachment.
+		FramebufferTextureFormat TextureFormat = FramebufferTextureFormat::None; ///< The format.
 		// TODO: Filtering/Wrap
 	};
 
 	/**
-	 * @brief The ordered list of attachments a framebuffer should have.
+	 * @brief A framebuffer's attachments. Their order gives the attachment indices.
 	 * @ingroup group_renderer
-	 *
-	 * The order matters: it determines the attachment index passed to
-	 * Uge::Framebuffer::GetColorAttachment and Uge::Framebuffer::ReadPixel.
 	 */
 	struct FramebufferAttachmentSpecification
 	{
-		/** @brief Constructs an empty attachment list. */
+		/** @brief No attachments. */
 		FramebufferAttachmentSpecification() = default;
 		/**
-		 * @brief Constructs an attachment list.
-		 * @param attachments Attachments in index order; a depth format may appear once.
+		 * @brief A list of attachments.
+		 * @param attachments The attachments in index order, with at most one depth format.
 		 */
 		FramebufferAttachmentSpecification(std::initializer_list<FramebufferTextureSpecification> attachments)
 			: Attachments(attachments) {}
 
-		std::vector<FramebufferTextureSpecification> Attachments; ///< Attachments, in index order.
+		std::vector<FramebufferTextureSpecification> Attachments; ///< The attachments, in index order.
 
 	};
 
 	/**
-	 * @brief Full description of a framebuffer.
+	 * @brief The settings a framebuffer is created from.
 	 * @ingroup group_renderer
-	 *
-	 * @code
-	 * FramebufferSpecification spec;
-	 * spec.Attachments = { FramebufferTextureFormat::RGBA8,         // colour
-	 *                      FramebufferTextureFormat::RED_INTEGER,  // entity ID
-	 *                      FramebufferTextureFormat::Depth };
-	 * spec.Width  = 1280;
-	 * spec.Height = 720;
-	 * m_framebuffer = Framebuffer::Create(spec);
-	 * @endcode
 	 */
 	struct FramebufferSpecification
 	{
-		/** @brief Render target dimensions in pixels. */
-		uint32_t Width, Height; ///< Render target dimensions in pixels.
-		FramebufferAttachmentSpecification Attachments; ///< Attachments to create.
-		uint32_t Samples = 1; ///< MSAA sample count; `1` disables multisampling.
+		/** @brief Size in pixels. */
+		uint32_t Width, Height; ///< Size in pixels.
+		FramebufferAttachmentSpecification Attachments; ///< The attachments.
+		uint32_t Samples = 1; ///< MSAA sample count; `1` for none.
 
-		bool SwapChainTarget = false; ///< `true` to target the window's backbuffer instead of a texture.
+		bool SwapChainTarget = false; ///< Whether to draw to the window instead of a texture.
 
 
 	};
 
 
 	/**
-	 * @brief An off-screen render target with one or more attachments.
+	 * @brief An off-screen render target. It doesn't resize itself; call Resize().
 	 * @ingroup group_renderer
-	 *
-	 * The editor renders the scene into one of these and displays its colour attachment as
-	 * an ImGui image, which is what makes the viewport a dockable panel rather than the
-	 * whole window.
-	 *
-	 * @warning Resizing is not automatic. When the viewport panel changes size, call
-	 * Resize() — rendering to a framebuffer whose size no longer matches the viewport
-	 * produces a stretched or clipped image.
 	 */
 	class Framebuffer
 	{
@@ -130,71 +100,60 @@ namespace Uge
 		virtual ~Framebuffer() {};
 		//virtual FramebufferSpecification& GetSpecification() = 0;
 		/**
-		 * @brief The specification this framebuffer was created from.
-		 * @return Const reference to the specification, with the current size.
+		 * @brief The specification, with the current size.
+		 * @return The specification.
 		 */
 		virtual const FramebufferSpecification& GetSpecification() const = 0;
 
-		/** @brief Binds this framebuffer as the render target and sets the viewport to its size. */
+		/** @brief Binds the framebuffer and sets the viewport to its size. */
 		virtual void Bind() = 0;
-		/** @brief Restores the window's default framebuffer as the render target. */
+		/** @brief Binds the window's framebuffer. */
 		virtual void Unbind() = 0;
 
 		/**
-		 * @brief Recreates the attachments at a new size.
-		 * @param width New width in pixels.
-		 * @param height New height in pixels.
-		 * @note Destroys and recreates the GPU textures, discarding their contents.
+		 * @brief Recreates the attachments at a new size, losing their contents.
+		 * @param width Width in pixels.
+		 * @param height Height in pixels.
+		 *
+		 * A zero size, or one above the GPU's limit, is ignored with a warning.
 		 */
 		virtual void Resize(uint32_t width ,uint32_t height) = 0;
 		/**
-		 * @brief Reads back one pixel from an integer attachment.
-		 * @param attachmentIndex Index of the attachment to read.
-		 * @param x Pixel x coordinate.
-		 * @param y Pixel y coordinate.
-		 * @return The integer stored at that pixel; `-1` where nothing was drawn.
-		 *
-		 * How the editor resolves a click to an entity. Reading back stalls the pipeline, so
-		 * do it once per click, not per frame.
+		 * @brief Reads one pixel of an integer attachment. Stalls the GPU.
+		 * @param attachmentIndex The attachment.
+		 * @param x Pixel x.
+		 * @param y Pixel y.
+		 * @return The value at the pixel.
 		 */
 		virtual int ReadPixel(uint32_t attachmentIndex, int x, int y) = 0;
 
 		/**
-		 * @brief The native handle of a colour attachment.
-		 * @param index Attachment index, in the order declared in the specification.
-		 * @return The OpenGL texture name, suitable for `ImGui::Image`.
+		 * @brief A colour attachment's texture.
+		 * @param index The attachment.
+		 * @return The OpenGL texture name.
 		 */
 		virtual uint32_t GetColorAttachment(uint32_t index = 0) const = 0;
 
 		/**
-		 * @brief Binds a colour attachment to a sampler slot so a later pass can read it.
-		 * @param index Attachment index, in the order declared in the specification.
-		 * @param slot Texture unit to bind to.
+		 * @brief Binds a colour attachment to a texture slot.
+		 * @param index The attachment.
+		 * @param slot Texture unit.
 		 *
-		 * What lets a post-process pass sample the scene it is resolving. Exists so callers
-		 * do not have to take GetColorAttachment()'s native handle and bind it themselves,
-		 * which would put backend calls in platform-agnostic code.
-		 *
-		 * @warning The attachment must not also be the current render target. Reading and
-		 * writing the same texture in one draw is undefined; resolve into a second
-		 * framebuffer.
+		 * Don't sample an attachment of the framebuffer being drawn to.
 		 */
 		virtual void BindColorAttachment(uint32_t index, uint32_t slot) const = 0;
 
 		/**
-		 * @brief Clears an integer attachment to a constant.
-		 * @param attachmentIndex Index of the attachment to clear.
-		 * @param value Value to write to every pixel.
-		 *
-		 * The entity-ID attachment is cleared to `-1` each frame so empty space reads back as
-		 * "no entity".
+		 * @brief Fills an integer attachment with a value.
+		 * @param attachmentIndex The attachment.
+		 * @param value The value.
 		 */
 		virtual void ClearAttachment(uint32_t attachmentIndex, int value) = 0;
 
 		/**
-		 * @brief Creates a framebuffer for the active graphics API.
-		 * @param spec Size, attachments and sample count.
-		 * @return The backend's framebuffer implementation.
+		 * @brief Creates a framebuffer.
+		 * @param spec The settings.
+		 * @return The framebuffer.
 		 */
 		static Ref<Framebuffer> Create(const FramebufferSpecification& spec);
 

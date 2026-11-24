@@ -55,7 +55,7 @@ namespace Uge
 		
 		std::string fileString = filepath.string();
 
-		// TODO: msdfgen::loadFontData loads from memory buffer
+		// TODO: load from memory with msdfgen::loadFontData.
 		msdfgen::FontHandle* font = msdfgen::loadFont(ft, fileString.c_str());
 
 		if (!font)
@@ -112,7 +112,7 @@ namespace Uge
 #define LCG_MULTIPLIER 6364136223846793005ull
 #define LCG_INCREMENT 1442695040888963407ull
 #define THREAD_COUNT 8
-		// if MSDF || MTSDF
+		// Edge colouring, which MSDF needs.
 
 		uint64_t coloringSeed = 0;
 		bool expensiveColoring = false;

@@ -15,19 +15,17 @@ namespace Uge
 
 
 	/**
-	 * @brief An immutable-storage OpenGL 2D texture.
+	 * @brief An OpenGL 2D texture with immutable storage.
 	 * @ingroup group_platform
-	 *
-	 * Uses direct state access, so no binding is needed to upload or configure the texture.
 	 */
 	class OpenGLTexture2D : public Texture2D
 	{
 
 	public:
 		/**
-		 * @brief Allocates the texture and optionally uploads its pixels.
-		 * @param specification Size, format and mip settings.
-		 * @param data Initial pixel data; an empty buffer leaves the texture uninitialized.
+		 * @brief Creates the texture.
+		 * @param specification Size, format and mipmaps.
+		 * @param data Pixels, or an empty buffer to leave the texture uninitialized.
 		 */
 		OpenGLTexture2D(const TextureSpecification& specification, Buffer data = Buffer());
 
@@ -65,9 +63,9 @@ namespace Uge
 		uint32_t m_rendererID;
 		GLenum m_internalFormat, m_dataFormat;
 
-		/** @brief Component type of the pixel data SetData() uploads. */
+		/** @brief The component type of the data SetData() takes. */
 		GLenum m_pixelType;
-		/** @brief Levels allocated by `glTextureStorage2D`; `1` when mips are disabled. */
+		/** @brief Mip levels allocated; `1` without mipmaps. */
 		uint32_t m_mipLevels = 1;
 
 

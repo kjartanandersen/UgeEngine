@@ -18,10 +18,9 @@
 namespace Uge
 {
 
-	// Callback for traces, connect this to your own trace function if you have one
+	// Sends Jolt's trace output to the engine log.
 	static void TraceImpl(const char* inFMT, ...)
 	{
-		// Format the message
 
 		va_list list;
 		va_start(list, inFMT);
@@ -29,19 +28,16 @@ namespace Uge
 		vsnprintf(buffer, sizeof(buffer), inFMT, list);
 		va_end(list);
 
-		// Print to the TTY
 		UG_CORE_TRACE("[Jolt] {0}", buffer);
 	}
 
 #ifdef JPH_ENABLE_ASSERTS
-	// Callback for asserts, connect this to your own assert handler if you have one
+	// Logs a failed Jolt assert. Returning true breaks into the debugger.
 	static bool AssertFailedImpl(const char* inExpression, const char* inMessage, const char* inFile, uint32_t inLine)
 	{
-		// Print to the TTY
 		// std::cout << inFile << ":" << inLine << ": (" << inExpression << ") " << (inMessage != nullptr ? inMessage : "") << std::endl;
 		UG_CORE_ERROR("[Jolt] {0}:{1}: ({2}) {3}", inFile, inLine, inExpression, (inMessage != nullptr ? inMessage : ""));
 
-		// Breakpoint
 		return true;
 	};
 #endif
@@ -63,34 +59,26 @@ namespace Uge
 	{
 		UG_CORE_ASSERT(!s_joltData, "Jolt can only be initialized once!");
 
-		// Register allocation hook. In this example we'll just let Jolt use malloc / free but you can override these if you want (see Memory.h).
-		// This needs to be done before any other Jolt function is called.
+		// Jolt uses malloc and free. This must come before any other Jolt call.
 		JPH::RegisterDefaultAllocator();
 
-		// Install trace and assert callbacks
 		JPH::Trace = TraceImpl;
 
 #ifdef JPH_ENABLE_ASSERTS
 		JPH::AssertFailed = AssertFailedImpl;
 #endif
-		// Create a factory, this class is responsible for creating instances of classes based on their name or hash and is mainly used for deserialization of saved data.
-		// It is not directly used in this example but still required.
+		// Jolt requires a factory, though the engine doesn't use it.
 		JPH::Factory::sInstance = new JPH::Factory();
 
-		// Register all physics types with the factory and install their collision handlers with the CollisionDispatch class.
-		// If you have your own custom shape types you probably need to register their handlers with the CollisionDispatch before calling this function.
-		// If you implement your own default material (PhysicsMaterial::sDefault) make sure to initialize it before this function or else this function will create one for you.
+		// Registers the physics types and their collision handlers.
 		JPH::RegisterTypes();
 
 		s_joltData = new JoltData();
 
-		// Scratch memory for the physics update, pre-allocated (32 MB) so a step never has to
-		// allocate. TempAllocatorMalloc would fall back to malloc/free instead.
+		// 32 MB of scratch memory, allocated up front so a step never allocates.
 		s_joltData->TempAllocator = CreateScope<JPH::TempAllocatorImpl>(32 * 1024 * 1024);
 
-		// We need a job system that will execute physics jobs on multiple threads. Typically
-		// you would implement the JobSystem interface yourself and let Jolt Physics run on top
-		// of your own job scheduler. JobSystemThreadPool is an example implementation.
+		// Physics jobs run on every core but one.
 		s_joltData->JobThreadPool = CreateScope<JPH::JobSystemThreadPool>(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, std::max(1, (int)std::thread::hardware_concurrency() - 1));
 
 #ifdef JPH_DEBUG_RENDERER

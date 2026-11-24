@@ -50,8 +50,7 @@ TEST(EventTest, MouseEventsCarryTheirPayload)
 
 TEST(EventTest, EventsReportEveryCategoryTheyBelongTo)
 {
-	// A layer filters on categories, so an event that under-reports them silently stops
-	// reaching handlers that ask for the family rather than the exact type.
+	// Each event reports all of its categories.
 	KeyPressedEvent key(65, 30, 0);
 	EXPECT_TRUE(key.IsInCategory(EventCategoryKeyboard));
 	EXPECT_TRUE(key.IsInCategory(EventCategoryInput));
@@ -122,8 +121,7 @@ TEST(EventDispatcherTest, SkipsTheHandlerWhenTheTypeDiffers)
 
 TEST(EventDispatcherTest, HandlerReturnValueDecidesWhetherPropagationStops)
 {
-	// Returning false from a handler is how a layer says "I looked at this, let it keep
-	// going". If Dispatch forced m_handled to true, no lower layer would ever see it.
+	// A handler returning false leaves the event unhandled, for the layers below.
 	KeyPressedEvent event(65, 30, 0);
 	EventDispatcher dispatcher(event);
 
@@ -134,8 +132,7 @@ TEST(EventDispatcherTest, HandlerReturnValueDecidesWhetherPropagationStops)
 
 TEST(EventDispatcherTest, ReturnValueReportsThatTheHandlerRanNotThatItHandled)
 {
-	// The documented quirk: Dispatch returns true for a type match even when the handler
-	// declined the event.
+	// Dispatch returns true for a matching type even when the handler returns false.
 	KeyPressedEvent event(65, 30, 0);
 	EventDispatcher dispatcher(event);
 
@@ -148,7 +145,7 @@ TEST(EventDispatcherTest, ReturnValueReportsThatTheHandlerRanNotThatItHandled)
 
 TEST(EventDispatcherTest, OnlyTheMatchingHandlerOfSeveralRuns)
 {
-	// The shape of a real OnEvent: a short list of dispatches, exactly one of which fires.
+	// Several dispatches, as in an OnEvent; only one runs.
 	MouseScrolledEvent event(0.0f, 2.0f);
 	EventDispatcher dispatcher(event);
 
@@ -172,8 +169,7 @@ TEST(EventDispatcherTest, OnlyTheMatchingHandlerOfSeveralRuns)
 
 TEST(EventDispatcherTest, DispatchingThroughABaseReferenceStillMatchesTheConcreteType)
 {
-	// Layers receive Event&, never the concrete type; the match has to be on the runtime
-	// type rather than the static one.
+	// The match is on the runtime type, through an Event&.
 	KeyReleasedEvent concrete(70, 33);
 	Event& event = concrete;
 

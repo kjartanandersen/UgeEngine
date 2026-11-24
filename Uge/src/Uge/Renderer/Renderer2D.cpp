@@ -8,6 +8,8 @@
 #include "Uge/Renderer/Mesh.h"
 #include "Uge/Renderer/MSDFData.h"
 
+#include "Uge/Core/Utf8.h"
+
 #include "Uge/Asset/AssetManager.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -19,85 +21,83 @@
 namespace Uge
 {
 
-	/** @brief Vertex format for MSDF text quads. */
+	/** @brief A vertex of a text quad. */
 	struct TextVertex
 	{
-		glm::vec3 Position; ///< Glyph corner position in world space.
-		glm::vec4 Color; ///< Text colour, RGBA.
-		glm::vec2 TexCoord; ///< Coordinates into the MSDF atlas.
+		glm::vec3 Position; ///< World-space position.
+		glm::vec4 Color; ///< RGBA colour.
+		glm::vec2 TexCoord; ///< Coordinates in the font atlas.
 
 		// TODO: bg color for outline/bg
 
 		// Editor Only
-		int EntityID; ///< Owning entity, written to the picking attachment. Editor only.
+		int EntityID; ///< The entity, for mouse picking.
 	};
 
-	/** @brief Vertex format for lines in 3D space */
+	/** @brief A vertex of a line. */
 	struct LineVertex
 	{
-		glm::vec3 Position; ///< Position of line in world space
-		glm::vec4 Color; ///< Line Color, RGBA
+		glm::vec3 Position; ///< World-space position.
+		glm::vec4 Color; ///< RGBA colour.
 
 		// Editor only
-		int EntityID; ///< Owning entity, written to the picking attachment. Editor only.
+		int EntityID; ///< The entity, for mouse picking.
 	};
 
 	/**
-	 * @brief All batching state for Uge::Renderer2D: buffers, shaders and texture slots.
-	 *
-	 * A single file-static instance. The vertex buffers are CPU-side staging arrays that
-	 * are filled as primitives are submitted and uploaded once per flush.
+	 * @brief Uge::Renderer2D's state. Vertices are written to CPU arrays and uploaded once
+	 * per batch.
 	 */
 	struct Renderer2DData
 	{
-		static const uint32_t MaxQuads = 20000;				///< Maximum quads per batch before an automatic flush.
-		static const uint32_t MaxLineVertices = 20000;		///< Maximum lines per batch before an automatic flush.
-		static const uint32_t MaxVertices = MaxQuads * 4;	///< Vertex capacity implied by #MaxQuads.
-		static const uint32_t MaxIndices = MaxQuads * 6;	///< Index capacity implied by #MaxQuads.
-		static const uint32_t MaxTextureSlots = 32;			///< Texture units available; exceeding this forces a flush.
+		static const uint32_t MaxQuads = 20000;				///< Quads per batch.
+		static const uint32_t MaxLineVertices = 20000;		///< Line vertices per batch.
+		static const uint32_t MaxVertices = MaxQuads * 4;	///< Quad vertices per batch.
+		static const uint32_t MaxIndices = MaxQuads * 6;	///< Quad indices per batch.
+		static const uint32_t MaxTextureSlots = 32;			///< Texture slots per batch.
 
-		Ref<VertexArray> QuadVA; ///< Vertex array for the quad batch.
-		Ref<VertexBuffer> QuadVB; ///< Dynamic vertex buffer refilled each flush.
-		Ref<Shader> TextureShader; ///< Shader used for quads and sprites.
-		Ref<Texture2D> WhiteTexture; ///< 1x1 white texture, bound to slot 0 for untextured quads.
+		Ref<VertexArray> QuadVA; ///< Quad vertex array.
+		Ref<VertexBuffer> QuadVB; ///< Quad vertex buffer.
+		Ref<Shader> TextureShader; ///< Quad shader.
+		Ref<Texture2D> WhiteTexture; ///< 1x1 white texture in slot 0, for untextured quads.
 
-		Ref<VertexArray> TextVA; ///< Vertex array for the text batch.
-		Ref<VertexBuffer> TextVB; ///< Dynamic vertex buffer for text geometry.
-		Ref<Shader> TextShader; ///< Shader that samples the MSDF atlas.
+		Ref<VertexArray> TextVA; ///< Text vertex array.
+		Ref<VertexBuffer> TextVB; ///< Text vertex buffer.
+		Ref<Shader> TextShader; ///< Text shader.
 
-		Ref<VertexArray> LineVA;	///< Vertex array for the line batch.
-		Ref<VertexBuffer> LineVB;	///< Dynamic vertex buffer for the lines.
-		Ref<Shader> LineShader;		///< Shader used for the lines
+		Ref<VertexArray> LineVA;	///< Line vertex array.
+		Ref<VertexBuffer> LineVB;	///< Line vertex buffer.
+		Ref<Shader> LineShader;		///< Line shader.
 
-		uint32_t QuadIndexCount = 0; ///< Indices accumulated in the current quad batch.
-		Vertex* VertexBufferBase = nullptr; ///< Start of the CPU-side quad staging buffer.
-		Vertex* VertexBufferPtr = nullptr; ///< Write cursor into the quad staging buffer.
+		uint32_t QuadIndexCount = 0; ///< Quad indices in the batch.
+		Vertex* VertexBufferBase = nullptr; ///< Start of the quad vertex array.
+		Vertex* VertexBufferPtr = nullptr; ///< Next quad vertex to write.
 
-		uint32_t TextIndexCount = 0; ///< Indices accumulated in the current text batch.
-		TextVertex* TextVertexBufferBase = nullptr; ///< Start of the CPU-side text staging buffer.
-		TextVertex* TextVertexBufferPtr = nullptr; ///< Write cursor into the text staging buffer.
+		uint32_t TextIndexCount = 0; ///< Text indices in the batch.
+		TextVertex* TextVertexBufferBase = nullptr; ///< Start of the text vertex array.
+		TextVertex* TextVertexBufferPtr = nullptr; ///< Next text vertex to write.
 
-		uint32_t LineVertexCount = 0;					///< Vertices accumulated in the current line batch.
-		LineVertex* LineVertexBufferBase = nullptr;		///< Start of the CPU-side line staging buffer.
-		LineVertex* LineVertexBufferPtr = nullptr;		///< Write cursor into the line staging buffer.
-		float LineWidth = 1;							///< The width of the line.
+		uint32_t LineVertexCount = 0;					///< Line vertices in the batch.
+		LineVertex* LineVertexBufferBase = nullptr;		///< Start of the line vertex array.
+		LineVertex* LineVertexBufferPtr = nullptr;		///< Next line vertex to write.
+		float LineWidth = 1;							///< Line width in pixels.
 
-		std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots; ///< Textures bound for the current batch.
-		uint32_t TextureSlotIndex = 1; ///< Next free texture slot; slot 0 is #WhiteTexture.
+		std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots; ///< The batch's textures.
+		uint32_t TextureSlotIndex = 1; ///< Next free slot.
 
-		Ref<Texture2D> FontAtlasTexture; ///< Atlas of the font used by the current text batch.
+		Ref<Texture2D> FontAtlasTexture; ///< The text batch's font atlas.
 
-		glm::vec4 VertexPositions[4] = { {} }; ///< Unit-quad corners, transformed per draw.
+		glm::vec4 VertexPositions[4] = { {} }; ///< Unit quad corners.
 		
 
-		/** @brief Camera block uploaded to the shared uniform buffer once per scene. */
+		/** @brief The camera uniform block. */
 		struct CameraData
 		{
-			glm::mat4 ViewProjection; ///< Combined view-projection matrix.
+			glm::mat4 ViewProjection; ///< View-projection matrix.
 		};
 
-		CameraData CameraBuffer = { {} }; ///< CPU-side copy of the camera block.
-		Ref<UniformBuffer> CameraUniformBuffer; ///< GPU uniform buffer holding #CameraBuffer.
+		CameraData CameraBuffer = { {} }; ///< The camera block.
+		Ref<UniformBuffer> CameraUniformBuffer; ///< Its uniform buffer, at binding 0.
 
 
 	};
@@ -202,7 +202,6 @@ namespace Uge
 		m_data.LineShader		= Shader::Create("assets/shaders/Line.glsl");
 
 
-		// Set all texture slots to zero
 		
 		m_data.TextureSlots[0] = m_data.WhiteTexture;
 
@@ -220,8 +219,7 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
-		// The staging buffers are plain new[]; everything else is a Ref. Released here, while
-		// the GL context still exists, not in static destruction after it.
+		// The vertex arrays are new[]; the rest are Refs, released by the reset.
 		delete[] m_data.VertexBufferBase;
 		delete[] m_data.TextVertexBufferBase;
 		delete[] m_data.LineVertexBufferBase;
@@ -445,7 +443,7 @@ namespace Uge
 
 		constexpr size_t VertexCount = 4;
 		const float texIndex = 0.0f; // White texture
-		const float tilingFactor = 1.0f; // Tiling Factor
+		const float tilingFactor = 1.0f;
 		constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 		
 
@@ -533,7 +531,7 @@ namespace Uge
 		}
 
 		const float texIndex = 0.0f; // White texture
-		const float tilingFactor = 1.0f; // Tiling Factor
+		const float tilingFactor = 1.0f;
 
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::rotate(glm::mat4(1.0f), rotation, { 0, 0, 1 })
@@ -720,8 +718,7 @@ namespace Uge
 
 	float Renderer2D::GetTextureSlot(const Ref<Texture2D>& texture)
 	{
-		// From 0: slot 0 is the white texture, so drawing it explicitly finds it there
-		// instead of taking a second slot.
+		// From 0, so the white texture is found in slot 0.
 		for (uint32_t i = 0; i < m_data.TextureSlotIndex; i++)
 		{
 			if (*m_data.TextureSlots[i] == *texture)
@@ -730,8 +727,7 @@ namespace Uge
 			}
 		}
 
-		// Every slot is taken: draw what's batched so far and start again. The texture shader
-		// declares exactly MaxTextureSlots samplers, so no more can join this batch.
+		// The shader has MaxTextureSlots samplers; when they are all taken, start a new batch.
 		if (m_data.TextureSlotIndex >= Renderer2DData::MaxTextureSlots)
 		{
 			NextBatch();
@@ -763,24 +759,48 @@ namespace Uge
 
 	void Renderer2D::DrawString(const std::string& string, Ref<Font> font, const glm::mat4& transform, const TextParams& textParams, int entityID)
 	{
+		// A font that failed to load has no atlas.
+		Ref<Texture2D> fontAtlas = font ? font->GetAtlasTexture() : nullptr;
+		if (!fontAtlas)
+		{
+			return;
+		}
 
 		const auto& fontGeometry = font->GetMSDFData()->Fonts;
 		const auto& metrics = fontGeometry.getMetrics();
-		Ref<Texture2D> fontAtlas = font->GetAtlasTexture();
-		
 
+		// A batch draws its text with one atlas, so text in another font starts a new batch.
+		if (m_data.TextIndexCount && m_data.FontAtlasTexture != fontAtlas)
+		{
+			NextBatch();
+		}
 		m_data.FontAtlasTexture = fontAtlas;
-		
+
 		double x = 0.0;
 		double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
-		double y = 0.0;		
+		double y = 0.0;
 
-		const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
+		// A font without a space glyph advances a quarter of an em for a space.
+		const msdf_atlas::GlyphGeometry* spaceGlyph = fontGeometry.getGlyph(' ');
+		const double spaceGlyphAdvance = spaceGlyph ? spaceGlyph->getAdvance() : metrics.emSize * 0.25;
 
-		for (size_t i = 0; i < string.size(); i++)
+		const float texelWidth = 1.0f / fontAtlas->GetWidth();
+		const float texelHeight = 1.0f / fontAtlas->GetHeight();
+
+		// Decoded one code point ahead, for kerning.
+		size_t offset = 0;
+		bool hasNext = !string.empty();
+		uint32_t nextCharacter = hasNext ? Utf8::DecodeNext(string, offset) : 0;
+
+		while (hasNext)
 		{
+			const uint32_t character = nextCharacter;
+			hasNext = offset < string.size();
+			if (hasNext)
+			{
+				nextCharacter = Utf8::DecodeNext(string, offset);
+			}
 
-			char character = string[i];
 			if (character == '\r')
 			{
 				continue;
@@ -792,9 +812,26 @@ namespace Uge
 				y -= fsScale * metrics.lineHeight + textParams.LineSpacing;
 				continue;
 			}
-			
 
+			if (character == ' ')
+			{
+				// getAdvance leaves the value alone when either glyph is missing.
+				double advance = spaceGlyphAdvance;
+				if (hasNext)
+				{
+					fontGeometry.getAdvance(advance, character, nextCharacter);
+				}
+				x += fsScale * advance + textParams.Kerning;
+				continue;
+			}
 
+			if (character == '\t')
+			{
+				x += (fsScale * spaceGlyphAdvance + textParams.Kerning) * 4.0;
+				continue;
+			}
+
+			// A character the font doesn't have is drawn as '?', or skipped without one.
 			auto glyph = fontGeometry.getGlyph(character);
 			if (!glyph)
 			{
@@ -802,31 +839,6 @@ namespace Uge
 			}
 			if (!glyph)
 			{
-				return;
-			}
-			
-
-
-			if (character == ' ')
-			{
-				float advance = spaceGlyphAdvance;
-				if (i < string.size() - 1)
-				{
-					char nextCharacter = string[i + 1];
-					double dAdvance;
-					fontGeometry.getAdvance(dAdvance, character, nextCharacter);
-					advance = (float)dAdvance;
-
-
-				}
-				x += fsScale * advance + textParams.Kerning;
-				continue;
-
-			}
-
-			if (character == '\t')
-			{
-				x += (fsScale * spaceGlyphAdvance + textParams.Kerning) * 4.0;
 				continue;
 			}
 
@@ -844,12 +856,17 @@ namespace Uge
 			quadMin += glm::vec2(x, y);
 			quadMax += glm::vec2(x, y);
 
-			float texelWidth = 1.0f / fontAtlas->GetWidth();
-			float texelHeight = 1.0f / fontAtlas->GetHeight();
 			texCoordMin *= glm::vec2(texelWidth, texelHeight);
 			texCoordMax *= glm::vec2(texelWidth, texelHeight);
 
-			// render here
+			// A full batch is drawn before the next glyph is written. StartBatch leaves
+			// FontAtlasTexture set, so the rest of the string keeps its atlas.
+			if (m_data.TextIndexCount >= Renderer2DData::MaxIndices)
+			{
+				NextBatch();
+			}
+
+			// The glyph's four corners.
 			m_data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin, 0.0f, 1.0f);
 			m_data.TextVertexBufferPtr->Color = textParams.Color;
 			m_data.TextVertexBufferPtr->TexCoord = texCoordMin;
@@ -876,21 +893,14 @@ namespace Uge
 
 			m_data.TextIndexCount += 6;
 
-			if (i < string.size() - 1)
+			if (hasNext)
 			{
 				double advance = glyph->getAdvance();
-
-				char nextCharacter = string[i + 1];
 				fontGeometry.getAdvance(advance, character, nextCharacter);
 
 				x += fsScale * advance + textParams.Kerning;
 			}
-
-
-
 		}
-
-
 	}
 
 	void Renderer2D::DrawString(const std::string& string, const glm::mat4& transform, const TextComponent& component, int entityID)

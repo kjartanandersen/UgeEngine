@@ -1,6 +1,6 @@
 /**
  * @file HeadlessImGui.h
- * @brief GoogleTest fixture that runs ImGui frames without a window or GPU.
+ * @brief A fixture that runs ImGui frames without a window or GPU.
  */
 
 #pragma once
@@ -15,25 +15,16 @@ namespace UgeTests
 {
 
 	/**
-	 * @brief Fixture giving each test a private ImGui context it can draw into.
+	 * @brief Gives each test its own ImGui context, with no backend.
 	 *
-	 * The editor's panels are ordinary ImGui code: they need a current context and a frame
-	 * in progress, but nothing about them needs pixels on a screen. Standing up a real
-	 * window plus an OpenGL context in a test would make the suite dependent on a GPU and
-	 * on Uge::Application's lifetime; instead this drives ImGui with no backend attached.
-	 *
-	 * That still exercises a lot. ImGui asserts on unbalanced `Begin`/`End`, on style and
-	 * ID stacks left pushed, and on tables and child windows that are never closed, so a
-	 * panel that renders a frame here is a panel whose widget structure is sound.
-	 *
-	 * What it cannot do is press anything: without a backend feeding input, every widget
-	 * reports "not clicked", so a frame drawn here follows the panel's idle path. Behaviour
-	 * behind a button press is not covered.
+	 * ImGui asserts on unbalanced `Begin`/`End`, leaked style and ID pushes, and unclosed
+	 * tables, so drawing a panel here checks its structure. Nothing can be clicked, so only
+	 * the panel's idle path runs.
 	 */
 	class HeadlessImGuiTest : public ::testing::Test
 	{
 	protected:
-		/** @brief Creates the ImGui context and configures it for headless use. */
+		/** @brief Creates the context and sets it up for headless use. */
 		void SetUp() override
 		{
 			m_context = ImGui::CreateContext();
@@ -43,17 +34,16 @@ namespace UgeTests
 			io.DisplaySize = ImVec2(1280.0f, 720.0f);
 			io.DeltaTime = 1.0f / 60.0f;
 
-			// Claiming texture support keeps the font atlas unlocked and lets ImGui leave
-			// its textures in WantCreate; nothing here ever uploads them.
+			// Claiming texture support keeps the font atlas unlocked; its textures are never
+			// uploaded.
 			io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
 
-			// A test binary should not drop imgui.ini next to itself, nor should one test's
-			// window layout leak into the next.
+			// No imgui.ini, so no layout is saved or carried between tests.
 			io.IniFilename = nullptr;
 			io.LogFilename = nullptr;
 		}
 
-		/** @brief Destroys the context, so tests cannot see each other's ImGui state. */
+		/** @brief Destroys the context. */
 		void TearDown() override
 		{
 			ImGui::DestroyContext(m_context);
@@ -61,12 +51,9 @@ namespace UgeTests
 		}
 
 		/**
-		 * @brief Runs @p draw inside a complete ImGui frame.
+		 * @brief Runs @p draw between `NewFrame` and `Render`, so the draw lists are built.
 		 * @tparam Fn Callable taking no arguments.
-		 * @param draw Drawing code to run between `NewFrame` and `Render`.
-		 *
-		 * Render() is called rather than EndFrame() so the draw lists are actually built,
-		 * which is where clipping and vertex generation would trip over a malformed widget.
+		 * @param draw The drawing code.
 		 */
 		template<typename Fn>
 		void DrawFrame(Fn&& draw)
@@ -77,14 +64,11 @@ namespace UgeTests
 		}
 
 		/**
-		 * @brief Runs @p draw once per frame for @p frames frames.
+		 * @brief Runs @p draw in each of @p frames frames. Window sizes and table columns
+		 * settle on the second frame.
 		 * @tparam Fn Callable taking no arguments.
-		 * @param frames Number of frames to draw.
-		 * @param draw Drawing code to run each frame.
-		 *
-		 * Several things settle only on the second frame — auto-fitted window sizes, table
-		 * column widths, and any widget whose state was created during the first one — so
-		 * a panel is worth drawing more than once.
+		 * @param frames Number of frames.
+		 * @param draw The drawing code.
 		 */
 		template<typename Fn>
 		void DrawFrames(int frames, Fn&& draw)

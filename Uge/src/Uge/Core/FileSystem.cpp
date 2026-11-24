@@ -11,7 +11,6 @@ namespace Uge
 
 		if (!stream)
 		{
-			// Failed to open the file
 			return {};
 		}
 
@@ -20,7 +19,6 @@ namespace Uge
 		uint32_t size = (uint32_t)end - (uint32_t)stream.tellg();
 		if (size == 0)
 		{
-			// File is empty
 			return {};
 		}
 

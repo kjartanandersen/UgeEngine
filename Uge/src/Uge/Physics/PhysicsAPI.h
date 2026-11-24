@@ -7,12 +7,9 @@ namespace Uge
 	struct PhysicsSceneDesc;
 
 	/**
-	* @brief Enum representing the library API used for physics
-	* @ingroup group_physics
-	* 
-	* 
-	*
-	**/
+	 * @brief Physics libraries.
+	 * @ingroup group_physics
+	 */
 	enum class PhysicsAPIType
 	{
 		None,
@@ -21,40 +18,33 @@ namespace Uge
 	};
 
 	/**
-	* @brief Abstract class for the physics API
-	* @ingroup group_physics
-	* 
-	**/
+	 * @brief A physics backend.
+	 * @ingroup group_physics
+	 */
 	class PhysicsAPI
 	{
 	public:
 
-		/**
-			@brief PhysicsAPI object destructor
-		**/
+		/** @brief Virtual destructor. */
 		virtual ~PhysicsAPI() = default;
 
-		/**
-			@brief Abstract function for initializing the physics API
-		**/
+		/** @brief Starts the backend. */
 		virtual void Init() = 0;
 
-		/**
-			@brief Abstract function for shutting down the physics API
-		**/
+		/** @brief Shuts the backend down. */
 		virtual void Shutdown() = 0;
 
 		/**
-		 * @brief Creates one independent physics world.
-		 * @param desc Tuning limits and initial gravity for the world.
-		 * @return An owning handle to the new world.
+		 * @brief Creates a physics world.
+		 * @param desc Limits and gravity.
+		 * @return The world.
 		 */
 		virtual Scope<PhysicsScene> CreateScene(const PhysicsSceneDesc& desc) = 0;
 
 
 		/**
-		 * @brief The physics backend this build targets.
-		 * @return The active Uge::PhysicsAPIType.
+		 * @brief The backend this build uses.
+		 * @return The backend.
 		 */
 		static PhysicsAPIType Current() { return s_currentPhysicsAPI; }
 	private:

@@ -9,7 +9,7 @@
 #include <filesystem>
 #include <mutex>
 
-// dbghelp.lib is linked by premake, alongside the other Windows system libraries.
+// premake links dbghelp.lib.
 #include <DbgHelp.h>
 
 namespace Uge
@@ -18,13 +18,13 @@ namespace Uge
 	namespace
 	{
 		constexpr const char* s_dumpDirectory = "logs";
-		constexpr uint32_t s_maxStackFrames = 62; // CaptureStackBackTrace's documented cap.
+		constexpr uint32_t s_maxStackFrames = 62; // CaptureStackBackTrace's limit.
 
 		bool s_installed = false;
 		bool s_symbolsInitialized = false;
-		std::mutex s_symbolMutex; // DbgHelp is single-threaded; serialise every entry point.
+		std::mutex s_symbolMutex; // DbgHelp isn't thread-safe.
 
-		/** @brief Loads debug symbols for the process once, on first use. */
+		/** @brief Loads the process's debug symbols on first use. */
 		void EnsureSymbols()
 		{
 			if (s_symbolsInitialized)
@@ -36,7 +36,7 @@ namespace Uge
 			s_symbolsInitialized = SymInitialize(GetCurrentProcess(), nullptr, TRUE) != FALSE;
 		}
 
-		/** @brief Builds `logs/Uge-YYYYMMDD-HHMMSS.dmp`. */
+		/** @brief The dump path, `logs/Uge-YYYYMMDD-HHMMSS.dmp`. */
 		std::string MakeDumpPath()
 		{
 			const std::time_t now = std::time(nullptr);
@@ -53,9 +53,9 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Writes a minidump for the faulting thread.
-		 * @param exceptionInfo The exception record, or `nullptr` for a terminate handler.
-		 * @return Path written, or an empty string on failure.
+		 * @brief Writes a minidump.
+		 * @param exceptionInfo The exception record, or `nullptr` from the terminate handler.
+		 * @return The path, or an empty string on failure.
 		 */
 		std::string WriteMiniDump(EXCEPTION_POINTERS* exceptionInfo)
 		{
@@ -84,13 +84,13 @@ namespace Uge
 			return written ? path : std::string{};
 		}
 
-		/** @brief Maps the common `EXCEPTION_*` codes to readable names. */
+		/** @brief A name for a common `EXCEPTION_*` code. */
 		const char* ExceptionCodeToString(DWORD code)
 		{
 			switch (code)
 			{
 				case EXCEPTION_ACCESS_VIOLATION:         return "Access violation";
-				// Reached when an assertion's UG_DEBUGBREAK fires with no debugger attached.
+				// An assert's UG_DEBUGBREAK without a debugger.
 				case EXCEPTION_BREAKPOINT:               return "Breakpoint (assertion or debug break)";
 				case EXCEPTION_SINGLE_STEP:              return "Single step";
 				case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:    return "Array bounds exceeded";
@@ -109,10 +109,10 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Shared reporting path: logs the reason, the stack and the dump location.
-		 * @param reason One-line description of what went wrong.
+		 * @brief Logs the reason and the stack, writes a minidump and flushes the log.
+		 * @param reason What went wrong, in one line.
 		 * @param exceptionInfo The exception record, or `nullptr`.
-		 * @param skipFrames Innermost frames to omit from the trace.
+		 * @param skipFrames Innermost frames to leave out of the stack.
 		 */
 		void Report(const std::string& reason, EXCEPTION_POINTERS* exceptionInfo, uint32_t skipFrames)
 		{
@@ -137,11 +137,11 @@ namespace Uge
 
 			UG_CORE_FATAL("=============================================");
 
-			// The process is about to die, so push the file sink out before it does.
+			// Flush the log file before the process ends.
 			Log::Shutdown();
 		}
 
-		/** @brief `SetUnhandledExceptionFilter` callback. */
+		/** @brief The unhandled exception filter. */
 		LONG WINAPI OnUnhandledException(EXCEPTION_POINTERS* exceptionInfo)
 		{
 			const EXCEPTION_RECORD* record = exceptionInfo ? exceptionInfo->ExceptionRecord : nullptr;
@@ -152,13 +152,13 @@ namespace Uge
 				ExceptionCodeToString(code), static_cast<unsigned long>(code),
 				record ? record->ExceptionAddress : nullptr);
 
-			// Skip this filter itself; the frames below it are the real fault site.
+			// Skip this filter's own frame.
 			Report(reason, exceptionInfo, 1);
 
 			return EXCEPTION_EXECUTE_HANDLER;
 		}
 
-		/** @brief `std::set_terminate` callback, for uncaught C++ exceptions. */
+		/** @brief The terminate handler, for uncaught C++ exceptions. */
 		void OnTerminate()
 		{
 			std::string reason = "std::terminate called";
@@ -181,7 +181,7 @@ namespace Uge
 
 			Report(reason, nullptr, 1);
 
-			// Hand back to the CRT so the debugger still gets its chance.
+			// abort() still lets an attached debugger break.
 			std::abort();
 		}
 	}
@@ -221,7 +221,7 @@ namespace Uge
 
 		const HANDLE process = GetCurrentProcess();
 
-		// SYMBOL_INFO is variable-length: the name is written past the end of the struct.
+		// SYMBOL_INFO's name runs past the end of the struct.
 		alignas(SYMBOL_INFO) char symbolStorage[sizeof(SYMBOL_INFO) + MAX_SYM_NAME] = {};
 		SYMBOL_INFO* symbol = reinterpret_cast<SYMBOL_INFO*>(symbolStorage);
 		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);

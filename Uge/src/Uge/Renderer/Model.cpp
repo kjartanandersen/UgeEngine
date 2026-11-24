@@ -9,9 +9,6 @@
 #include <cstdlib>
 #include <filesystem>
 
-#include <assimp/Importer.hpp>
-#include <assimp/config.h>
-#include <assimp/postprocess.h>
 #include <assimp/material.h>
 #include <assimp/scene.h>
 
@@ -23,8 +20,7 @@ namespace Uge
 		struct CameraData
 		{
 			glm::mat4 ViewProjection;
-			// vec4 rather than vec3: std140 pads a vec3 to 16 bytes anyway, and spelling it
-			// out keeps the C++ and GLSL declarations obviously identical.
+			// A vec4, as std140 pads a vec3 to 16 bytes anyway.
 			glm::vec4 Position;
 		};
 
@@ -34,16 +30,20 @@ namespace Uge
 			int EntityData;
 		};
 
-		// Mirrors LightData in assets/shaders/Model.glsl. vec4 rather than vec3 because std140
-		// pads a vec3 to 16 bytes regardless; spelling it out keeps the two declarations
-		// obviously identical.
+		// Matches LightData in assets/shaders/Model.glsl.
 		struct LightData
 		{
 			glm::vec4 Direction;
 			glm::vec4 Radiance;
+			int32_t HasEnvironment;
+			int32_t EnvironmentMipCount;
+			float EnvironmentIntensity;
+			float Padding; // Pads the struct to 48 bytes, a multiple of 16, as some drivers round the block up.
 		};
 
-		// Mirrors SkyboxData in assets/shaders/Skybox.glsl.
+		static_assert(sizeof(LightData) == 48, "LightData must match LightData in Model.glsl");
+
+		// Matches SkyboxData in assets/shaders/Skybox.glsl.
 		struct SkyboxData
 		{
 			glm::mat4 ViewProjection;
@@ -51,7 +51,7 @@ namespace Uge
 			float Padding[3];
 		};
 
-		// Positions only; the skybox shader uses the vertex position as a sample direction.
+		// Positions only; the skybox shader samples in the direction of each vertex.
 		static Ref<VertexArray> CreateSkyboxCube()
 		{
 			constexpr float vertices[] =
@@ -93,9 +93,6 @@ namespace Uge
 			return result;
 		}
 
-		// Materials are referenced by handle and resolved per draw rather than cached on the
-		// Mesh, so editing a material (its blend mode, whether it's double-sided) takes effect
-		// without a reimport.
 		static Ref<Material> ResolveMaterial(AssetHandle materialHandle)
 		{
 			if (!materialHandle)
@@ -106,10 +103,7 @@ namespace Uge
 			return AssetManager::GetAsset<Material>(materialHandle);
 		}
 
-		// Double-sided materials are thin cards meant to be seen from both sides (foliage,
-		// chains, single-sheet panels), so they draw both faces. Everything else culls back
-		// faces.
-		static CullMode CullModeFor(const Ref<Material>& material)
+		static CullMode CullModeFor(const Material* material)
 		{
 			return material && material->IsDoubleSided() ? CullMode::None : CullMode::Back;
 		}
@@ -117,16 +111,19 @@ namespace Uge
 
 	Model::SceneData Model::s_sceneData;
 
-	Model::Model(const std::string& path, const MeshAssetMetadata& metadata)
-		: m_meshMetadata(metadata)
+	Model::Model(const aiScene& scene, const std::string& path, const MeshAssetMetadata& metadata)
+		: m_path(path), m_meshMetadata(metadata)
 	{
-		LoadModel(path);
+		m_directory = std::filesystem::path(path).parent_path().string();
+
+		SetName(scene.mName.C_Str());
+		ProcessNode(scene.mRootNode, &scene, aiMatrix4x4t<float>());
 	}
 
 	void Model::Shutdown()
 	{
 		
-		// Initialized goes back to false, so a later draw recreates the resources
+		// Initialized goes back to false, so the next BeginScene() recreates the resources.
 		s_sceneData = SceneData();
 	
 	}
@@ -139,9 +136,7 @@ namespace Uge
 		}
 
 		s_sceneData.ModelShader = Shader::Create("assets/shaders/Model.glsl");
-		// Binding 3, not 0: Renderer2D owns a camera block at binding 0 that is a bare mat4,
-		// while this one carries the camera position too. Sharing a binding point between two
-		// differently sized blocks lets a draw read past the end of whichever is bound.
+		// Binding 3, as Renderer2D's smaller camera block is at 0.
 		s_sceneData.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 3);
 		s_sceneData.ModelUniformBuffer = UniformBuffer::Create(sizeof(ModelData), 1);
 
@@ -156,8 +151,8 @@ namespace Uge
 
 	void Model::ApplyCullMode(CullMode mode)
 	{
-		// Skips the GL call when the mode is already set. Only safe because every change inside the 
-		// pass goes through here, and BeginScene re-syncs the cache each frame.
+		// Skips the GL call when the mode is already set. BeginScene() sets the mode directly,
+		// as code outside the pass can change it.
 		if (s_sceneData.CurrentCullMode == mode)
 		{
 			return;
@@ -168,18 +163,38 @@ namespace Uge
 
 	}
 
+	void Model::DrawSubmesh(const Mesh& mesh, Material* material)
+	{
+		ApplyCullMode(CullModeFor(material));
+
+		if (material)
+		{
+			material->Bind();
+		}
+		else
+		{
+			// Otherwise the mesh would use the last material's block.
+			Material::BindDefaultProperties();
+		}
+
+		mesh.Draw();
+
+		// A material with its own shader replaced the model shader.
+		if (material && material->GetShader())
+		{
+			s_sceneData.ModelShader->Bind();
+		}
+	}
+
 	void Model::SetEnvironment(const Ref<Environment>& environment, float intensity)
 	{
-		// Only a valid environment counts: a half-built one would leave the shader sampling
-		// cubemaps that were never filled.
 		s_sceneData.SceneEnvironment = (environment && environment->IsValid()) ? environment : nullptr;
 		s_sceneData.EnvironmentIntensity = intensity;
 	}
 
 	void Model::SetDirectionalLight(const glm::vec3& direction, const glm::vec3& radiance)
 	{
-		// A zero direction cannot be normalized, and would leave the shader with a NaN light
-		// vector that poisons every fragment it touches.
+		// A zero direction can't be normalized, so it turns the light off.
 		const float lengthSquared = glm::dot(direction, direction);
 
 		s_sceneData.LightDirection = lengthSquared > 0.0f
@@ -206,16 +221,14 @@ namespace Uge
 		s_sceneData.SkyboxShader->Bind();
 		s_sceneData.SceneEnvironment->Skybox->Bind(0);
 
-		ApplyCullMode(CullMode::None); // The cube is seen from the inside, so culling the back faces would hide it entirely.
+		ApplyCullMode(CullMode::None); // The cube is seen from inside.
 
-		// The vertex stage emits z == w, which lands exactly on the far plane; GL_LESS would
-		// reject all of it. Depth writes stay on so the sky still occludes nothing but is
-		// itself occluded correctly.
+		// The sky is at the far plane (z == w), which GL_LESS would reject.
 		RenderCommand::SetDepthFunc(DepthCompare::LessEqual);
 		RenderCommand::DrawIndexed(s_sceneData.SkyboxCube);
 		RenderCommand::SetDepthFunc(DepthCompare::Less);
 
-		ApplyCullMode(CullMode::Back); // Back to the default for the rest of the scene, which is drawn from the outside.
+		ApplyCullMode(CullMode::Back);
 	}
 
 	void Model::BeginScene(const glm::mat4& viewProjection, const glm::vec3& cameraPosition)
@@ -231,20 +244,23 @@ namespace Uge
 
 		// Culling
 		s_sceneData.ViewFrustum = Math::Frustum::FromViewProjection(viewProjection);
-		// Forced, not cached: code outside this pass (the environment builder, ImGui, any other
-		// renderer) may have changed it since the last frame. One GL call per frame
+		// Set directly rather than through ApplyCullMode(), as code outside the pass may have
+		// changed it.
 		RenderCommand::SetCullMode(CullMode::Back);
 		s_sceneData.CurrentCullMode = CullMode::Back;
 
-		// The shader wants the direction towards the light, which is the reverse of the
-		// direction the light travels in.
+		const Ref<Environment>& environment = s_sceneData.SceneEnvironment;
+
+		// The shader takes the direction towards the light.
 		LightData lightData{};
 		lightData.Direction = glm::vec4(-s_sceneData.LightDirection, 0.0f);
 		lightData.Radiance = glm::vec4(s_sceneData.LightRadiance, 0.0f);
+		lightData.HasEnvironment = environment ? 1 : 0;
+		lightData.EnvironmentMipCount = environment ? static_cast<int32_t>(environment->GetPrefilteredMipCount()) : 1;
+		lightData.EnvironmentIntensity = s_sceneData.EnvironmentIntensity;
 		s_sceneData.LightUniformBuffer->SetData(&lightData, sizeof(LightData));
 
-		// Bound once for the whole pass rather than per material: the maps are scene state, and
-		// slots 6-8 are outside the range OpenGLMaterial::Bind touches.
+		// Slots 6 to 8, above the material textures.
 		if (s_sceneData.SceneEnvironment)
 		{
 			s_sceneData.SceneEnvironment->Irradiance->Bind(6);
@@ -252,12 +268,7 @@ namespace Uge
 			s_sceneData.SceneEnvironment->BrdfLut->Bind(8);
 		}
 
-		Material::SetEnvironmentState(s_sceneData.SceneEnvironment != nullptr,
-			s_sceneData.SceneEnvironment ? s_sceneData.SceneEnvironment->GetPrefilteredMipCount() : 1,
-			s_sceneData.EnvironmentIntensity);
-
-		// Entries point into model submesh vectors, so anything an unterminated pass left
-		// behind must go rather than be drawn a frame late.
+		// Entries left by a pass that wasn't ended point at submeshes that may be gone.
 		s_sceneData.BlendedQueue.clear();
 	}
 
@@ -270,15 +281,14 @@ namespace Uge
 
 		if (!s_sceneData.BlendedQueue.empty())
 		{
-			// Farthest first, so nearer surfaces blend over what is already behind them.
+			// Farthest first.
 			std::sort(s_sceneData.BlendedQueue.begin(), s_sceneData.BlendedQueue.end(),
 				[](const BlendedDraw& lhs, const BlendedDraw& rhs)
 				{
 					return lhs.SortKey > rhs.SortKey;
 				});
 
-			// Depth testing stays on so opaque geometry still occludes; only the writes go, which
-			// is what lets one transparent surface show through another.
+			// Depth test on, depth writes off, so blended surfaces show through each other.
 			RenderCommand::SetDepthWrite(false);
 
 			s_sceneData.ModelShader->Bind();
@@ -289,8 +299,7 @@ namespace Uge
 				modelData.EntityData = blendedDraw.EntityID;
 				s_sceneData.ModelUniformBuffer->SetData(&modelData, sizeof(ModelData));
 
-				ApplyCullMode(CullModeFor(ResolveMaterial(blendedDraw.SubMesh->GetMaterial())));
-				blendedDraw.SubMesh->Draw(s_sceneData.ModelShader, blendedDraw.EntityID);
+				DrawSubmesh(*blendedDraw.SubMesh, blendedDraw.SubMeshMaterial);
 			}
 
 			RenderCommand::SetDepthWrite(true);
@@ -298,9 +307,7 @@ namespace Uge
 			s_sceneData.BlendedQueue.clear();
 		}
 
-		// Culling belongs to this pass. Renderer2D, the post-process passes and the editor
-		// overlay draw afterwards and expect it off: a sprite or text seen from behind should
-		// still show.
+		// What draws after this pass expects culling off.
 		ApplyCullMode(CullMode::None);
 	}
 
@@ -337,34 +344,29 @@ namespace Uge
 			const Ref<Material> material = ResolveMaterial(mesh.GetMaterial());
 			if (material && material->GetBlendMode() == AlphaMode::Blend)
 			{
-				// Deferred to EndScene(): sorting has to span every model in the pass, not
-				// just the submeshes of this one.
+				// Sorted in EndScene() with the blended submeshes of every model.
 				const glm::vec3 worldCenter = glm::vec3(transform * glm::vec4(mesh.GetCenter(), 1.0f));
 				const glm::vec3 toCamera = worldCenter - s_sceneData.CameraPosition;
 
-				s_sceneData.BlendedQueue.push_back({ &mesh, transform, entityID, glm::dot(toCamera, toCamera) });
+				s_sceneData.BlendedQueue.push_back({ &mesh, material.get(), transform, entityID, glm::dot(toCamera, toCamera) });
 				continue;
 			}
 
-			ApplyCullMode(CullModeFor(material));
-			mesh.Draw(s_sceneData.ModelShader, entityID);
+			DrawSubmesh(mesh, material.get());
 		}
 	}
 
 	bool Model::BuildCollisionGeometry(AssetHandle mesh, std::vector<glm::vec3>& outVertices, std::vector<uint32_t>& outIndices)
 	{
-		// Clear outgoing vertex and index vectors
 		outVertices.clear();
 		outIndices.clear();
 
-		// Validate handle
 		if (!mesh)
 		{
 			return false;
 
 		}
 
-		// Get asset and check if loaded
 		Ref<Model> model = AssetManager::GetAsset<Model>(mesh);
 		if (!model || !model->IsLoaded())
 		{
@@ -372,7 +374,6 @@ namespace Uge
 
 		}
 
-		// Get total vertex and index count from the submeshes and reserve outgoing vector accordingly
 		size_t vertexCount = 0, indexCount = 0;
 		for (const Mesh& sub : model->GetMeshes())
 		{
@@ -382,13 +383,12 @@ namespace Uge
 		outVertices.reserve(vertexCount);
 		outIndices.reserve(indexCount);
 
-		// Add the verices and indices from the submeshes to the outgoing vectors
-		// Iterate over submeshes
+		// Submesh positions are already in the model's space, so they only need an index
+		// offset.
 		for (const Mesh& sub : model->GetMeshes())
 		{
 			const uint32_t base = (uint32_t)outVertices.size();
 
-			// Iterate over each vertex and index in a submesh
 			for (const MeshVertex& v : sub.GetVertices())
 			{
 				outVertices.push_back(v.Position);
@@ -401,48 +401,7 @@ namespace Uge
 			}
 		}
 
-		// Return true if the vertex vector is not empty and if the index vector is greater or 
-		// equal to 3, that is it has at least one triangle
 		return !outVertices.empty() && outIndices.size() >= 3;
-	}
-
-	void Model::LoadModel(const std::string& path)
-	{
-		m_path = path;
-		m_meshes.clear();
-		m_loadedTextures.clear();
-
-		if (path.empty())
-		{
-			UG_CORE_WARN("Model::LoadModel called with an empty path");
-			return;
-		}
-
-		Assimp::Importer importer;
-
-		// ProcessMesh below appends every face's indices into a triangle index buffer,
-		// so line/point primitives have to be discarded rather than just split out.
-		importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
-
-		// No aiProcess_CalcTangentSpace here either - see MeshImporter::ImportMesh.
-		const aiScene* scene = importer.ReadFile(path,
-			aiProcess_Triangulate |
-			aiProcess_JoinIdenticalVertices |
-			aiProcess_SortByPType);
-
-		if (!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)
-		{
-			UG_CORE_ERROR("Failed to load model '{0}': {1}", path, importer.GetErrorString());
-			return;
-		}
-
-		std::filesystem::path modelPath(path);
-		m_directory = modelPath.has_parent_path() ? modelPath.parent_path().string() : std::string();
-
-		SetName(scene->mName.C_Str());
-
-		m_bounds = Math::AABB{};
-		ProcessNode(scene->mRootNode, scene, aiMatrix4x4t<float>());
 	}
 
 	void Model::ProcessNode(aiNode* node, const aiScene* scene, const aiMatrix4x4t<float>& parentTransform)

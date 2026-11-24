@@ -1,6 +1,6 @@
 /**
  * @file Asset.h
- * @brief The asset base class, asset handles and the asset type enumeration.
+ * @brief Asset base class, handles and types.
  * @ingroup group_asset
  */
 
@@ -14,61 +14,46 @@
 namespace Uge
 {
 	/**
-	 * @brief Identifies an asset. An alias for Uge::UUID.
+	 * @brief Identifies an asset. `0` means none.
 	 * @ingroup group_asset
-	 *
-	 * Components store handles rather than pointers, so an asset can be reloaded, moved on
-	 * disk or not yet loaded without invalidating anything referring to it. A handle of
-	 * `0` conventionally means "none".
-	 *
-	 * Resolve one at the point of use:
-	 * @code
-	 * if (auto texture = AssetManager::GetAsset<Texture2D>(component.Texture))
-	 *     texture->Bind();
-	 * @endcode
 	 */
 	using AssetHandle = UUID;
 
 	/**
-	 * @brief The kinds of asset the engine can load.
+	 * @brief Kinds of asset.
 	 * @ingroup group_asset
-	 *
-	 * Uge::AssetImporter::ImportAsset dispatches on this to pick an importer, so a new
-	 * asset type needs an entry here and a corresponding importer.
 	 */
 	enum class AssetType : uint16_t
 	{
-		None = 0, ///< Unset / invalid.
-		Scene, ///< A Uge::Scene, stored as a `.uge` YAML file.
-		Texture2D, ///< A Uge::Texture2D loaded from an image file.
+		None = 0, ///< No type.
+		Scene, ///< A Uge::Scene in a `.uge` file.
+		Texture2D, ///< A Uge::Texture2D loaded from an image.
 		Mesh, ///< A Uge::Model imported through assimp.
-		Material, ///< A Uge::Material; usually memory-only, created during mesh import.
+		Material, ///< A Uge::Material, usually created in memory by mesh import.
 		Environment ///< A Uge::Environment built from an equirectangular `.hdr` image.
 	};
 
 	/**
-	 * @brief Converts an asset type to its serialized name.
+	 * @brief The serialized name of an asset type.
 	 * @param type Type to convert.
-	 * @return A static string such as `"Texture2D"`.
+	 * @return A name such as `"AssetType::Texture2D"`.
 	 * @ingroup group_asset
 	 */
 	std::string_view AssetTypeToString(AssetType type);
 	/**
-	 * @brief Parses an asset type from its serialized name.
-	 * @param type String produced by Uge::AssetTypeToString.
-	 * @return The matching type, or Uge::AssetType::None if unrecognized.
+	 * @brief Parses a name written by Uge::AssetTypeToString.
+	 * @param type Name to parse.
+	 * @return The type, or Uge::AssetType::None for an unknown name.
 	 * @ingroup group_asset
 	 */
 	AssetType AssetTypeFromString(std::string_view type);
 
 	/**
-	 * @brief Polymorphic base for everything the asset system manages.
+	 * @brief Base class of every asset.
 	 * @ingroup group_asset
 	 *
-	 * Subclassed by Uge::Scene, Uge::Texture2D, Uge::Model, Uge::Material and
-	 * Uge::Environment. Each subclass provides a static `GetStaticType()` alongside the
-	 * virtual GetType(); Uge::AssetManager::GetAsset compares the two to reject a handle
-	 * of the wrong type.
+	 * A subclass must also define a static `GetStaticType()` that returns the same value
+	 * as GetType().
 	 */
 	class Asset
 	{
@@ -77,23 +62,23 @@ namespace Uge
 	public:
 
 
-		AssetHandle m_handle; ///< This asset's identifier, assigned when it is registered.
+		AssetHandle m_handle; ///< Set when the asset is registered.
 
 	public:
 		/**
-		 * @brief This instance's runtime asset type.
-		 * @return The asset type; matches the subclass's `GetStaticType()`.
+		 * @brief The asset's type.
+		 * @return The type.
 		 */
 		virtual AssetType GetType() const = 0;
 
 		/**
-		 * @brief The asset's display name.
-		 * @return Name as shown in the editor, prefixed with the asset type.
+		 * @brief The display name.
+		 * @return The name, prefixed with the asset type.
 		 */
 		std::string GetName() const { return m_name; }
 		/**
 		 * @brief Sets the display name.
-		 * @param name Base name; stored prefixed with the asset type, as `"Texture2D - foo"`.
+		 * @param name Name, stored as `"<type> - <name>"`.
 		 */
 		void SetName(const std::string& name) 
 		{ 

@@ -1,6 +1,6 @@
 /**
  * @file ColorSpaceTests.cpp
- * @brief Tests for the sRGB/linear conversions in Uge/Renderer/ColorSpace.h.
+ * @brief Tests for the sRGB and linear conversions.
  */
 
 #include <ugpch.h>
@@ -27,8 +27,7 @@ TEST(ColorSpaceTest, BlackAndWhiteAreFixedPoints)
 
 TEST(ColorSpaceTest, UsesTheLinearSegmentBelowTheKnee)
 {
-	// Below 0.04045 the curve is a plain division, not a power. Getting this branch wrong
-	// only shows up in near-black values, which is exactly where it is hardest to see.
+	// Below 0.04045 the curve is a division, not a power.
 	EXPECT_NEAR(SrgbToLinear(0.02f), 0.02f / 12.92f, s_tolerance);
 	EXPECT_NEAR(SrgbToLinear(0.04045f), 0.04045f / 12.92f, s_tolerance);
 }
@@ -50,8 +49,7 @@ TEST(ColorSpaceTest, LinearToSrgbIsTheInverse)
 
 TEST(ColorSpaceTest, DecodingDarkensAndEncodingBrightens)
 {
-	// The direction matters more than the exact number: a value decoded twice, or encoded
-	// when it should have been decoded, is the classic "washed out" bug.
+	// Decoding makes mid-grey darker; encoding makes it lighter.
 	EXPECT_LT(SrgbToLinear(0.5f), 0.5f);
 	EXPECT_GT(LinearToSrgb(0.5f), 0.5f);
 }
@@ -68,7 +66,7 @@ TEST(ColorSpaceTest, ConvertsEachChannelOfAVec3)
 
 TEST(ColorSpaceTest, LeavesAlphaAlone)
 {
-	// Alpha is coverage, not light, so gamma does not apply to it.
+	// Alpha is not converted.
 	const glm::vec4 encoded(0.5f, 0.5f, 0.5f, 0.33f);
 	const glm::vec4 linear = SrgbToLinear(encoded);
 

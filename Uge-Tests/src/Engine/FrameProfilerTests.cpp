@@ -1,6 +1,6 @@
 /**
  * @file FrameProfilerTests.cpp
- * @brief Tests for Uge::FrameProfiler, the source of the Diagnostics panel's timings.
+ * @brief Tests for Uge::FrameProfiler.
  */
 
 #include <ugpch.h>
@@ -15,7 +15,7 @@ using Uge::ProfileEntry;
 namespace
 {
 
-	/** @brief Resets the process-wide profiler around each test. */
+	/** @brief Resets the profiler before and after each test. */
 	class FrameProfilerTest : public ::testing::Test
 	{
 	protected:
@@ -47,8 +47,7 @@ TEST_F(FrameProfilerTest, StartsEmpty)
 
 TEST_F(FrameProfilerTest, SubmissionsOnlyBecomeVisibleWhenTheFrameCloses)
 {
-	// GetLastFrame has to stay stable while a panel draws it, so a scope submitted this
-	// frame must not appear until BeginFrame swaps the buffers.
+	// A scope submitted this frame appears only after BeginFrame.
 	FrameProfiler::Submit("Scope", 1.0f);
 	EXPECT_TRUE(FrameProfiler::GetLastFrame().empty());
 
@@ -72,8 +71,7 @@ TEST_F(FrameProfilerTest, RepeatedScopesAccumulateIntoOneRow)
 
 TEST_F(FrameProfilerTest, EntriesAreSortedByDescendingCost)
 {
-	// The panel prints them in order and does not sort, so the expensive scope has to be
-	// the first row.
+	// The panel doesn't sort, so the most expensive scope comes first.
 	FrameProfiler::Submit("Cheap", 0.1f);
 	FrameProfiler::Submit("Expensive", 8.0f);
 	FrameProfiler::Submit("Middling", 2.0f);
@@ -93,14 +91,13 @@ TEST_F(FrameProfilerTest, ClosingAFrameClearsTheAccumulator)
 	FrameProfiler::BeginFrame(16.0f);
 	FrameProfiler::BeginFrame(16.0f);
 
-	// A scope that ran once ten frames ago should not still be listed.
+	// A scope from an earlier frame is gone.
 	EXPECT_TRUE(FrameProfiler::GetLastFrame().empty());
 }
 
 TEST_F(FrameProfilerTest, ShortensAFunctionSignatureToAQualifiedName)
 {
-	// UG_PROFILE_FUNCTION labels its scope with __FUNCSIG__, which is far too wide for a
-	// table column.
+	// UG_PROFILE_FUNCTION's label is __FUNCSIG__.
 	FrameProfiler::Submit("void __cdecl Uge::EditorLayer::OnUpdate(class Uge::Timestep)", 1.0f);
 	FrameProfiler::BeginFrame(16.0f);
 
@@ -153,8 +150,7 @@ TEST_F(FrameProfilerTest, HistoryIsOldestFirstWhileItIsFillingUp)
 
 TEST_F(FrameProfilerTest, HistoryUnrollsTheRingOnceItWraps)
 {
-	// Plotted directly by the panel, so a ring handed over unrolled incorrectly shows as a
-	// discontinuity travelling across the graph.
+	// The history comes oldest first once the ring has wrapped.
 	constexpr size_t frames = FrameProfiler::s_historySize + 10;
 
 	for (size_t i = 0; i < frames; i++)
@@ -233,8 +229,8 @@ TEST_F(FrameProfilerTest, SubmitIsSafeFromMultipleThreads)
 
 TEST_F(FrameProfilerTest, ALabelAtTwoAddressesIsOneRow)
 {
-	// The same text can sit at two addresses, as a literal does when two translation units
-	// each keep their own copy. Rows are by text, not by address.
+	// The same text at two addresses, as a literal in two translation units can be, makes
+	// one row.
 	const char first[] = "Scene Physics";
 	const char second[] = "Scene Physics";
 	ASSERT_NE(static_cast<const void*>(first), static_cast<const void*>(second));

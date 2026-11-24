@@ -13,32 +13,30 @@ namespace Uge
 
 
     /**
-     * @brief Process-wide Jolt state owned by Uge::JoltAPI.
+     * @brief Jolt state owned by Uge::JoltAPI.
      *
-     * Internal to the `Physics/Jolt/` folder: it names Jolt types, so no header outside
-     * that folder may include it. Reach it through GetJoltData().
+     * It names Jolt types, so only files in `Physics/Jolt/` may include it.
      */
     struct JoltData
     {
-        /// Linear scratch allocator reused by every PhysicsSystem::Update.
+        /// Scratch allocator for PhysicsSystem::Update.
         Scope<JPH::TempAllocatorImpl> TempAllocator;
-        /// Worker pool Jolt runs its simulation jobs on.
+        /// Worker threads for the simulation.
         Scope<JPH::JobSystemThreadPool> JobThreadPool;
 #ifdef JPH_DEBUG_RENDERER
-        /// Sole JPH::DebugRenderer for the process; JPH::DebugRenderer::sInstance is a singleton.
+        /// The only JPH::DebugRenderer; Jolt allows one per process.
         Scope<JoltDebugRenderer> DebugRenderer;
 #endif
     };
 
 
     /**
-     * @brief Accesses the state created by Uge::JoltAPI::Init().
-     * @return The live JoltData.
-     * @pre Uge::Physics::Init() must have been called.
+     * @brief The state created by Uge::JoltAPI::Init().
+     * @return The state.
+     * @pre Uge::Physics::Init() has run.
      *
-     * @warning JPH::TempAllocatorImpl is a linear allocator and is neither thread-safe nor
-     * reentrant. Every Uge::JoltScene shares this one instance, which is only sound because
-     * Step() is main-thread and the worlds never step concurrently.
+     * Every scene shares the temp allocator, which isn't thread-safe, so scenes must not
+     * step at the same time.
      */
     JoltData& GetJoltData();
 }

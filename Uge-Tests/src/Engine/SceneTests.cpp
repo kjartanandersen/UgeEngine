@@ -1,6 +1,6 @@
 /**
  * @file SceneTests.cpp
- * @brief Tests for the entity operations the editor's hierarchy panel drives.
+ * @brief Tests for Uge::Scene's entity operations.
  */
 
 #include <ugpch.h>
@@ -8,10 +8,16 @@
 #include "Uge/Scene/Components.h"
 #include "Uge/Scene/Entity.h"
 #include "Uge/Scene/Scene.h"
+#include "Uge/Scripting/ScriptEngine.h"
+#include "Uge/Scene/ScriptableEntity.h"
+
+#include "../TestSupport/PhysicsFixture.h"
 
 #include <gtest/gtest.h>
 
 #include <unordered_set>
+#include <filesystem>
+#include <vector>
 
 using Uge::Entity;
 using Uge::Scene;
@@ -19,7 +25,7 @@ using Uge::Scene;
 namespace
 {
 
-	/** @brief Gives each test an empty scene. */
+	/** @brief An empty scene for each test. */
 	class SceneTest : public ::testing::Test
 	{
 	protected:
@@ -78,8 +84,7 @@ TEST_F(SceneTest, LookupOfAMissingEntityReturnsAnInvalidHandle)
 
 TEST_F(SceneTest, CreateEntityWithUUIDKeepsTheGivenId)
 {
-	// Deserialization takes this path: the id in the .uge file has to survive, or every
-	// entity reference in the scene breaks on load.
+	// Loading a scene creates entities with their saved UUIDs.
 	const Uge::UUID id(0xABCDEF12);
 	Entity entity = m_scene->CreateEntityWithUUID(id, "Restored");
 
@@ -148,9 +153,8 @@ TEST_F(SceneTest, NoPrimaryCameraYieldsAnInvalidEntity)
 
 TEST_F(SceneTest, ACopiedSceneHasNoLiveBodies)
 {
-	// Play mode runs on a copy of the scene and builds its own physics world. A body handle
-	// copied over from the editor scene would point into a world the copy doesn't have, so
-	// the copy starts with none; everything else on the rigidbody is copied.
+	// The copy has no body, as it builds its own physics world. The rest of the rigidbody is
+	// copied.
 	Entity entity = m_scene->CreateEntity("Crate");
 	Uge::RigidbodyComponent& body = entity.AddComponent<Uge::RigidbodyComponent>();
 	body.Mass = 3.0f;
@@ -165,4 +169,131 @@ TEST_F(SceneTest, ACopiedSceneHasNoLiveBodies)
 	const Uge::RigidbodyComponent& result = copied.GetComponent<Uge::RigidbodyComponent>();
 	EXPECT_NEAR(result.Mass, 3.0f, 1e-5f);
 	EXPECT_FALSE(result.RuntimeBody.IsValid());
+}
+
+namespace
+{
+
+	/** @brief A scene that can run Play: physics, and the script engine without Mono. */
+	class ScenePlayTest : public UgeTests::PhysicsFixture
+	{
+	protected:
+		void SetUp() override
+		{
+			PhysicsFixture::SetUp();
+			if (std::filesystem::exists("mono/lib"))
+			{
+				GTEST_SKIP() << "Mono's runtime is in the working directory; run the tests from the repo root.";
+			}
+			Uge::ScriptEngine::Init();
+		}
+
+		void TearDown() override
+		{
+			Uge::ScriptEngine::Shutdown();
+			PhysicsFixture::TearDown();
+		}
+
+		// The bodies within half a unit of the origin.
+		std::vector<Uge::PhysicsBodyID> BodiesAtOrigin(Scene& scene)
+		{
+			std::vector<Uge::PhysicsBodyID> hits;
+			scene.GetPhysicsScene()->OverlapSphere(glm::vec3(0.0f), 0.5f, Uge::PhysicsLayerMaskAll, hits);
+			return hits;
+		}
+	};
+
+}
+
+TEST_F(ScenePlayTest, DestroyingAnEntityDuringPlayRemovesItsBody)
+{
+	Scene scene;
+	Entity box = scene.CreateEntity("Box");
+	box.AddComponent<Uge::RigidbodyComponent>();
+	box.AddComponent<Uge::BoxColliderComponent>();
+
+	scene.OnRuntimeStart();
+	ASSERT_EQ(BodiesAtOrigin(scene).size(), 1u);
+
+	scene.DestroyEntity(box);
+	EXPECT_TRUE(BodiesAtOrigin(scene).empty());
+
+	scene.OnRuntimeStop();
+}
+
+TEST_F(ScenePlayTest, RemovingARigidbodyDuringPlayRemovesItsBody)
+{
+	Scene scene;
+	Entity box = scene.CreateEntity("Box");
+	box.AddComponent<Uge::RigidbodyComponent>();
+	box.AddComponent<Uge::BoxColliderComponent>();
+
+	scene.OnRuntimeStart();
+	ASSERT_EQ(BodiesAtOrigin(scene).size(), 1u);
+
+	box.RemoveComponent<Uge::RigidbodyComponent>();
+	EXPECT_TRUE(BodiesAtOrigin(scene).empty());
+
+	scene.OnRuntimeStop();
+}
+
+namespace
+{
+
+	/** @brief A native script that counts its creations and destructions. */
+	struct CountingScript : Uge::ScriptableEntity
+	{
+		static inline int Created = 0;
+		static inline int Destroyed = 0;
+
+		void OnCreate() override { Created++; }
+		void OnDestroy() override { Destroyed++; }
+	};
+
+}
+
+TEST_F(ScenePlayTest, StoppingPlayDestroysNativeScripts)
+{
+	CountingScript::Created = CountingScript::Destroyed = 0;
+
+	Scene scene;
+	scene.CreateEntity("Scripted").AddComponent<Uge::NativeScriptComponent>().Bind<CountingScript>();
+
+	scene.OnRuntimeStart();
+	scene.OnUpdateRuntime(Uge::Timestep(1.0f / 60.0f));
+	EXPECT_EQ(CountingScript::Created, 1);
+
+	scene.OnRuntimeStop();
+	EXPECT_EQ(CountingScript::Destroyed, 1);
+}
+
+TEST_F(ScenePlayTest, DestroyingAnEntityDuringPlayDestroysItsNativeScript)
+{
+	CountingScript::Created = CountingScript::Destroyed = 0;
+
+	Scene scene;
+	Entity entity = scene.CreateEntity("Scripted");
+	entity.AddComponent<Uge::NativeScriptComponent>().Bind<CountingScript>();
+
+	scene.OnRuntimeStart();
+	scene.OnUpdateRuntime(Uge::Timestep(1.0f / 60.0f));
+
+	scene.DestroyEntity(entity);
+	EXPECT_EQ(CountingScript::Destroyed, 1);
+
+	scene.OnRuntimeStop();
+	EXPECT_EQ(CountingScript::Destroyed, 1);
+}
+
+TEST(NativeScriptComponentTest, CopyingLeavesTheObjectBehind)
+{
+	Uge::NativeScriptComponent original;
+	original.Bind<CountingScript>();
+	original.Instance = original.InstantiateScript();
+
+	Uge::NativeScriptComponent copy(original);
+	EXPECT_EQ(copy.Instance, nullptr);
+	EXPECT_EQ(copy.InstantiateScript, original.InstantiateScript);
+
+	original.DestroyScript(&original);
 }

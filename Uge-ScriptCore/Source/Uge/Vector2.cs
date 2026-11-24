@@ -1,6 +1,6 @@
 ﻿/**
  * @file Vector2.cs
- * @brief Two-component vector used by scripts.
+ * @brief A 2D vector for scripts.
  * @ingroup group_scripting
  */
 
@@ -8,11 +8,8 @@
 namespace Uge
 {
     /**
-     * @brief A two-component float vector.
+     * @brief A 2D float vector, laid out like `glm::vec2`.
      * @ingroup group_scripting
-     *
-     * Laid out to match `glm::vec2` so it can be marshalled across the internal-call
-     * boundary without conversion.
      */
     public struct Vector2
     {
@@ -25,8 +22,8 @@ namespace Uge
         public static Vector2 Zero => new Vector2(0.0f);
 
         /**
-         * @brief Constructs a vector with both components set to the same value.
-         * @param scalar Value for every component.
+         * @brief A vector with both components equal.
+         * @param scalar The value.
          */
         public Vector2(float scalar)
         {
@@ -35,9 +32,9 @@ namespace Uge
         }
 
         /**
-         * @brief Constructs a vector from its components.
-         * @param x X component.
-         * @param y Y component.
+         * @brief A vector from its components.
+         * @param x X.
+         * @param y Y.
          */
         public Vector2(float x, float y)
         {
@@ -46,9 +43,9 @@ namespace Uge
         }
 
         /**
-         * @brief Component-wise addition.
-         * @param a Left operand.
-         * @param b Right operand.
+         * @brief Adds two vectors.
+         * @param a A vector.
+         * @param b A vector.
          * @return The sum.
          */
         public static Vector2 operator +(Vector2 a, Vector2 b)
@@ -57,9 +54,9 @@ namespace Uge
         }
 
         /**
-         * @brief Scalar multiplication.
-         * @param vector Vector to scale.
-         * @param scalar Factor to scale by.
+         * @brief Scales a vector.
+         * @param vector The vector.
+         * @param scalar The factor.
          * @return The scaled vector.
          */
         public static Vector2 operator *(Vector2 vector, float scalar)

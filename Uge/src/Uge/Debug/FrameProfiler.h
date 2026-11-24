@@ -1,6 +1,6 @@
 /**
  * @file FrameProfiler.h
- * @brief Live, in-memory per-frame timing aggregation for the editor's Debug panel.
+ * @brief Per-frame timings of the profiling scopes.
  * @ingroup group_debug
  */
 
@@ -14,84 +14,71 @@ namespace Uge
 {
 
 	/**
-	 * @brief Accumulated timings for one named scope over a single frame.
+	 * @brief One scope's timings over a frame.
 	 * @ingroup group_debug
 	 */
 	struct ProfileEntry
 	{
-		/**
-		 * @brief Display label: the literal passed to `UG_PROFILE_SCOPE`, or for
-		 *        `UG_PROFILE_FUNCTION` the qualified function name with its return type
-		 *        and parameter list stripped.
-		 */
+		/** @brief The scope label; the qualified function name for `UG_PROFILE_FUNCTION`. */
 		std::string Name;
-		float TotalMs = 0.0f;  ///< Summed wall time across every call in the frame.
-		uint32_t Calls = 0;    ///< Number of times the scope was entered during the frame.
+		float TotalMs = 0.0f;  ///< Total time in the frame.
+		uint32_t Calls = 0;    ///< Times the scope ran in the frame.
 	};
 
 	/**
-	 * @brief Aggregates `UG_PROFILE_*` scope timings per frame and keeps a frame-time history.
+	 * @brief Sums the `UG_PROFILE_*` scope timings per frame and keeps recent frame times.
 	 * @ingroup group_debug
 	 *
-	 * The Chrome-tracing output of Uge::Instrumentor answers "what happened during those
-	 * three seconds"; this answers "what is costing me *right now*", which is the question
-	 * a live panel needs. Both are fed from the same Uge::InstrumentationTimer, but this one 
-	 * is always on, and does no string work per event: each label’s text is read once per frame, in BeginFrame().
-	 *
-	 * Uge::Application::Run calls BeginFrame() once per frame; the editor's Debug panel
-	 * reads GetLastFrame() and GetFrameTimeHistory().
+	 * Always on. Submit() does no string work; label text is read once per frame, in
+	 * BeginFrame().
 	 */
 	class FrameProfiler
 	{
 	public:
-		/** @brief Number of frame times retained for the frame-time graph. */
+		/** @brief Number of frame times kept. */
 		static constexpr size_t s_historySize = 256;
 
 		/**
-		 * @brief Closes the previous frame and starts a new one.
-		 * @param frameMs Wall time of the frame that just finished, in milliseconds.
+		 * @brief Ends the frame being recorded and starts the next.
+		 * @param frameMs Length of the frame that ended, in milliseconds.
 		 *
-		 * Snapshots the accumulated scopes so GetLastFrame() stays stable for the whole
-		 * frame, then clears the accumulator and records @p frameMs in the history ring.
-		 * Scopes whose labels have the same text become one row.
+		 * Scopes whose labels have the same text become one entry.
 		 */
 		static void BeginFrame(float frameMs);
 
 		/**
-		 * @brief Records one completed scope timing into the frame being accumulated.
-		 * @param name Scope label. It must stay valid until the next BeginFrame(), which 
-		 * is when its text is read; every `UG_PROFILE_*` label is a string literal or `__FUNCSIG__`, which last for the whole program.
-		 * @param milliseconds Duration of the scope.
-		 *
-		 * Called by Uge::InstrumentationTimer; there is rarely a reason to call it directly.
+		 * @brief Adds a scope's timing to the current frame.
+		 * @param name Scope label. It must stay valid until the next BeginFrame(), so it must
+		 * be a string literal or `__FUNCSIG__`.
+		 * @param milliseconds How long the scope took.
 		 */
 		static void Submit(const char* name, float milliseconds);
 
 		/**
-		 * @brief Returns the scope timings of the most recently completed frame.
-		 * @return Entries sorted by descending total time.
+		 * @brief The timings of the last finished frame.
+		 * @return Entries, slowest first.
 		 */
 		static std::vector<ProfileEntry> GetLastFrame();
 
 		/**
-		 * @brief Returns recent frame times for plotting.
-		 * @return Up to #s_historySize milliseconds values, oldest first.
+		 * @brief Recent frame times.
+		 * @return Up to #s_historySize values in milliseconds, oldest first.
 		 */
 		static std::vector<float> GetFrameTimeHistory();
 
 		/**
-		 * @brief Returns the mean of the retained frame times.
-		 * @return Average frame time in milliseconds, or `0` before the first frame.
+		 * @brief The mean of the kept frame times.
+		 * @return Milliseconds, or `0` before the first frame.
 		 */
 		static float GetAverageFrameMs();
 
 		/**
-		 * @brief Returns the duration of the most recently completed frame.
-		 * @return Frame time in milliseconds, or `0` before the first frame.
+		 * @brief The length of the last finished frame.
+		 * @return Milliseconds, or `0` before the first frame.
 		 */
 		static float GetLastFrameMs();
 
-		/** @brief Drops the frame-time history and the last frame's scope timings. */
+		/** @brief Clears the frame times and the last frame's timings. */
 		static void Reset();
 	};
 

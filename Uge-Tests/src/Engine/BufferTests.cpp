@@ -1,6 +1,6 @@
 /**
  * @file BufferTests.cpp
- * @brief Tests for Uge::Buffer and Uge::ScopedBuffer, the raw byte buffers.
+ * @brief Tests for Uge::Buffer and Uge::ScopedBuffer.
  */
 
 #include <ugpch.h>
@@ -40,9 +40,7 @@ TEST(BufferTest, ReleaseResetsTheBufferAndIsSafeToRepeat)
 	EXPECT_EQ(buffer.Data, nullptr);
 	EXPECT_EQ(buffer.Size, 0u);
 
-	// Release() is the manual half of a manually managed buffer, so calling it twice —
-	// which happens whenever an error path and a success path both clean up — must not
-	// double-free.
+	// A second Release() does nothing.
 	buffer.Release();
 	EXPECT_EQ(buffer.Data, nullptr);
 }
@@ -66,7 +64,7 @@ TEST(BufferTest, ViewConstructorDoesNotCopyTheBytes)
 	EXPECT_EQ(view.Data, bytes);
 	EXPECT_EQ(view.Size, sizeof(bytes));
 
-	// A view aliases its source, so writing through one is visible in the other.
+	// The buffer views the array, so a write shows in both.
 	view.Data[0] = 42;
 	EXPECT_EQ(bytes[0], 42);
 }
@@ -83,7 +81,7 @@ TEST(BufferTest, CopyDuplicatesTheBytesIntoNewMemory)
 	EXPECT_EQ(copy.Size, source.Size);
 	EXPECT_EQ(std::memcmp(copy.Data, bytes, sizeof(bytes)), 0);
 
-	// The whole point of Copy over the copy constructor: the two no longer alias.
+	// Copy() makes separate bytes.
 	bytes[0] = 99;
 	EXPECT_EQ(copy.Data[0], 10);
 
@@ -100,7 +98,7 @@ TEST(BufferTest, CopyConstructorSharesTheSameMemory)
 	EXPECT_EQ(alias.Data, owner.Data);
 	EXPECT_EQ(alias.Data[0], 7);
 
-	// Only one of them may be released; that asymmetry is why ScopedBuffer exists.
+	// They share bytes, so only one may be released.
 	owner.Release();
 }
 
@@ -140,7 +138,7 @@ TEST(BufferTest, ScopedBufferAdoptsAnExistingBuffer)
 	EXPECT_EQ(owner.Size(), 16u);
 	EXPECT_EQ(owner.As<uint8_t>()[0], 5);
 
-	// owner releases the allocation on the way out; raw must not be released as well.
+	// owner releases the bytes; raw must not.
 }
 
 TEST(BufferTest, ScopedBufferOverAnEmptyBufferIsFalse)

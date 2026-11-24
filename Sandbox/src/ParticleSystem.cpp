@@ -49,7 +49,7 @@ void ParticleSystem::OnRender(Uge::OrthographicCamera& camera)
 			if (!particle.Active)
 				continue;
 
-			// Fade away particles
+			// Blend from the start values to the end values over the particle's life.
 			float life = particle.LifeRemaining / particle.LifeTime;
 			glm::vec4 color = glm::lerp(particle.ColorEnd, particle.ColorBegin, life);
 			//color.a = color.a * life;

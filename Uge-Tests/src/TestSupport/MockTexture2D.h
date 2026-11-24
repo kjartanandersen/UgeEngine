@@ -13,21 +13,15 @@ namespace UgeTests
 {
 
 	/**
-	 * @brief A texture asset that never touches OpenGL.
-	 *
-	 * Uge::Texture2D::Create returns the OpenGL implementation, which needs a live context,
-	 * so a test cannot make a real texture. Everything above the backend only asks a texture
-	 * for its size, its renderer ID and its asset type, all of which a mock can answer —
-	 * which is enough to register one as an asset and drive the code paths that branch on
-	 * "is there a valid texture here".
+	 * @brief A texture that needs no GL context, for registering texture assets in tests.
 	 */
 	class MockTexture2D : public Uge::Texture2D
 	{
 	public:
 		/**
-		 * @brief Constructs a mock reporting the given dimensions.
-		 * @param width Width to report.
-		 * @param height Height to report.
+		 * @brief A mock of a given size.
+		 * @param width Width.
+		 * @param height Height.
 		 */
 		MockTexture2D(uint32_t width = 4, uint32_t height = 4)
 		{
@@ -42,26 +36,26 @@ namespace UgeTests
 		MOCK_METHOD(void, Bind, (uint32_t), (const, override));
 		MOCK_METHOD(void, UnBind, (uint32_t), (const, override));
 
-		/** @brief The specification this mock reports. @return Const reference to it. */
+		/** @brief The specification. @return The specification. */
 		const Uge::TextureSpecification& GetSpecification() const override { return m_specification; }
 
-		/** @brief Reported width. @return Width in pixels. */
+		/** @brief The width. @return Width in pixels. */
 		uint32_t GetWidth() const override { return m_specification.Width; }
-		/** @brief Reported height. @return Height in pixels. */
+		/** @brief The height. @return Height in pixels. */
 		uint32_t GetHeight() const override { return m_specification.Height; }
-		/** @brief A stand-in native handle. @return A fixed non-zero id. */
+		/** @brief A fixed renderer ID. @return `1`. */
 		uint32_t GetRendererID() const override { return 1; }
 
 		/** @brief Always loaded. @return `true`. */
 		bool IsLoaded() const override { return true; }
 
-		/** @brief Records the tiling factor. @param tilingFactor Repeat count. */
+		/** @brief Stores the tiling factor. @param tilingFactor Repeat count. */
 		void SetTilingFactor(float tilingFactor) override { m_tilingFactor = tilingFactor; }
 
 		/**
-		 * @brief Compares by identity.
-		 * @param other Texture to compare against.
-		 * @return `true` if it is this same object.
+		 * @brief Whether @p other is this object.
+		 * @param other The other texture.
+		 * @return `true` if it is.
 		 */
 		bool operator==(const Uge::Texture& other) const override { return this == &other; }
 

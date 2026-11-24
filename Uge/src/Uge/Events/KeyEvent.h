@@ -14,26 +14,21 @@ namespace Uge
 {
 
 	/**
-	 * @brief Common base for keyboard events, carrying the key and scan codes.
+	 * @brief Base class of the keyboard events.
 	 * @ingroup group_events
-	 *
-	 * Abstract in practice: the constructor is protected, so only the concrete subclasses
-	 * can be created. Dispatch against those, not against this class.
-	 *
-	 * Belongs to both #EventCategoryKeyboard and #EventCategoryInput.
 	 */
 	class KeyEvent : public Event
 	{
 
 	public:
 		/**
-		 * @brief The key involved.
-		 * @return A `UG_KEY_*` value from KeyCodes.h; layout-dependent.
+		 * @brief The key.
+		 * @return A `UG_KEY_*` code; depends on the keyboard layout.
 		 */
 		inline int GetKeyCode() const { return m_keyCode; };
 		/**
-		 * @brief The physical key involved.
-		 * @return A platform-specific scan code, independent of keyboard layout.
+		 * @brief The physical key.
+		 * @return A platform scan code, independent of the layout.
 		 */
 		inline int GetScanCode() const { return m_scanCode; };
 
@@ -41,47 +36,44 @@ namespace Uge
 
 	protected:
 		/**
-		 * @brief Constructs the base event.
-		 * @param keyCode Layout-dependent key code.
-		 * @param scancode Platform-specific physical scan code.
+		 * @brief Creates the event.
+		 * @param keyCode Key code.
+		 * @param scancode Scan code.
 		 */
 		KeyEvent(int keyCode, int scancode)
 			: m_keyCode(keyCode), m_scanCode(scancode) { }
 
-		int m_keyCode; ///< Layout-dependent key code from KeyCodes.h.
-		int m_scanCode; ///< Platform-specific physical scan code.
+		int m_keyCode; ///< Key code.
+		int m_scanCode; ///< Scan code.
 
 	};
 
 	/**
-	 * @brief Raised when a key goes down, and again while it auto-repeats.
+	 * @brief A key went down, or repeated while held.
 	 * @ingroup group_events
-	 *
-	 * Check GetRepeatCount() to distinguish the initial press from auto-repeat: shortcuts
-	 * usually want to act only when it is `0`.
 	 */
 	class  KeyPressedEvent : public KeyEvent
 	{
 
 	public:
 		/**
-		 * @brief Constructs the event.
-		 * @param keyCode Layout-dependent key code.
-		 * @param scancode Platform-specific physical scan code.
-		 * @param repeatCount `0` for the initial press, non-zero while auto-repeating.
+		 * @brief Creates the event.
+		 * @param keyCode Key code.
+		 * @param scancode Scan code.
+		 * @param repeatCount `0` for the first press.
 		 */
 		KeyPressedEvent(int keyCode, int scancode, int repeatCount)
 			: KeyEvent(keyCode, scancode), m_repeatCount(repeatCount) { }
 
 		/**
-		 * @brief Auto-repeat state of this press.
-		 * @return `0` on the first press, non-zero for repeats.
+		 * @brief Whether this is a repeat.
+		 * @return `0` for the first press, non-zero for repeats.
 		 */
 		inline int GetRepeatCount() const { return m_repeatCount; }
 
 		/**
-		 * @brief Describes the event.
-		 * @return A string with the key code and repeat count.
+		 * @brief A description for logging.
+		 * @return The key code and repeat count.
 		 */
 		std::string ToString() const override
 		{
@@ -98,7 +90,7 @@ namespace Uge
 	};
 
 	/**
-	 * @brief Raised when a key goes up.
+	 * @brief A key went up.
 	 * @ingroup group_events
 	 */
 	class KeyReleasedEvent : public KeyEvent
@@ -106,17 +98,17 @@ namespace Uge
 
 	public:
 		/**
-		 * @brief Constructs the event.
-		 * @param keyCode Layout-dependent key code.
-		 * @param scancode Platform-specific physical scan code.
+		 * @brief Creates the event.
+		 * @param keyCode Key code.
+		 * @param scancode Scan code.
 		 */
 		KeyReleasedEvent(int keyCode, int scancode)
 			: KeyEvent(keyCode, scancode) {
 		}
 
 		/**
-		 * @brief Describes the event.
-		 * @return A string with the key code.
+		 * @brief A description for logging.
+		 * @return The key code.
 		 */
 		std::string ToString() const override
 		{
@@ -131,35 +123,31 @@ namespace Uge
 
 
 	/**
-	 * @brief Raised when a key press produces a character.
+	 * @brief A key press produced a character, after layout and modifiers.
 	 * @ingroup group_events
-	 *
-	 * Unlike Uge::KeyPressedEvent this is text input: it accounts for keyboard layout and
-	 * modifiers, so it is what text fields should consume. Non-printing keys such as
-	 * Shift or the arrow keys produce no typed event.
 	 */
 	class KeyTypedEvent : public KeyEvent
 	{
 
 	public:
 		/**
-		 * @brief Constructs the event.
-		 * @param keyCode Character code produced.
-		 * @param scancode Platform-specific physical scan code.
+		 * @brief Creates the event.
+		 * @param keyCode The character.
+		 * @param scancode Scan code.
 		 */
 		KeyTypedEvent(int keyCode, int scancode)
 			: KeyEvent(keyCode, scancode) {  }
 		/**
-		 * @brief Constructs the event with no scan code.
-		 * @param keyCode Character code produced.
+		 * @brief Creates the event without a scan code.
+		 * @param keyCode The character.
 		 */
 		KeyTypedEvent(int keyCode)
 			: KeyEvent(keyCode, 0) { }
 
 
 		/**
-		 * @brief Describes the event.
-		 * @return A string with the character code.
+		 * @brief A description for logging.
+		 * @return The character code.
 		 */
 		std::string ToString() const override
 		{

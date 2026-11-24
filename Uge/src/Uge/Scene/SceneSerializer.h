@@ -12,60 +12,45 @@ namespace Uge
 {
 	
 	/**
-	 * @brief Serializes a scene's entities and components to YAML, and back.
+	 * @brief Reads and writes a scene's entities and components as YAML.
 	 * @ingroup group_scene
 	 *
-	 * Each entity is written with its UUID, so references between entities survive a
-	 * round-trip. Assets are stored as handles, never as paths, which means a file can be
-	 * moved on disk without breaking the scene that uses it.
-	 *
-	 * @code
-	 * SceneSerializer serializer(scene);
-	 * serializer.Serialize("assets/scenes/Level1.uge");
-	 * @endcode
-	 *
-	 * @warning Every component type needs explicit read and write support here. A new
-	 * component that is not handled is silently dropped on save.
+	 * A component type it doesn't handle is lost on save.
 	 */
 	class SceneSerializer
 	{
 
 	public:
 		/**
-		 * @brief Binds the serializer to a scene.
-		 * @param scene Scene to read from or write into.
+		 * @brief Creates a serializer for a scene.
+		 * @param scene Scene to read into or write from.
 		 */
 		SceneSerializer(const Ref<Scene>& scene);
 
 		/**
-		* @brief Writes the scene as human-readable YAML.
-		* @param filepath Destination `.uge` path; replaced if it exists.
-		* @return `true` if the file was written. On failure the reason is logged, and any
-		* existing file at @p filepath is left as it was.
-		*
-		* The YAML goes to `<filepath>.tmp` first, which then replaces the destination in one
-		* step, so a save that fails part-way never leaves a truncated scene.
-		*/
+		 * @brief Writes the scene.
+		 * @param filepath The `.uge` file; replaced if it exists.
+		 * @return `true` on success. On failure the reason is logged and the file is unchanged.
+		 *
+		 * Writes `<filepath>.tmp`, then renames it over the file.
+		 */
 		bool Serialize(const std::filesystem::path& filepath);
 		/**
-		 * @brief Writes the scene in a packed runtime form.
-		 * @param filepath Destination path.
-		 * @note Not implemented yet; asserts if called.
+		 * @brief Writes the scene in a packed form. Not implemented; asserts.
+		 * @param filepath The file.
 		 */
 		void SerializeRuntime(const std::filesystem::path& filepath);
 
 		/**
-		 * @brief Loads a YAML scene into the bound scene.
-		 * @param filepath Source `.uge` path.
-		 * @return `true` on success; `false` if the file is missing or malformed.
-		 * @note Entities are added to the bound scene rather than replacing its contents.
+		 * @brief Reads a scene, adding its entities to the scene.
+		 * @param filepath The `.uge` file.
+		 * @return `false` if the file is missing or malformed.
 		 */
 		bool DeSerialize(const std::filesystem::path& filepath);
 		/**
-		 * @brief Loads a packed runtime scene.
-		 * @param filepath Source path.
+		 * @brief Reads a packed scene. Not implemented; asserts.
+		 * @param filepath The file.
 		 * @return `true` on success.
-		 * @note Not implemented yet; asserts if called.
 		 */
 		bool DeSerializeRuntime(const std::filesystem::path& filepath);
 	private:

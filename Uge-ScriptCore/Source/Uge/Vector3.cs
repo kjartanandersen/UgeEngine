@@ -1,6 +1,6 @@
 ﻿/**
  * @file Vector3.cs
- * @brief Three-component vector used by scripts.
+ * @brief A 3D vector for scripts.
  * @ingroup group_scripting
  */
 
@@ -8,11 +8,8 @@
 namespace Uge
 {
     /**
-     * @brief A three-component float vector.
+     * @brief A 3D float vector, laid out like `glm::vec3`.
      * @ingroup group_scripting
-     *
-     * Laid out to match `glm::vec3`, so positions cross the internal-call boundary without
-     * conversion. This is the type entity transforms are read and written as.
      */
     public struct Vector3
     {
@@ -22,7 +19,7 @@ namespace Uge
 
         
 
-        /** @brief The X and Y components as a Uge.Vector2. */
+        /** @brief X and Y, as a Uge.Vector2. */
         public Vector2 XY
         {
             get
@@ -41,9 +38,9 @@ namespace Uge
         public static Vector3 Zero => new Vector3(0.0f);
 
         /**
-         * @brief Constructs a vector from a 2D vector and a z component.
-         * @param xy X and Y components.
-         * @param z Z component.
+         * @brief A vector from a 2D vector and a z.
+         * @param xy X and Y.
+         * @param z Z.
          */
         public Vector3(Vector2 xy, float z)
         {
@@ -53,8 +50,8 @@ namespace Uge
         }
 
         /**
-         * @brief Constructs a vector with every component set to the same value.
-         * @param scalar Value for every component.
+         * @brief A vector with all components equal.
+         * @param scalar The value.
          */
         public Vector3(float scalar)
         {
@@ -64,10 +61,10 @@ namespace Uge
         }
 
         /**
-         * @brief Constructs a vector from its components.
-         * @param x X component.
-         * @param y Y component.
-         * @param z Z component.
+         * @brief A vector from its components.
+         * @param x X.
+         * @param y Y.
+         * @param z Z.
          */
         public Vector3(float x, float y, float z)
         {
@@ -77,9 +74,9 @@ namespace Uge
         }
 
         /**
-         * @brief Component-wise addition.
-         * @param a Left operand.
-         * @param b Right operand.
+         * @brief Adds two vectors.
+         * @param a A vector.
+         * @param b A vector.
          * @return The sum.
          */
         public static Vector3 operator +(Vector3 a, Vector3 b)
@@ -88,9 +85,9 @@ namespace Uge
         }
 
         /**
-         * @brief Scalar multiplication.
-         * @param vector Vector to scale.
-         * @param scalar Factor to scale by.
+         * @brief Scales a vector.
+         * @param vector The vector.
+         * @param scalar The factor.
          * @return The scaled vector.
          */
         public static Vector3 operator *(Vector3 vector, float scalar)

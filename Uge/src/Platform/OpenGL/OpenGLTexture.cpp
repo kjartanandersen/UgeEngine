@@ -39,9 +39,8 @@ namespace Uge
 			return 0;
 		}
 
-		// The type of one component in the pixel data handed to SetData, which is not implied
-		// by the internal format: a GL_RGBA16F texture is uploaded from GL_FLOAT data, since
-		// stb_image's HDR loader produces 32-bit floats and the driver converts on upload.
+		// The component type of the data SetData() takes. Float formats take 32-bit floats,
+		// as stb_image loads HDR images, and the driver converts them.
 		static GLenum UgeImageFormatToGLPixelType(ImageFormat format)
 		{
 			switch (format)
@@ -58,8 +57,7 @@ namespace Uge
 			return 0;
 		}
 
-		// A full chain down to 1x1. Prefiltered environment maps address roughness through the
-		// mip level, so the chain has to exist before anything can be rendered into it.
+		// A full chain down to 1x1.
 		static uint32_t CalculateMipLevels(uint32_t width, uint32_t height)
 		{
 			uint32_t levels = 1;
@@ -88,8 +86,7 @@ namespace Uge
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_rendererID);
 		glTextureStorage2D(m_rendererID, m_mipLevels, m_internalFormat, m_width, m_height);
 
-		// Sampling a mipped texture with GL_LINEAR would read level 0 forever and the chain
-		// below would be dead weight.
+		// GL_LINEAR would only ever sample level 0.
 		glTextureParameteri(m_rendererID, GL_TEXTURE_MIN_FILTER,
 			m_mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 		glTextureParameteri(m_rendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -119,8 +116,7 @@ namespace Uge
 	void OpenGLTexture2D::SetData(Buffer data)
 	{
 #ifdef UG_DEBUG
-		// Derived from the format rather than guessed from m_dataFormat, which cannot tell an
-		// 8-bit RGBA from a 16-bit float one - both report GL_RGBA.
+		// From the format: m_dataFormat is GL_RGBA for both RGBA8 and RGBA16F.
 		const uint64_t bpp = ImageFormatBytesPerPixel(m_specification.Format);
 		UG_CORE_ASSERT(data.Size == (uint64_t)m_width * m_height * bpp, "Data must be the entire texture!");
 
@@ -128,8 +124,7 @@ namespace Uge
 
 		glTextureSubImage2D(m_rendererID, 0, 0, 0, m_width, m_height, m_dataFormat, m_pixelType, data.Data);
 
-		// Only level 0 was uploaded; without this the rest of the chain stays undefined and a
-		// minified sample returns whatever the driver left in the allocation.
+		// Only level 0 was uploaded.
 		if (m_mipLevels > 1)
 		{
 			glGenerateTextureMipmap(m_rendererID);

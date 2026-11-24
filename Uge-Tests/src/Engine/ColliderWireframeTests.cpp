@@ -16,7 +16,7 @@
 
 namespace
 {
-	/** @brief Records every line segment it is given. */
+	/** @brief Records the lines it is given. */
 	class LineRecorder : public Uge::PhysicsDebugRenderer
 	{
 	public:
@@ -101,8 +101,7 @@ TEST(ColliderWireframeTest, ASphereIsThreeRingsOnItsSurface)
 
 TEST(ColliderWireframeTest, ACapsuleOutlineLiesOnItsSurface)
 {
-	// Every point on a capsule's surface is exactly one radius from its core: the segment
-	// between the centres of its two caps.
+	// Every point is one radius from the segment between the caps' centres.
 	LineRecorder lines;
 	const float radius = 0.5f;
 	const float halfHeight = 1.5f;
@@ -120,8 +119,7 @@ TEST(ColliderWireframeTest, ACapsuleOutlineLiesOnItsSurface)
 
 TEST(ColliderWireframeTest, SegmentCountsAreRaisedToUsableValues)
 {
-	// A ring needs at least three segments. A capsule uses an even count of at least four,
-	// so each cap's half-arc is symmetric.
+	// At least three segments per ring; a capsule uses an even number, at least four.
 	LineRecorder sphere;
 	Uge::ColliderWireframe::DrawSphere(sphere, glm::mat4(1.0f), 1.0f, k_white, 1);
 	EXPECT_EQ(sphere.Lines.size(), 3u * 3u);

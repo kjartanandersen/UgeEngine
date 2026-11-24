@@ -1,6 +1,6 @@
 ﻿/**
  * @file Input.cs
- * @brief Managed keyboard input, forwarded to the engine through an internal call.
+ * @brief Keyboard input for scripts.
  * @ingroup group_scripting
  */
 using Uge;
@@ -8,18 +8,15 @@ using Uge;
 namespace Source.Uge
 {
     /**
-     * @brief Polled keyboard state, as seen from a C# script.
+     * @brief Keyboard state, from the native Uge::Input.
      * @ingroup group_scripting
-     *
-     * The managed mirror of the native Uge::Input. Calls cross into the engine through
-     * Uge::ScriptGlue.
      */
     public class Input
     {
         /**
-         * @brief Tests whether a key is currently held down.
-         * @param keycode Key to test.
-         * @return `true` while the key is down.
+         * @brief Whether a key is down.
+         * @param keycode The key.
+         * @return `true` if it is.
          */
         public static bool IsKeyDown(KeyCode keycode)
         {

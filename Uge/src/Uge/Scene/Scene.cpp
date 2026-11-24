@@ -21,9 +21,8 @@ namespace Uge
 
 	namespace
 	{
-		// Finds the scene's sky light and hands its environment to the mesh pass. Clears the
-		// environment when there is none, since Model holds it across frames and would
-		// otherwise keep lighting with a sky light that has since been deleted.
+		// Gives the first sky light's environment to the mesh pass, or clears it when there is
+		// none, since Model keeps it between frames.
 		static void ApplySkyLight(entt::registry& registry)
 		{
 			auto skyLightView = registry.view<SkyLightComponent>();
@@ -41,20 +40,17 @@ namespace Uge
 			Model::SetEnvironment(nullptr);
 		}
 
-		// Finds the scene's directional light and hands it to the mesh pass. Clears it when
-		// there is none, for the same reason ApplySkyLight does.
+		// Gives the first directional light to the mesh pass, or clears it, like ApplySkyLight.
 		static void ApplyDirectionalLight(entt::registry& registry)
 		{
 			auto lightView = registry.view<TransformComponent, DirectionalLightComponent>();
 			for (auto [entity, transform, light] : lightView.each())
 			{
-				// Shines along the entity's local -Z, matching the axis a camera looks down,
-				// so the same rotation gizmo aims both. Position is irrelevant: the source is
-				// infinitely distant, which is what makes the rays parallel.
+				// Shines along the entity's local -Z, the way a camera looks.
 				const glm::vec3 direction =
 					glm::mat3(glm::toMat3(glm::quat(transform.Rotation))) * glm::vec3(0.0f, 0.0f, -1.0f);
 
-				// Picked by eye in the property panel, so sRGB; the renderer works in linear.
+				// The colour is sRGB; the renderer works in linear.
 				Model::SetDirectionalLight(direction, SrgbToLinear(light.Color) * light.Intensity);
 				return;
 			}
@@ -62,8 +58,7 @@ namespace Uge
 			Model::SetDirectionalLight(glm::vec3(0.0f), glm::vec3(0.0f));
 		}
 
-		// The sky surrounds the camera rather than sitting somewhere in the world, so the view
-		// matrix keeps its rotation and loses its translation.
+		// The sky surrounds the camera, so the view keeps its rotation and drops its translation.
 		static glm::mat4 SkyboxViewProjection(const glm::mat4& projection, const glm::mat4& view)
 		{
 			return projection * glm::mat4(glm::mat3(view));
@@ -128,7 +123,6 @@ namespace Uge
 		auto& dstSceneRegistry = newScene->m_registry;
 		std::unordered_map<UUID, entt::entity> enttMap;
 
-		// Create entities in new scene
 		auto idView = srcSceneRegistry.view<IDComponent>();
 		for (auto e : idView)
 		{
@@ -138,7 +132,7 @@ namespace Uge
 			enttMap[uuid] = (entt::entity)newEntity;
 		}
 
-		// Copy components (except IDComponent and TagComponent)
+		// IDComponent and TagComponent are set above; AllComponents leaves them out.
 		CopyComponent(AllComponents{}, dstSceneRegistry, srcSceneRegistry, enttMap);
 
 		return newScene;
@@ -200,19 +194,22 @@ namespace Uge
 	void Scene::DestroyEntity(Entity entity)
 	{
 
-		// Read the handle before the entity goes away, release after — the scan in
-		// ReleaseMeshIfUnused would otherwise still see this entity holding it.
+		// Read before the entity is destroyed and released after, so ReleaseMeshIfUnused
+		// doesn't count this entity.
 		AssetHandle mesh = entity.HasComponent<MeshComponent>()
 			? entity.GetComponent<MeshComponent>().Mesh
 			: 0;
 
 
-		// Same but for mesh collider
 		AssetHandle meshCollider = entity.HasComponent<MeshColliderComponent>()
 			? entity.GetComponent<MeshColliderComponent>().Mesh
 			: 0;
 
-		
+		// Read here because the IDComponent may go before the ScriptComponent.
+		if (m_isRunning)
+		{
+			ScriptEngine::OnDestroyEntity(entity.GetUUID());
+		}
 
 		m_entityMap.erase(entity.GetUUID());
 		m_registry.destroy(entity);
@@ -255,8 +252,11 @@ namespace Uge
 	void Scene::OnRuntimeStart()
 	{
 		m_isRunning = true;
+		m_registry.on_destroy<RigidbodyComponent>().connect<&Scene::OnRigidbodyDestroyed>(*this);
+		m_registry.on_destroy<ScriptComponent>().connect<&Scene::OnScriptDestroyed>(*this);
+		m_registry.on_destroy<NativeScriptComponent>().connect<&Scene::OnNativeScriptDestroyed>(*this);
 
-		// Physics — must exist before scripts are instantiated.
+		// Physics first, so scripts can use it from OnCreate.
 		{
 			PhysicsSceneDesc desc;
 			m_physicsScene = Physics::CreateScene(desc);
@@ -265,16 +265,14 @@ namespace Uge
 			for (auto e : view)
 			{
 				Entity entity = { e, this };
-				CreatePhysicsBody(entity);   // new private helper, see below
+				CreatePhysicsBody(entity);
 			}
 
 			m_physicsScene->OptimizeBroadPhase();
 		}
 
-		// Scripting
 		{
 			ScriptEngine::OnRuntimeStart(this);
-			// Instantiate all script entities
 
 			auto view = m_registry.view<ScriptComponent>();
 			for (auto e : view)
@@ -288,6 +286,15 @@ namespace Uge
 
 	void Scene::OnRuntimeStop()
 	{
+		m_registry.on_destroy<RigidbodyComponent>().disconnect<&Scene::OnRigidbodyDestroyed>(*this);
+		m_registry.on_destroy<ScriptComponent>().disconnect<&Scene::OnScriptDestroyed>(*this);
+		m_registry.on_destroy<NativeScriptComponent>().disconnect<&Scene::OnNativeScriptDestroyed>(*this);
+
+		// Native script objects only exist during Play.
+		for (auto e : m_registry.view<NativeScriptComponent>())
+		{
+			OnNativeScriptDestroyed(m_registry, e);
+		}
 		m_isRunning = false;
 		ScriptEngine::OnRuntimeStop();
 
@@ -333,8 +340,7 @@ namespace Uge
 					++steps;
 				}
 
-				// A hitch (breakpoint, asset load) must not leave a backlog that
-				// then runs at maxSubSteps forever and never catches up.
+				// After a hitch, drop the backlog rather than run maxSubSteps every frame.
 				if (steps == maxSubSteps)
 				{
 					m_physicsAccumulator = 0.0f;
@@ -362,13 +368,10 @@ namespace Uge
 				}
 
 				m_physicsScene->ConsumeContactEvents(m_contactEvents);
-				// TODO: dispatch m_contactEvents to scripts once Phase 4 lands.
+				// TODO: send m_contactEvents to the scripts.
 			}
 
 
-			// Update Scripts
-
-			// C# Entity OnUpdate
 			{
 				UG_PROFILE_SCOPE("Scene Scripts (C#)");
 				auto view = m_registry.view<ScriptComponent>();
@@ -381,18 +384,20 @@ namespace Uge
 
 			{
 				UG_PROFILE_SCOPE("Scene Scripts (native)");
-				m_registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
+				m_registry.view<NativeScriptComponent>().each([this, ts](auto entity, auto& nsc)
 					{
-						// TODO: Move to Scene::OnScenePlay
-						if (!nsc.Instance)
+						// Created on the first update, so a component added during Play starts too.
+						if (!nsc.Instance && nsc.InstantiateScript)
 						{
 							nsc.Instance = nsc.InstantiateScript();
 							nsc.Instance->m_entity = Entity{ entity, this };
 							nsc.Instance->OnCreate();
 						}
 
-						nsc.Instance->OnUpdate(ts);
-
+						if (nsc.Instance)
+						{
+							nsc.Instance->OnUpdate(ts);
+						}
 					});
 			}
 		}
@@ -406,7 +411,6 @@ namespace Uge
 	{
 
 
-		// Render Scene
 		Camera* mainCam = nullptr;
 		glm::mat4 mainTransform;
 		{
@@ -436,6 +440,7 @@ namespace Uge
 			ApplyDirectionalLight(m_registry);
 			Model::BeginScene(viewProjection, glm::vec3(mainTransform[3]));
 			{
+				UG_PROFILE_SCOPE("Scene Meshes");
 				auto meshView = m_registry.view<TransformComponent, MeshComponent>();
 				for (auto [entity, transform, mesh] : meshView.each())
 				{
@@ -596,6 +601,36 @@ namespace Uge
 
 	}
 
+	void Scene::OnRigidbodyDestroyed(entt::registry& registry, entt::entity entity)
+	{
+		RigidbodyComponent& rigidbody = registry.get<RigidbodyComponent>(entity);
+		if (m_physicsScene && rigidbody.RuntimeBody.IsValid())
+		{
+			m_physicsScene->DestroyBody(rigidbody.RuntimeBody);
+			rigidbody.RuntimeBody = {};
+		}
+	}
+
+	void Scene::OnScriptDestroyed(entt::registry& registry, entt::entity entity)
+	{
+		// With the whole entity destroyed, the IDComponent may be gone already;
+		// DestroyEntity has removed the script object then.
+		if (const IDComponent* id = registry.try_get<IDComponent>(entity))
+		{
+			ScriptEngine::OnDestroyEntity(id->ID);
+		}
+	}
+
+	void Scene::OnNativeScriptDestroyed(entt::registry& registry, entt::entity entity)
+	{
+		NativeScriptComponent& nsc = registry.get<NativeScriptComponent>(entity);
+		if (nsc.Instance)
+		{
+			nsc.Instance->OnDestroy();
+			nsc.DestroyScript(&nsc);
+		}
+	}
+
 	void Scene::OnUpdateEditor(Timestep ts, EditorCamera& camera)
 	{
 
@@ -604,6 +639,7 @@ namespace Uge
 		ApplyDirectionalLight(m_registry);
 		Model::BeginScene(camera.GetViewProjection(), camera.GetPosition());
 		{
+			UG_PROFILE_SCOPE("Scene Meshes");
 			auto meshView = m_registry.view<TransformComponent, MeshComponent>();
 			for (auto [entity, transform, mesh] : meshView.each())
 			{
@@ -618,8 +654,8 @@ namespace Uge
 			}
 		}
 
-		// After the opaque meshes so the depth buffer rejects sky the car already covers, and
-		// before EndScene so transparent surfaces blend over it.
+		// After the opaque meshes, so depth testing hides the sky they cover, and before
+		// EndScene, so transparent surfaces blend over it.
 		Model::DrawSkybox(SkyboxViewProjection(camera.GetProjection(), camera.GetViewMatrix()));
 
 		Model::EndScene();
@@ -791,12 +827,8 @@ namespace Uge
 	template<>
 	void Scene::OnComponentAdded<DirectionalLightComponent>(Entity entity, DirectionalLightComponent& component)
 	{
-		// A light shines along its entity's local -Z, so an untouched transform points it
-		// horizontally - which lights none of the upward-facing surfaces anyone is looking at,
-		// and reads as "the light does nothing". Aim it down and to one side instead, the angle
-		// a sun would actually come from.
-		//
-		// Only when the rotation is untouched, so this never overwrites a deliberate one.
+		// Untouched, the light would shine horizontally and seem to light nothing, so aim it
+		// down and to the side, like the sun. A rotation already set is kept.
 		TransformComponent& transform = entity.GetComponent<TransformComponent>();
 		if (transform.Rotation == glm::vec3(0.0f))
 		{

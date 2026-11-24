@@ -2,14 +2,15 @@
 #include "Material.h"
 
 #include "Renderer.h"
+#include "Texture.h"
 #include <Platform/OpenGL/OpenGLMaterial.h>
+#include "Uge/Asset/AssetManager.h"
 
 namespace Uge
 {
-	// Created on first Bind() rather than at startup: the graphics context does not exist yet
-	// when the first materials are constructed during model import. A file static, not a
-	// function static, so Shutdown() can release it while the context exists.
-	static Ref<UniformBuffer> s_propertiesUniformBuffer;
+	// The default material's block. Created on first use, once a GL context exists; a file
+	// static so Shutdown() can release it before the context goes.
+	static Ref<UniformBuffer> s_defaultPropertiesBuffer;
 
 	Ref<Material> Material::Create(const Ref<Shader>& shader)
 	{
@@ -24,50 +25,31 @@ namespace Uge
 		return nullptr;
 	}
 
-	bool Material::s_hasEnvironment = false;
-	uint32_t Material::s_environmentMipCount = 1;
-	float Material::s_environmentIntensity = 1.0f;
-
-	void Material::SetEnvironmentState(bool hasEnvironment, uint32_t prefilteredMipCount, float intensity)
-	{
-		s_hasEnvironment = hasEnvironment;
-		s_environmentMipCount = prefilteredMipCount;
-		s_environmentIntensity = intensity;
-	}
-
-	const Ref<UniformBuffer>& Material::PropertiesUniformBuffer()
-	{
-
-		if (!s_propertiesUniformBuffer)
-		{
-			s_propertiesUniformBuffer = UniformBuffer::Create(sizeof(MaterialUniformData), 2);
-		}
-
-		return s_propertiesUniformBuffer;
-	}
-
 	void Material::BindDefaultProperties()
 	{
-		MaterialUniformData data{};
+		if (!s_defaultPropertiesBuffer)
+		{
+			MaterialUniformData data{};
+			data.AlbedoColor = glm::vec4(1.0f);
+			data.EmissiveColor = glm::vec4(0.0f);
+			data.Roughness = 1.0f;
+			data.Metallic = 0.0f;
+			data.EmissiveStrength = 0.0f;
+			data.AlphaCutoff = 0.5f;
+			data.MapFlags = MaterialMap_None;
+			data.BlendMode = static_cast<int32_t>(AlphaMode::Opaque);
 
-		data.AlbedoColor = glm::vec4(1.0f);
-		data.EmissiveColor = glm::vec4(0.0f);
-		data.Roughness = 1.0f;
-		data.Metallic = 0.0f;
-		data.EmissiveStrength = 0.0f;
-		data.AlphaCutoff = 0.5f;
-		data.MapFlags = s_hasEnvironment ? MaterialMap_Environment : MaterialMap_None;
-		data.BlendMode = static_cast<int32_t>(AlphaMode::Opaque);
-		data.EnvironmentMipCount = static_cast<int32_t>(s_environmentMipCount);
-		data.EnvironmentIntensity = s_environmentIntensity;
+			s_defaultPropertiesBuffer = UniformBuffer::Create(sizeof(data), 2);
+			s_defaultPropertiesBuffer->SetData(&data, sizeof(data));
+		}
 
-		PropertiesUniformBuffer()->SetData(&data, sizeof(data));
+		s_defaultPropertiesBuffer->Bind();
 	}
 
 	void Material::Shutdown()
 	{
 
-		s_propertiesUniformBuffer.reset();
+		s_defaultPropertiesBuffer.reset();
 
 	}
 
@@ -91,24 +73,56 @@ namespace Uge
 		if (m_textureMaps.AmbientOcclusion)	mapFlags |= MaterialMap_AmbientOcclusion;
 		if (m_textureMaps.Emissive)			mapFlags |= MaterialMap_Emissive;
 
-		// The same handle in both slots means one packed texture, which is how assimp reports
-		// a glTF metallicRoughnessTexture. @see MaterialMap_PackedMetallicRoughness
+		// The same texture in both slots is a packed glTF metallic-roughness map.
 		if (m_textureMaps.Roughness && m_textureMaps.Roughness == m_textureMaps.Metallic)
 		{
 			mapFlags |= MaterialMap_PackedMetallicRoughness;
 		}
 
-		// Per-frame scene state rather than a property of this material. @see SetEnvironmentState
-		if (s_hasEnvironment)
-		{
-			mapFlags |= MaterialMap_Environment;
-		}
-
 		data.MapFlags = mapFlags;
-		data.EnvironmentMipCount = static_cast<int32_t>(s_environmentMipCount);
-		data.EnvironmentIntensity = s_environmentIntensity;
+
 
 		return data;
+	}
+
+	void Material::BindProperties()
+	{
+		if (!m_propertiesBuffer)
+		{
+			// Binding 2, MaterialData in assets/shaders/Model.glsl.
+			m_propertiesBuffer = UniformBuffer::Create(sizeof(MaterialUniformData), 2);
+			m_propertiesDirty = true;
+		}
+
+		if (m_propertiesDirty)
+		{
+			const MaterialUniformData data = BuildUniformData();
+			m_propertiesBuffer->SetData(&data, sizeof(data));
+			m_propertiesDirty = false;
+		}
+
+		m_propertiesBuffer->Bind();
+	}
+
+	const std::array<Ref<Texture2D>, Material::TextureMapCount>& Material::ResolveTextures()
+	{
+		if (!m_texturesResolved)
+		{
+			const AssetHandle handles[TextureMapCount] =
+			{
+				m_textureMaps.Albedo, m_textureMaps.Normal, m_textureMaps.Roughness,
+				m_textureMaps.Metallic, m_textureMaps.AmbientOcclusion, m_textureMaps.Emissive
+			};
+
+			for (uint32_t slot = 0; slot < TextureMapCount; slot++)
+			{
+				m_textures[slot] = handles[slot] ? AssetManager::GetAsset<Texture2D>(handles[slot]) : nullptr;
+			}
+
+			m_texturesResolved = true;
+		}
+
+		return m_textures;
 	}
 
 }

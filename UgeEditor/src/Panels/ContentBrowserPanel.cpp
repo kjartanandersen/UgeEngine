@@ -3,7 +3,7 @@
 
 #include "Uge/Project/Project.h"
 
-#include "Uge/Asset/TextureImporter.h"
+#include "../EditorIcons.h"
 
 #include <imgui.h>
 
@@ -16,8 +16,8 @@ namespace Uge
 	{
 		m_baseDirectory = Project::GetAssetDirectory();
 		m_currentDirectory = m_baseDirectory;
-		m_directoryIcon = TextureImporter::LoadTexture2D("Resources/Icons/ContentBrowser/DirectoryIcon.png");
-		m_fileIcon = TextureImporter::LoadTexture2D("Resources/Icons/ContentBrowser/FileIcon.png");
+		m_directoryIcon = LoadEditorIcon("Resources/Icons/ContentBrowser/DirectoryIcon.png");
+		m_fileIcon = LoadEditorIcon("Resources/Icons/ContentBrowser/FileIcon.png");
 		m_treeNodes.push_back(TreeNode(".", 0));
 		RefreshAssetTree();
 		m_mode = Mode::Asset;
@@ -93,9 +93,7 @@ namespace Uge
 				{
 
 					std::string itemStr = item.generic_string();
-					// 'item' is only the leaf component relative to the current directory, so
-					// resolve it against m_currentDirectory (not the asset root) when probing
-					// the filesystem — otherwise nested folders are misclassified as files.
+					// item is relative to the current directory, not the asset root.
 					bool isDirectory = std::filesystem::is_directory(m_currentDirectory / itemStr);
 
 
@@ -118,8 +116,7 @@ namespace Uge
 								ImGui::EndPopup();
 							}
 
-							// Only real asset files are draggable. Directories carry no handle and
-							// are navigated into via double-click instead.
+							// Only files can be dragged; a directory is opened by double-clicking.
 							if (!isDirectory && ImGui::BeginDragDropSource())
 							{
 								AssetHandle handle = m_treeNodes[treeNodeIndex].Handle;
@@ -226,10 +223,7 @@ namespace Uge
 		{
 			uint32_t currentNodeIdx = 0;
 
-			// Only the final path component (the actual asset file) should carry the
-			// asset handle. Intermediate directory nodes must stay handle-less, otherwise
-			// a directory ends up holding the handle of whichever asset created it first
-			// (e.g. a mesh's extracted texture), and dragging it yields the wrong asset.
+			// Only the file's node gets the handle; directory nodes keep 0.
 			const std::filesystem::path leaf = metadata.FilePath.filename();
 
 			for (const auto& p : metadata.FilePath)

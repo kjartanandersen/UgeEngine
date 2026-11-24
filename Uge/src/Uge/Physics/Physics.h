@@ -8,28 +8,23 @@ namespace Uge
 	struct PhysicsSceneDesc;
 
 	/**
-     * @brief Static facade over the active Uge::PhysicsAPI.
+     * @brief Static access to the physics backend, which creates the worlds.
      * @ingroup group_physics
-     *
-     * Owns the process-wide backend: allocators, the job system and type registration.
-     * Individual worlds are Uge::PhysicsScene objects created through CreateScene().
-     *
-     * @see PhysicsScene, Uge::JoltAPI
      */
 	class Physics
 	{
 
 	public:
-		/** @brief Boots the backend. Call once, from Uge::Application's constructor. */
+		/** @brief Starts the backend. Call once. */
 		static void Init();
 
-		/** @brief Tears the backend down. Call after every Uge::PhysicsScene is destroyed. */
+		/** @brief Shuts the backend down. Call after every Uge::PhysicsScene is destroyed. */
 		static void Shutdown();
 
 		/**
-		 * @brief Creates an independent physics world.
-		 * @param desc Tuning limits and initial gravity for the world.
-		 * @return An owning handle to the new world.
+		 * @brief Creates a physics world.
+		 * @param desc Limits and gravity.
+		 * @return The world.
 		 */
 		static Scope<PhysicsScene> CreateScene(const PhysicsSceneDesc& desc);
 

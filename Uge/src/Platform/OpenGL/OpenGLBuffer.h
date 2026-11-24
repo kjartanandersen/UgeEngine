@@ -1,6 +1,6 @@
 /**
  * @file OpenGLBuffer.h
- * @brief OpenGL implementations of the vertex and index buffers.
+ * @brief OpenGL vertex and index buffers.
  * @ingroup group_platform
  */
 
@@ -21,14 +21,14 @@ namespace Uge
 
 	public:
 		/**
-		 * @brief Allocates a dynamic buffer with no initial contents.
-		 * @param size Capacity in bytes.
+		 * @brief An empty dynamic buffer.
+		 * @param size Size in bytes.
 		 */
 		OpenGLVertexBuffer(uint32_t size);
 		/**
-		 * @brief Allocates a static buffer and uploads its contents.
-		 * @param vertices Source vertex data.
-		 * @param size Size of @p vertices in bytes.
+		 * @brief A static buffer holding vertex data.
+		 * @param vertices The vertex data.
+		 * @param size Its size in bytes.
 		 */
 		OpenGLVertexBuffer(float* vertices, uint32_t size);
 		/** @brief Deletes the GL buffer. */
@@ -50,7 +50,7 @@ namespace Uge
 	};
 
 	/**
-	 * @brief An OpenGL element array buffer holding 32-bit indices.
+	 * @brief An OpenGL buffer of 32-bit indices.
 	 * @ingroup group_platform
 	 */
 	class OpenGLIndexBuffer : public IndexBuffer
@@ -58,9 +58,9 @@ namespace Uge
 
 	public:
 		/**
-		 * @brief Allocates the buffer and uploads the indices.
-		 * @param indices Source index data.
-		 * @param size Number of indices, **not** a byte count.
+		 * @brief A buffer holding indices.
+		 * @param indices The indices.
+		 * @param size Number of indices, not bytes.
 		 */
 		OpenGLIndexBuffer(uint32_t* indices, uint32_t size);
 		/** @brief Deletes the GL buffer. */

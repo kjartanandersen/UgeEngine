@@ -11,28 +11,24 @@
 namespace Uge
 {
 	/**
-	 * @brief An OpenGL framebuffer object with colour and depth attachments.
+	 * @brief An OpenGL framebuffer with colour and depth attachments.
 	 * @ingroup group_platform
-	 *
-	 * Supports the `RED_INTEGER` attachment the editor reads back for mouse picking.
 	 */
 	class OpenGLFramebuffer : public Framebuffer
 	{
 	public:
 		/**
 		 * @brief Creates the framebuffer and its attachments.
-		 * @param spec Size, attachments and sample count.
+		 * @param spec The settings.
 		 */
 		OpenGLFramebuffer(const FramebufferSpecification& spec);
-		/** @brief Deletes the framebuffer and its attachment textures. */
+		/** @brief Deletes the framebuffer and its attachments. */
 		virtual ~OpenGLFramebuffer();
 
 		virtual const FramebufferSpecification& GetSpecification() const override { return m_specification; };
 
 		/**
-		 * @brief Destroys and recreates the framebuffer and every attachment.
-		 *
-		 * Called on construction and by Resize(); attachment contents are discarded.
+		 * @brief Recreates the framebuffer and its attachments, losing their contents.
 		 */
 		void Invalidate();
 

@@ -21,15 +21,15 @@ namespace Uge::JoltLayers
         static constexpr uint32_t Count = 2;
     }
 
-    /// Static bodies never need to collide with each other.
+    /// Lets every pair of layers collide except two static ones.
     class ObjectLayerPairFilterImpl : public JPH::ObjectLayerPairFilter
     {
     public:
         /**
-         * @brief Whether two object layers may generate contacts.
-         * @param a First object layer.
-         * @param b Second object layer.
-         * @return `true` unless both layers are static.
+         * @brief Whether two object layers can collide.
+         * @param a First layer.
+         * @param b Second layer.
+         * @return `true` unless both are static.
          */
         bool ShouldCollide(JPH::ObjectLayer a, JPH::ObjectLayer b) const override
         {
@@ -38,28 +38,27 @@ namespace Uge::JoltLayers
     };
 
     /**
-     * @brief Maps every Uge::PhysicsLayer onto a Jolt broad-phase layer.
+     * @brief Maps the object layers onto two broad-phase layers, static and moving.
      *
-     * Two broad-phase layers are enough: static geometry and everything that moves.
-     * Keeping them apart lets Jolt skip the static-vs-static half of the tree entirely.
+     * Static bodies get their own layer, so static pairs are never tested.
      */
     class BroadPhaseLayerInterfaceImpl final : public JPH::BroadPhaseLayerInterface
     {
     public:
-        /** @brief Builds the object-layer to broad-phase-layer table. */
+        /** @brief Builds the layer table. */
         BroadPhaseLayerInterfaceImpl()
         {
             m_objectToBroadPhase[Static] = BroadPhase::Static;
             m_objectToBroadPhase[Moving] = BroadPhase::Moving;
         }
 
-        /** @brief How many broad-phase layers exist. @return JoltLayers::BroadPhase::Count. */
+        /** @brief The number of broad-phase layers. @return JoltLayers::BroadPhase::Count. */
         uint32_t GetNumBroadPhaseLayers() const override { return BroadPhase::Count; }
 
         /**
-         * @brief The broad-phase layer an object layer belongs to.
-         * @param layer Object layer to map; must be below JoltLayers::Count.
-         * @return The matching broad-phase layer.
+         * @brief The broad-phase layer of an object layer.
+         * @param layer Object layer, below JoltLayers::Count.
+         * @return The broad-phase layer.
          */
         JPH::BroadPhaseLayer GetBroadPhaseLayer(JPH::ObjectLayer layer) const override
         {
@@ -84,19 +83,16 @@ namespace Uge::JoltLayers
     };
 
     /**
-     * @brief Decides which broad-phase layers an object layer is tested against.
-     *
-     * A static object only needs testing against the moving broad-phase layer; anything
-     * that moves is tested against both.
+     * @brief Tests static objects against moving bodies only, and moving objects against both.
      */
     class ObjectVsBroadPhaseLayerFilterImpl : public JPH::ObjectVsBroadPhaseLayerFilter
     {
     public:
         /**
-         * @brief Whether an object layer should be tested against a broad-phase layer.
-         * @param layer Object layer of the body or query.
-         * @param bpLayer Broad-phase layer being considered.
-         * @return `true` if the pair may collide.
+         * @brief Whether an object layer is tested against a broad-phase layer.
+         * @param layer Object layer.
+         * @param bpLayer Broad-phase layer.
+         * @return `true` if they can collide.
          */
         bool ShouldCollide(JPH::ObjectLayer layer, JPH::BroadPhaseLayer bpLayer) const override
         {
@@ -106,24 +102,21 @@ namespace Uge::JoltLayers
     };
 
     /**
-     * @brief Restricts a query to the layers named in a Uge::PhysicsLayerMask.
-     *
-     * Bit `N` of the mask enables Uge::PhysicsLayer `N`, so Uge::PhysicsLayerMaskAll
-     * (`~0u`) passes everything.
+     * @brief Limits a query to the layers in a Uge::PhysicsLayerMask. Bit N enables layer N.
      */
     class MaskObjectLayerFilter : public JPH::ObjectLayerFilter
     {
     public:
         /**
-         * @brief Builds a filter from a layer mask.
-         * @param mask Bitmask of Uge::PhysicsLayer values to accept.
+         * @brief Creates the filter.
+         * @param mask Layers to accept.
          */
         explicit MaskObjectLayerFilter(PhysicsLayerMask mask) : m_mask(mask) {}
 
         /**
-         * @brief Whether a body's object layer passes the mask.
-         * @param layer Object layer to test.
-         * @return `true` if that layer's bit is set in the mask.
+         * @brief Whether a layer is in the mask.
+         * @param layer Object layer.
+         * @return `true` if its bit is set.
          */
         bool ShouldCollide(JPH::ObjectLayer layer) const override
         {

@@ -15,8 +15,7 @@ namespace Uge
 
 	namespace
 	{
-		// Mirrors CubeRenderData in the environment build shaders. std140 rounds the block up
-		// to a multiple of 16, hence the padding after the single float.
+		// Matches CubeRenderData in the environment shaders, padded to 16 bytes for std140.
 		struct CubeRenderData
 		{
 			glm::mat4 ViewProjection;
@@ -30,14 +29,12 @@ namespace Uge
 		constexpr uint32_t k_prefilterMipCount = 5;
 		constexpr uint32_t k_brdfLutSize = 512;
 
-		// 90 degrees of field of view is exactly one cube face. The near and far planes only
-		// have to bracket the unit cube.
+		// A 90 degree field of view covers one cube face.
 		const glm::mat4 k_captureProjection =
 			glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
 
-		// Order matches GL_TEXTURE_CUBE_MAP_POSITIVE_X + i. The up vectors are negated on the
-		// horizontal faces because a cubemap's texture space is left-handed and flipped
-		// vertically relative to the world - the standard, deeply unintuitive convention.
+		// In GL_TEXTURE_CUBE_MAP_POSITIVE_X + i order. Up is -y on the side faces, as cubemap
+		// faces are stored upside down.
 		const glm::mat4 k_captureViews[6] =
 		{
 			glm::lookAt(glm::vec3(0.0f), glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
@@ -50,7 +47,7 @@ namespace Uge
 
 		Ref<VertexArray> CreateUnitCube()
 		{
-			// Wound so the faces point inwards: every pass renders the cube from its centre.
+			// Faces wind inwards, as the cube is drawn from its centre.
 			constexpr float vertices[] =
 			{
 				-1.0f, -1.0f, -1.0f,   1.0f, -1.0f, -1.0f,   1.0f,  1.0f, -1.0f,  -1.0f,  1.0f, -1.0f,
@@ -106,7 +103,7 @@ namespace Uge
 			return vertexArray;
 		}
 
-		// Renders the six faces of one cubemap mip level with the given shader bound.
+		// Draws all six faces of one mip level with the bound shader.
 		void RenderCubeFaces(uint32_t framebuffer, const Ref<TextureCube>& target, uint32_t mipLevel,
 			uint32_t mipSize, float roughness, const Ref<VertexArray>& cube,
 			const Ref<UniformBuffer>& uniformBuffer)
@@ -149,9 +146,7 @@ namespace Uge
 		Ref<Shader> prefilterShader = Shader::Create("assets/shaders/PrefilterEnvironment.glsl");
 		Ref<Shader> brdfShader = Shader::Create("assets/shaders/BrdfLut.glsl");
 
-		// This runs mid-frame, while the editor's scene framebuffer is bound: Scene::ApplySkyLight
-		// loads the environment on first use. Put back what was bound, or the rest of that frame
-		// draws into the window and picking reads an attachment it doesn't have.
+		// This can run mid-frame, with the scene framebuffer bound, so it is restored at the end.
 		GLint previousFramebuffer = 0;
 		GLint previousViewport[4] = {};
 		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previousFramebuffer);
@@ -160,8 +155,7 @@ namespace Uge
 		uint32_t framebuffer = 0;
 		glCreateFramebuffers(1, &framebuffer);
 
-		// The cube is drawn from the inside, so culling must be off. This runs when a Sky Light's
-		// environment is first loaded, before Model::BeginScene, which forces culling back on.
+		// The cube is drawn from inside.
 		RenderCommand::SetCullMode(CullMode::None);
 		RenderCommand::SetDepthTest(false);
 
@@ -171,8 +165,8 @@ namespace Uge
 		environmentSpec.Size = k_environmentSize;
 		environmentSpec.Format = ImageFormat::RGBA16F;
 
-		// Mipped so the prefilter pass can sample a coarser level for its wider lobes, which is
-		// what stops a small bright sun turning into a field of fireflies.
+		// Mipmaps let the prefilter sample coarser levels for rough lobes, which avoids
+		// bright speckles.
 		environmentSpec.GenerateMips = true;
 		environment->Skybox = TextureCube::Create(environmentSpec);
 
@@ -200,9 +194,7 @@ namespace Uge
 		prefilterSpec.Format = ImageFormat::RGBA16F;
 		prefilterSpec.GenerateMips = true;
 
-		// Exactly as many levels as the loop below writes. A full chain would leave levels 5-7
-		// of a 128px cube undefined, and Model.glsl maps roughness 1.0 onto the last level -
-		// so every rough surface in the scene would sample uninitialized memory.
+		// Only the levels the loop writes; Model.glsl samples the last one for roughness 1.
 		prefilterSpec.MipLevels = k_prefilterMipCount;
 		environment->Prefiltered = TextureCube::Create(prefilterSpec);
 
@@ -226,8 +218,7 @@ namespace Uge
 		brdfSpec.GenerateMips = false;
 		environment->BrdfLut = Texture2D::Create(brdfSpec);
 
-		// Clamped rather than repeated: this is a lookup table, and wrapping at the edges would
-		// return the reflectance for the opposite view angle.
+		// Clamped, as wrapping would read the opposite view angle at the edges.
 		glTextureParameteri(environment->BrdfLut->GetRendererID(), GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(environment->BrdfLut->GetRendererID(), GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 

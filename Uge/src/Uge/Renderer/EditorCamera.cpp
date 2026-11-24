@@ -46,10 +46,10 @@ namespace Uge
 
 	std::pair<float, float> EditorCamera::PanSpeed() const
 	{
-		float x = std::min(m_viewportWidth / 1000.0f, 2.4f); // max = 2.4f
+		float x = std::min(m_viewportWidth / 1000.0f, 2.4f);
 		float xFactor = 0.0366f * (x * x) - 0.1778f * x + 0.3021f;
 
-		float y = std::min(m_viewportHeight / 1000.0f, 2.4f); // max = 2.4f
+		float y = std::min(m_viewportHeight / 1000.0f, 2.4f);
 		float yFactor = 0.0366f * (y * y) - 0.1778f * y + 0.3021f;
 
 		return { xFactor, yFactor };
@@ -70,7 +70,7 @@ namespace Uge
 		float distance = m_distance * 0.2f;
 		distance = std::max(distance, 0.0f);
 		float speed = distance * distance;
-		speed = std::min(speed, 100.0f); // max speed = 100
+		speed = std::min(speed, 100.0f);
 		return speed;
 	}
 
@@ -158,11 +158,10 @@ namespace Uge
 	
 		glm::quat yaw = glm::angleAxis(glm::radians(-delta.x ), glm::vec3(0, 1, 0));
 
-		// 2. Clamp and Handle Pitch (Vertical)
 		float newPitch = m_currentPitch + delta.y;
 		float newYOffset = delta.y;
 
-		// Lock pitch between -89 and 89 degrees to prevent flipping/singularities
+		// Clamp pitch to 89 degrees either way, so the camera can't flip over.
 		if (newPitch > 89.0f) 
 		{
 			newYOffset = (89.0f - m_currentPitch);
@@ -181,10 +180,10 @@ namespace Uge
 
 		// UG_CORE_INFO("Current Pitch: {0}", m_currentPitch);
 
-		// Vertical rotation around the camera's local Right axis
+		// Pitch turns about the camera's own right axis.
 		glm::quat pitch = glm::angleAxis(glm::radians(-newYOffset), glm::vec3(1, 0, 0));
 
-		// Update orientation: Yaw happens in world space, Pitch in local space
+		// Yaw in world space, pitch in local space.
 		m_orientation = glm::normalize(yaw * m_orientation * pitch);
 	}
 

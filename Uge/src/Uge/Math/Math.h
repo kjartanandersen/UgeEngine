@@ -1,6 +1,6 @@
 /**
  * @file Math.h
- * @brief Math helpers layered on GLM.
+ * @brief Math helpers.
  * @ingroup group_math
  */
 
@@ -11,7 +11,7 @@
 namespace Uge
 {
 	/**
-	 * @brief Math utilities that GLM does not provide directly.
+	 * @brief Math helpers missing from GLM.
 	 * @ingroup group_math
 	 */
 	namespace Math
@@ -19,19 +19,15 @@ namespace Uge
 
 
 		/**
-		 * @brief Splits a transform matrix into translation, rotation and scale.
-		 * @param[in]  transform Matrix to decompose.
-		 * @param[out] outTranslation Extracted position.
-		 * @param[out] outRotation Extracted Euler angles, in **radians**.
-		 * @param[out] outScale Extracted scale factors.
-		 * @return `true` if the matrix could be decomposed.
+		 * @brief Splits a transform into translation, rotation and scale.
+		 * @param[in]  transform The transform.
+		 * @param[out] outTranslation Translation.
+		 * @param[out] outRotation Euler angles, in radians.
+		 * @param[out] outScale Scale.
+		 * @return `false` if the matrix can't be split; the outputs are then undefined.
 		 * @ingroup group_math
 		 *
-		 * Used when a gizmo writes back a manipulated matrix and the resulting values have to
-		 * be stored in a Uge::TransformComponent, which keeps the three parts separately.
-		 *
-		 * @note A simplified version of `glm::decompose` that skips perspective and skew.
-		 * Output values are undefined when it returns `false`.
+		 * Perspective and skew are ignored.
 		 */
 		bool DecomposeTransform(const glm::mat4& transform, 
 			glm::vec3& outTranslation, glm::vec3& outRotation, glm::vec3& outScale);

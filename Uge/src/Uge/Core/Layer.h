@@ -1,6 +1,6 @@
 /**
  * @file Layer.h
- * @brief Base class for the units of behaviour held by the layer stack.
+ * @brief Base class of the application's layers.
  * @ingroup group_core
  */
 
@@ -16,67 +16,48 @@ namespace Uge
 
 
 	/**
-	 * @brief A named slice of application behaviour that receives updates and events.
+	 * @brief A part of the application that receives updates and events.
 	 * @ingroup group_core
 	 *
-	 * Layers are the engine's primary extension point. A client subclasses Layer, overrides
-	 * the callbacks it needs, and hands an instance to Application::PushLayer or
-	 * Application::PushOverlay, which takes ownership.
-	 *
-	 * Every callback has an empty default, so a subclass only overrides what it uses.
-	 *
-	 * @note Updates run bottom-to-top while events propagate top-to-bottom, so the
-	 * most recently pushed layer sees input first.
-	 *
-	 * @see Uge::EditorLayer for a full example.
+	 * Every callback does nothing by default.
 	 */
 	class Layer
 	{
 
 	public:
 		/**
-		 * @brief Constructs a layer.
-		 * @param debugName Name used in logs and profiling output.
+		 * @brief Creates a layer.
+		 * @param debugName Name for logs and profiling.
 		 */
 		Layer(const std::string& debugName = "Layer");
-		/** @brief Virtual destructor; the layer stack deletes layers through this pointer. */
+		/** @brief Virtual, because the layer stack deletes layers through a base pointer. */
 		virtual ~Layer();
 
-		/**
-		 * @brief Called once when the layer is pushed onto the stack.
-		 *
-		 * The window and renderer are already initialized here, so this is the right place to
-		 * create framebuffers, load assets and set up state.
-		 */
+		/** @brief Called once when the layer is added. */
 		virtual void OnAttach() {}
-		/** @brief Called once when the layer is popped, before it is deleted. */
+		/** @brief Called once when the layer is removed, before it is deleted. */
 		virtual void OnDetach() {}
 		/**
-		 * @brief Called once per frame to advance and draw the layer.
-		 * @param timestep Seconds elapsed since the previous frame.
-		 * @note Not called while the window is minimized.
+		 * @brief Called every frame, except while the window is minimized.
+		 * @param timestep Seconds since the previous frame.
 		 */
 		virtual void OnUpdate(Timestep timestep) {}
-		/**
-		 * @brief Called once per frame inside the ImGui frame to emit UI.
-		 *
-		 * ImGui begin/end are handled by the ImGui layer, so this only issues widget calls.
-		 */
+		/** @brief Called every frame, inside the ImGui frame, to draw UI. */
 		virtual void OnImGuiRender() {}
 		/**
-		 * @brief Called when an event reaches this layer.
-		 * @param event The event; set Event::m_handled to stop it reaching lower layers.
+		 * @brief Called when an event reaches the layer.
+		 * @param event The event; set Event::m_handled to keep it from lower layers.
 		 */
 		virtual void OnEvent(Event& event) {}
 
 		/**
-		 * @brief Returns the debug name given at construction.
-		 * @return Const reference to the layer's name.
+		 * @brief The debug name.
+		 * @return The name.
 		 */
 		inline const std::string& GetName() const { return m_debugName; }
 
 	protected:
-		std::string m_debugName; ///< Name used in logs and profiling output.
+		std::string m_debugName; ///< Name for logs and profiling.
 	};
 
 

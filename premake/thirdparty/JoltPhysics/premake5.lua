@@ -1,5 +1,5 @@
--- Premake integration for the core Jolt static library.
--- Keep the default source set self-contained by using CPU compute only.
+-- Premake script for the Jolt static library.
+-- CPU compute only; the DX12, Metal and Vulkan compute sources are left out.
 
 project "Jolt"
 	kind "StaticLib"

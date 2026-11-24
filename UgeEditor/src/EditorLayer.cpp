@@ -10,6 +10,7 @@
 #include "Uge/Renderer/ColorSpace.h"
 #include "Uge/Physics/PhysicsDebugRenderer.h"
 #include "Uge/Physics/ColliderWireframe.h"
+#include "EditorIcons.h"
 
 #include "imgui.h"
 #include <cstdint>
@@ -25,15 +26,15 @@ namespace Uge
 {
 
 
-	/** @brief Forwards Uge::PhysicsDebugRenderer lines into the Uge::Renderer2D line batch. */
+	/** @brief Draws Uge::PhysicsDebugRenderer lines with Uge::Renderer2D. */
 	class Renderer2DLineSink : public PhysicsDebugRenderer
 	{
 	public:
 		/**
-		 * @brief Draws one world-space line segment through Uge::Renderer2D.
-		 * @param from Start point.
-		 * @param to End point.
-		 * @param color RGBA colour, components in `[0, 1]`.
+		 * @brief Draws a line with entity ID `-1`.
+		 * @param from Start, in world space.
+		 * @param to End, in world space.
+		 * @param color RGBA colour.
 		 */
 		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) override
 		{
@@ -41,12 +42,19 @@ namespace Uge
 		}
 	};
 
+	// The file's path relative to the asset directory, or an empty path if it isn't a .uge
+	// file inside the asset directory.
+	static std::filesystem::path SceneAssetPath(const std::string& filepath)
+	{
+		const std::filesystem::path relative = Project::GetRelativePath(filepath);
+		if (relative.empty() || *relative.begin() == ".." || relative.extension() != ".uge")
+		{
+			return {};
+		}
+		return relative;
+	}
 
-
-	// A handle never resolves when the asset manager doesn't know it (the asset was deleted,
-	// or the handle never pointed anywhere) or when it names the wrong kind of asset (a scene
-	// edited by hand). Say so once, when the scene opens, instead of leaving an entity that
-	// silently draws nothing.
+	// Warns about each asset reference in the scene that is missing or of the wrong type.
 	static void WarnAboutUnresolvedAssets(const Ref<Scene>& scene, const std::filesystem::path& scenePath)
 	{
 		auto check = [&](entt::entity handle, AssetHandle asset, AssetType expected, const char* what)
@@ -93,7 +101,7 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
-		// Once per frame, before anything draws — see Uge::RenderStats.
+		// Once per frame, before anything draws.
 		RenderStats::Reset();
 
 		// Counts down an in-progress trace capture and closes the session when it ends.
@@ -122,9 +130,7 @@ namespace Uge
 		{
 			{
 				UG_PROFILE_SCOPE("Renderer Prep")
-				// Decoded because the scene target is linear and the resolve pass encodes it.
-				// Written straight through, this grey would be encoded on the way out and the
-				// viewport background would come out at 0.345 rather than the 0.1 it reads as.
+				// An sRGB grey, converted because the scene target is linear.
 				RenderCommand::SetClearColor(SrgbToLinear(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f)));
 				RenderCommand::Clear();
 			}
@@ -149,9 +155,7 @@ namespace Uge
 				}
 			}
 
-			// A synchronous readback, so it stalls until the GPU has caught up with the
-			// whole frame. Timed separately because that stall is easily mistaken for the
-			// scene being slow to draw.
+			// Timed on its own: the readback waits for the GPU to finish the frame.
 			UG_PROFILE_SCOPE("Entity Picking Readback");
 
 			auto [mx, my] = ImGui::GetMousePos();
@@ -184,8 +188,8 @@ namespace Uge
 		}
 		m_frameBuffer->Unbind();
 
-		// Both read m_frameBuffer, so both are kept out of the block above, which still has it
-		// bound. Bloom first: the resolve samples its result.
+		// Both read m_frameBuffer, so they run once it is unbound. The resolve samples bloom's
+		// result.
 		{
 			UG_PROFILE_SCOPE("Bloom");
 			Bloom::Render(m_frameBuffer, PostProcess::GetSettings());
@@ -202,28 +206,29 @@ namespace Uge
 	{
 		UG_PROFILE_FUNCTION();
 
+		// Once per process; OpenProject() loads each project's scripts.
+		ScriptEngine::Init();
+
+		// OpenProject() replaces this with the project's start scene, if it has one.
+		m_editorScene = CreateRef<Scene>();
+		m_activeScene = m_editorScene;
+		m_sceneHierarchyPanel.SetContext(m_activeScene);
+		m_debugPanel.SetContext(m_activeScene);
+
 		auto appSpec = Application::Get().GetSpecifications();
 
-
-		if (appSpec.CommandLineArgs.Count > 1)
+		// A project on the command line that doesn't load falls back to the file dialog.
+		bool projectOpen = appSpec.CommandLineArgs.Count > 1 && OpenProject(appSpec.CommandLineArgs[1]);
+		if (!projectOpen && !OpenProject())
 		{
-			auto projectFilePath = appSpec.CommandLineArgs[1];
-			OpenProject(projectFilePath);
-		}
-		else
-		{
-
-			if (!OpenProject())
-			{
-				Application::Get().CloseProgram();
-			}
-
+			Application::Get().CloseProgram();
+			return;
 		}
 		
-		m_iconPlay = TextureImporter::LoadTexture2D("Resources/Icons/PlayButton.png");
-		m_iconStop = TextureImporter::LoadTexture2D("Resources/Icons/StopButton.png");
-		m_iconPause = TextureImporter::LoadTexture2D("Resources/Icons/PauseButton.png");
-		m_iconStep = TextureImporter::LoadTexture2D("Resources/Icons/StepButton.png");
+		m_iconPlay = LoadEditorIcon("Resources/Icons/PlayButton.png");
+		m_iconStop = LoadEditorIcon("Resources/Icons/StopButton.png");
+		m_iconPause = LoadEditorIcon("Resources/Icons/PauseButton.png");
+		m_iconStep = LoadEditorIcon("Resources/Icons/StepButton.png");
 		
 
 		//m_activeScene = CreateRef<Scene>();
@@ -251,35 +256,18 @@ namespace Uge
 		SceneHierarchyPanel::SetBoldFont(boldFont);
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		
-		// RGBA16F, not RGBA8: the scene pass writes linear radiance, which has no upper bound.
-		// An 8-bit target clamps on write, so a bright emissive surface would already be
-		// clipped before the resolve below could tonemap it. @see Uge::PostProcess
+		// RGBA16F, as RGBA8 would clamp the linear HDR scene at 1.
 		FramebufferSpecification fbSpec{ 1280, 720 };
 		fbSpec.Attachments = { FramebufferTextureFormat::RGBA16F,FramebufferTextureFormat::RED_INTEGER,  FramebufferTextureFormat::Depth };
 		m_frameBuffer = Framebuffer::Create(fbSpec);
 
-		// What the viewport actually displays: the tonemapped, sRGB-encoded result. Needs no
-		// depth or entity ID of its own - picking reads those back from m_frameBuffer.
+		// The tonemapped image the viewport shows. Picking reads m_frameBuffer.
 		FramebufferSpecification displaySpec{ 1280, 720 };
 		displaySpec.Attachments = { FramebufferTextureFormat::RGBA8 };
 		m_displayFrameBuffer = Framebuffer::Create(displaySpec);
 
-		m_editorScene = CreateRef<Scene>();
-		m_activeScene = m_editorScene;
-
-
-
-		
-
-
 		m_editorCamera = EditorCamera(60.0f, 16.0f/9.0f, 0.01f, 10000.0f);
 
-
-
-		m_sceneHierarchyPanel.SetContext(m_activeScene);
-		m_debugPanel.SetContext(m_activeScene);
-
-		
 
 	}
 
@@ -289,8 +277,7 @@ namespace Uge
 
 		UG_PROFILE_FUNCTION();
 
-		// Closing the window during Play: stop the runtime the normal way, so its physics world
-		// and script instances are torn down before the subsystems go.
+		// Stops play mode before the physics and scripting subsystems shut down.
 		if (m_sceneState != SceneState::Edit)
 		{
 			OnSceneStop();
@@ -311,17 +298,13 @@ namespace Uge
 		*
 		*****************************/
 
-		// TL;DR; this demo is more complicated than what most users you would normally use.
-		// If we remove all options we are showcasing, this demo would become a simple call to ImGui::DockSpaceOverViewport() !!
-		// In this specific demo, we are not using DockSpaceOverViewport() because:
 
 		static bool isOpen = true;
 		static bool opt_fullscreen = true;
 		static bool opt_padding = false;
 		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-		// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-		// because it would be confusing to have two docking targets within each others.
+		// The host window can't be docked into.
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
 		if (opt_fullscreen)
 		{
@@ -339,16 +322,12 @@ namespace Uge
 			dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
 		}
 
-		// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-		// and handle the pass-thru hole, so we ask Begin() to not render a background.
+		// With a pass-through central node, DockSpace() draws the background.
 		if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
 			window_flags |= ImGuiWindowFlags_NoBackground;
 
-		// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-		// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-		// all active windows docked into it will lose their parent and become undocked.
-		// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-		// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+		// The dockspace is submitted even if Begin() returns false, or the windows docked in
+		// it would come undocked.
 		if (!opt_padding)
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 #pragma endregion
@@ -363,8 +342,6 @@ namespace Uge
 				ImGui::PopStyleVar(2);
 
 			// Submit the DockSpace
-			// REMINDER: THIS IS A DEMO FOR ADVANCED USAGE OF DockSpace()!
-			// MOST REGULAR APPLICATIONS WILL SIMPLY WANT TO CALL DockSpaceOverViewport(). READ COMMENTS ABOVE.
 			ImGuiIO& io = ImGui::GetIO();
 			ImGuiStyle& style = ImGui::GetStyle();
 			float minWidthSize = style.WindowMinSize.x;
@@ -377,7 +354,7 @@ namespace Uge
 
 			style.WindowMinSize.x = minWidthSize;
 
-			// Show demo options and help
+			// Menu bar
 			if (ImGui::BeginMenuBar())
 			{
 				if (ImGui::BeginMenu("File"))
@@ -473,8 +450,7 @@ namespace Uge
 			}
 			if (m_showDebug)
 			{
-				// Fed here rather than in OnUpdate so the panel always reports the same
-				// frame it is drawn in.
+				// Set here, in the frame the panel draws.
 				m_debugPanel.SetHoveredEntity(m_hoveredEntity);
 				m_debugPanel.OnImGuiRender();
 			}
@@ -915,31 +891,38 @@ namespace Uge
 		}
 		else
 		{
-			OpenProject(filepath);
-			return true;
+			return OpenProject(filepath);
 		}
 
 	}
 
-	void EditorLayer::OpenProject(const std::filesystem::path& path)
+	bool EditorLayer::OpenProject(const std::filesystem::path& path)
 	{
-		if (Project::Load(path))
+		// Play runs on the open project's scene and scripts.
+		if (m_sceneState != SceneState::Edit)
 		{
-
-			ScriptEngine::Init();
-
-			AssetHandle startScene = Project::GetActive()->GetConfig().StartScene;
-			if (startScene)
-			{
-
-				OpenScene(startScene);
-			}
-			m_contentBrowserPanel = CreateScope<ContentBrowserPanel>();
-
-
-
+			OnSceneStop();
 		}
 
+		if (!Project::Load(path))
+		{
+			return false;
+		}
+
+		// The open scene belongs to the old project. Its asset handles mean nothing in the
+		// new one, and its saved path would resolve against the new asset directory.
+		NewScene();
+
+		ScriptEngine::UnloadProject();
+		ScriptEngine::LoadProject();
+
+		AssetHandle startScene = Project::GetActive()->GetConfig().StartScene;
+		if (startScene)
+		{
+			OpenScene(startScene);
+		}
+		m_contentBrowserPanel = CreateScope<ContentBrowserPanel>();
+		return true;
 	}
 
 	void EditorLayer::SaveScene()
@@ -980,17 +963,17 @@ namespace Uge
 			return;
 		}
 
-		// The serializer has logged why. The scene keeps its old path, and nothing is registered.
+		// The serializer has logged why. The scene keeps its old path.
 		if (!SerializeScene(m_editorScene, filepath))
 		{
 			return;
 		}
 		m_editorScenePath = filepath;
 
-		// Register the file, so it appears in the content browser's Asset view and can be
-		// opened from there. Only a .uge file inside the asset directory can be.
-		const std::filesystem::path relative = Project::GetRelativePath(filepath);
-		if (relative.empty() || *relative.begin() == ".." || relative.extension() != ".uge")
+		// Register the file so the content browser lists it. Only a .uge file in the asset
+		// directory can be registered.
+		const std::filesystem::path relative = SceneAssetPath(filepath);
+		if (relative.empty())
 		{
 			UG_WARN("Saved {0}, but it isn't in the asset registry: it's outside the asset directory or not a .uge file.", filepath);
 			return;
@@ -1028,25 +1011,29 @@ namespace Uge
 
 	void EditorLayer::OpenScene()
 	{
-		// std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*.uge\0");
-		// 
-		// std::filesystem::path absPath(filepath);
-		// std::filesystem::path baseDir = Project::GetAssetAbsolutePath();
-		// 
-		// std::filesystem::path relativePath = std::filesystem::relative(absPath, baseDir);
-		// 
-		// 
-		// 
-		// std::filesystem::path path = Project::GetAssetFileSystemPath(relativePath).string();
-		// 
-		// 
-		// if (!path.empty())
-		// {
-		// 	
-		// 	OpenScene(path);
-		// 
-		// }
+		const std::string filepath = FileDialogs::OpenFile("Uge Scene (*.uge)\0*.uge\0");
+		if (filepath.empty())
+		{
+			return;
+		}
 
+		// Scenes open as assets, so the file has to be in the asset directory.
+		const std::filesystem::path relative = SceneAssetPath(filepath);
+		if (relative.empty())
+		{
+			UG_WARN("Can't open {0}: only a .uge file in the asset directory can be opened.", filepath);
+			return;
+		}
+
+		const AssetHandle handle = Project::GetActive()->GetEditorAssetManager()->GetOrImportAsset(relative, relative.filename().string());
+		if (!AssetManager::IsAssetHandleValid(handle))
+		{
+			// The importer has logged why.
+			return;
+		}
+
+		m_contentBrowserPanel->RefreshAssetTree();
+		OpenScene(handle);
 	}
 
 	void EditorLayer::OpenScene(AssetHandle handle)
@@ -1058,8 +1045,8 @@ namespace Uge
 			OnSceneStop();
 		}
 
-		// Read the file every time. The editor edits a copy and saves to disk, so the asset
-		// cached on first open is stale after any save, and edits made outside the editor would never show
+		// Reloaded from disk every time: a cached scene is stale after a save or an edit made
+		// outside the editor.
 		AssetManager::DeleteAsset(handle);
 
 		Ref<Scene> scene = AssetManager::GetAsset<Scene>(handle);
@@ -1240,7 +1227,7 @@ namespace Uge
 
 		if (m_colliderXRay)
 		{
-			RenderCommand::SetDepthTest(true);   // global state — must be restored
+			RenderCommand::SetDepthTest(true);
 		}
 
 	}

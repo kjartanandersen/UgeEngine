@@ -1,6 +1,6 @@
 /**
  * @file Font.h
- * @brief MSDF font atlas generation and storage.
+ * @brief Fonts baked into MSDF atlases.
  * @ingroup group_renderer
  */
 
@@ -18,25 +18,18 @@ namespace Uge
 	struct MSDFData;
 
 	/**
-	 * @brief A font loaded from a TrueType file and baked into an MSDF atlas.
+	 * @brief A TrueType font baked into a multi-channel signed distance field atlas.
 	 * @ingroup group_renderer
 	 *
-	 * A multi-channel signed distance field encodes each glyph's outline as a distance
-	 * rather than as coverage, so text stays sharp at any scale and rotation from a single
-	 * modest atlas — no per-size rasterization.
-	 *
-	 * @warning Constructing a Font generates the atlas, which takes noticeable time. Load
-	 * fonts up front rather than during a frame, and reuse them.
-	 *
-	 * @see Renderer2D::DrawString
+	 * The atlas is built in the constructor, which is slow; don't create fonts mid-frame.
 	 */
 	class Font
 	{
 
 	public:
 		/**
-		 * @brief Loads a font and generates its MSDF atlas.
-		 * @param filepath Path to a TrueType (`.ttf`) file.
+		 * @brief Loads a font and builds its atlas. Logs an error if the file doesn't load.
+		 * @param filepath Path to a `.ttf` file.
 		 */
 		Font(const std::filesystem::path& filepath);
 		/** @brief Releases the glyph data and the atlas texture. */
@@ -44,19 +37,19 @@ namespace Uge
 
 		/**
 		 * @brief The glyph geometry and font metrics.
-		 * @return Pointer to the internal MSDF data; owned by this font.
+		 * @return The data, owned by the font.
 		 */
 		const MSDFData* GetMSDFData() const { return m_data; }
 
 		/**
-		 * @brief The generated glyph atlas.
-		 * @return The atlas texture sampled when drawing text.
+		 * @brief The glyph atlas.
+		 * @return The atlas texture.
 		 */
 		Ref<Texture2D> GetAtlasTexture() const { return m_atlasTexture; }
 
 		/**
-		 * @brief The engine's built-in font.
-		 * @return A shared default font, generated on first use.
+		 * @brief The built-in font, loaded on first use.
+		 * @return The font.
 		 */
 		static Ref<Font> GetDefault();
 

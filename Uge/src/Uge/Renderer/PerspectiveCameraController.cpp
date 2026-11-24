@@ -21,7 +21,7 @@ namespace Uge
 
 		Application& app = Application::Get();
 
-		// TODO: Needs to be fixed
+		// TODO: don't assume the window is a WindowsWindow.
 		auto& window = dynamic_cast<WindowsWindow&>(app.GetWindow());
 
 		m_width = window.GetWidth();

@@ -1,6 +1,6 @@
 /**
  * @file EditorCamera.h
- * @brief The orbiting viewport camera used for scene editing.
+ * @brief The editor's viewport camera.
  * @ingroup group_renderer
  */
 
@@ -20,127 +20,111 @@
 namespace Uge {
 
 	/**
-	 * @brief Orbit camera for the editor viewport, driven by mouse and modifier keys.
+	 * @brief A fly camera for the editor viewport.
 	 * @ingroup group_renderer
 	 *
-	 * Rather than a free-flying position, this camera orbits a focal point at a fixed
-	 * distance — the behaviour expected of a modelling tool, where the object of interest
-	 * stays centred.
-	 *
-	 * Controls, all requiring Alt to be held:
-	 * - **Alt + left drag** — orbit around the focal point
-	 * - **Alt + middle drag** — pan the focal point
-	 * - **Alt + right drag** or scroll wheel — zoom, by changing the orbit distance
-	 *
-	 * Position is derived from the focal point, orientation and distance, so writing to
-	 * those is what moves the camera.
-	 *
-	 * @note Only used in the editor. At runtime the scene renders from the entity holding
-	 * the primary Uge::CameraComponent.
+	 * Hold the right mouse button to look around, and W, A, S and D to move while it is held.
 	 */
 	class EditorCamera : public Camera
 	{
 	public:
-		/** @brief Constructs an unconfigured camera; set a projection before use. */
+		/** @brief A camera with an identity projection. */
 		EditorCamera() = default;
 		/**
-		 * @brief Constructs the camera and builds its projection.
-		 * @param fov Vertical field of view, in degrees.
-		 * @param aspectRatio Viewport width divided by height.
+		 * @brief A camera at `(0, 0, 3)` looking at the origin.
+		 * @param fov Vertical field of view in degrees.
+		 * @param aspectRatio Width divided by height.
 		 * @param nearClip Near plane distance.
 		 * @param farClip Far plane distance.
 		 */
 		EditorCamera(float fov, float aspectRatio, float nearClip, float farClip);
 
 		/**
-		 * @brief Applies mouse input and recomputes the view matrix.
-		 * @param ts Frame delta time.
-		 * @note Only responds while Alt is held, so the mouse stays free for selection.
+		 * @brief Applies mouse and keyboard input and updates the view matrix.
+		 * @param ts Frame time.
 		 */
 		void OnUpdate(Timestep ts);
 		/**
-		 * @brief Handles scroll-wheel zoom.
-		 * @param e Event to inspect.
+		 * @brief Handles an event. Scrolling does nothing yet.
+		 * @param e The event.
 		 */
 		void OnEvent(Event& e);
 
 		/**
-		 * @brief Orbit radius.
-		 * @return Distance from the camera to its focal point.
+		 * @brief The orbit distance, which the fly controls don't use.
+		 * @return The distance.
 		 */
 		inline float GetDistance() const { return m_distance; }
 		/**
-		 * @brief Sets the orbit radius.
-		 * @param distance New distance from the focal point.
+		 * @brief Sets the orbit distance.
+		 * @param distance The distance.
 		 */
 		inline void SetDistance(float distance) { m_distance = distance; }
 
 		/**
-		 * @brief Updates the viewport size and rebuilds the projection.
-		 * @param width Viewport width in pixels.
-		 * @param height Viewport height in pixels.
+		 * @brief Sets the viewport size and rebuilds the projection.
+		 * @param width Width in pixels.
+		 * @param height Height in pixels.
 		 */
 		inline void SetViewportSize(float width, float height) { m_viewportWidth = width; m_viewportHeight = height; UpdateProjection(); }
 
 		/**
 		 * @brief The view matrix.
-		 * @return Const reference to the world-to-camera transform.
+		 * @return The view matrix.
 		 */
 		const glm::mat4& GetViewMatrix() const { return m_viewMatrix; }
 		/**
-		 * @brief The combined view-projection matrix.
-		 * @return `projection * view`, ready to upload to a shader.
+		 * @brief The view-projection matrix.
+		 * @return `projection * view`.
 		 */
 		glm::mat4 GetViewProjection() const { return m_projection * m_viewMatrix; }
 
 		/**
-		 * @brief The camera's up axis.
-		 * @return Normalized up vector in world space.
+		 * @brief The camera's up direction.
+		 * @return Unit vector in world space.
 		 */
 		glm::vec3 GetUpDirection() const;
 		/**
-		 * @brief The camera's right axis.
-		 * @return Normalized right vector in world space.
+		 * @brief The camera's right direction.
+		 * @return Unit vector in world space.
 		 */
 		glm::vec3 GetRightDirection() const;
 		/**
-		 * @brief The camera's viewing axis.
-		 * @return Normalized forward vector in world space.
+		 * @brief The direction the camera looks in.
+		 * @return Unit vector in world space.
 		 */
 		glm::vec3 GetForwardDirection() const;
 		/**
-		 * @brief The camera's world position.
-		 * @return Const reference to the position, derived from the focal point and distance.
+		 * @brief The camera's position.
+		 * @return World-space position.
 		 */
 		const glm::vec3& GetPosition() const { return m_position; }
 		/**
-		 * @brief The camera's orientation.
-		 * @return Rotation quaternion built from the current pitch and yaw.
+		 * @brief A rotation built from GetPitch() and GetYaw().
+		 * @return The rotation.
 		 */
 		glm::quat GetOrientation() const;
 
 		/**
-		 * @brief Rotation about the right axis.
+		 * @brief Pitch, which mouse look doesn't update.
 		 * @return Pitch in radians.
 		 */
 		float GetPitch() const { return m_pitch; }
 		/**
-		 * @brief Rotation about the up axis.
+		 * @brief Yaw, which mouse look doesn't update.
 		 * @return Yaw in radians.
 		 */
 		float GetYaw() const { return m_Yaw; }
 
 		/**
-		 * @brief Points the camera along a direction.
-		 * @param direction Direction to face, in world space.
-		 * @param up Reference up vector resolving the roll.
+		 * @brief Turns the camera to face a direction.
+		 * @param direction World-space direction.
+		 * @param up Up vector.
 		 */
 		void LookAt(const glm::vec3& direction, const glm::vec3& up);
 		/**
-		 * @brief Whether an orbit drag is in progress.
-		 * @return `true` while the user is rotating the camera.
-		 *
-		 * The editor checks this to suppress gizmo interaction during a camera drag.
+		 * @brief Whether the right mouse button was held at the last OnUpdate().
+		 * @return `true` if it was.
 		 */
 		bool IsBeingRotated();
 

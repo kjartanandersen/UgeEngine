@@ -2,8 +2,6 @@
 #include "Mesh.h"
 
 #include "Uge/Renderer/RenderCommand.h"
-#include "Material.h"
-#include "Uge/Asset/AssetManager.h"
 
 namespace Uge
 {
@@ -49,35 +47,15 @@ namespace Uge
 		m_VAO->SetIndexBuffer(m_IBO);
 	}
 
-	void Mesh::Draw(const Ref<Shader>& shader, int /*entityID*/) const
+	void Mesh::Draw() const
 	{
-		if (!m_VAO || m_indices.empty() || !shader)
+		if (!m_VAO || m_indices.empty())
 		{
 			return;
 		}
-		shader->Bind();
 
-		Ref<Material> material;
-		if (m_material)
-		{
-			material = AssetManager::GetAsset<Material>(m_material);
-		}
-
-		if (material)
-		{
-			material->Bind();
-		}
-		else
-		{
-			// The material uniform block survives between draws, so an unmaterialed mesh
-			// would otherwise be shaded with whatever bound last.
-			Material::BindDefaultProperties();
-		}
-
-		m_VAO->Bind();
 		RenderCommand::DrawIndexed(m_VAO);
 		RenderStats::Get().MeshDrawCount++;
-		shader->Unbind();
 	}
 
 }

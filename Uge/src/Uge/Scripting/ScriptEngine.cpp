@@ -20,9 +20,8 @@
 namespace Uge
 {
 
-	// Relative to the working directory, like every other engine resource (shaders, fonts,
-	// icons); for the editor that is UgeEditor/, its debugdir. Not relative to the exe: the
-	// build copies nothing next to it, and bin/ holds a stale hand-made copy.
+	// Relative to the working directory, like every engine resource; for the editor that is
+	// UgeEditor/.
 	static constexpr const char* s_monoAssembliesPath = "mono/lib";
 	static constexpr const char* s_coreAssemblyPath = "Resources/Scripts/Uge-ScriptCore.dll";
 
@@ -55,8 +54,8 @@ namespace Uge
 	namespace Utils
 	{
 		/**
-		 * @brief Logs every type defined in an assembly, for debugging assembly loading.
-		 * @param assembly Assembly to enumerate.
+		 * @brief Logs every type in an assembly.
+		 * @param assembly The assembly.
 		 */
 		void PrintAssemblyTypes(MonoAssembly* assembly)
 		{
@@ -118,13 +117,13 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Maps a managed type onto the engine's field-type enumeration.
-		 * @param monoType Managed type to classify.
-		 * @return The matching Uge::ScriptFieldType, or `None` for an unsupported type.
+		 * @brief The field type of a managed type.
+		 * @param monoType The managed type.
+		 * @return The type, or `None` if unsupported.
 		 */
 		ScriptFieldType MonoTypeToScriptFieldType(MonoType* monoType)
 		{
-			// mono_type_get_name allocates the string it returns; the caller frees it.
+			// mono_type_get_name allocates the string; the caller frees it.
 			char* typeName = mono_type_get_name(monoType);
 			ScriptFieldType type = ScriptFieldTypeFromManagedName(typeName);
 			mono_free(typeName);
@@ -134,40 +133,36 @@ namespace Uge
 	}
 
 	/**
-	 * @brief All Mono state owned by Uge::ScriptEngine.
-	 *
-	 * Holds the domains, both assemblies, the reflected entity classes, the live script
-	 * instances and the per-entity field values that outlive them.
+	 * @brief The script engine's Mono state.
 	 */
 	struct ScriptEngineData
 	{
 
-		MonoDomain* RootDomain = nullptr; ///< The Mono root domain, created once at startup.
-		MonoDomain* AppDomain = nullptr; ///< Domain holding the loaded assemblies; recreated on reload.
+		MonoDomain* RootDomain = nullptr; ///< Created once at startup.
+		MonoDomain* AppDomain = nullptr; ///< Holds the assemblies; recreated on reload.
 
-		MonoAssembly* CoreAssembly = nullptr; ///< The engine's `Uge-ScriptCore` assembly.
-		MonoImage* CoreAssemblyImage = nullptr; ///< Metadata image of #CoreAssembly.
+		MonoAssembly* CoreAssembly = nullptr; ///< `Uge-ScriptCore`.
+		MonoImage* CoreAssemblyImage = nullptr; ///< #CoreAssembly's image.
 
 		MonoAssembly* AppAssembly = nullptr; ///< The project's script assembly.
-		MonoImage* AppAssemblyImage = nullptr; ///< Metadata image of #AppAssembly.
+		MonoImage* AppAssemblyImage = nullptr; ///< #AppAssembly's image.
 
-		std::filesystem::path CoreAssemblyFilePath; ///< Path #CoreAssembly was loaded from.
-		std::filesystem::path AppAssemblyFilePath; ///< Path #AppAssembly was loaded from; watched for changes.
+		std::filesystem::path CoreAssemblyFilePath; ///< Where #CoreAssembly was loaded from.
+		std::filesystem::path AppAssemblyFilePath; ///< Where #AppAssembly was loaded from; watched for changes.
 
-		ScriptClass EntityMonoClass; ///< The script core's `Entity` base class.
+		ScriptClass EntityMonoClass; ///< The `Entity` base class.
 
-		std::unordered_map<std::string, Ref<ScriptClass>> EntityClasses; ///< Reflected script classes, by fully qualified name.
-		std::unordered_map<UUID, Ref<ScriptInstance>> EntityInstances; ///< Live script instances, by entity UUID.
-		std::unordered_map<UUID, ScriptFieldMap> EntityScriptFields; ///< Editor-set field values, kept across reloads.
+		std::unordered_map<std::string, Ref<ScriptClass>> EntityClasses; ///< Script classes, by full name.
+		std::unordered_map<UUID, Ref<ScriptInstance>> EntityInstances; ///< Script objects, by entity UUID.
+		std::unordered_map<UUID, ScriptFieldMap> EntityScriptFields; ///< Stored field values; kept across reloads.
 
-		Scope<filewatch::FileWatch<std::string>> AppAssemblyFileWatcher = nullptr; ///< Watches the script assembly so a rebuild triggers a reload.
+		Scope<filewatch::FileWatch<std::string>> AppAssemblyFileWatcher = nullptr; ///< Reloads the script assembly when it is rebuilt.
 		bool AppAssemblyReloadPending = false; ///< Set by the watcher; the reload runs on the main thread.
 
-		Timer ReloadTimer; ///< Debounces the watcher, which fires several times per rebuild.
+		Timer ReloadTimer; ///< Times the reload.
 
 
-		// Runtime
-		Scene* SceneContext = nullptr; ///< Scene currently running scripts; null outside play mode.
+		Scene* SceneContext = nullptr; ///< Scene running scripts; null outside play mode.
 	};
 
 	static ScriptEngineData* s_data = nullptr;
@@ -206,8 +201,8 @@ namespace Uge
 	{
 		s_data = new ScriptEngineData();
 
-		// mono_jit_init ends the process if it can't find mscorlib, with nothing in the log to
-		// say why. Check first, and run without scripts instead.
+		// mono_jit_init ends the process without a log line if it can't find mscorlib, so
+		// check first and run without scripts.
 		if (!std::filesystem::exists(s_monoAssembliesPath) || !std::filesystem::exists(s_coreAssemblyPath))
 		{
 			UG_CORE_ERROR("Scripting disabled: '{0}' or '{1}' not found in the working directory '{2}'. Run the editor from UgeEditor/.",
@@ -217,28 +212,64 @@ namespace Uge
 
 		InitMono();
 		ScriptGlue::RegisterFunctions();
+	}
 
-		auto scriptModulePath = Project::GetAssetDirectory() / Project::GetActive()->GetConfig().ScriptModulePath;
+	void ScriptEngine::LoadProject()
+	{
+		// No root domain means Init() disabled scripting.
+		if (!s_data || !s_data->RootDomain)
+		{
+			return;
+		}
 
-		bool status = LoadAssembly(s_coreAssemblyPath);
-		if (!status)
+		if (!LoadAssembly(s_coreAssemblyPath))
 		{
 			UG_CORE_ERROR("ScriptEngine Could not load Uge-ScriptCore assembly!");
 			return;
 		}
 
-		status = LoadAppAssembly(scriptModulePath);
-		if (!status)
+		const std::filesystem::path scriptModulePath =
+			Project::GetAssetDirectory() / Project::GetActive()->GetConfig().ScriptModulePath;
+		if (!LoadAppAssembly(scriptModulePath))
 		{
 			UG_CORE_ERROR("ScriptEngine Could not load app assembly!");
 			return;
 		}
+
 		LoadAssemblyClasses();
-
 		ScriptGlue::RegisterComponents();
-		
-		s_data->EntityMonoClass = ScriptClass("Uge", "Entity" ,true);
+		s_data->EntityMonoClass = ScriptClass("Uge", "Entity", true);
+	}
 
+	void ScriptEngine::UnloadProject()
+	{
+		if (!s_data)
+		{
+			return;
+		}
+
+		// Destroying the watcher joins its threads, so no new reload gets queued.
+		s_data->AppAssemblyFileWatcher.reset();
+		s_data->AppAssemblyReloadPending = false;
+
+		// GC handles belong to the app domain, so the instances go before it does.
+		s_data->EntityInstances.clear();
+		s_data->EntityClasses.clear();
+		s_data->EntityScriptFields.clear();
+		s_data->EntityMonoClass = ScriptClass();
+		s_data->SceneContext = nullptr;
+
+		if (s_data->AppDomain)
+		{
+			mono_domain_set(mono_get_root_domain(), false);
+			mono_domain_unload(s_data->AppDomain);
+			s_data->AppDomain = nullptr;
+		}
+
+		s_data->CoreAssembly = nullptr;
+		s_data->CoreAssemblyImage = nullptr;
+		s_data->AppAssembly = nullptr;
+		s_data->AppAssemblyImage = nullptr;
 	}
 
 	void ScriptEngine::Shutdown()
@@ -248,7 +279,7 @@ namespace Uge
 			return;
 		}
 
-		s_data->EntityInstances.clear(); // closing the editor during Play leaves instances alive
+		UnloadProject();
 
 		ShutdownMono();
 		delete s_data;
@@ -264,15 +295,14 @@ namespace Uge
 
 		MonoDomain* rootDomain = mono_jit_init("UgeJITRuntime");
 		UG_CORE_ASSERT(rootDomain);
-		
 
-		// Store the root domain pointer
+
 		s_data->RootDomain = rootDomain;
 	}
 
 	void ScriptEngine::ShutdownMono()
 	{
-		// Null when Init stopped before starting Mono (missing runtime files).
+		// Null when Init didn't start Mono, for lack of the runtime files.
 		if (!s_data->RootDomain)
 		{
 			return;
@@ -293,7 +323,6 @@ namespace Uge
 	bool ScriptEngine::LoadAssembly(const std::filesystem::path& filePath)
 	{
 
-		// Create an App Domain
 		s_data->AppDomain = mono_domain_create_appdomain("UgeScriptRuntime", nullptr);
 		mono_domain_set(s_data->AppDomain, true);
 
@@ -364,14 +393,14 @@ namespace Uge
 
 	void ScriptEngine::ReloadAssembly()
 	{
-		if (!s_data || !s_data->RootDomain)
+		if (!s_data || !s_data->RootDomain || !s_data->AppDomain)
 		{
 			UG_CORE_WARN("Scripting isn't running; nothing to reload.");
 			return;
 		}
 
-		// GC handles belong to the domain being unloaded, so free them first. A reload during
-		// Play therefore stops the scripts until the next Play.
+		// GC handles belong to the domain being unloaded, so they are freed first. Scripts
+		// running in Play stop until the next Play.
 		if (!s_data->EntityInstances.empty())
 		{
 			UG_CORE_WARN("Script assembly reloaded during Play; scripts stop until the next Play.");
@@ -399,7 +428,7 @@ namespace Uge
 
 	Ref<ScriptClass> ScriptEngine::GetEntityClass(const std::string& name)
 	{
-		// Is null before Init() is called, or after Shutdown() is called.
+		// Null before Init() and after Shutdown().
 		if (!s_data)
 		{
 			UG_CORE_WARN("Script engine data is null");
@@ -423,7 +452,7 @@ namespace Uge
 
 	ScriptFieldMap* ScriptEngine::GetScriptFieldMap(UUID entityID)
 	{
-		// Null before Init() is called, or after Shutdown() is called.
+		// Null before Init() and after Shutdown().
 		if (!s_data)
 		{
 			return nullptr;
@@ -441,7 +470,6 @@ namespace Uge
 	MonoObject* ScriptEngine::InstantiateClass(MonoClass* monoClass)
 	{
 
-		// Create object and call constructor
 		MonoObject* instance = mono_object_new(s_data->AppDomain, monoClass);
 		mono_runtime_object_init(instance);
 
@@ -526,15 +554,14 @@ namespace Uge
 		: m_scriptClass(scriptClass)
 	{
 
-		// Rooted straight away: Mono doesn't scan native memory, so without a handle the
-		// object could be collected, or moved, by the first GC after this returns.
+		// Held by a GC handle at once, or the next collection could free or move the object.
 		m_gcHandle = mono_gchandle_new(scriptClass->Instantiate(), false);
 
 		m_constructor = s_data->EntityMonoClass.GetMethod(".ctor", 1);
 		m_onCreateMethod = scriptClass->GetMethod("OnCreate", 0);
 		m_onUpdateMethod = scriptClass->GetMethod("OnUpdate", 1);
 
-		// Call Entity constructor
+		// The Entity constructor takes the entity's UUID.
 		{
 			UUID entityID = entity.GetUUID();
 			void* param = &entityID;
@@ -544,8 +571,7 @@ namespace Uge
 
 	ScriptInstance::~ScriptInstance()
 	{
-		// Must run before the domain holding the object is unloaded: ReloadAssembly and
-		// Shutdown clear EntityInstances first for that reason.
+		// Must run before the object's domain is unloaded.
 		if (m_gcHandle)
 		{
 			mono_gchandle_free(m_gcHandle);
@@ -632,16 +658,14 @@ namespace Uge
 			Ref<ScriptInstance> instance = CreateRef<ScriptInstance>(s_data->EntityClasses[sc.ClassName], entity);
 			s_data->EntityInstances[entityID] = instance;
 
-			// Copy field values
 			if (s_data->EntityScriptFields.find(entityID) != s_data->EntityScriptFields.end())
 			{
 				const ScriptFieldMap& fieldMap = s_data->EntityScriptFields.at(entityID);
 				const auto& classFields = instance->GetScriptClass()->GetFields();
 				for (const auto& [name, fieldInstance] : fieldMap)
 				{
-					// A value is copied only into a field of the same type. After a reload that
-					// changed a field's type, the stored bytes belong to the old type. The field
-					// keeps its default, and the stored value stays for when the type changes back.
+					// Copied only into a field of the same type. If a reload changed the type, the
+					// field keeps its default and the stored value is kept.
 					auto it = classFields.find(name);
 					if (it != classFields.end() && it->second.Type != fieldInstance.Field.Type)
 					{
@@ -661,7 +685,7 @@ namespace Uge
 		}
 		else
 		{
-			// Said once here; OnUpdateEntity then skips the entity silently.
+			// Warned once here; OnUpdateEntity skips the entity silently.
 			if (sc.ClassName.empty())
 			{
 				UG_CORE_WARN("Entity '{0}' ({1}) has a Script component with no class; it won't run.",
@@ -675,10 +699,19 @@ namespace Uge
 		}
 	}
 
+	void ScriptEngine::OnDestroyEntity(UUID entityID)
+	{
+		if (!s_data)
+		{
+			return;
+		}
+
+		s_data->EntityInstances.erase(entityID);
+	}
+
 	void ScriptEngine::OnUpdateEntity(Entity entity, Timestep ts)
 	{
-		// No instance means OnCreateEntity has already warned that the class is missing;
-		// logging here would repeat it every frame.
+		// Without an instance, OnCreateEntity has already warned; don't repeat it every frame.
 		auto it = s_data->EntityInstances.find(entity.GetUUID());
 		if (it != s_data->EntityInstances.end())
 		{

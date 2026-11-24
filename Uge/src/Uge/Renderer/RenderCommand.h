@@ -1,6 +1,6 @@
 /**
  * @file RenderCommand.h
- * @brief Static entry point for issuing raw draw and state commands.
+ * @brief Draw and state commands.
  * @ingroup group_renderer
  */
 
@@ -15,32 +15,28 @@ namespace Uge
 
 
 	/**
-	 * @brief Thin static facade forwarding to the active Uge::RendererAPI.
+	 * @brief Static functions that forward to the Uge::RendererAPI.
 	 * @ingroup group_renderer
 	 *
-	 * Saves every call site from having to resolve the backend instance. All three draw
-	 * paths — Uge::Renderer2D, Uge::Renderer3D and Uge::Model — bottom out here.
-	 *
-	 * @note Calls are issued immediately; there is no command buffer or deferred queue.
-	 * They must therefore run on the thread that owns the graphics context.
+	 * Commands run immediately, so call them on the thread that owns the GL context.
 	 */
 	class RenderCommand
 	{
 
 	public :
 
-		/** @brief Initializes the backend's device state. @see RendererAPI::Init */
+		/** @brief Sets the initial GPU state. */
 		inline static void Init()
 		{
 			m_rendererAPI->Init();
 		}
 
 		/**
-		 * @brief Sets the drawable region of the current render target.
+		 * @brief Sets the viewport.
 		 * @param x Left edge in pixels.
 		 * @param y Bottom edge in pixels.
-		 * @param width Viewport width in pixels.
-		 * @param height Viewport height in pixels.
+		 * @param width Width in pixels.
+		 * @param height Height in pixels.
 		 */
 		inline static void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 		{
@@ -50,22 +46,21 @@ namespace Uge
 
 		/**
 		 * @brief Sets the clear colour.
-		 * @param color RGBA colour, components in `[0, 1]`.
+		 * @param color RGBA colour.
 		 */
 		inline static void SetClearColor(const glm::vec4& color)
 		{
 			m_rendererAPI->SetClearColor(color);
 		}
-		/** @brief Clears the bound render target's colour and depth buffers. */
+		/** @brief Clears the colour and depth buffers. */
 		inline static void Clear()
 		{
 			m_rendererAPI->Clear();
 		}
 
 		/**
-		 * @brief Enables or disables depth buffer writes.
-		 * @param enabled `true` to write depth, `false` to test against it only.
-		 * @see RendererAPI::SetDepthWrite
+		 * @brief Turns depth writes on or off.
+		 * @param enabled Whether to write depth.
 		 */
 		inline static void SetDepthWrite(bool enabled)
 		{
@@ -73,9 +68,8 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Enables or disables depth testing.
-		 * @param enabled `true` to test against the depth buffer, `false` to draw regardless.
-		 * @see RendererAPI::SetDepthTest
+		 * @brief Turns the depth test on or off.
+		 * @param enabled Whether to test depth.
 		 */
 		inline static void SetDepthTest(bool enabled)
 		{
@@ -83,9 +77,8 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Sets the depth comparison function.
-		 * @param compare Comparison to use for subsequent draws.
-		 * @see RendererAPI::SetDepthFunc
+		 * @brief Sets the depth comparison.
+		 * @param compare The comparison.
 		 */
 		inline static void SetDepthFunc(DepthCompare compare)
 		{
@@ -93,9 +86,8 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Sets how subsequent draws blend with the render target.
-		 * @param mode Blend equation to use.
-		 * @see RendererAPI::SetBlendMode
+		 * @brief Sets the blend mode.
+		 * @param mode The mode.
 		 */
 		inline static void SetBlendMode(BlendMode mode)
 		{
@@ -103,9 +95,8 @@ namespace Uge
 		}
 
 		/**
-		* @brief Sets which faces subsequent draws discard.
-		* @param mode Faces to cull.
-		* @see RendererAPI::SetCullMode
+		* @brief Sets which faces are culled.
+		* @param mode The faces to cull.
 		*/
 		inline static void SetCullMode(CullMode mode)
 		{
@@ -113,9 +104,8 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Sets the width of a rendered line
-		 * @param width The width of the line
-		 * @see RendererAPI::SetLineWidth
+		 * @brief Sets the line width.
+		 * @param width Width in pixels.
 		 */
 		inline static void SetLineWidth(float width)
 		{
@@ -124,12 +114,9 @@ namespace Uge
 
 
 		/**
-		 * @brief Issues an indexed draw call.
-		 * @param vertexArray Geometry to draw, with its index buffer set.
-		 * @param indexCount Indices to draw, or `0` for the entire index buffer.
-		 *
-		 * Every draw path bottoms out here, which is why this is where Uge::RenderStats
-		 * accumulates the frame's totals.
+		 * @brief Draws indexed triangles and adds them to Uge::RenderStats.
+		 * @param vertexArray The geometry, with an index buffer.
+		 * @param indexCount Indices to draw, or `0` for all of them.
 		 */
 		inline static void DrawIndexed(const Ref<VertexArray> vertexArray, uint32_t indexCount = 0)
 		{
@@ -146,13 +133,9 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Issues a non-indexed draw call for line segments.
-		 * @param vertexArray Line geometry to draw; two vertices per segment.
-		 * @param vertexCount Number of vertices to draw.
-		 *
-		 * The line counterpart to DrawIndexed(), and like it the place where Uge::RenderStats
-		 * accumulates the frame's line totals. Lines are counted separately from triangles so
-		 * a debug overlay cannot be mistaken for scene geometry in the profiler.
+		 * @brief Draws line segments and adds them to Uge::RenderStats.
+		 * @param vertexArray The lines, two vertices each.
+		 * @param vertexCount Vertices to draw.
 		 */
 		inline static void DrawLines(const Ref<VertexArray> vertexArray, uint32_t vertexCount = 0)
 		{

@@ -1,6 +1,6 @@
 /**
  * @file EnvironmentImporter.h
- * @brief Loads HDR images into Uge::Environment assets.
+ * @brief Imports `.hdr` images as environments.
  * @ingroup group_asset
  */
 
@@ -15,20 +15,19 @@ namespace Uge
 {
 
 	/**
-	 * @brief Imports equirectangular `.hdr` images as environment maps.
+	 * @brief Imports equirectangular `.hdr` images as environments.
 	 * @ingroup group_asset
 	 *
-	 * The import is not just a file read: it runs four GPU passes to derive the irradiance,
-	 * prefiltered and BRDF maps image-based lighting needs. @see Uge::Environment
+	 * The import renders the lighting maps on the GPU, so it needs a GL context.
 	 */
 	class EnvironmentImporter
 	{
 	public:
 		/**
-		 * @brief Imports an environment described by registry metadata.
-		 * @param handle Handle to assign to the imported environment.
-		 * @param metadata Metadata whose file path is resolved against the asset directory.
-		 * @return The built environment, or null on failure.
+		 * @brief Imports an environment.
+		 * @param handle Handle to give the environment.
+		 * @param metadata Its registry entry.
+		 * @return The environment, or null on failure.
 		 */
 		static Ref<Environment> ImportEnvironment(AssetHandle handle, const AssetMetadata& metadata);
 	};

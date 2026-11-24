@@ -6,11 +6,8 @@ namespace Uge
 {
 
     /**
-     * @brief Line sink that Uge::PhysicsScene::DebugDraw writes into.
+     * @brief Receives the lines of physics debug drawing, so physics needs no renderer.
      * @ingroup group_physics
-     *
-     * Keeps the physics module free of any renderer dependency; the editor supplies an
-     * implementation that forwards to Uge::Renderer2D::DrawLine.
      */
     class PhysicsDebugRenderer
     {
@@ -18,10 +15,10 @@ namespace Uge
         virtual ~PhysicsDebugRenderer() = default;
 
         /**
-         * @brief Draws one world-space line segment.
-         * @param from Start point.
-         * @param to End point.
-         * @param color RGBA colour, components in `[0, 1]`.
+         * @brief Draws a world-space line.
+         * @param from Start.
+         * @param to End.
+         * @param color RGBA colour.
          */
         virtual void DrawLine(const glm::vec3& from, const glm::vec3& to,
             const glm::vec4& color) = 0;

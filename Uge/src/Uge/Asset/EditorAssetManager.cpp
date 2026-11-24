@@ -61,7 +61,7 @@ namespace Uge
             return memoryIt->second;
         }
 
-		// If the asset failed to import previously, don't try again.
+		// A failed import is not retried.
         if (m_failedImports.count(handle))
         {
 			return nullptr;
@@ -294,8 +294,7 @@ namespace Uge
         {
             data = YAML::LoadFile(path.string());
         }
-        // YAML::Exception covers YAML::BadFile too: the existence check above is not enough
-        // on its own, since the file can still be unreadable.
+        // Also catches YAML::BadFile: the file can exist and still be unreadable.
         catch (const YAML::Exception& e)
         {
             UG_CORE_ERROR("EditorAssetManager::DeserializeAssetRegistry - Failed to load asset registry {0}\n	{1}", path.string(), e.what());
@@ -352,8 +351,7 @@ namespace Uge
         auto meshIt = m_meshAssetRegistry.find(handle);
         if (meshIt != m_meshAssetRegistry.end())
         {
-            // Copy before erasing; the entry goes first so the shared-use check below
-            // does not count the model that is being deleted.
+            // Erased first, so IsDependencyOfAnyModel doesn't count this model.
             std::vector<AssetHandle> dependencies = meshIt->second.Dependencies;
             m_meshAssetRegistry.erase(meshIt);
 
@@ -366,9 +364,7 @@ namespace Uge
             }
         }
 
-        // Only unload. The registry entry is the file's identity: erasing it would
-        // invalidate the handle that scenes, the content browser and the registry file
-        // all still refer to, so the same file could never be assigned again.
+        // Unload only. The registry entry stays, so the handle remains valid.
         m_loadedAssets.erase(handle);
 
     }
@@ -385,8 +381,7 @@ namespace Uge
 
     void EditorAssetManager::DeleteScene(AssetHandle handle)
     {
-        // Only unload: the registry entry is the file's identity, and erasing it would invalidate 
-        // the handle that scenes, the content browser and the registry file refer to.
+        // Unload only. The registry entry stays, so the handle remains valid.
 
 		m_loadedAssets.erase(handle);
 		m_failedImports.erase(handle);

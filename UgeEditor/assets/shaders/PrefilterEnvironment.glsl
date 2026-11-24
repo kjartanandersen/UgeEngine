@@ -34,12 +34,8 @@ layout(std140, binding = 6) uniform CubeRenderData
 
 const float k_pi = 3.14159265359;
 
-// The first half of Karis' split-sum approximation: the environment convolved against the GGX
-// lobe for a fixed roughness. Each mip level of the target holds one roughness, so a rough
-// surface reads a blurrier level - which is why this cubemap must have a mip chain.
-//
-// The view direction is assumed equal to the normal. That is what makes a single prefiltered
-// map usable from every angle, and it is also why grazing reflections lose their stretch.
+// The split sum's first half: the environment convolved with the GGX lobe, one roughness per
+// mip level. The view direction is taken to be the normal.
 
 float DistributionGGX(vec3 normal, vec3 halfway, float roughness)
 {
@@ -50,7 +46,7 @@ float DistributionGGX(vec3 normal, vec3 halfway, float roughness)
 	return aSquared / (k_pi * denominator * denominator);
 }
 
-// Van der Corput radical inverse - bit-reverses the index to give a low-discrepancy sequence.
+// Van der Corput radical inverse, a low-discrepancy sequence.
 float RadicalInverseVdC(uint bits)
 {
 	bits = (bits << 16u) | (bits >> 16u);
@@ -58,7 +54,7 @@ float RadicalInverseVdC(uint bits)
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
 	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+	return float(bits) * 2.3283064365386963e-10; // Divides by 0x100000000.
 }
 
 vec2 Hammersley(uint i, uint count)
@@ -66,7 +62,7 @@ vec2 Hammersley(uint i, uint count)
 	return vec2(float(i) / float(count), RadicalInverseVdC(i));
 }
 
-// Biases samples towards the GGX lobe, so the samples that matter most are the ones taken.
+// A sample direction from the GGX lobe.
 vec3 ImportanceSampleGGX(vec2 xi, vec3 normal, float roughness)
 {
 	float a = roughness * roughness;
@@ -106,9 +102,8 @@ void main()
 			continue;
 		}
 
-		// Sampling a mip chosen by solid angle rather than level 0. Without this a smooth
-		// surface reflecting a small bright source produces a field of sparkling dots, because
-		// 1024 samples cannot resolve a sun that occupies a handful of texels.
+		// The mip is chosen by the sample's solid angle, so a small bright source doesn't
+		// sparkle.
 		float distribution = DistributionGGX(normal, halfway, u_Roughness);
 		float normalDotHalfway = max(dot(normal, halfway), 0.0);
 		float viewDotHalfway = max(dot(view, halfway), 0.0);

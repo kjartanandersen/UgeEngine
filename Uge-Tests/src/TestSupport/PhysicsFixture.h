@@ -10,11 +10,7 @@
 namespace UgeTests
 {
     /**
-     * @brief Boots the physics backend for the duration of one test.
-     *
-     * Uge::Physics::Init registers Jolt's types process-wide and asserts if called twice,
-     * so a test that creates a Uge::PhysicsScene has to bracket itself. No project and no
-     * GL context are needed — physics touches neither.
+     * @brief Starts physics for one test. Physics needs no project or GL context.
      */
     class PhysicsFixture : public ::testing::Test
     {
@@ -22,7 +18,7 @@ namespace UgeTests
         void SetUp() override { Uge::Physics::Init(); }
         void TearDown() override { Uge::Physics::Shutdown(); }
 
-        /// A scene with default limits; override desc fields before calling for specific ones.
+        /// A physics scene, with default limits unless desc sets others.
         Uge::Scope<Uge::PhysicsScene> MakeScene( const Uge::PhysicsSceneDesc& desc = {} )
         {
             return Uge::Physics::CreateScene(desc);

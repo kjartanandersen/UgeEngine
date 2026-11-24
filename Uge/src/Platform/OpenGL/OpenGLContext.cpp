@@ -40,26 +40,22 @@ namespace Uge
 			}
 		}
 
-		// Drivers repeat the same complaint every frame, which would bury everything else.
-		// Each message id is logged a few times and then muted for the rest of the run.
+		// A message id is logged this many times, then muted for the rest of the run.
 		constexpr uint32_t s_maxRepeatsPerMessage = 4;
 		std::unordered_map<GLuint, uint32_t> s_messageCounts;
 
 		/**
-		 * @brief Routes driver diagnostics into the engine log.
-		 *
-		 * Registered with `glDebugMessageCallback` in Debug builds. The context is created
-		 * with `GL_DEBUG_OUTPUT_SYNCHRONOUS`, so the break on a high-severity message lands
-		 * on the call stack that caused it rather than somewhere later in the frame.
+		 * @brief Logs a driver debug message. A high-severity one breaks into an attached
+		 * debugger, on the call that caused it as output is synchronous.
 		 */
 		void APIENTRY OnGLDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity,
 			GLsizei length, const GLchar* message, const void* userParam)
 		{
-			// Unused, but required by the GL callback signature.
+			// Required by the callback signature.
 			(void)length;
 			(void)userParam;
 
-			// High severity is never muted: it breaks into the debugger, so it cannot spam.
+			// High severity is never muted.
 			if (severity != GL_DEBUG_SEVERITY_HIGH)
 			{
 				const uint32_t seen = ++s_messageCounts[id];
@@ -80,9 +76,7 @@ namespace Uge
 				case GL_DEBUG_SEVERITY_HIGH:
 					UG_CORE_FATAL("[OpenGL] {0} / {1} ({2}): {3}",
 						DebugSourceToString(source), DebugTypeToString(type), id, message);
-					// Only break when someone is there to catch it. UG_DEBUGBREAK with no
-					// debugger attached terminates the process, and a GL error is not worth
-					// killing the editor over.
+					// UG_DEBUGBREAK without a debugger ends the process.
 					if (IsDebuggerPresent())
 					{
 						UG_DEBUGBREAK();
@@ -104,8 +98,8 @@ namespace Uge
 		}
 
 		/**
-		 * @brief Installs the debug message callback if the driver gave us a debug context.
-		 * @return `true` when driver diagnostics are now being logged.
+		 * @brief Installs the debug callback, if this is a debug context.
+		 * @return `true` if it was installed.
 		 */
 		bool TryEnableDebugOutput()
 		{
@@ -121,16 +115,15 @@ namespace Uge
 			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 			glDebugMessageCallback(OnGLDebugMessage, nullptr);
 
-			// Everything on by default...
+			// Everything except notifications.
 			glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-			// ...except notification-level chatter, which some drivers emit per buffer upload.
 			glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION,
 				0, nullptr, GL_FALSE);
 
 			return true;
 		}
 
-		/** @brief Reads a GL string, tolerating a null return from a broken driver. */
+		/** @brief A GL string, or `<unknown>` if the driver returns null. */
 		std::string GetGLString(GLenum name)
 		{
 			const GLubyte* value = glGetString(name);
@@ -163,7 +156,7 @@ namespace Uge
 		info.ShadingLanguage = GetGLString(GL_SHADING_LANGUAGE_VERSION);
 
 #ifdef UG_DEBUG
-		// Requested by WindowsWindow via GLFW_OPENGL_DEBUG_CONTEXT before window creation.
+		// WindowsWindow asks GLFW for a debug context in Debug builds.
 		info.DebugOutputEnabled = TryEnableDebugOutput();
 #endif
 

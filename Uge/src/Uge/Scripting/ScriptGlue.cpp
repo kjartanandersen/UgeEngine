@@ -102,8 +102,8 @@ namespace Uge
 
 	}
 
-	// Lets Entity.HasComponent<T>() work for a component that has a C# class in Uge-ScriptCore.
-	// Names are explicit: typeid(T).name() is compiler-specific.
+	// Makes Entity.HasComponent<T>() work for a component with a C# class. The name is
+	// passed in, because typeid(T).name() differs between compilers.
 	template<typename Component>
 	static void RegisterComponent(std::string managedTypeName)
 	{
@@ -121,8 +121,7 @@ namespace Uge
 	{
 		s_entityHasComponentFuncs.clear();
 
-		// One line per component class in Uge-ScriptCore/Source/Uge/Scene/Components.cs. Most
-		// components have no C# counterpart, so they aren't listed.
+		// One line per component class in Uge-ScriptCore/Source/Uge/Scene/Components.cs.
 		RegisterComponent<TransformComponent>("Uge.TransformComponent");
 	}
 

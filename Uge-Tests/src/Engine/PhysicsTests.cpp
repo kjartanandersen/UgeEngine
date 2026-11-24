@@ -1,7 +1,7 @@
 /**
 
     @file      PhysicsTests.cpp
-    @brief     Tests for the physics System
+    @brief     Tests for the physics system.
 
 
 **/
@@ -16,7 +16,7 @@
 namespace
 {
 
-	/** @brief Physics initialized for the duration of each test. */
+	/** @brief Physics, started for each test. */
 	class PhysicsTest : public UgeTests::PhysicsFixture
 	{
 
@@ -31,7 +31,7 @@ namespace
 
     }
 
-	// A query that excludes the static layer must not report a static body.
+	// A query without the static layer doesn't report a static body.
 	TEST_F(PhysicsTest, OverlapSphereHonoursTheLayerMask)
 	{
 		auto scene = MakeScene();
@@ -61,7 +61,7 @@ namespace
 		EXPECT_EQ(hits[0], movingBody);
 	}
 
-	// Triggers aren't reported, matching CastRay.
+	// Triggers aren't reported, as with CastRay.
 	TEST_F(PhysicsTest, OverlapSphereSkipsTriggers)
 	{
 		auto scene = MakeScene();
@@ -81,7 +81,7 @@ namespace
 		EXPECT_TRUE(hits.empty());
 	}
 
-	// A compound body touched through two colliders is still reported once.
+	// A body touched through two colliders is reported once.
 	TEST_F(PhysicsTest, OverlapSphereReportsEachBodyOnce)
 	{
 		auto scene = MakeScene();
@@ -103,8 +103,7 @@ namespace
 		EXPECT_EQ(hits[0], id);
 	}
 
-	// Points on one line can't make a hull at any tolerance. That has to come back as "no
-	// body", not a crash or an assert.
+	// Points on one line can't make a hull, so there is no body, and no crash or assert.
 	TEST_F(PhysicsTest, AConvexHullFromPointsOnALineCreatesNoBody)
 	{
 		auto scene = MakeScene();
@@ -120,6 +119,50 @@ namespace
 		body.Colliders.push_back(collider);
 
 		EXPECT_FALSE(scene->CreateBody(body).IsValid());
+	}
+
+
+	// Jolt doesn't wake a body resting on one that is removed, so DestroyBody does.
+	TEST_F(PhysicsTest, DestroyingABodyWakesTheBodiesRestingOnIt)
+	{
+		auto scene = MakeScene();
+
+		Uge::BodyDesc floor;
+		floor.Type = Uge::BodyType::Static;
+		floor.Layer = Uge::PhysicsLayer::Static;
+		floor.Position = { 0.0f, -0.5f, 0.0f };
+		Uge::ColliderDesc floorCollider;
+		floorCollider.Shape = Uge::BoxShapeDesc{ glm::vec3(5.0f, 0.5f, 5.0f) };
+		floor.Colliders.push_back(floorCollider);
+		const Uge::PhysicsBodyID floorBody = scene->CreateBody(floor);
+
+		Uge::BodyDesc box;
+		box.Position = { 0.0f, 0.5f, 0.0f };
+		Uge::ColliderDesc boxCollider;
+		boxCollider.Shape = Uge::BoxShapeDesc{ glm::vec3(0.5f) };
+		box.Colliders.push_back(boxCollider);
+		const Uge::PhysicsBodyID boxBody = scene->CreateBody(box);
+
+		// Two seconds, well past the half second before Jolt puts a resting body to sleep.
+		for (int i = 0; i < 120; i++)
+		{
+			scene->Step(1.0f / 60.0f);
+		}
+
+		glm::vec3 restingPosition;
+		glm::quat rotation;
+		scene->GetTransform(boxBody, restingPosition, rotation);
+
+		scene->DestroyBody(floorBody);
+		for (int i = 0; i < 30; i++)
+		{
+			scene->Step(1.0f / 60.0f);
+		}
+
+		// Half a second of free fall is over a metre.
+		glm::vec3 position;
+		scene->GetTransform(boxBody, position, rotation);
+		EXPECT_LT(position.y, restingPosition.y - 0.5f);
 	}
 
 }

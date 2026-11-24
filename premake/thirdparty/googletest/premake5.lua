@@ -1,9 +1,6 @@
--- Premake integration for GoogleTest / GoogleMock.
--- Only the "-all" translation units are compiled: gtest-all.cc and gmock-all.cc
--- #include the remaining sources, so listing the rest would duplicate symbols.
--- The *_main.cc entry points are deliberately left out so these libraries can be
--- linked into applications that already define main(); a test runner should call
--- ::testing::InitGoogleTest / ::testing::InitGoogleMock from its own main.
+-- Premake script for GoogleTest and GoogleMock.
+-- Only gtest-all.cc and gmock-all.cc are compiled; they include the other sources.
+-- The *_main.cc files are left out, as the test runner has its own main().
 
 project "googletest"
 	kind "StaticLib"

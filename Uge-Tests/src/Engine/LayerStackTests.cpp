@@ -1,6 +1,6 @@
 /**
  * @file LayerStackTests.cpp
- * @brief Tests for Uge::LayerStack's ordering and ownership rules.
+ * @brief Tests for Uge::LayerStack.
  */
 
 #include <ugpch.h>
@@ -20,10 +20,8 @@ namespace
 {
 
 	/**
-	 * @brief A Layer whose lifecycle calls can be asserted on.
-	 *
-	 * The stack owns and deletes what it is given, so these are always heap-allocated and
-	 * either left to the stack or deleted by the test after being popped.
+	 * @brief A layer whose calls can be checked. Heap-allocated, as the stack deletes its
+	 * layers.
 	 */
 	class MockLayer : public Layer
 	{
@@ -70,8 +68,7 @@ TEST(LayerStackTest, LayersIterateInPushOrder)
 
 TEST(LayerStackTest, OverlaysStayAboveLayersWhicheverOrderTheyArePushedIn)
 {
-	// This is the stack's whole reason for existing: the ImGui overlay is pushed during
-	// Application's constructor, before any client layer, and still has to end up on top.
+	// The ImGui overlay is pushed before any layer and still ends up on top.
 	LayerStack stack;
 
 	Layer* overlay = new NiceMockLayer("Overlay");
@@ -116,14 +113,13 @@ TEST(LayerStackTest, PopLayerDetachesRemovesAndReturnsOwnership)
 
 	EXPECT_EQ(Order(stack), (std::vector<Layer*>{ keep }));
 
-	// Ownership came back to us, so the stack must not delete it a second time.
+	// Popping hands the layer back to the caller.
 	delete layer;
 }
 
 TEST(LayerStackTest, PoppingALayerKeepsTheOverlayPartitionIntact)
 {
-	// PopLayer decrements the insert index; if it did not, a layer pushed afterwards
-	// would land on the wrong side of the partition and render over the UI.
+	// After PopLayer, a new layer still goes below the overlays.
 	LayerStack stack;
 
 	Layer* first = new NiceMockLayer("First");
@@ -158,8 +154,7 @@ TEST(LayerStackTest, PopLayerIgnoresALayerThatWasNeverPushed)
 
 TEST(LayerStackTest, PopLayerWillNotRemoveAnOverlay)
 {
-	// The two partitions are searched separately, so an overlay is only removable through
-	// PopOverlay.
+	// PopLayer doesn't find overlays.
 	LayerStack stack;
 
 	NiceMockLayer* overlay = new NiceMockLayer("Overlay");
@@ -191,10 +186,7 @@ TEST(LayerStackTest, PopOverlayRemovesTheOverlay)
 
 TEST(LayerStackTest, PopOverlayDoesNotCallOnDetach)
 {
-	// Asymmetric with PopLayer, which does detach. Pinned here so the difference is a
-	// deliberate decision rather than something a refactor changes by accident: nothing
-	// else calls OnDetach for a popped overlay, so as it stands an overlay removed this
-	// way never gets one.
+	// Unlike PopLayer. Nothing else calls OnDetach on a popped overlay.
 	LayerStack stack;
 
 	NiceMockLayer* overlay = new NiceMockLayer("Overlay");
@@ -234,14 +226,12 @@ TEST(LayerStackTest, DestructorDetachesAndDeletesEverythingLeft)
 		EXPECT_CALL(*overlay, OnDetach()).Times(1);
 	}
 
-	// Both mocks verified their expectations as the stack deleted them; reaching here
-	// without a leak report or a double free is the rest of the assertion.
+	// The mocks checked their expectations when the stack deleted them.
 }
 
 TEST(LayerStackTest, PushingDoesNotAttach)
 {
-	// Application::PushLayer calls OnAttach itself, right after handing the layer over.
-	// If the stack did it too, every layer would attach twice.
+	// Application::PushLayer calls OnAttach, not the stack.
 	LayerStack stack;
 
 	NiceMockLayer* layer = new NiceMockLayer("Layer");

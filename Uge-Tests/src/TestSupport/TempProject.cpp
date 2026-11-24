@@ -10,8 +10,7 @@ namespace UgeTests
 
 	TempProject::TempProject(const std::string& name)
 	{
-		// A UUID rather than the test name: two fixtures alive at once, or a previous run
-		// that failed to clean up, must not collide.
+		// A UUID, so it can't collide with another fixture or a previous run's leftovers.
 		m_root = std::filesystem::temp_directory_path()
 			/ ("uge-tests-" + std::to_string((uint64_t)Uge::UUID((uint64_t)Uge::UUID::Generate())));
 
@@ -27,9 +26,7 @@ namespace UgeTests
 
 		m_projectFile = m_root / (name + ".ugproj");
 
-		// Save then load, rather than assigning the singleton directly: Load() is what
-		// creates the EditorAssetManager and reads the registry, so this is the same path
-		// the editor takes when it opens a project.
+		// Saved and loaded, as the editor does: Load() creates the asset manager.
 		Uge::Project::SaveActive(m_projectFile);
 		Uge::Project::Load(m_projectFile);
 	}

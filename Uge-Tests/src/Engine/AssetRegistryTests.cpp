@@ -29,11 +29,7 @@ namespace
 {
 
 	/**
-	 * @brief A project with an asset manager, plus a helper for making importable assets.
-	 *
-	 * Scenes are the only asset type that can be imported without a GPU: the texture, mesh
-	 * and environment importers all end up calling into OpenGL. So a `.uge` file is what
-	 * these tests register when they need a real registry entry.
+	 * @brief A project with an asset manager. Only scenes can be imported without a GPU.
 	 */
 	class AssetRegistryTest : public ::testing::Test
 	{
@@ -44,17 +40,16 @@ namespace
 		}
 
 		/**
-		 * @brief Writes a real scene file into the asset directory.
+		 * @brief Writes a scene file in the asset directory.
 		 * @param relativePath Path relative to the asset directory, ending in `.uge`.
-		 * @return The same relative path, ready to hand to ImportAsset.
+		 * @return The same relative path.
 		 */
 		std::filesystem::path WriteScene(const std::filesystem::path& relativePath) const
 		{
 			Uge::Ref<Scene> scene = Uge::CreateRef<Scene>();
 			scene->CreateEntity("Entity");
 
-			// SceneSerializer opens an ofstream without creating the directory first, so a
-			// missing folder would leave no file behind and no error either.
+			// SceneSerializer doesn't create the directory.
 			const std::filesystem::path absolute = Project::GetAssetFileSystemPath(relativePath);
 			std::filesystem::create_directories(absolute.parent_path());
 
@@ -71,8 +66,7 @@ namespace
 
 TEST(AssetTypeTest, RoundTripsThroughItsSerializedName)
 {
-	// The registry file stores these as text, so a rename here silently invalidates every
-	// existing project's registry.
+	// The registry stores these names, so renaming one breaks existing registries.
 	for (AssetType type : { AssetType::Scene, AssetType::Texture2D, AssetType::Mesh,
 		AssetType::Material, AssetType::Environment })
 	{
@@ -93,13 +87,13 @@ TEST_F(AssetRegistryTest, StartsWithAnEmptyRegistry)
 
 TEST_F(AssetRegistryTest, MissingRegistryFileIsCreatedRatherThanFailingTheLoad)
 {
-	// A project checked out without its registry still has to open.
+	// A project without a registry file still opens.
 	EXPECT_TRUE(std::filesystem::exists(Project::GetAssetRegistryPath()));
 }
 
 TEST_F(AssetRegistryTest, ZeroIsNeverAValidHandle)
 {
-	// Components use 0 for "nothing assigned", so it must not resolve to an asset.
+	// 0 means no asset.
 	EXPECT_FALSE(AssetManager::IsAssetHandleValid(0));
 	EXPECT_EQ(AssetManager::GetAssetType(0), AssetType::None);
 	EXPECT_EQ(AssetManager::GetAsset<Scene>(0), nullptr);
@@ -145,7 +139,7 @@ TEST_F(AssetRegistryTest, ImportedAssetResolvesToItsContents)
 
 TEST_F(AssetRegistryTest, ImportingTheSameFileTwiceCreatesTwoAssets)
 {
-	// Documented behaviour, and the reason GetOrImportAsset exists.
+	// ImportAsset always makes a new handle; GetOrImportAsset doesn't.
 	const std::filesystem::path relative = WriteScene("Scenes/Level.uge");
 
 	const AssetHandle first = Manager().ImportAsset(relative);
@@ -168,8 +162,7 @@ TEST_F(AssetRegistryTest, GetOrImportReusesTheExistingHandle)
 
 TEST_F(AssetRegistryTest, RegistrySurvivesAReload)
 {
-	// Handles are what scenes store, so they have to mean the same thing after the project
-	// is closed and opened again.
+	// Handles survive closing and reopening the project.
 	const std::filesystem::path relative = WriteScene("Scenes/Level.uge");
 	const AssetHandle handle = Manager().ImportAsset(relative, "Level");
 
@@ -181,14 +174,13 @@ TEST_F(AssetRegistryTest, RegistrySurvivesAReload)
 	EXPECT_EQ(Manager().GetAssetType(handle), AssetType::Scene);
 	EXPECT_EQ(Manager().GetFilePath(handle), relative);
 
-	// Reloaded from the registry means registered but not yet in memory.
+	// Registered, but not loaded.
 	EXPECT_FALSE(Manager().IsAssetLoaded(handle));
 }
 
 TEST_F(AssetRegistryTest, MemoryOnlyAssetsAreUsableButNotRegistered)
 {
-	// Materials synthesized during mesh import take this path: no file to reimport from,
-	// so writing them to the registry would leave entries nothing could resolve.
+	// As for the materials made during mesh import, which have no file.
 	Uge::Ref<UgeTests::MockTexture2D> texture = Uge::CreateRef<UgeTests::MockTexture2D>();
 
 	const AssetHandle handle = Manager().AddMemoryOnlyAsset(texture);
@@ -204,8 +196,7 @@ TEST_F(AssetRegistryTest, MemoryOnlyAssetsAreUsableButNotRegistered)
 
 TEST_F(AssetRegistryTest, LoadedAssetOfAnotherTypeResolvesToNull)
 {
-	// A scene edited by hand can hold a handle to the wrong kind of asset. Asking for it as
-	// another type gives null rather than a pointer to the wrong object.
+	// Asking for an asset as the wrong type gives null.
 	Uge::Ref<UgeTests::MockTexture2D> texture = Uge::CreateRef<UgeTests::MockTexture2D>();
 	const AssetHandle handle = Manager().AddMemoryOnlyAsset(texture);
 
@@ -215,8 +206,7 @@ TEST_F(AssetRegistryTest, LoadedAssetOfAnotherTypeResolvesToNull)
 
 TEST_F(AssetRegistryTest, RegisteredAssetOfAnotherTypeResolvesToNull)
 {
-	// The same for an asset that isn't loaded yet. Asking for the wrong type first leaves
-	// the asset usable as its own type.
+	// The same for an asset not yet loaded, which then still loads as its own type.
 	const AssetHandle handle = Manager().ImportAsset(WriteScene("Scenes/NotATexture.uge"), "NotATexture");
 
 	EXPECT_EQ(AssetManager::GetAsset<Uge::Texture2D>(handle), nullptr);
@@ -251,9 +241,7 @@ TEST_F(AssetRegistryTest, LoadedAssetNamesArePrefixedWithTheirType)
 
 	ASSERT_EQ(names.size(), 1u);
 
-	// Asset::SetName prefixes with AssetTypeToString, which spells the enumerator out in
-	// full — so the label is "AssetType::Scene - Level", not the "Scene - Level" the
-	// doc comment on SetName suggests.
+	// SetName prefixes the name with AssetTypeToString's, AssetType::Scene.
 	EXPECT_EQ(names[0], "AssetType::Scene - Level");
 }
 
@@ -298,8 +286,7 @@ TEST_F(AssetRegistryTest, DeletingAModelDropsItsMeshEntryAndUnloadsIt)
 
 TEST_F(AssetRegistryTest, DeletingAnAssetUnloadsItButKeepsItRegistered)
 {
-	// Unloading is not unregistering: the handle stays resolvable so the asset can be
-	// reimported on the next use.
+	// Unloading keeps the asset registered, so it imports again on next use.
 	const std::filesystem::path relative = WriteScene("Scenes/Level.uge");
 	const AssetHandle handle = Manager().ImportAsset(relative, "Level");
 
@@ -317,13 +304,12 @@ TEST_F(AssetRegistryTest, DeletingAnAssetUnloadsItButKeepsItRegistered)
 
 TEST_F(AssetRegistryTest, DeletingASceneUnloadsItSoTheFileIsReadAgain)
 {
-	// The editor writes scenes to disk, but GetAsset kept serving the copy it cached on
-	// first load, so reopening a saved scene showed it as it was before the save.
+	// After DeleteAsset, GetAsset reads the saved file instead of the cached scene.
 	const std::filesystem::path relative = WriteScene("Scenes/Level.uge");
 	const AssetHandle handle = Manager().ImportAsset(relative, "Level");
 	ASSERT_NE(AssetManager::GetAsset<Scene>(handle), nullptr);
 
-	// What the editor's Save does: write a changed scene over the file.
+	// Save a changed scene over the file, as the editor does.
 	Uge::Ref<Scene> edited = Uge::CreateRef<Scene>();
 	edited->CreateEntity("Added in the editor");
 	Uge::SceneSerializer(edited).Serialize(Project::GetAssetFileSystemPath(relative));
@@ -338,22 +324,19 @@ TEST_F(AssetRegistryTest, DeletingASceneUnloadsItSoTheFileIsReadAgain)
 
 TEST_F(AssetRegistryTest, ResolvingAnAssetWhoseFileIsGoneReturnsNull)
 {
-	// Content deleted from disk while a scene still refers to it must resolve to null, not
-	// throw: the handle stays registered, so this is reached simply by opening a project
-	// whose files have moved.
+	// A registered asset whose file is gone resolves to null without throwing.
 	const std::filesystem::path relative = WriteScene("Scenes/Level.uge");
 	const AssetHandle handle = Manager().ImportAsset(relative, "Level");
 	Manager().SerializeAssetRegistry();
 
-	// Reopen so the handle is registered but nothing is cached, then take the file away.
+	// Reopen, so nothing is cached, then delete the file.
 	ASSERT_TRUE(Project::Load(m_project.ProjectFile()));
 	ASSERT_TRUE(std::filesystem::remove(Project::GetAssetFileSystemPath(relative)));
 
 	Uge::Ref<Scene> resolved;
 	EXPECT_NO_THROW({ resolved = AssetManager::GetAsset<Scene>(handle); });
 
-	// Null rather than an empty scene: an importer that reported success here would let the
-	// editor save a blank scene over content that was only misplaced.
+	// Null, not an empty scene that the editor could save over the missing file.
 	EXPECT_EQ(resolved, nullptr);
 }
 

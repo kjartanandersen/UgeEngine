@@ -1,6 +1,6 @@
 /**
  * @file DebugPanel.h
- * @brief Editor panel showing frame timings, renderer counters and scene diagnostics.
+ * @brief The diagnostics panel.
  * @ingroup group_editor
  */
 
@@ -17,58 +17,51 @@ namespace Uge
 	class Scene;
 
 	/**
-	 * @brief Live diagnostics for the running editor.
+	 * @brief Shows frame times, Uge::RenderStats, Uge::FrameProfiler timings and scene
+	 * counts, and captures Chrome traces.
 	 * @ingroup group_editor
-	 *
-	 * Brings together what the engine already measures but never showed: the frame time
-	 * that Uge::Application computes each frame, the Uge::RenderStats counters every draw
-	 * path feeds, and the per-scope timings Uge::FrameProfiler aggregates from the
-	 * `UG_PROFILE_*` macros. It also drives on-demand Chrome-trace capture, which is
-	 * otherwise not reachable at runtime.
 	 */
 	class DebugPanel
 	{
 	public:
-		/** @brief Draws the panel, and any ImGui tool windows it has enabled. */
+		/** @brief Draws the panel, and the ImGui tool windows that are turned on. */
 		void OnImGuiRender();
 
 		/**
-		 * @brief Points the panel at the scene whose statistics it should report.
-		 * @param context Scene to inspect; may be null.
+		 * @brief Sets the scene to report on.
+		 * @param context The scene, or null.
 		 */
 		void SetContext(const Ref<Scene>& context);
 
 		/**
-		 * @brief Supplies the entity under the cursor, recomputed by the editor each frame.
-		 * @param entity The hovered entity, or a null entity when the cursor is over nothing.
+		 * @brief Sets the entity under the cursor.
+		 * @param entity The entity, or a null entity.
 		 */
 		void SetHoveredEntity(Entity entity);
 
 		/**
-		 * @brief Advances an in-progress trace capture; call once per frame.
-		 *
-		 * Capture is measured in frames rather than seconds so that a trace covers a known
-		 * number of frames regardless of how slow they are.
+		 * @brief Counts down a trace capture, which lasts a number of frames. Call once per
+		 * frame.
 		 */
 		void OnUpdate();
 
 	private:
 		/** @brief Frame time, FPS and the frame-time graph. */
 		void DrawFrameSection();
-		/** @brief Draw calls, triangles and per-path counters, plus the GPU description. */
+		/** @brief Render counters and the GPU's description. */
 		void DrawRendererSection();
 		/** @brief Entity and asset counts, and the hovered entity. */
 		void DrawSceneSection();
-		/** @brief Sortable per-scope timing table and the trace capture control. */
+		/** @brief The timing table and the trace capture controls. */
 		void DrawProfilerSection();
-		/** @brief Toggles for ImGui's own demo, metrics and style windows. */
+		/** @brief Toggles for ImGui's demo, metrics and style windows. */
 		void DrawToolsSection();
 
 		Ref<Scene> m_context;
 		Entity m_hoveredEntity;
 
-		int m_captureFramesRemaining = 0; ///< Frames left in the active trace capture.
-		int m_captureFrameCount = 120;    ///< Frames the next capture should cover.
+		int m_captureFramesRemaining = 0; ///< Frames left in the capture.
+		int m_captureFrameCount = 120;    ///< Frames the next capture lasts.
 
 		bool m_showImGuiDemo = false;
 		bool m_showImGuiMetrics = false;

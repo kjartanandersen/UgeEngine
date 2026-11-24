@@ -12,24 +12,26 @@ namespace Uge
 {
 
 	/**
-	 * @brief An OpenGL uniform buffer object bound to an indexed binding point.
+	 * @brief An OpenGL uniform buffer.
 	 * @ingroup group_platform
 	 */
 	class OpenGLUniformBuffer : public UniformBuffer
 	{
 	public:
 		/**
-		 * @brief Creates the buffer and binds it to a binding point.
-		 * @param size Buffer size in bytes.
-		 * @param binding Binding index matching the shader's `layout(binding = N)`.
+		 * @brief Creates the buffer and binds it.
+		 * @param size Size in bytes.
+		 * @param binding Binding point, as in the shader's `layout(binding = N)`.
 		 */
 		OpenGLUniformBuffer(uint32_t size, uint32_t binding);
 		/** @brief Deletes the GL buffer. */
 		virtual ~OpenGLUniformBuffer();
 
 		virtual void SetData(const void* data, uint32_t size, uint32_t offset = 0) override;
+		virtual void Bind() const override;
 	private:
 		uint32_t m_RendererID = 0;
+		uint32_t m_binding = 0;
 	};
 
 

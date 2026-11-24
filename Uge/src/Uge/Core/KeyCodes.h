@@ -1,6 +1,6 @@
 /**
  * @file KeyCodes.h
- * @brief Keyboard key identifiers, mirroring the GLFW key codes.
+ * @brief Keyboard key codes.
  * @ingroup group_core
  */
 
@@ -12,15 +12,8 @@
 namespace Uge
 {
 	/**
-	 * @brief Platform-independent keyboard key identifiers.
+	 * @brief Keyboard keys, with the same values as GLFW's `GLFW_KEY_*` codes.
 	 * @ingroup group_core
-	 *
-	 * Values match the `GLFW_KEY_*` constants so the Windows backend can pass them
-	 * through unchanged. Use these with Uge::Input::IsKeyPressed and when inspecting
-	 * Uge::KeyEvent::GetKeyCode.
-	 *
-	 * Printable keys use their ASCII value, so `UG_KEY_A` is `65`. Function and modifier
-	 * keys start at 256.
 	 */
 	enum KeyCode
 	{

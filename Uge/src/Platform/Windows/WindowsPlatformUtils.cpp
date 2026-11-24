@@ -48,11 +48,10 @@ namespace Uge
 	std::string FileDialogs::OpenFile(const char* filter)
 	{
 
-		OPENFILENAMEA ofn;			// Common dialog box structure
-		CHAR szFile[260] = { 0 };	// If using TCHAR Macros
+		OPENFILENAMEA ofn;
+		CHAR szFile[260] = { 0 };
 		CHAR currentDir[256] = { 0 };
 
-		// Initialize OPENFILENAME
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
 		ofn.lStructSize = sizeof(OPENFILENAME);
 		ofn.hwndOwner = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow());
@@ -80,12 +79,11 @@ namespace Uge
 	}
 	std::string FileDialogs::SaveFile(const char* filter)
 	{
-		OPENFILENAMEA ofn;			// Common dialog box structure
-		CHAR szFile[260] = { 0 };	// If using TCHAR Macros
+		OPENFILENAMEA ofn;
+		CHAR szFile[260] = { 0 };
 		CHAR currentDir[256] = { 0 };
 		CHAR defaultExt[32] = { 0 };
 
-		// Initialize OPENFILENAME
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
 		ofn.lStructSize = sizeof(OPENFILENAME);
 		ofn.hwndOwner = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow());

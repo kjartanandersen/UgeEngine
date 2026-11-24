@@ -13,27 +13,25 @@ namespace Uge
 {
 
     /**
-     * @brief Adapts Jolt's debug renderer onto a Uge::PhysicsDebugRenderer line sink.
+     * @brief Sends Jolt's debug drawing to a Uge::PhysicsDebugRenderer.
      *
-     * @warning JPH::DebugRenderer keeps a process-wide `sInstance` and asserts if a second
-     * one is constructed, so exactly one of these may exist. It is owned by Uge::JoltData,
-     * not by a scene: the editor world and the play-mode world are alive at the same time.
-     * Uge::JoltScene::DebugDraw points it at a sink for the duration of one call.
+     * Jolt asserts on a second debug renderer, so exactly one exists. Uge::JoltData owns it,
+     * since two scenes can be alive at once.
      */
     class JoltDebugRenderer : public JPH::DebugRendererSimple
     {
     public:
         /**
-         * @brief Points the renderer at the sink to forward into.
-         * @param sink Sink for subsequent draw calls, or `nullptr` to discard them.
+         * @brief Sets where lines go.
+         * @param sink The sink, or `nullptr` to discard them.
          */
         void SetSink(PhysicsDebugRenderer* sink) { m_sink = sink; }
 
         /**
-         * @brief Forwards one line to the current sink.
-         * @param inFrom Start point.
-         * @param inTo End point.
-         * @param inColor Line colour.
+         * @brief Draws a line.
+         * @param inFrom Start.
+         * @param inTo End.
+         * @param inColor Colour.
          */
         void DrawLine(JPH::RVec3Arg inFrom, JPH::RVec3Arg inTo, JPH::ColorArg inColor) override
         {
@@ -47,12 +45,12 @@ namespace Uge
         }
 
         /**
-         * @brief Forwards a triangle as its three edges.
+         * @brief Draws a triangle's edges.
          * @param inV1 First vertex.
          * @param inV2 Second vertex.
          * @param inV3 Third vertex.
-         * @param inColor Triangle colour.
-         * @param inCastShadow Ignored; the sink draws lines only.
+         * @param inColor Colour.
+         * @param inCastShadow Ignored.
          */
         void DrawTriangle(JPH::RVec3Arg inV1, JPH::RVec3Arg inV2, JPH::RVec3Arg inV3,
             JPH::ColorArg inColor, ECastShadow inCastShadow) override
@@ -69,7 +67,7 @@ namespace Uge
         }
 
         /**
-         * @brief No-op: Uge::PhysicsDebugRenderer draws lines only.
+         * @brief Does nothing; only lines are drawn.
          * @param inPosition Ignored.
          * @param inString Ignored.
          * @param inColor Ignored.

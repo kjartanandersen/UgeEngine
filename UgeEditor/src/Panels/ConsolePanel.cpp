@@ -8,7 +8,7 @@ namespace Uge
 
 	namespace
 	{
-		/** @brief Short label shown on the level filter buttons. */
+		/** @brief A level's button label. */
 		const char* LevelToLabel(spdlog::level::level_enum level)
 		{
 			switch (level)
@@ -23,7 +23,7 @@ namespace Uge
 			}
 		}
 
-		/** @brief Text colour used for a record of the given severity. */
+		/** @brief A level's text colour. */
 		ImVec4 LevelToColor(spdlog::level::level_enum level)
 		{
 			switch (level)
@@ -38,7 +38,7 @@ namespace Uge
 			}
 		}
 
-		// Levels offered as filter buttons; `off` is never used as a record severity.
+		// The levels with filter buttons; no record has level `off`.
 		constexpr spdlog::level::level_enum s_filterLevels[] = {
 			spdlog::level::trace,
 			spdlog::level::debug,
@@ -63,7 +63,7 @@ namespace Uge
 		if (ImGui::BeginChild("##consoleScroll", ImVec2(0.0f, 0.0f), false,
 			ImGuiWindowFlags_HorizontalScrollbar))
 		{
-			// The buffer holds thousands of records, so only the visible rows are built.
+			// Only the rows on screen are drawn.
 			ImGuiListClipper clipper;
 			clipper.Begin((int)m_visible.size());
 
@@ -79,8 +79,7 @@ namespace Uge
 				}
 			}
 
-			// Only follow the tail while the view is already pinned to the bottom, so
-			// scrolling back to read something does not fight the incoming records.
+			// Follows new records only while scrolled to the bottom.
 			if (m_autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
 			{
 				ImGui::SetScrollHereY(1.0f);
@@ -111,7 +110,7 @@ namespace Uge
 			const bool enabled = m_levelEnabled[level];
 			const ImVec4 color = LevelToColor(level);
 
-			// Enabled filters are tinted with their level colour; disabled ones stay grey.
+			// An enabled level's button has its colour; a disabled one is grey.
 			UI::ScopedStyleColor text(ImGuiCol_Text, enabled ? color : ImVec4(0.45f, 0.45f, 0.48f, 1.0f));
 
 			char label[64];

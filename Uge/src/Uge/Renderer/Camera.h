@@ -1,6 +1,6 @@
 /**
  * @file Camera.h
- * @brief Base camera holding a projection matrix.
+ * @brief Base camera.
  * @ingroup group_renderer
  */
 
@@ -13,24 +13,20 @@ namespace Uge
 {
 
 	/**
-	 * @brief Base class for anything that supplies a projection matrix.
+	 * @brief A projection matrix. The view matrix is left to subclasses.
 	 * @ingroup group_renderer
-	 *
-	 * Deliberately minimal: it holds the projection only, leaving the view matrix to
-	 * subclasses and callers. Uge::SceneCamera pairs it with an entity's transform, while
-	 * Uge::EditorCamera manages its own orbit view.
 	 */
 	class Camera
 	{
 
 	public:
-		/** @brief Constructs a camera with an identity projection. */
+		/** @brief A camera with an identity projection. */
 		Camera() = default;
 		/**
-		 * @brief Constructs a camera with an explicit projection.
-		 * @param projection Projection matrix to use.
+		 * @brief A camera with a given projection.
+		 * @param projection The projection matrix.
 		 */
-		Camera(const glm::mat4& projection) 
+		Camera(const glm::mat4& projection)
 			: m_projection(projection) {}
 
 		/** @brief Virtual destructor. */
@@ -38,12 +34,12 @@ namespace Uge
 
 		/**
 		 * @brief The projection matrix.
-		 * @return Const reference to the projection.
+		 * @return The projection.
 		 */
 		const glm::mat4& GetProjection() const { return m_projection; };
 
 	protected:
-		glm::mat4 m_projection = glm::mat4(1.0f); ///< Projection matrix; subclasses rebuild it.
+		glm::mat4 m_projection = glm::mat4(1.0f); ///< The projection matrix.
 
 		
 

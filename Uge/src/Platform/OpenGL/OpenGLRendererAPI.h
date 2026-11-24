@@ -12,13 +12,10 @@ namespace Uge
 {
 
 	/**
-	 * @brief Issues OpenGL state changes and draw calls.
+	 * @brief The OpenGL renderer API.
 	 * @ingroup group_platform
 	 *
-	 * Init() enables blending, depth testing and, in Debug builds, the OpenGL debug
-	 * message callback that routes driver diagnostics into the engine log.
-	 *
-	 * Reached through Uge::RenderCommand rather than directly.
+	 * Init() turns on alpha blending, depth testing and seamless cubemap filtering.
 	 */
 	class OpenGLRendererAPI : public RendererAPI
 	{
